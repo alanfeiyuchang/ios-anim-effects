@@ -42,9 +42,11 @@ private struct ScrollWheelSnap: ScrollTargetBehavior {
     }
 }
 
+private let scrollWheelInitialIndex = 4
+
 private struct ScrollWheelDemo: View {
     let ctx: DemoContext
-    @State private var current = 4
+    @State private var current = scrollWheelInitialIndex
     @State private var position = ScrollPosition(edge: .top)
     @State private var direction = 1
 
@@ -109,7 +111,7 @@ private struct ScrollWheelDemo: View {
         }, action: { _, newValue in
             current = newValue
         })
-        .onAppear { position.scrollTo(y: CGFloat(current) * rowHeight) }
+        .onAppear { position.scrollTo(y: CGFloat(scrollWheelInitialIndex) * rowHeight) }
         .scrollIndicators(.hidden)
         .frame(height: viewport)
         .background {

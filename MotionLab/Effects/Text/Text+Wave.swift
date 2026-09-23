@@ -34,7 +34,8 @@ private struct WaveDemo: View {
     var body: some View {
         TimelineView(.animation) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
-            VStack(spacing: 6) {
+            // Leave room for both lines' vertical travel so they never collide.
+            VStack(spacing: 6 + ctx.cg("amplitude") * 1.4) {
                 Text(L("Good Vibes", "律动文字"), ctx.language)
                     .font(.system(size: 50, weight: .heavy, design: .rounded))
                     .foregroundStyle(Palette.sunset)

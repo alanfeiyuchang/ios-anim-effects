@@ -26,6 +26,8 @@ extension Effect {
     }
 }
 
+private let scrollPagingSpace = "scroll.paging-carousel"
+
 private struct ScrollPagingDemo: View {
     let ctx: DemoContext
     @State private var current: Int? = 0
@@ -56,7 +58,7 @@ private struct ScrollPagingDemo: View {
                         .frame(width: cardWidth, height: 250)
                         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                         .visualEffect { content, proxy in
-                            let mid = proxy.frame(in: .scrollView).midX
+                            let mid = proxy.frame(in: .named(scrollPagingSpace)).midX
                             let t = min(abs(mid - viewport / 2) / pitch, 1)
                             return content
                                 .scaleEffect(1 - (1 - CGFloat(sideScale)) * t)
@@ -71,6 +73,10 @@ private struct ScrollPagingDemo: View {
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $current, anchor: .center)
         .scrollIndicators(.hidden)
+        // Measure cards against the scroll view's own bounds: with contentMargins
+        // the `.scrollView` space is offset by the leading margin, which left the
+        // centered card slightly shrunk and dimmed.
+        .coordinateSpace(.named(scrollPagingSpace))
         .frame(height: 260)
         .onGeometryChange(for: CGFloat.self, of: { proxy in proxy.size.width }, action: { newWidth in
             width = newWidth

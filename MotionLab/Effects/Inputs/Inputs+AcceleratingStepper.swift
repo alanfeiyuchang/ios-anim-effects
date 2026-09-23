@@ -35,6 +35,8 @@ private struct AcceleratingStepperDemo: View {
     @State private var multiplier = 1
     @State private var repeatTask: Task<Void, Never>?
     @State private var step = 0
+    /// Ends a simulated hold; a real press cancels it so it can't cut the user's hold short.
+    @State private var introTask: Task<Void, Never>?
 
     private let range: ClosedRange<Int> = 0...9990
     private let firstDelay: Double = 0.4
@@ -48,7 +50,10 @@ private struct AcceleratingStepperDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onDisappear { repeatTask?.cancel() }
+        .onDisappear {
+            repeatTask?.cancel()
+            introTask?.cancel()
+        }
         .autoplay(ctx.isPreview, every: 3.4, delay: 0.3) { previewHold() }
     }
 
@@ -137,7 +142,14 @@ private struct AcceleratingStepperDemo: View {
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
-                    if holding != direction { begin(direction) }
+                    if let intro = introTask {
+                        // A real press takes over a simulated hold, even in the same direction.
+                        intro.cancel()
+                        introTask = nil
+                        begin(direction)
+                    } else if holding != direction {
+                        begin(direction)
+                    }
                 }
                 .onEnded { _ in end() }
         )
@@ -189,9 +201,12 @@ private struct AcceleratingStepperDemo: View {
         step += 1
         let direction = step % 2 == 1 ? 1 : -1
         begin(direction)
-        Task {
+        introTask?.cancel()
+        introTask = Task {
             try? await Task.sleep(for: .seconds(2.4))
+            guard !Task.isCancelled else { return }
             end()
+            introTask = nil
         }
     }
 }

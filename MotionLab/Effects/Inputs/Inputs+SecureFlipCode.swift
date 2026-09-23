@@ -39,6 +39,8 @@ private struct SecureFlipCodeDemo: View {
     /// Set by the autoplay script so the keystroke it types (in previews or the detail intro) stays silent.
     @State private var scripted = false
     @FocusState private var focused: Bool
+    /// Detail intro: plays the whole script once (type, mask, peek, clear); any touch cancels it.
+    @State private var introTask: Task<Void, Never>?
 
     private let length = 4
     private static let script: [String] = ["7", "", "3", "", "9", "", "1", "", "", "", "👁", "", "", "", "👁", "", "", "⌧", ""]
@@ -66,6 +68,7 @@ private struct SecureFlipCodeDemo: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
+                takeOver()
                 if code.count == length { reset() }
                 focused = true
             }
@@ -75,11 +78,15 @@ private struct SecureFlipCodeDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background { hiddenField }
-        .autoplay(ctx.isPreview, every: 0.35, delay: 0.4) { previewTick() }
+        .autoplay(ctx.isPreview, every: 0.35, delay: 0.4) {
+            if ctx.isPreview { previewTick() } else { playIntro() }
+        }
+        .onDisappear { introTask?.cancel() }
     }
 
     private var eyeButton: some View {
         Button {
+            takeOver()
             if !ctx.isPreview { Haptics.tap() }
             staggerFlips = true
             peeking.toggle()
@@ -141,6 +148,29 @@ private struct SecureFlipCodeDemo: View {
         code = ""
         masked = []
         peeking = false
+    }
+
+    /// Detail intro: the preview script once at the same 0.35 s beat — four digits typed and masked,
+    /// the eye peek on and off, then a clear.
+    private func playIntro() {
+        introTask?.cancel()
+        scriptIndex = 0
+        introTask = Task {
+            for _ in Self.script.indices {
+                guard !Task.isCancelled else { return }
+                previewTick()
+                try? await Task.sleep(for: .seconds(0.35))
+            }
+            introTask = nil
+        }
+    }
+
+    /// A real touch ends the intro and starts from a clean field.
+    private func takeOver() {
+        guard let task = introTask else { return }
+        task.cancel()
+        introTask = nil
+        reset()
     }
 
     private func previewTick() {

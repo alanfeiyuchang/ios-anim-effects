@@ -122,6 +122,8 @@ the Compare mode on the family page plays all variations side by side.
    `.frame(maxWidth: .infinity, maxHeight: .infinity)`, never assume the screen size, never use `UIScreen`.
    The container draws the background & clips; demos should not add a full-bleed opaque background
    unless the effect *is* a background.
+   Exception: Signature Interactions (Showcase) demos draw their own dark glossy stage (`SignatureStage`) on purpose —
+   they reproduce dark widget cards and use white text on it in both appearances.
 2. **Previews must move.** In previews (`ctx.isPreview == true`) the demo cannot be touched.
    Tap/gesture/state demos must auto-play using `.autoplay(ctx.isPreview, every: seconds) { … }`
    (call the same function the tap calls, with `withAnimation` inside). Gesture demos should simulate a

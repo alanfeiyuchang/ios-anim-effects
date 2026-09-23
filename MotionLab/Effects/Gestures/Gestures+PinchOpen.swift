@@ -8,8 +8,8 @@ extension Effect {
         name: L("Pinch to Open", "捏合展开"),
         summary: L("Spread two fingers on a card to grow it live; past the threshold it blooms into a full page.", "双指张开，卡片随之实时放大；越过阈值便绽开为完整页面。"),
         prompt: L(
-            "A 170 × 128 pt album card (aurora gradient cover, title) rests at the centre. Spreading two fingers scales it live with the pinch, lifting its shadow and tilting 2° toward the anchor, with rubber-band resistance above 1.6×. Crossing 1.3× arms it: a light haptic fires and a thin ring glows around the card. Releasing while armed hands the live scale over to a layout change: the card blooms into a 300 × 320 pt page on a spring (response 0.5 s, damping 0.78), the cover grows to a 150 pt header and body lines fade up 8 pt with a 60 ms stagger. Pinching the page below 0.8× (or double-tapping) folds it back into the card on the same spring. Releasing unarmed springs back. Direct, continuous, intentional.",
-            "一张 170 × 128pt 的相册卡片（极光渐变封面与标题）置于中央。双指张开时，卡片随捏合实时放大，投影随之抬升，并朝锚点一侧倾斜 2°，超过 1.6 倍后带橡皮筋阻力。越过 1.3 倍即进入“就绪”：触发一次轻触感，卡片外缘亮起一圈细光环。就绪时松手，实时缩放会无缝交接为布局变化：卡片以弹簧（响应 0.5 秒、阻尼 0.78）绽开为 300 × 320pt 的页面，封面扩展为 150pt 的头图，正文行以 60ms 的错峰上移 8pt 淡入。在页面上捏合到 0.8 倍以下（或双击）即以同一弹簧折回卡片；未就绪松手则弹回原状。直接、连贯、意图明确。"
+            "A 170×128 pt album card with an aurora-gradient cover and a title rests at the centre. Spreading two fingers scales it live with the pinch, lifting its shadow and tilting it 2° toward the anchor, with rubber-band resistance above 1.6×; crossing 1.3× arms it with a light haptic and a thin glowing ring. Releasing while armed hands the live scale straight over to a layout change: the card blooms into a 300×320 pt page on a spring (response 0.5 s, damping 0.78) as the cover grows into a 150 pt header and body lines fade up 8 pt, 60 ms apart. Pinching the page below 0.8× or double-tapping folds it back on the same spring, and an unarmed release simply springs back. Direct, continuous and intentional.",
+            "一张 170×128 pt 的相册卡片（极光渐变封面加标题）放在中央。双指张开时卡片随捏合实时放大，投影抬升，并朝锚点一侧倾斜 2°，超过 1.6 倍后带橡皮筋阻力；越过 1.3 倍即“就绪”，一下轻触感，卡片外缘亮起细光环。就绪时松手，实时缩放无缝交接为布局变化：卡片以弹簧（响应 0.5 秒、阻尼 0.78）绽开成 300×320 pt 的页面，封面长成 150 pt 的头图，正文行错开 60 毫秒上移 8 pt 淡入。在页面上捏到 0.8 倍以下或双击，就以同一弹簧折回卡片；未就绪松手则只是弹回。直接、连贯、意图明确。"
         ),
         implementation: L(
             "MagnifyGesture sets a live scale (rubber-banded) and an armed flag; onEnded toggles the expanded state and resets the scale in one spring so the layout frame and the gesture scale blend into a single motion. sensoryFeedback marks the threshold.",
@@ -32,6 +32,8 @@ private struct PinchOpenDemo: View {
     @State private var expanded = false
     @State private var live: CGFloat = 1
     @State private var tilt: Double = 0
+    /// True while autoplay (or the detail intro) drives the pinch, so the scripted arm tick stays silent.
+    @State private var scripted = false
 
     var body: some View {
         let armed = expanded ? live < 0.8 : live > ctx.cg("threshold")
@@ -42,7 +44,7 @@ private struct PinchOpenDemo: View {
                 .gesture(magnify)
                 .onTapGesture(count: 2) { toggle(haptic: true) }
                 .sensoryFeedback(.impact(weight: .light), trigger: armed) { _, newValue in
-                    newValue && !ctx.isPreview
+                    newValue && !ctx.isPreview && !scripted
                 }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -66,7 +68,7 @@ private struct PinchOpenDemo: View {
                         .foregroundStyle(.white.opacity(0.9))
                 }
                 .frame(height: expanded ? 150 : 72)
-            Text(ctx.language == .zh ? "夏日旅行" : "Summer Trip")
+            Text(L("Summer Trip", "夏日旅行"), ctx.language)
                 .font(expanded ? Font.title3.weight(.bold) : Font.subheadline.weight(.semibold))
             if expanded {
                 ForEach(0..<3, id: \.self) { index in
@@ -96,6 +98,7 @@ private struct PinchOpenDemo: View {
     private var magnify: some Gesture {
         MagnifyGesture()
             .onChanged { value in
+                scripted = false
                 let m = value.magnification
                 if expanded {
                     live = min(max(m, 0.55), 1) + rubberBand(max(m - 1, 0), limit: 0.05, coefficient: 1)
@@ -127,6 +130,7 @@ private struct PinchOpenDemo: View {
     }
 
     private func simulate() {
+        scripted = true
         let target: CGFloat = expanded ? 0.74 : ctx.cg("threshold") + 0.12
         withAnimation(.easeInOut(duration: 0.45)) {
             live = target

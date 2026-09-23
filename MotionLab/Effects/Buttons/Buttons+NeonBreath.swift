@@ -6,14 +6,14 @@ extension Effect {
         category: .buttons,
         interaction: .loop,
         name: L("Neon Breath", "霓虹呼吸"),
-        summary: L("A neon tube glow that slowly breathes and flickers on tap.", "缓慢呼吸的霓虹灯管辉光，点击时闪烁。"),
+        summary: L("A neon tube glow that slowly breathes and flickers now and then, or on tap.", "缓慢呼吸的霓虹灯管辉光，不时自己闪烁，点击也会闪。"),
         prompt: L(
             "Mounted on a near-black wall panel (so it reads in light mode too), a dark capsule is outlined by a 2 pt electric-cyan neon tube, its label glowing in the same colour. The glow breathes on a slow sine (~2.4 s per cycle): stacked shadows swell from a tight 4 pt halo to a 22 pt bloom and back, the tube brightens by 0.25 at the peak, and a blurred floor reflection and a faint wash on the panel pulse in sync. Every few seconds (a random 2.8–5.5 s) the tube stutters on its own like an ageing sign. Tapping triggers the same flicker on demand — opacity 1 → 0.35 → 1 → 0.6 → 1 within ~350 ms — plus a light haptic. Atmospheric and nocturnal, like a sign humming in a rainy alley.",
             "按钮装在近黑墙面面板上（浅色模式同样醒目）：深色胶囊外圈是 2pt 电光青霓虹灯管，文字同色发光。辉光以约 2.4 秒一周期的正弦呼吸：多层阴影从 4pt 贴身光晕扩到 22pt 柔光再收回，峰值时灯管亮度提升 0.25，地面倒影与面板上的淡彩光晕同步明暗。每隔随机 2.8–5.5 秒，灯管会像老化的招牌一样自己闪一下；点击则随时触发同样的闪烁——约 350 毫秒内不透明度 1 → 0.35 → 1 → 0.6 → 1——并伴随轻触觉。像雨夜小巷里嗡嗡作响的招牌。"
         ),
         implementation: L(
-            "TimelineView computes a sine-based breath value that scales layered shadows and stroke brightness; a keyframeAnimator keyed on a tap counter plays the flicker on opacity.",
-            "TimelineView 计算基于正弦的呼吸值，用于缩放多层阴影与描边亮度；以点击计数为触发的 keyframeAnimator 在不透明度上播放闪烁。"
+            "TimelineView computes a sine-based breath value that scales layered shadows and stroke brightness; a keyframeAnimator keyed on a flicker counter plays the stutter on opacity, bumped by taps and by a task that sleeps a random 2.8–5.5 s between idle flickers.",
+            "TimelineView 计算基于正弦的呼吸值，用于缩放多层阴影与描边亮度；以闪烁计数为触发的 keyframeAnimator 在不透明度上播放抖动，计数由点击以及一个每隔随机 2.8–5.5 秒唤醒的 task 递增。"
         ),
         apis: ["TimelineView", "shadow", "keyframeAnimator", "blur"],
         tags: ["neon", "glow", "breathing", "pulse", "霓虹", "呼吸灯", "辉光", "赛博"],

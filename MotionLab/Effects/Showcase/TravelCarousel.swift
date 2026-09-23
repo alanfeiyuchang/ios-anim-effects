@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A horizontal carousel of tall destination cards (200×240 pt, 24 pt corners) with a scrim, a country eyebrow, a bold place name and a “126 shots” caption. The centered card sits at 100% scale. As a card moves toward the edge it shrinks to ~86%, rotates up to 5° in the scroll direction and fades to 65% opacity, all mapped directly to scroll offset. Inside each card the photo is 72 pt wider than its frame and shifts opposite to the scroll by up to 36 pt, giving a window-like parallax. Paging snaps card by card with view-aligned targeting. Below, the active page dot stretches into a 22 pt orange capsule while the others shrink to 6 pt dots on a spring (response 0.35 s, damping 0.7), with a selection haptic per page. It feels deep, tactile and editorial.",
-            "横向轮播一排竖版目的地卡片（200×240pt，圆角 24pt），卡片上有渐变遮罩、国家小标题、粗体地名和「126 张照片」说明。居中卡片保持 100% 缩放。卡片往边缘移动时，会按滚动偏移直接映射，缩小到约 86%，朝滚动方向最多倾斜 5°，透明度降到 65%。每张卡片里的照片比卡框宽 72pt，随滚动反向最多平移 36pt，像透过窗户看风景一样产生视差。翻页按视图对齐逐张吸附。下方当前页码点以弹簧（响应 0.35 秒、阻尼 0.7）拉伸成 22pt 的橙色胶囊，其余收缩为 6pt 圆点，每翻一页有一下选择触感。整体有纵深、有手感，像翻阅一本旅行杂志。"
+            "横向轮播一排竖版目的地卡片（200 × 240pt，圆角 24pt），带渐变遮罩、国家小标题、粗体地名和照片数。居中卡片保持 100%；越往边缘，按滚动偏移缩到约 86%、朝滚动方向最多倾斜 5°、透明度降到 65%。卡内照片比卡框宽 72pt，随滚动反向最多平移 36pt，像透过窗户看风景。翻页按视图对齐逐张吸附。下方当前页码点以弹簧（响应 0.35 秒、阻尼 0.7）拉成 22pt 橙色胶囊，其余缩成 6pt 圆点，每翻一页一次选择触感。有纵深感。"
         ),
         implementation: L(
             "ScrollView + LazyHStack with scrollTargetLayout, viewAligned target behavior, scrollPosition(id:) and contentMargins of (measured width − 200) / 2 so the snapped card is exactly centred; scrollTransition maps phase.value to scale, rotation and opacity on the card and to an x-offset on the oversized image inside it.",

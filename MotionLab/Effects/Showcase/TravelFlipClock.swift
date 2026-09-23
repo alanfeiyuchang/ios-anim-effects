@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A dark travel widget shows the local time of the selected city in four split-flap digit tiles (52×76 pt, rounded digits, 1.5 pt hinge gap), above a row of airport-code chips (HGH · NCE · KEF · JFK) with a sliding orange selection capsule. When the city changes, only the digits that differ flip, left to right, 60 ms apart. Over ~0.6 s the upper flap carrying the old digit folds down around the hinge with a quadratic ease-in and darkens as it turns edge-on, revealing the new digit’s top half. The new lower flap then swings from 90° to flat with an ease-in fall and lands with a small rebound (~8° lift, sine-shaped). Perspective is 0.45. A selection haptic accompanies each switch and the minute ticks live. It feels mechanical, nostalgic and precise.",
-            "暗色旅行小组件以四块翻牌数字（52×76pt，圆体数字，1.5pt 铰链缝）显示所选城市的当地时间，下方是一排机场代码标签（HGH · NCE · KEF · JFK），橙色选中胶囊在其间滑动。切换城市时，只有发生变化的数字从左到右依次翻转，间隔 60 毫秒。在约 0.6 秒内，印着旧数字的上半片先以二次缓入绕铰链向下翻折，转到侧面时逐渐变暗，露出新数字的上半部分。随后新数字的下半片从 90° 缓入落下到平放，着陆时轻轻回弹（约 8°，正弦曲线）。透视系数为 0.45。每次切换有选择触感，分钟数实时走动。整体有机械感，怀旧又精准。"
+            "暗色旅行小组件用四块翻牌数字（52 × 76pt，1.5pt 铰链缝）显示所选城市当地时间，下方是机场代码标签（HGH · NCE · KEF · JFK），橙色选中胶囊在其间滑动。切换城市时，只有变化的数字从左到右依次翻转，间隔 60 毫秒：约 0.6 秒内，旧数字的上半片以二次缓入绕铰链下翻，转到侧面时变暗；新数字的下半片再从 90° 缓入落平，着陆轻弹约 8°。透视 0.45。每次切换一次选择触感，分钟实时走动。机械、怀旧而精准。"
         ),
         implementation: L(
             "Each digit is an Animatable view whose animatableData is a monotonically increasing flip counter. The fractional part is mapped to the upper and lower flap angles for rotation3DEffect(axis: x, anchor: bottom/top), so no state reset is needed between flips. Halves are clipped copies of a full tile, and TimelineView(.everyMinute) keeps the time live.",

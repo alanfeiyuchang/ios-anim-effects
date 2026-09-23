@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A dark booking card shows two weeks of July as a 7-column grid of rounded digits, with a nightly rate and total below. The first tap sets check-in, the second sets check-out. The two endpoint circles (orange gradient, black digits) glide between cells via shared geometry, and a translucent orange band stretches or shrinks behind the days in between, split across week rows with its ends squared off where it continues into the next or previous week, all on one spring (response 0.4 s, damping 0.78). The nights label (e.g. \"3 nights · $186/night\") and the large total price roll to their new values with a numeric content transition. The Reserve pill brightens once a valid range exists. Each tap gives a selection haptic. It feels decisive, informative and smooth.",
-            "暗色预订卡片以 7 列网格展示七月的两周日期，数字为圆体，下方是每晚价格与总价。第一次点击设入住日，第二次设退房日。两个端点圆（橙色渐变、黑色数字）通过共享几何在格子间滑动，一条半透明橙色色带在中间日期背后伸缩，跨周时分行显示，且在延续到上一周或下一周的一端改为方角，整体使用同一弹簧（响应 0.4 秒、阻尼 0.78）。晚数（如「3 晚 · ¥1,280/晚」）和醒目的总价用数字滚动过渡更新到新值，中文界面统一以人民币计价。选出有效区间后，「预订」按钮随之点亮。每次点击都有选择触感。整体果断、信息清晰、过渡顺滑。"
+            "暗色预订卡片以 7 列网格展示七月的两周，数字为圆体，下方是每晚价格与总价。第一次点击设入住日，第二次设退房日。两个端点圆（橙色渐变、黑字）借共享几何在格子间滑动，一条半透明橙色色带在中间日期背后伸缩，跨周时分行，延续到相邻周的一端改为方角，全部由同一弹簧（响应 0.4 秒、阻尼 0.78）驱动。晚数（如“3 晚 · ¥1,280/晚”）与醒目的总价以数字滚动更新，中文界面以人民币计价。区间有效后“预订”按钮点亮，每次点击一次选择触感。果断、顺滑。"
         ),
         implementation: L(
             "Endpoint circles are matchedGeometryEffect backgrounds inside the start and end DayCells; each week row draws one UnevenRoundedRectangle (squared where the range crosses a week break) whose width and x-offset come from the range's intersection with that row, all animated with one spring. Prices use contentTransition(.numericText(value:)).",

@@ -12,8 +12,8 @@ extension Effect {
             "近黑色圆角矩形按钮（圆角 20pt），外圈 2pt 描边使用锥形（角向）渐变绘制。渐变起始角度以线性匀速持续旋转，约 3 秒转一圈，看起来像一颗紫、粉、天蓝交织的彗星沿边缘追逐。按钮下方叠一层同款渐变的模糊副本（模糊约 14pt、70% 不透明度），向外晕出同步旋转的彩色光晕。按下时以快速弹簧缩放到 97%。整体充满未来感与能量，适合 AI 或高级功能入口。"
         ),
         implementation: L(
-            "TimelineView drives the angle of an AngularGradient used both as a strokeBorder and, blurred, as a glow layer behind the dark face.",
-            "TimelineView 驱动 AngularGradient 的角度，该渐变既用作 strokeBorder，也经模糊后作为深色按钮背后的辉光层。"
+            "TimelineView drives the angle of an AngularGradient strokeBorder; the glow is the same gradient blurred once at a fixed angle inside a drawingGroup and only rotated per frame, masked by a soft copy of the button shape.",
+            "TimelineView 驱动 AngularGradient 描边的角度；辉光是同一渐变在固定角度下只模糊一次（drawingGroup），每帧仅做旋转，再用柔化的按钮形状作遮罩。"
         ),
         apis: ["TimelineView", "AngularGradient", "strokeBorder", "blur"],
         tags: ["glow", "border", "gradient", "neon", "辉光", "描边", "渐变", "AI"],

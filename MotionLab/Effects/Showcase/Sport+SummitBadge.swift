@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A dark achievement card. On tap an orange hexagonal badge with a mountain glyph and \"3,798 m\" drops from 160 pt above on a spring (response 0.55 s, damping 0.6) while spinning two full turns around its vertical axis on a decelerating curve (1.2 s, fast start, soft finish), its glossy highlight flashing as each face turns toward you. It lands at 100% with a slight overshoot and a medium haptic. Behind it, twelve soft sunburst rays scale in from 60% and fade up over 0.6 s, then rotate slowly (12°/s) forever, while four sparkles twinkle on staggered loops. The title \"Summit reached\" and a caption rise 12 pt into place 150 ms apart after the landing, with a success haptic. Tapping replays the unlock. Triumphant, warm and collectible.",
-            "一张暗色成就卡片。点击后，一枚刻有山峰图标与“3,798 m”的橙色六边形徽章从 160pt 高处以弹簧（响应 0.55 秒、阻尼 0.6）落下，同时以先快后缓的减速曲线（1.2 秒）绕竖直轴旋转整整两圈，每次转回正面时光泽高光一闪。落地时带轻微过冲停在 100%，并伴随中等触感。徽章身后，十二道柔和的放射光芒在 0.6 秒内从 60% 放大并淡入，随后以每秒 12° 永久缓慢旋转，四颗星光以错开的节奏闪烁。落地后，标题“登顶成功”与说明文字依次上浮 12pt 就位，间隔 150 毫秒，并伴随成功触感。点击可重播解锁过程。胜利感、温暖、值得收藏。"
+            "暗色成就卡片。点击后，刻有山峰与“3,798 m”的橙色六边形徽章从 160pt 高处以弹簧（响应 0.55 秒、阻尼 0.6）落下，同时以先快后缓的 1.2 秒曲线绕竖轴转两圈，每次转回正面高光一闪；落地轻微过冲，伴随中等触感。身后十二道柔和光芒 0.6 秒内从 60% 放大淡入，随后以每秒 12° 永久缓转，四颗星光错开闪烁。落地后标题“登顶成功”与说明相隔 150 毫秒上浮 12pt 就位，并触发成功触感。点击可重播。胜利而温暖。"
         ),
         implementation: L(
             "An async sequence resets the badge instantly, then springs its drop offset and runs a timingCurve animation on an accumulated rotation3DEffect angle; the rays are a TimelineView-rotated ForEach of capsules, and the texts use delayed springs keyed on the revealed flag.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A horizontal tick ruler that ticks under your finger, glides with momentum and snaps to 10 m.", "横向刻度尺：拖动时逐格触感，松手带惯性滑行并吸附到 10 米整。"),
         prompt: L(
             "A dark DROP-IN ALTITUDE card with a huge rounded \"2,250 m\" readout above a horizontal ruler: fine ticks every 10 m, medium every 50 m, tall labelled ticks every 100 m, all fading toward the edges, with a glowing orange center needle. Dragging slides the ruler 1:1 while the readout rolls digit by digit and a selection haptic fires on every tick crossed; beyond the 800 m / 3,000 m ends the ruler rubber-bands. On release it keeps gliding by a share of the flick's predicted distance and lands on the nearest 10 m tick with a spring (0.55 s, damping ≈0.82) plus a soft landing haptic. Precise, mechanical and tactile, like a physical dial.",
-            "深色“起滑海拔”卡片：上方是超大圆体读数“2,250 m”，下方是横向刻度尺——每 10 米细刻度、每 50 米中刻度、每 100 米带数字的长刻度，向两端逐渐淡出，中央是一根发光的橙色指针。拖动时刻度尺 1:1 跟手，读数逐位滚动，每越过一格触发一次选择触感；超出 800 米或 3,000 米端点时带橡皮筋阻尼。松手后按快速滑动的预测距离继续惯性滑行一段，并以弹簧（0.55 秒、阻尼约 0.82）落在最近的 10 米刻度上，伴随一次柔和的落位触感。精准、机械，像在拨动一只实体拨盘。"
+            "深色“起滑海拔”卡片：超大圆体读数“2,250 m”下方是横向刻度尺——10 米细刻度、50 米中刻度、100 米带数字长刻度，向两端淡出，中央一根发光橙色指针。拖动时刻度尺 1:1 跟手，读数逐位滚动，每越过一格触发选择触感；超出 800 米或 3,000 米端点时带橡皮筋阻尼。松手后按甩动的预测距离继续滑行一段，再以弹簧（0.55 秒、阻尼约 0.82）落在最近的 10 米刻度上，并柔和地触感一下。精准、机械，像拨动一只实体拨盘。"
         ),
         implementation: L(
             "The ruler is an Animatable view whose Canvas draws only the visible ticks for the interpolated position, so the spring snap animates the drawing itself; DragGesture's predictedEndTranslation provides momentum.",

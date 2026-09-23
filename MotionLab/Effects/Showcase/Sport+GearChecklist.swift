@@ -6,17 +6,17 @@ extension Effect {
         category: .showcase,
         interaction: .tap,
         name: L("Gear Checklist", "装备清单"),
-        summary: L("Tick off your kit: checks draw themselves, packed items sink and the ring fills to lime.", "逐项勾选装备：对勾自行描绘，已打包项下沉，进度环最终变为青柠色。"),
+        summary: L("Tick off your kit: checks draw themselves, each item's icon flies into the ring and it fills to lime.", "逐项勾选装备：对勾自行描绘，物品图标飞进进度环，最终变为青柠色。"),
         prompt: L(
-            "A dark SUMMIT KIT checklist card: a title, a progress ring with a rolling \"2/5\" count, and five gear rows (glyph tile, name, detail, round check). Tapping a row presses it to 97%; its check circle fills with the orange gradient from 20% on a bouncy spring (response 0.35 s, damping 0.6) while a dark checkmark draws itself 80 ms later, the name dims to 45% and gains a strike-through, and ~300 ms later — once the check has landed — the row slides to the bottom of the list as the others close the gap (spring, response 0.5 s). The ring's orange arc sweeps to the new fraction with a soft glow. When the last item is packed, the ring turns lime, its count swaps for a checkmark, it swells 8%, the title changes to \"All packed\" and a success haptic fires. Orderly, satisfying and motivating.",
-            "深色“登顶装备”清单卡片：标题、带滚动计数（“2/5”）的进度环，以及五行装备（图标小方块、名称、说明、圆形勾选框）。点击某一行，整行轻压到 97%；勾选圆以弹性弹簧（响应 0.35 秒、阻尼 0.6）从 20% 放大并填满橙色渐变，深色对勾在 80 毫秒后自行描绘出来，名称降到 45% 透明度并加上删除线，约 300 毫秒后（对勾落定之后）这一行才滑到列表底部，其余行顺势补位（弹簧，响应 0.5 秒）。进度环的橙色弧线带着柔光扫到新的比例。最后一项打包完成时，进度环变为青柠色，计数替换为对勾并放大 8%，标题变为“装备齐全”，同时触发成功触觉。井然有序、满足感十足，也很激励人。"
+            "A dark SUMMIT KIT checklist card: a title, a progress ring with a rolling “2/5” count, and five gear rows (glyph tile, name, detail, round check). Tapping a row presses it to 97%; its check fills with the orange gradient from 20% on a bouncy spring (response 0.35 s, damping 0.6), a dark checkmark draws itself 80 ms later, and the name dims to 45% with a strike-through. A glowing copy of the row's glyph then flies a quadratic arc (~28 pt above the straight path, ~0.55 s, fast-out slow-in) into the ring, shrinking to half size and fading at the very end. The ring gulps it with a 1.14 swell and bouncy settle as its orange arc sweeps to the new fraction. The last item turns the ring lime, swaps the count for a checkmark, retitles the card “All packed” and fires a success haptic. Satisfying.",
+            "深色“登顶装备”清单：标题、带滚动计数（“2/5”）的进度环和五行装备。点击一行，整行轻压到 97%，勾选圆以弹性弹簧（响应 0.35 秒、阻尼 0.6）从 20% 填满橙色，对勾 80 毫秒后描出，名称淡到 45% 并加删除线。随后该行图标的发光副本沿二次弧线（高出直线约 28pt，约 0.55 秒）飞进进度环，途中缩到一半、末段淡出；圆环放大到 1.14 再弹性回落，橙色弧线扫到新比例。最后一件入环时圆环变青柠色、计数换成对勾，标题变为“装备齐全”并触发成功触觉。"
         ),
         implementation: L(
-            "A Set of checked ids drives the check, ring and title at once; a second Set, copied from it ~300 ms later in its own spring withAnimation, decides the order of the id-keyed ForEach so packed items sink only after the check lands; the check is a trimmed custom Shape with its own delayed animation, and the ring is a trimmed Circle.",
-            "已勾选 id 的 Set 立即驱动对勾、进度环与标题；约 300 毫秒后再把它复制到第二个 Set，并在独立的弹簧 withAnimation 中决定以 id 为标识的 ForEach 排序，让已打包项在对勾落定后才下沉；对勾是带独立延迟动画的 trim 自定义 Shape，进度环是 trim 后的 Circle。"
+            "A Set of checked ids drives the checks; onGeometryChange records each glyph tile and the ring in a named coordinate space, and an Animatable flyer view interpolates a quadratic Bézier between them. A second Set of landed ids feeds the ring, whose keyframeAnimator swells on each arrival; the check is a trimmed custom Shape.",
+            "已勾选 id 的 Set 驱动对勾；onGeometryChange 在命名坐标空间里记录每个图标方块与进度环的位置，一个遵循 Animatable 的飞行视图在两者之间按二次贝塞尔插值。另一个“已落入” Set 驱动进度环，每次落入由 keyframeAnimator 放大一下；对勾是 trim 的自定义 Shape。"
         ),
-        apis: ["ForEach(id:)", "Shape.trim(from:to:)", "strikethrough(_:color:)", "contentTransition(.numericText(value:))", "spring(response:dampingFraction:)"],
-        tags: ["checklist", "todo", "progress ring", "packing", "清单", "待办", "进度环", "打包"],
+        apis: ["onGeometryChange(for:of:action:)", "Animatable", "keyframeAnimator", "Shape.trim(from:to:)", "coordinateSpace(.named(_:))"],
+        tags: ["checklist", "fly to target", "progress ring", "packing", "清单", "飞入", "进度环", "打包"],
         params: [
             .slider("flight", L("Flight time", "飞行时长"), 0.3...1.2, default: 0.55, unit: "s"),
             .slider("arc", L("Arc height", "弧线高度"), 0...60, default: 28, decimals: 0, unit: "pt"),

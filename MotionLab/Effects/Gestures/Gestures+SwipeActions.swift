@@ -8,8 +8,8 @@ extension Effect {
         name: L("Swipe to Reveal & Delete", "左滑操作与删除"),
         summary: L("List rows that reveal actions, and a full swipe that deletes with a collapse.", "列表行左滑露出操作，一滑到底即删除并收拢。"),
         prompt: L(
-            "A stack of 64 pt list rows (18 pt continuous corners, elevated surface, tinted icon, title, subtitle and timestamp). Swiping a row left slides its content with the finger and reveals two 56 pt action tiles — Pin (amber) and Delete (red) — that scale from 60% to 100% and fade in proportionally to the reveal. Releasing past ~half the reveal width (projected with velocity) snaps the row open at −132 pt; otherwise it closes, both on a spring (response 0.4 s, damping 0.82), and opening one row closes the others. Crossing the full-swipe threshold fires a single medium haptic, hides Pin and stretches Delete across the whole revealed area; letting go there deletes the row, which slides out left while the rows below glide up to close the gap. The tiles are real buttons: Pin toggles an amber pin badge beside the title and closes the row, Delete removes it the same way, and tapping the row or anywhere outside closes whatever is open. Rightward drags are rubber-banded.",
-            "一组高 64pt 的列表行（18pt 连续圆角、浮起表面、彩色图标、标题、副标题与时间）。向左滑动时，行内容跟手移动，同时露出两个 56pt 的操作块——置顶（琥珀色）与删除（红色），它们随露出比例从 60% 放大到 100% 并淡入。松手时结合速度预测：超过露出宽度一半即以弹簧（响应 0.4 秒、阻尼 0.82）吸附到 −132pt 的展开位，否则收回；展开一行会自动收起其他行。越过“一滑到底”阈值时只触发一次中等触感，置顶按钮隐去，删除按钮拉伸铺满整个露出区域；在此松手即删除该行——它向左滑出，下方各行平滑上移补位。两个操作块都是真实按钮：点“置顶”会在标题旁切换一枚琥珀色图钉标记并收起该行，点“删除”同样移除该行；点击该行或其他任意位置即收起已展开的行。向右拖动带橡皮筋阻尼。"
+            "A stack of 64 pt list rows (18 pt corners, tinted icon, title, subtitle, timestamp). Swiping a row left slides its content with the finger and reveals two 56 pt tiles, Pin (amber) and Delete (red), that scale from 60% to 100% and fade in with the reveal. Releasing past half the reveal width, projected with velocity, snaps the row open at −132 pt, otherwise it closes, both on a spring (response 0.4 s, damping 0.82), and opening one row closes the others. Crossing the full-swipe threshold fires one medium haptic, hides Pin and stretches Delete across the reveal; letting go there slides the row out left as the rows below glide up. The tiles are real buttons, Pin toggling an amber badge, and a tap elsewhere closes the open row.",
+            "一组 64 pt 高的列表行（18 pt 圆角、彩色图标、标题、副标题与时间）。向左滑动时内容跟手，露出两个 56 pt 的操作块——置顶（琥珀）和删除（红色），随露出比例从 60% 放大到 100% 并淡入。松手时按速度预测，过半就以弹簧（响应 0.4 秒、阻尼 0.82）吸到 −132 pt 的展开位，否则收回，且只保留一行展开。越过“一滑到底”阈值时只有一下中等触感，置顶隐去，删除铺满露出区；在此松手，该行向左滑出，下方各行上移补位。操作块都是真按钮，置顶会切换一枚琥珀色图钉，点别处即收起。"
         ),
         implementation: L(
             "Each row owns a horizontal DragGesture (run simultaneously so the page can still scroll) and reports offset and predicted end to the parent, which decides open/close/delete and owns the pinned set; action tiles are Buttons, a background tap closes open rows, and removal uses an asymmetric move transition inside withAnimation.",
@@ -78,7 +78,11 @@ private struct SwipeActionsDemo: View {
                 Button {
                     restore()
                 } label: {
-                    Label(ctx.language == .zh ? "恢复" : "Restore", systemImage: "arrow.uturn.backward")
+                    Label {
+                        Text(L("Restore", "恢复"), ctx.language)
+                    } icon: {
+                        Image(systemName: "arrow.uturn.backward")
+                    }
                         .font(.footnote.weight(.semibold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)

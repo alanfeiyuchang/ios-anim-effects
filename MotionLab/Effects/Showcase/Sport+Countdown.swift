@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A start-gate ring drains every second while digits punch in, then GO bursts with a shockwave.", "出发门圆环每秒流逝、数字重击登场，最后 GO 伴随冲击波爆发。"),
         prompt: L(
             "A dark START GATE card with a 170 pt ring (10 pt track, orange gradient stroke with glow) around a rounded numeral. On tap each count punches in from 180% scale and zero opacity on a snappy spring (0.35 s, damping 0.6) while the previous digit shrinks to 40% and fades; the ring refills instantly and then drains linearly over one beat, and a medium haptic lands on every number. On zero the ring snaps full in lime, \"GO\" pops in with overshoot, a 3 pt shockwave ring expands to 190% while fading out over 0.9 s ease-out, and a success haptic fires; after 1.6 s it settles back to the idle \"Tap to start\" state. Rhythmic, tense, then explosive.",
-            "深色“出发门”卡片：170pt 圆环（10pt 轨道、带辉光的橙色渐变描边）中央是圆体数字。点击后每个数字从 180% 缩放、零透明度以利落弹簧（0.35 秒、阻尼 0.6）重击登场，上一个数字缩到 40% 并淡出；圆环瞬间补满，再在一拍内线性流逝，每个数字都伴随一次中等触感。归零时圆环以青柠色瞬间填满，“GO”带过冲弹出，一圈 3pt 冲击波在 0.9 秒 ease-out 中扩张到 190% 并消散，同时触发成功触感；1.6 秒后回到“点击开始”的待机状态。节奏紧凑、蓄力后瞬间爆发。"
+            "深色“出发门”卡片：170pt 圆环（10pt 轨道、带辉光的橙色渐变描边）中央是圆体数字。点击后每个数字从 180% 缩放、零透明度以利落弹簧（0.35 秒、阻尼 0.6）重击登场，上一个数字缩到 40% 淡出；圆环瞬间补满，再在一拍内线性流逝，每个数字一次中等触感。归零时圆环以青柠色瞬间填满，“GO”带过冲弹出，一圈 3pt 冲击波以 0.9 秒 ease-out 扩到 190% 并消散，同时触发成功触感；1.6 秒后回到“点击开始”待机态。节奏紧凑，蓄力后爆发。"
         ),
         implementation: L(
             "An async loop in task(id:) steps the count; each digit is re-identified with .id so an asymmetric scale+opacity transition plays, while the ring trim animates linearly per beat and a separate ring handles the shockwave.",

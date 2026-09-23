@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A dark stylised map card (faint street grid, a teal bay) shows a trip with numbered stops. Tapping anywhere drops a white-and-orange pin from 90 pt above on a spring (response 0.5 s, damping 0.65), so it lands with a visible overshoot bounce and a medium haptic. From 250 ms an orange ring ripples out from its base, scaling 0.4→3.2 and fading over 900 ms. At the same time a dashed orange route (3 pt, 6/5 dash, soft glow) draws itself from the previous pin to the new one along a gently bowed quadratic arc, trimming 0→1 over 0.8 s ease-in-out. The trip distance above rolls to its new total. Once the stop limit is reached, the oldest pin shrinks away with its leg. The newest pin is highlighted in orange, earlier ones turn graphite. It feels exploratory, precise and alive.",
-            "暗色风格化地图卡片（淡淡的街道网格、一片青蓝色海湾）上展示一段有多个站点的行程。点击任意位置，一枚白橙相间的图钉从 90pt 高处以弹簧（响应 0.5 秒、阻尼 0.65）落下，落地时有明显的过冲回弹，并伴随一次中等触感。落地后 250 毫秒起，钉脚泛起一圈橙色涟漪，在 900 毫秒内从 0.4 放大到 3.2 并淡出。与此同时，一条橙色虚线路线（3pt，虚线 6/5，带柔光）从上一枚图钉沿微微拱起的二次曲线画到新图钉，0.8 秒缓入缓出，trim 从 0 到 1。上方行程里程滚动到新的总数。站点数达到上限时，最早的图钉连同它的路段一起缩小消失。最新的图钉为橙色，其余变为石墨色。整体充满探索感，精准又生动。"
+            "暗色风格化地图卡片上是一段多站点行程。点击任意处，一枚白橙图钉从 90pt 高处以弹簧（响应 0.5 秒、阻尼 0.65）落下，明显过冲回弹，伴随中等触感。落地 250 毫秒后钉脚泛起橙色涟漪，900 毫秒内从 0.4 放大到 3.2 并淡出；同时一条橙色虚线路线（3pt，虚线 6/5，带柔光）沿微拱的二次曲线从上一枚图钉画到新图钉，0.8 秒缓入缓出。里程滚动到新总数。达到站点上限时，最早的图钉连同路段一起缩回下一站并消失。最新图钉为橙色，其余为石墨色。"
         ),
         implementation: L(
             "Pins live in an array and are placed with position(); insertion uses an asymmetric offset+opacity transition inside a spring withAnimation, so the spring overshoot becomes the bounce. Each leg is a quadratic-curve Shape whose trim animates on appear, and each pin's ripple is an onAppear-driven Circle.",

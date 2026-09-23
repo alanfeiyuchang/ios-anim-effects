@@ -38,6 +38,13 @@ private struct InputWheelPickerDemo: View {
     /// Programmatic moves (first layout, autoplay, the detail intro) set this so they don't tick the haptic.
     @State private var quietUntil = Date.distantPast
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run `onAppear`, so seed the resting time directly.
+        _hour = State(initialValue: ctx.isStill ? 7 : nil)
+        _minute = State(initialValue: ctx.isStill ? 25 : nil)
+    }
+
     /// "Now" is fixed so the countdown reads the same for everyone.
     private static let now = 22 * 60 + 35
     private static let previewTimes: [(Int, Int)] = [(6, 45), (9, 10), (7, 30), (5, 55)]

@@ -8,8 +8,8 @@ extension Effect {
         name: L("Stretchy Slide to Send", "拉伸滑动发送"),
         summary: L("A liquid knob whose front follows the finger while its tail lags behind, then a paper plane takes off.", "液态滑块：前端跟手、尾部滞后拉长，成功后纸飞机起飞。"),
         prompt: L(
-            "A 290 × 64 pt capsule track holds a 56 pt indigo-to-violet knob carrying a paper-plane glyph, beside the label “Slide to send”. Dragging moves the knob's leading edge 1:1 while its trailing edge chases it on an interactive spring (response 0.3 s, damping 0.7), so the knob stretches into a liquid pill that grows with speed. Releasing beyond 85% of the travel commits: the pill floods the whole track and turns green on a spring (response 0.4 s, damping 0.75), the plane flies off 60 pt up and to the right while fading, and a checkmark pops in with a success haptic; it resets after 1.8 s. Releasing short snaps the tail home first while the head follows more slowly, a gooey recoil. Fluid, playful, alive.",
-            "一条 290 × 64pt 的胶囊滑轨，左侧是 56pt 的靛蓝到紫色滑块，上面是纸飞机图标，旁边写着“滑动发送”。拖动时滑块前缘 1:1 跟手，尾缘则以交互式弹簧（响应 0.3 秒、阻尼 0.7）追赶，于是滑块被拉成一条液态长条，速度越快拉得越长。行程超过 85% 时松手即提交：长条以弹簧（响应 0.4 秒、阻尼 0.75）铺满整条滑轨并变为绿色，纸飞机向右上方飞出 60pt 并淡出，对勾随之弹出，同时触发成功触感；1.8 秒后复位。未达阈值松手时，尾部先弹回起点，前端随后慢慢收回，呈现黏稠的回弹。流畅、俏皮、有生命力。"
+            "A 290×64 pt capsule track holds a 56 pt indigo-to-violet knob carrying a paper-plane glyph, beside the label “Slide to send”. Dragging moves the knob's leading edge 1:1 while its trailing edge chases it on an interactive spring (response 0.3 s, damping 0.7), so the knob stretches into a liquid pill that grows with speed. Releasing beyond 85% of the travel commits: the pill floods the track and turns green on a spring (response 0.4 s, damping 0.75), the plane flies 60 pt up and right as it fades, and a checkmark pops in with a success haptic, resetting after 1.8 s. Releasing short snaps the tail home first while the head follows more slowly, a gooey recoil. Fluid, playful and alive.",
+            "一条 290×64 pt 的胶囊滑轨，左侧是带纸飞机图标的 56 pt 靛蓝紫渐变滑块，旁边写着“滑动发送”。拖动时滑块前缘 1:1 跟手，尾缘以交互式弹簧（响应 0.3 秒、阻尼 0.7）追赶，于是滑块被拉成一条液态长条，越快拉得越长。行程超过 85% 时松手即提交：长条以弹簧（响应 0.4 秒、阻尼 0.75）铺满滑轨并变绿，纸飞机向右上方飞出 60 pt 并淡出，对勾弹出，伴随成功触感，1.8 秒后复位。未达阈值松手时，尾部先弹回起点，前端再慢慢收回，像黏稠的液体回弹。流畅、俏皮、有生命力。"
         ),
         implementation: L(
             "Two offsets describe the knob: head is set directly from the drag, tail is re-targeted to head inside withAnimation(.interactiveSpring) on every change. The pill is a long capsule offset by tail and masked by a long capsule ending at head, so each edge animates with its own transaction.",
@@ -44,7 +44,7 @@ private struct StretchSlideDemo: View {
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Color.primary.opacity(0.07))
-                Text(ctx.language == .zh ? "滑动发送" : "Slide to send")
+                Text(L("Slide to send", "滑动发送"), ctx.language)
                     .font(.headline)
                     .foregroundStyle(.secondary)
                     .padding(.leading, knob)
@@ -55,7 +55,7 @@ private struct StretchSlideDemo: View {
                     .offset(x: inset + head)
                     .gesture(dragGesture)
                 if sent {
-                    Text(ctx.language == .zh ? "已发送" : "Sent")
+                    Text(L("Sent", "已发送"), ctx.language)
                         .font(.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Press sinks and dims the photo card; play morphs into a progress ring while the shot drifts in Ken Burns.", "按下时卡片下沉变暗；播放键变形为进度环，画面缓缓推近平移。"),
         prompt: L(
             "A dark photo card shows a golden-hour alpine shot, \"Nordkette Ridge\" with its altitude beneath, and a white round play button. Touch-down sinks the whole card to ~96% and dims it by 12%, releasing with a springy 0.3 s rebound. Tapping toggles playback: the play glyph symbol-replaces into pause, the button turns glassy and grows 8%, and a 3 pt orange progress ring starts sweeping clockwise around it from 12 o'clock; meanwhile the photo slowly pushes in to ~116% and pans a few points left in a smooth Ken Burns cosine ease that ping-pongs without ever jumping. A time chip counts elapsed seconds. Pausing freezes ring and zoom exactly in place. Cinematic, calm and tactile.",
-            "深色照片卡片展示一张金色时刻的雪山照，下方是“Nordkette Ridge”与海拔信息，右侧为白色圆形播放键。手指按下时整张卡片下沉到约 96% 并压暗 12%，松手以 0.3 秒弹簧回弹。点击切换播放：播放图标以符号替换动画变为暂停，按钮转为半透明玻璃质感并放大 8%，一圈 3pt 橙色进度环从 12 点方向顺时针扫出；与此同时画面以余弦缓动缓缓推近到约 116% 并向左平移几个点，形成往返不跳变的 Ken Burns 效果，时间标签同步计秒。暂停时进度环与缩放精确定格。有电影感，安静而富有触感。"
+            "深色照片卡片展示一张金色时刻雪山照，下方是“Nordkette Ridge”与海拔，右侧是白色圆形播放键。按下时整张卡片下沉到约 96% 并压暗 12%，松手以 0.3 秒弹簧回弹。点击切换播放：播放图标经符号替换变为暂停，按钮转为玻璃质感并放大 8%，一圈 3pt 橙色进度环从 12 点方向顺时针扫出；画面以余弦缓动缓缓推近到约 116% 并左移几个点，形成往返不跳变的 Ken Burns 效果，时间标签同步计秒。暂停时进度环与缩放精确定格。有电影感，安静而可触。"
         ),
         implementation: L(
             "A paused-able TimelineView(.animation) derives clip progress and a cosine Ken Burns phase from accumulated play time; a custom ButtonStyle handles the press scale and dim.",

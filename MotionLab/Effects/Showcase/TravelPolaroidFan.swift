@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "Four cream-framed polaroids with small italic serif captions (a jotted, handwritten feel) rest in a loose stack, each with a slight irregular tilt (−5° to 6°) and a 2 pt vertical offset. On tap they fan out like a hand of cards. Each photo rotates around its bottom edge to (i − 1.5) × 10° and slides out horizontally by (i − 1.5) × 44 pt, while the outer cards drop 8 pt per step to form an arc. The cards move one after another at 40 ms intervals on a spring (response 0.5 s, damping 0.72). Tapping one card lifts it to the front: it straightens, scales to 118% and rises 18 pt with a deeper shadow, while the others shrink to 90% and dim by 25%. Tapping it again gathers everything back into the stack. It feels nostalgic, tactile and personal.",
-            "四张奶油白相框的拍立得，下方配着小号衬线体说明（中文为宋体、英文为斜体，带随手记录的手写感），随意堆成一叠，每张都有一点不规则的倾斜（−5° 到 6°）和 2pt 的纵向错位。点击后它们像一手扑克牌般扇形展开。每张照片以底边为轴旋转到 (i − 1.5) × 10°，横向滑出 (i − 1.5) × 44pt，越靠外下沉越多（每级 8pt），排成一道弧线。卡片以弹簧（响应 0.5 秒、阻尼 0.72）依次移动，每张间隔 40 毫秒。点击其中一张，它会被抬到最前：摆正、放大到 118%、上移 18pt，阴影加深；其余照片缩到 90% 并压暗 25%。再点一次，所有照片收拢回一叠。整体怀旧、有手感，也很私人。"
+            "四张奶油白相框拍立得配着小号衬线说明（中文宋体、英文斜体），随意叠成一摞，各带 −5° 到 6° 的倾斜与 2pt 错位。点击后像一手扑克牌般展开：每张以底边为轴转到 (i − 1.5) × 10°，横向滑出 (i − 1.5) × 44pt，越靠外每级下沉 8pt，排成弧线；以弹簧（响应 0.5 秒、阻尼 0.72）依次移动，间隔 40 毫秒。点击一张，它被抬到最前：摆正、放大到 118%、上移 18pt、阴影加深，其余缩到 90% 并压暗 25%。再点则收拢。"
         ),
         implementation: L(
             "Each polaroid gets a ViewModifier computing rotation (bottom anchor), offset, scale and brightness from fanned/focused state, with per-card .animation(spring.delay(index × stagger), value: fanned) and zIndex lifting the focused card.",

@@ -8,8 +8,8 @@ extension Effect {
         name: L("Pinch Grid Density", "捏合切换网格密度"),
         summary: L("Pinch a photo grid to step between 2, 3 and 4 columns while every tile reflows in a cascade.", "捏合照片网格在 2、3、4 列之间切换，每张图块以瀑布式错峰重排。"),
         prompt: L(
-            "A 300 × 300 pt photo grid (6 pt gutters, gradient tiles with white glyphs) clipped in a 28 pt rounded frame, with a column pill above. While pinching, the whole grid scales live around the pinch anchor, rubber-banded to about ±25%. Releasing past 115% steps to one column fewer (bigger tiles); below 87% one column more. Every tile then animates to its new frame on a spring (response 0.45 s, damping 0.8) delayed 15 ms × its index, so the reflow ripples from the top-left corner like Photos, while the live scale springs back to 1 in the same beat. The pill counts to the new column number with a numeric transition and a medium haptic confirms the step. Double-tap cycles density. Tactile and spatially continuous.",
-            "一个 300 × 300pt 的照片网格（6pt 间距、渐变图块配白色图标）裁切在 28pt 圆角框内，上方有显示列数的胶囊。捏合过程中整个网格围绕捏合锚点实时缩放，超出约 ±25% 时有橡皮筋阻尼。松手时若放大超过 115% 就减少一列（图块变大），缩小到 87% 以下则增加一列。随后每个图块以弹簧（响应 0.45 秒、阻尼 0.8）移动到新位置，并按序号延迟 15ms，重排像“照片”那样从左上角荡漾开来，同时整体缩放在同一拍内弹回 1。胶囊以数字转场滚动到新列数，并伴随一次中等触感。双击可循环切换密度。井然有序、手感扎实、空间连续。"
+            "A 288×288 pt photo grid (6 pt gutters, gradient tiles with white glyphs) is clipped in a 28 pt rounded frame under a column-count pill. While pinching, the whole grid scales live around the pinch anchor, rubber-banded to about ±25%; releasing past 115% steps to one column fewer with bigger tiles, below 87% to one column more. Every tile then springs to its new frame (response 0.45 s, damping 0.8) delayed 15 ms × its index, so the reflow ripples from the top-left corner like Photos while the live scale springs back to 1 in the same beat. The pill rolls to the new count with a numeric transition and a medium haptic confirms the step; double-tap cycles the density. Tactile and spatially continuous.",
+            "一个 288×288 pt 的照片网格（6 pt 间距，渐变图块配白色图标）裁在 28 pt 圆角框里，上方胶囊显示列数。捏合时整个网格围绕捏合锚点实时缩放，超出约 ±25% 带橡皮筋阻尼；松手时放大超过 115% 就少一列、图块变大，缩到 87% 以下就多一列。随后每个图块以弹簧（响应 0.45 秒、阻尼 0.8）移到新位置，按序号各延迟 15 毫秒，重排像“照片”App 一样从左上角荡开，整体缩放也在同一拍弹回 1。胶囊以数字转场滚到新列数，一下中等触感确认；双击可循环切换密度。手感扎实，空间连续。"
         ),
         implementation: L(
             "MagnifyGesture drives a rubber-banded scaleEffect anchored at value.startAnchor; tiles are placed with explicit frames and positions computed from the column count, each with its own .animation(spring.delay(i × stagger), value: columns) so the reflow cascades.",
@@ -36,7 +36,8 @@ private struct PinchGridDemo: View {
     @State private var anchor: UnitPoint = .center
     @State private var zoomingIn = true
 
-    private let side: CGFloat = 300
+    /// Pill + 12 pt + grid stays inside the 340 pt preview canvas.
+    private let side: CGFloat = 288
     private let gutter: CGFloat = 6
 
     var body: some View {
@@ -59,10 +60,10 @@ private struct PinchGridDemo: View {
     private var pill: some View {
         HStack(spacing: 6) {
             Image(systemName: "square.grid.3x3.fill")
-            Text("\(columns)")
+            Text(verbatim: "\(columns)")
                 .monospacedDigit()
                 .contentTransition(.numericText(value: Double(columns)))
-            Text(ctx.language == .zh ? "列" : "columns")
+            Text(L("columns", "列"), ctx.language)
         }
         .font(.subheadline.weight(.semibold))
         .padding(.horizontal, 14)
@@ -106,14 +107,14 @@ private struct PinchGridDemo: View {
             }
     }
 
-    private func commit(_ target: Int) {
+    private func commit(_ target: Int, haptic: Bool = true) {
         let clampedTarget = target.clamped(to: 2...4)
         let changed = clampedTarget != columns
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.8)) {
             live = 1
             columns = clampedTarget
         }
-        if changed && !ctx.isPreview { Haptics.tap(.medium) }
+        if changed && haptic && !ctx.isPreview { Haptics.tap(.medium) }
     }
 
     private func cycle() {
@@ -127,7 +128,8 @@ private struct PinchGridDemo: View {
         withAnimation(.easeInOut(duration: 0.35)) { live = zoomingIn ? 1.16 : 0.86 }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.4))
-            commit(zoomingIn ? columns - 1 : columns + 1)
+            // Scripted (preview or detail intro): the column step stays silent.
+            commit(zoomingIn ? columns - 1 : columns + 1, haptic: false)
         }
     }
 }

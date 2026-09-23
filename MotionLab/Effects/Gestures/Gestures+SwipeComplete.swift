@@ -8,8 +8,8 @@ extension Effect {
         name: L("Swipe to Complete", "右滑完成任务"),
         summary: L("Swipe a task right past a detent: it strikes itself through and sinks to the bottom of the list.", "把任务向右滑过阈值：文字划线勾掉，并沉到列表底部。"),
         prompt: L(
-            "Four 58 pt task rows (18 pt corners, round checkbox, title, tinted dot). Dragging a row right slides it over a green well whose opacity rises with the pull while a checkmark scales from 60% to 100%. At 110 pt the row arms: the glyph fills with a bounce and a medium haptic clicks; beyond it the row rubber-bands. Released while armed, the row springs home (response 0.35 s, damping 0.75), its checkbox fills, a 1.5 pt line draws across the title left to right over 300 ms and the text fades to 40%; 450 ms later the row glides to the bottom of the list as the others close the gap. Swiping a finished task over an amber well restores it to the top. Satisfying, list-native closure.",
-            "四条高 58pt 的任务行（18pt 连续圆角、浮起表面、圆形复选框、标题与彩色小圆点）。向右拖动某行时，它滑过下方的绿色底槽，底槽不透明度随拉动增加，对勾图标从 60% 放大到 100%。拉到 110pt 时进入“就绪”：图标填充并弹跳一下，伴随一次中等触感；再往后则有橡皮筋阻力。就绪状态下松手，该行以弹簧（响应 0.35 秒、阻尼 0.75）回位，复选框填满，一条 1.5pt 的线在 300ms 内从左到右划过标题，文字淡到 40%；450ms 后该行滑到列表底部，其余各行上移补位。已完成的任务滑过琥珀色底槽即可恢复并回到顶部。干净利落，完成感十足。"
+            "Four 58 pt task rows show a round checkbox, a title and a tinted dot on 18 pt continuous corners. Dragging a row right slides it over a green well whose opacity rises with the pull while a checkmark scales from 60% to 100%; at 110 pt the row arms as the glyph fills with a bounce and a medium haptic clicks, and beyond that it rubber-bands. Released while armed, the row springs home (response 0.35 s, damping 0.75), its checkbox fills, a 1.5 pt line draws across the title left to right over 300 ms and the text fades to 40%; 450 ms later the row glides to the bottom as the others close the gap. Swiping a finished task over an amber well restores it to the top. Satisfying, list-native closure.",
+            "四条 58 pt 高的任务行，18 pt 连续圆角，带圆形复选框、标题和彩色小圆点。向右拖某行，它会滑过下方的绿色底槽，底槽随拉动变得不透明，对勾从 60% 放大到 100%；拉到 110 pt 即“就绪”，图标填满并弹一下，伴随中等触感，再往后则是橡皮筋阻力。就绪时松手，该行以弹簧（响应 0.35 秒、阻尼 0.75）回位，复选框填满，一条 1.5 pt 的线在 300 毫秒内从左到右划过标题，文字淡到 40%；450 毫秒后该行滑到列表底部，其余各行上移补位。把已完成的任务滑过琥珀色底槽，即可恢复并回到顶部。干净利落，完成感十足。"
         ),
         implementation: L(
             "Rows own a horizontal DragGesture run with simultaneousGesture so vertical page scrolling still works; the parent stores offsets, flips done inside withAnimation and then reorders the array in a second spring so ForEach animates the move. sensoryFeedback fires when the armed flag flips on.",
@@ -44,6 +44,8 @@ private struct SwipeCompleteDemo: View {
     let ctx: DemoContext
     @State private var items = completeSeed
     @State private var offsets: [Int: CGFloat] = [:]
+    /// True while autoplay (or the detail intro) swipes a task, so its arm click and success stay silent.
+    @State private var scripted = false
 
     var body: some View {
         let threshold = ctx.cg("threshold")
@@ -54,7 +56,11 @@ private struct SwipeCompleteDemo: View {
                     offset: offsets[item.id] ?? 0,
                     threshold: threshold,
                     ctx: ctx,
-                    onDrag: { offsets[item.id] = $0 },
+                    scripted: scripted,
+                    onDrag: {
+                        scripted = false
+                        offsets[item.id] = $0
+                    },
                     onEnd: { finish(item.id) }
                 )
             }
@@ -66,7 +72,7 @@ private struct SwipeCompleteDemo: View {
         .autoplay(ctx.isPreview, every: 1.8) { autoStep() }
     }
 
-    private func finish(_ id: Int) {
+    private func finish(_ id: Int, haptic: Bool = true) {
         let armed = (offsets[id] ?? 0) >= ctx.cg("threshold")
         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
             offsets[id] = 0
@@ -75,7 +81,7 @@ private struct SwipeCompleteDemo: View {
             }
         }
         guard armed else { return }
-        if !ctx.isPreview { Haptics.success() }
+        if haptic && !ctx.isPreview { Haptics.success() }
         let delay = ctx["sinkDelay"]
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(delay))
@@ -99,10 +105,11 @@ private struct SwipeCompleteDemo: View {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { items = completeSeed }
             return
         }
+        scripted = true
         withAnimation(.easeOut(duration: 0.45)) { offsets[next.id] = ctx.cg("threshold") + 18 }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.5))
-            finish(next.id)
+            finish(next.id, haptic: false)
         }
     }
 }
@@ -112,6 +119,7 @@ private struct CompleteRow: View {
     let offset: CGFloat
     let threshold: CGFloat
     let ctx: DemoContext
+    let scripted: Bool
     let onDrag: (CGFloat) -> Void
     let onEnd: () -> Void
     @State private var tracking = false
@@ -127,7 +135,7 @@ private struct CompleteRow: View {
         }
         .frame(height: 58)
         .sensoryFeedback(.impact(weight: .medium), trigger: armed) { _, newValue in
-            newValue && !ctx.isPreview
+            newValue && !ctx.isPreview && !scripted
         }
     }
 

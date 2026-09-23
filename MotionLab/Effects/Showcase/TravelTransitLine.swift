@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A dark \"Line 2 · Northbound\" card with five stations stacked 40 pt apart along a 4 pt vertical track. A glowing orange train dot glides from station to station on a 1.0 s ease-in-out, and the track behind it fills orange as it goes. When the train arrives, that station's ring fills and pops to 140% before springing back (response 0.35 s, damping 0.5), its name brightens to white, the \"Next\" tag slides to the following station and the minutes-to-terminus counter rolls down. Passed stations stay orange, upcoming ones stay graphite. The train advances every 1.8 s and loops back to the first station at the end; tapping any station sends the train straight there with a light haptic. Calm, legible and quietly alive.",
-            "一张暗色“2 号线 · 北行”卡片，五个站点沿一条 4pt 的竖向轨道每 40pt 排列。一颗发光的橙色列车圆点以 1.0 秒 ease-in-out 从一站滑向下一站，经过的轨道随之被填成橙色。列车到站时，该站的圆环被填满并弹到 140% 再以弹簧（响应 0.35 秒、阻尼 0.5）回落，站名亮为白色，“下一站”标记滑到后一站，距终点的分钟数向下滚动。已经过的站保持橙色，未到的站保持石墨色。列车每 1.8 秒前进一站，到终点后回到首站循环；点击任意站点，列车会直接驶向那里，并伴随轻触感。冷静、清晰、安静地鲜活。"
+            "暗色“2 号线 · 北行”卡片，五个站点沿 4pt 竖向轨道每 40pt 排列。一颗发光的橙色列车圆点以 1.0 秒 ease-in-out 逐站滑行，经过的轨道填成橙色。到站时该站圆环填满、弹到 140% 再以弹簧（响应 0.35 秒、阻尼 0.5）回落，站名变白，“下一站”标记滑到后一站，距终点分钟数向下滚动。已过的站保持橙色，未到的为石墨色。列车每 1.8 秒前进一站，到终点回首站循环；点击任意站点，列车直接驶去并轻触一下。冷静而鲜活。"
         ),
         implementation: L(
             "A station index drives the train's y offset and the track fill height inside one easeInOut withAnimation; each station ring runs a keyframeAnimator keyed on its own arrival counter, the minutes-to-terminus counter uses numericText, and a task(id:) loop advances the index.",

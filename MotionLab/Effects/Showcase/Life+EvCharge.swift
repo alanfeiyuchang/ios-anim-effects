@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A dark glossy \"Charging · Bay 4\" widget. A 46 pt rounded percentage ticks up one point every 0.8 s, while three smaller stats — power in kW, minutes left and energy added — refresh on the same beat, the power jittering between 148 and 156 kW. Beneath them a 240 × 34 pt battery fills to the current level with an orange gradient on a smooth 0.6 s ease-out, and a row of faint chevrons streams rightward through the fill at 60 pt/s, masked to the charged part, so energy visibly flows in. Tapping pauses the session: the chevrons freeze, the fill dims and the eyebrow reads \"Paused\". At 100% the bar flashes lime, reads \"Charged\" and after 2 s restarts at 62%. Calm and alive.",
-            "一张暗色光泽的“充电中 · 4 号桩”小组件。46pt 的圆体百分比每 0.8 秒通过数字滚动增加 1，下方三个小指标——功率（kW）、剩余分钟与已充电量——按同一节拍刷新，功率在 148 到 156 kW 之间轻微跳动。再下方是一块 240 × 34pt 的电池条，以 0.6 秒 ease-out 平滑填充到当前电量，填充为橙色渐变；一排淡淡的箭头以每秒 60pt 的速度在填充区域内向右流动（仅在已充部分可见），让能量“流进去”清晰可见。点击可暂停：箭头静止、填充变暗、眉标显示“已暂停”。到 100% 时电池条闪成青柠色并显示“已充满”，2 秒后从 62% 重新开始。冷静、专业又鲜活。"
+            "暗色光泽“充电中 · 4 号桩”小组件。46pt 圆体百分比每 0.8 秒滚动加 1，功率、剩余分钟与已充电量同拍刷新，功率在 148–156 kW 间轻跳。下方 240 × 34pt 电池条以 0.6 秒 ease-out 填到当前电量，橙色渐变；一排淡箭头以每秒 60pt 在已充部分内向右流动，能量“流进去”清晰可见。点击暂停：箭头静止、填充变暗、眉标显示“已暂停”。到 100% 时电池条闪成青柠色并显示“已充满”，2 秒后从 62% 重来。冷静而鲜活。"
         ),
         implementation: L(
             "A task(id:) loop advances the percentage and power every beat inside withAnimation, feeding numericText transitions and the bar width; a TimelineView offsets a repeating chevron row that is masked to the filled width, and pausing cancels the loop via the task id.",

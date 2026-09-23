@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Stat tiles fly in from blur one after another and their numbers count up as they land.", "数据方块依次从模糊中飞入落位，数字随落地同步递增。"),
         prompt: L(
             "A day-summary bento of dark glossy tiles: a wide DISTANCE tile with a mini bar sparkline, a RUNS tile, and a row of VERTICAL, TOP (km/h) and MINUTES tiles, one number highlighted in orange. On appear (or tap) the tiles assemble in reading order with a ~70 ms stagger: each rises 26 pt from 82% scale, 8 pt blur and zero opacity into place on a spring (≈0.55 s response, damping 0.72, a touch of overshoot), and as it lands its numeral genuinely counts up from zero — 12 ease-out steps about 40 ms apart, each digit change rolling with a numeric text transition; the sparkline bars grow in their own quick 25 ms stagger. On replay everything collapses at once in 200 ms, then rebuilds. Rewarding, orderly and celebratory.",
-            "一组深色光泽便当格总结当日滑行：宽幅“距离”格内含迷你柱状趋势，右侧“趟数”格，下方一排“落差”“最高速”“分钟”格，其中一个数字以橙色高亮。出现（或点击）时，方块按阅读顺序以约 70 毫秒错峰组装：每块从 82% 缩放、8pt 模糊、零透明度的状态上移 26pt 落位，采用弹簧（响应约 0.55 秒、阻尼 0.72，略带过冲），落地时数字真正从零开始计数递增——约 12 个缓出步进、每步间隔约 40 毫秒，每次变化都以数字滚动过渡呈现；迷你柱状图再以 25 毫秒的快速错峰各自长高。重播时所有方块在 200 毫秒内同时收起，再重新拼装。有奖励感、秩序感和庆祝感。"
+            "深色便当格总结当日滑行：宽幅“距离”格含迷你柱状趋势，旁边“趟数”，下方“落差”“最高速”“分钟”，一个数字橙色高亮。出现（或点击）时，方块按阅读顺序以约 70 毫秒错峰组装：每块从 82% 缩放、8pt 模糊、全透明上移 26pt 落位，弹簧响应约 0.55 秒、阻尼 0.72，略带过冲；落地时数字真正从零递增，约 12 个缓出步进、每步约 40 毫秒；迷你柱以 25 毫秒错峰长高。重播时所有方块 200 毫秒内同时收起再重组。有奖励感。"
         ),
         implementation: L(
             "Each tile reads one `assembled` flag and carries its own .animation(value:) with a spring delayed by its index; each numeral is a small view whose task(id:) waits for that same delay, then steps its value to the target with eased increments under numericText.",

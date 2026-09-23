@@ -8,8 +8,8 @@ extension Effect {
         name: L("Staged Swipe Scrub", "分段滑动操作"),
         summary: L("One swipe, three actions: the further you pull, the well shifts from Archive to Snooze to Delete.", "一次滑动、三种操作：拉得越远，底色从归档依次变为稍后与删除。"),
         prompt: L(
-            "Three 62 pt mail rows (avatar, sender, preview). Swiping a row left reveals a well whose action depends on distance, like scrubbing: 70 pt arms Archive (indigo, archive box), every further 64 pt steps to Snooze (amber, clock) and then Delete (red, trash). At each step the well cross-fades its colour over 200 ms, the glyph swaps with a symbol replace transition and bounces, the caption changes and a selection haptic ticks; the icon stays centred in the revealed area as it widens. Releasing on a stage flings the row off to the left on a quick ease-in (250 ms), the list closes the gap on a spring (response 0.4 s, damping 0.85) and a chip confirms the action; releasing before the first stage springs back. Precise, expressive, fast triage.",
-            "三条高 62pt 的邮件行（头像、发件人与预览文字）。向左滑动时露出一个底槽，执行的操作取决于滑动距离，就像拖动刻度：到 70pt 进入“归档”（靛蓝、归档盒），此后每多 64pt 依次切换为“稍后”（琥珀、时钟）与“删除”（红色、垃圾桶）。每切换一段，底槽颜色在 200ms 内交叉渐变，图标通过符号替换转场切换并弹跳一下，说明文字随之改变，同时触发一次选择触感；图标始终居中于已露出的区域。在某一段松手时，该行以 250ms 的快速缓入向左甩出，列表以弹簧（响应 0.4 秒、阻尼 0.85）收拢空位，并弹出一枚确认小标签；未到第一段就松手则弹回原位。精准、表达力强，处理邮件又快又爽。"
+            "Three 62 pt mail rows show an avatar, a sender and a preview. Swiping a row left reveals a well whose action depends on distance, like scrubbing: 70 pt arms Archive (indigo, archive box), and each further 64 pt steps to Snooze (amber, clock) and then Delete (red, trash). At every step the well cross-fades its colour over 200 ms, the glyph swaps with a symbol replace and bounces, the caption changes and a selection haptic ticks, with the icon centred in the widening reveal. Releasing on a stage flings the row off to the left on a 250 ms ease-in while the list closes the gap on a spring (response 0.4 s, damping 0.85) and a chip confirms the action; releasing before the first stage springs back. Precise, expressive, fast triage.",
+            "三条高 62 pt 的邮件行，各有头像、发件人和预览。向左滑动会露出一个底槽，操作取决于滑动距离：到 70 pt 进入“归档”（靛蓝、归档盒），之后每多 64 pt 依次切到“稍后”（琥珀、时钟）和“删除”（红色、垃圾桶）。每换一段，底槽颜色在 200 毫秒内渐变，图标以符号替换切换并弹一下，说明文字随之改变，伴随一下选择触感。在某一段松手，该行以 250 毫秒的缓入向左甩出，列表以弹簧（响应 0.4 秒、阻尼 0.85）收拢，并弹出确认小标签；没到第一段就松手则弹回。精准利落，处理邮件又快又爽。"
         ),
         implementation: L(
             "The row's offset maps to a stage enum; the well reads it for colour, symbol and caption with animation(value:), and sensoryFeedback(.selection) fires on stage changes. Release animates the offset past the edge, then removes the item in a spring so the VStack reflows.",
@@ -82,6 +82,8 @@ private struct StagedSwipeDemo: View {
     @State private var offsets: [Int: CGFloat] = [:]
     @State private var chip: SwipeStage?
     @State private var autoIndex = 0
+    /// True while autoplay (or the detail intro) swipes a row, so its stage ticks and release stay silent.
+    @State private var scripted = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -92,7 +94,11 @@ private struct StagedSwipeDemo: View {
                     first: ctx.cg("first"),
                     step: ctx.cg("step"),
                     ctx: ctx,
-                    onDrag: { offsets[item.id] = $0 },
+                    scripted: scripted,
+                    onDrag: {
+                        scripted = false
+                        offsets[item.id] = $0
+                    },
                     onEnd: { release(item.id) }
                 )
                 .transition(.asymmetric(insertion: .scale(scale: 0.92).combined(with: .opacity), removal: .opacity))
@@ -131,14 +137,14 @@ private struct StagedSwipeDemo: View {
         return SwipeStage(rawValue: min(steps + 1, 3)) ?? .delete
     }
 
-    private func release(_ id: Int) {
+    private func release(_ id: Int, haptic: Bool = true) {
         let current = stage(for: offsets[id] ?? 0)
         guard current != .none else {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { offsets[id] = 0 }
             return
         }
         withAnimation(.easeIn(duration: 0.25)) { offsets[id] = -420 }
-        if !ctx.isPreview { Haptics.tap(current == .delete ? .rigid : .medium) }
+        if haptic && !ctx.isPreview { Haptics.tap(current == .delete ? .rigid : .medium) }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.25))
             withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
@@ -161,13 +167,14 @@ private struct StagedSwipeDemo: View {
         guard let target = items.first else { return }
         let stageIndex = autoIndex % 3
         autoIndex += 1
+        scripted = true
         let first = ctx.cg("first")
         let step = ctx.cg("step")
         let distance: CGFloat = first + step * CGFloat(stageIndex) + step * 0.5
         withAnimation(.easeInOut(duration: 0.8)) { offsets[target.id] = -distance }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.9))
-            release(target.id)
+            release(target.id, haptic: false)
         }
     }
 }
@@ -178,6 +185,7 @@ private struct StagedRow: View {
     let first: CGFloat
     let step: CGFloat
     let ctx: DemoContext
+    let scripted: Bool
     let onDrag: (CGFloat) -> Void
     let onEnd: () -> Void
     @State private var tracking = false
@@ -216,7 +224,7 @@ private struct StagedRow: View {
                 .simultaneousGesture(dragGesture)
         }
         .frame(height: 62)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview }
+        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
     }
 
     private var content: some View {

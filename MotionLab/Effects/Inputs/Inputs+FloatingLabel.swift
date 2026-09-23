@@ -142,7 +142,7 @@ private struct InputFloatingField: View {
                 TextField("", text: $text)
                     .font(.system(size: 17))
                     .focused(focus, equals: id)
-                    .textInputAutocapitalization(id == .email ? .never : .words)
+                    .textInputAutocapitalization(id == .email ? TextInputAutocapitalization.never : TextInputAutocapitalization.words)
                     .autocorrectionDisabled()
                     .keyboardType(id == .email ? .emailAddress : .default)
                 if isValid {

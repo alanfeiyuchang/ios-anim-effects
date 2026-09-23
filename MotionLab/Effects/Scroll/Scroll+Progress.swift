@@ -50,7 +50,7 @@ private struct ScrollProgressDemo: View {
             progress = newValue
         })
         .overlay(alignment: .top) {
-            ScrollProgressHeader(progress: progress, barHeight: ctx.cg("barHeight"), language: ctx.language)
+            ScrollProgressHeader(progress: progress, barHeight: ctx.cg("barHeight"), language: ctx.language, trailingInset: ctx.isPreview ? 18 : 56)
         }
         .overlay(alignment: .bottomTrailing) {
             if ctx.bool("ring") {
@@ -73,6 +73,8 @@ private struct ScrollProgressHeader: View {
     let progress: Double
     let barHeight: CGFloat
     let language: AppLanguage
+    /// Leaves room for the detail stage's reset button in the top-trailing corner.
+    var trailingInset: CGFloat = 18
 
     var body: some View {
         VStack(spacing: 0) {
@@ -84,7 +86,8 @@ private struct ScrollProgressHeader: View {
                     .font(.footnote.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 18)
+            .padding(.leading, 18)
+            .padding(.trailing, trailingInset)
             .padding(.vertical, 12)
             Capsule()
                 .fill(LinearGradient(colors: [Palette.mint, Palette.sky, Palette.violet], startPoint: .leading, endPoint: .trailing))

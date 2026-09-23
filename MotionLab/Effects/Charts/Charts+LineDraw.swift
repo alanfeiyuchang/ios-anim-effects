@@ -196,6 +196,9 @@ private struct LineChartCanvas: View, Animatable {
     private func tip(x: CGFloat, y: CGFloat) -> some View {
         let normalized = 1 - (y - LineGeometry.inset) / (LineGeometry.size.height - LineGeometry.inset * 2)
         let value = 8 + normalized * 16
+        // Keep the value pill (~52 pt wide) inside the chart so it never spills past the card edge.
+        let pillHalf: CGFloat = 26
+        let pillShift = max(0, pillHalf - x) + min(0, LineGeometry.size.width - pillHalf - x)
         return ZStack {
             Circle()
                 .fill(Palette.violet.opacity(0.25))
@@ -211,7 +214,7 @@ private struct LineChartCanvas: View, Animatable {
                 .padding(.vertical, 3)
                 .background(Palette.violet, in: Capsule())
                 .fixedSize()
-                .offset(y: -22)
+                .offset(x: pillShift, y: -22)
         }
         .position(x: x, y: y)
     }

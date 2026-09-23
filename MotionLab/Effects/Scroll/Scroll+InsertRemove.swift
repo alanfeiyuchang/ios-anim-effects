@@ -72,7 +72,7 @@ private struct ScrollInsertRemoveDemo: View {
             }
             .scrollIndicators(.hidden)
         }
-        .padding(.top, 20)
+        .padding(.top, ctx.isPreview ? 20 : 52)
         .autoplay(ctx.isPreview, every: 1.2) { autoStep() }
     }
 

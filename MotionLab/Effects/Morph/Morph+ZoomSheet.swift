@@ -196,11 +196,12 @@ private struct ZoomBackdrop: View {
                         .font(.system(size: 50, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.85))
                 }
-                .frame(height: 170)
+                .frame(height: 150)
             PlaceholderLines(count: 3)
                 .padding(.horizontal, 4)
         }
         .padding(20)
+        .padding(.top, 32) // clear the stage's reset button
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }

@@ -55,8 +55,10 @@ private struct StepProgressDemo: View {
                             .combined(with: .opacity)
                     )
             }
-            .frame(width: 300, height: 136)
-            .clipped()
+            // No inner clip: a tight clip rectangle cut the card's shadow into a visible grey box.
+            // The stage itself clips pages as they push in/out.
+            .frame(maxWidth: .infinity)
+            .frame(height: 136)
             controls
         }
         .padding(.horizontal, 20)

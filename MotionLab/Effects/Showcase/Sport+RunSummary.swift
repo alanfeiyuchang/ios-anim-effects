@@ -181,11 +181,15 @@ private struct BentoDistanceTile: View {
                         .font(Signature.number(30))
                         .foregroundStyle(Color.white)
                         .contentTransition(.numericText(value: assembled ? 24.6 : 0))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                     Text(verbatim: "km")
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .foregroundStyle(Signature.textSecondary)
+                        .fixedSize()
                 }
             }
+            .layoutPriority(1)
             Spacer(minLength: 0)
             sparkline
         }
@@ -195,7 +199,7 @@ private struct BentoDistanceTile: View {
     }
 
     private var sparkline: some View {
-        HStack(alignment: .bottom, spacing: 3) {
+        HStack(alignment: .bottom, spacing: 2) {
             ForEach(0..<Self.bars.count, id: \.self) { i in
                 Capsule()
                     .fill(i == 5 ? AnyShapeStyle(Signature.accentGradient) : AnyShapeStyle(Color.white.opacity(0.2)))

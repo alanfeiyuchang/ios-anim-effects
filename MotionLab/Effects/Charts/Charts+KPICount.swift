@@ -130,7 +130,9 @@ private struct KPICountDemo: View {
             shown = true
             for kind in KPIKind.allCases {
                 let i = kind.rawValue
-                let previous = old[i] == 0 ? targets[i] * 0.85 : old[i]
+                // From zero there is no real previous value, so invent a varied baseline per card
+                // (otherwise every pill reads the identical +17.6%).
+                let previous = old[i] == 0 ? targets[i] * Double.random(in: 0.78...1.12) : old[i]
                 deltas[i] = (targets[i] - previous) / previous * 100
             }
         }

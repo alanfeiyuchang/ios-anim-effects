@@ -223,6 +223,7 @@ private struct SearchBackdrop: View {
             }
         }
         .padding(18)
+        .padding(.top, 32) // clear the stage's reset button
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }

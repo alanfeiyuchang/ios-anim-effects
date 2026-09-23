@@ -237,12 +237,22 @@ private struct DissolveDemo: View {
             DemoHint(text: L("Tap to burn / restore", "点击溶解 / 复原"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.8, delay: 0.4) { toggle() }
+        .autoplay(ctx.isPreview, every: ctx["duration"] * 2 + 1.0, delay: 0.4) { autoplayCycle() }
     }
 
     private func toggle() {
         if !ctx.isPreview { Haptics.tap(.rigid) }
         withAnimation(.easeInOut(duration: ctx["duration"])) { gone.toggle() }
+    }
+
+    /// Preview loop: burn away, hold ~0.3 s, then re-materialize, so the card is visible most of the time.
+    private func autoplayCycle() {
+        let duration = ctx["duration"]
+        withAnimation(.easeInOut(duration: duration)) { gone = true }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(duration + 0.3))
+            withAnimation(.easeInOut(duration: duration)) { gone = false }
+        }
     }
 }
 
@@ -314,6 +324,8 @@ private struct CRTDemo: View {
                     )
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                // Bounded size keeps the bezel clear of the stage's replay button and edges.
+                .frame(maxWidth: 290, maxHeight: 320)
                 .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

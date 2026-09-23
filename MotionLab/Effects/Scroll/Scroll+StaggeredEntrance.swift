@@ -46,7 +46,8 @@ private struct ScrollStaggerDemo: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 14)
+                .padding(.top, ctx.isPreview ? 14 : 52)
+                .padding(.bottom, 14)
             }
             .id(generation)
             .scrollIndicators(.hidden)

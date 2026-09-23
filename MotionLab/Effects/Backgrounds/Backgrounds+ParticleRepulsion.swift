@@ -37,6 +37,8 @@ private final class SwarmModel {
     private var position: [CGPoint] = []
     private var velocity: [CGVector] = []
     var touch: CGPoint?
+    /// Once the user has touched the field, the idle "ghost finger" stops wandering.
+    var userTouched = false
     private(set) var pointer: CGPoint?
 
     private static let spacing: CGFloat = 16
@@ -118,7 +120,7 @@ private final class SwarmModel {
                 with: .radialGradient(halo, center: p, startRadius: 0, endRadius: r)
             )
         }
-        context.fill(calm, with: .color(.white.opacity(0.28)))
+        context.fill(calm, with: .color(.white.opacity(0.36)))
         context.fill(moved, with: .color(Palette.sky))
         context.fill(excited, with: .color(Palette.pink))
     }
@@ -134,7 +136,8 @@ private struct ParticleRepulsionDemo: View {
             TimelineView(.animation) { timeline in
                 let now = timeline.date.timeIntervalSinceReferenceDate
                 Canvas { context, size in
-                    let simulated: CGPoint? = ctx.isPreview
+                    // Previews always wander; the detail stage wanders until the first touch so it never looks empty.
+                    let simulated: CGPoint? = ctx.isPreview || !model.userTouched
                         ? CGPoint(
                             x: size.width * CGFloat(0.5 + 0.32 * sin(now * 0.9)),
                             y: size.height * CGFloat(0.5 + 0.3 * sin(now * 1.37))
@@ -159,7 +162,10 @@ private struct ParticleRepulsionDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
-            .onChanged { value in model.touch = value.location }
+            .onChanged { value in
+                model.userTouched = true
+                model.touch = value.location
+            }
             .onEnded { _ in model.touch = nil }
     }
 }

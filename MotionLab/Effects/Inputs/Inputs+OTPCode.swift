@@ -44,13 +44,14 @@ private struct InputOTPDemo: View {
 
     private var length: Int { ctx.int("digits") == 0 ? 4 : 6 }
     private var expected: String { String("123456".prefix(length)) }
+    private var spacedExpected: String { expected.map(String.init).joined(separator: " ") }
     private var wrongCode: String { String("123999".prefix(length - 1)) + "0" }
 
     var body: some View {
         VStack(spacing: 26) {
             Spacer()
             boxes
-            DemoHint(text: L("Tap the boxes · correct code is 1 2 3 4…", "点击格子输入 · 正确验证码为 1 2 3 4…"), ctx: ctx)
+            DemoHint(text: L("Tap the boxes · correct code is \(spacedExpected)", "点击格子输入 · 正确验证码为 \(spacedExpected)"), ctx: ctx)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

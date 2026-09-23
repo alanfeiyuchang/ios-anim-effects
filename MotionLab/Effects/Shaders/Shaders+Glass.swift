@@ -145,6 +145,9 @@ private struct GlassOrbs: View {
             orb(Palette.indigo, size: 200, x: sin(time / 1.7) * 80 + 20, y: cos(time / 1.3) * 50 + 40)
             orb(Palette.amber, size: 120, x: cos(time / 1.1 + 2) * 90, y: sin(time / 1.5 + 1) * 80)
         }
+        // Offsets don't grow layout bounds, so without a full-size frame the drawingGroup
+        // rasterizes (and the blur clips) to a ~200 pt box, leaving hard-edged colour slabs.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .offset(parallax)
         .blur(radius: 30)
         .drawingGroup()

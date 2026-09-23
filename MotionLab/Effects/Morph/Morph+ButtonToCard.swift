@@ -192,7 +192,7 @@ private struct BackdropList: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.top, 8)
+        .padding(.top, 32) // clear the stage's reset button
         .scaleEffect(receded ? 0.95 : 1, anchor: .top)
         .blur(radius: receded ? 6 : 0)
         .opacity(receded ? 0.5 : 1)

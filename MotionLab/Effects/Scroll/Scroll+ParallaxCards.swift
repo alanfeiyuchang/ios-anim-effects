@@ -44,7 +44,9 @@ private struct ScrollParallaxDemo: View {
                         }
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.top, ctx.isPreview ? 20 : 52)
+            .padding(.bottom, 20)
         }
         .scrollIndicators(.hidden)
         .scrollPosition($position)

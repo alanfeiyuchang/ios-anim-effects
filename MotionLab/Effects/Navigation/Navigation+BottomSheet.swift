@@ -59,18 +59,22 @@ private struct BottomSheetDemo: View {
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            MapCanvas()
-                .scaleEffect(1 - 0.06 * lift)
-                .overlay(Color.black.opacity(0.3 * Double(lift)))
-            sheet
-                .offset(y: stageHeight - currentHeight)
-        }
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.height
-        } action: { newHeight in
-            stageHeight = newHeight
-        }
+        // The sheet lives in an overlay so its (taller-than-stage) frame never feeds back
+        // into the measured stage height; only the map canvas defines the layout size.
+        MapCanvas()
+            .scaleEffect(1 - 0.06 * lift)
+            .overlay(Color.black.opacity(0.3 * Double(lift)))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.height
+            } action: { newHeight in
+                stageHeight = newHeight
+            }
+            .overlay(alignment: .top) {
+                sheet
+                    .offset(y: stageHeight - currentHeight)
+            }
+            .clipped()
         .autoplay(ctx.isPreview, every: 1.5) {
             let order = [1, 2, 1, 0]
             snap(to: order[autoStep % order.count])

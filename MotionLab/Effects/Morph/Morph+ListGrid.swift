@@ -64,6 +64,7 @@ private struct ListGridDemo: View {
             toggleButton
         }
         .padding(16)
+        .padding(.top, 32) // clear the stage's reset button
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) { toggle() }
     }

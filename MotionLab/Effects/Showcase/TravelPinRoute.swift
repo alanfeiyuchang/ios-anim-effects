@@ -52,6 +52,9 @@ private struct TravelPinRouteDemo: View {
         CGPoint(x: 62, y: 104),
     ]
 
+    /// Fixed map size; the card hugs it so it keeps a margin inside both the 340 pt preview and ~360 pt detail stage.
+    private static let mapSize = CGSize(width: 276, height: 228)
+
     private var zh: Bool { ctx.language == .zh }
 
     private var totalKm: Int {
@@ -72,6 +75,7 @@ private struct TravelPinRouteDemo: View {
                 map
             }
             .padding(14)
+            .frame(width: Self.mapSize.width + 28)
             .signatureCard()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -121,7 +125,7 @@ private struct TravelPinRouteDemo: View {
                     )
             }
         }
-        .frame(width: 290, height: 236)
+        .frame(width: Self.mapSize.width, height: Self.mapSize.height)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .contentShape(Rectangle())
         .onTapGesture(coordinateSpace: .local) { location in

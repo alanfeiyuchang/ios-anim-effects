@@ -46,7 +46,7 @@ private struct CollapsingTabBarDemo: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.top, 52) // first card starts below the stage's reset button
         }
         .scrollIndicators(.hidden)
         .contentMargins(.bottom, 90, for: .scrollContent)

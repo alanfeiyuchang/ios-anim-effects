@@ -73,23 +73,34 @@ private struct MarqueeRow<Content: View>: View {
     @State private var stripWidth: CGFloat = 0
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            HStack(spacing: 0) {
-                strip
-                    .onGeometryChange(for: CGFloat.self) { proxy in
-                        proxy.size.width
-                    } action: { newValue in
-                        stripWidth = newValue
-                    }
-                strip
-                strip
-            }
+        // A zero-width, hidden copy of the strip gives the row its height
+        // without leaking the (very wide) ideal width of the moving content
+        // into the parent layout — otherwise the whole detail page is pushed
+        // off-screen. The moving strips live in an overlay, which never
+        // affects layout.
+        strip
             .fixedSize()
-            .offset(x: offset(at: timeline.date))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .clipped()
-        .mask { edgeFade }
+            .hidden()
+            .frame(width: 0)
+            .frame(maxWidth: .infinity)
+            .overlay(alignment: .leading) {
+                TimelineView(.animation) { timeline in
+                    HStack(spacing: 0) {
+                        strip
+                            .onGeometryChange(for: CGFloat.self) { proxy in
+                                proxy.size.width
+                            } action: { newValue in
+                                stripWidth = newValue
+                            }
+                        strip
+                        strip
+                    }
+                    .fixedSize()
+                    .offset(x: offset(at: timeline.date))
+                }
+            }
+            .clipped()
+            .mask { edgeFade }
     }
 
     private var strip: some View {

@@ -80,7 +80,7 @@ private struct PageDotsDemo: View {
         } action: { _, newValue in
             progress = newValue
         }
-        .frame(height: 210)
+        .frame(height: 234)
     }
 
     private func pageCard(_ index: Int) -> some View {
@@ -93,7 +93,7 @@ private struct PageDotsDemo: View {
                     .foregroundStyle(.white.opacity(0.92))
             }
             .shadow(color: spec.1[0].opacity(0.3), radius: 14, y: 8)
-            .padding(.vertical, 12)
+            .padding(.vertical, 24) // room for the drop shadow inside the scroll view's clip
     }
 }
 

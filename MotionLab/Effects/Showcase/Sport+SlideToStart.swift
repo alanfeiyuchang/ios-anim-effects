@@ -53,7 +53,9 @@ private struct SportSlideDemo: View {
                     track
                 }
                 .padding(18)
+                .frame(maxWidth: trackWidth + 36)
                 .signatureCard()
+                .padding(.horizontal, 16)
                 Spacer()
                 DemoHint(text: L("Drag the knob to the end", "把圆钮拖到最右端"), ctx: ctx)
                     .padding(.bottom, 16)

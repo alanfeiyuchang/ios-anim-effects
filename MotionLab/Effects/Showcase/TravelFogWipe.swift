@@ -93,13 +93,17 @@ private struct TravelFogDemo: View {
             .mask {
                 ZStack {
                     Rectangle()
-                    TravelFogHoles(
-                        strokes: strokes,
-                        brush: ctx.cg("brush"),
-                        regrowAfter: regrowAfter,
-                        isPreview: ctx.isPreview
-                    )
-                    .blendMode(.destinationOut)
+                    // Only composite the hole layer when there is something to erase; an empty blurred
+                    // layer under destinationOut punched stray blocky holes into the fog.
+                    if ctx.isPreview || !strokes.isEmpty {
+                        TravelFogHoles(
+                            strokes: strokes,
+                            brush: ctx.cg("brush"),
+                            regrowAfter: regrowAfter,
+                            isPreview: ctx.isPreview
+                        )
+                        .blendMode(.destinationOut)
+                    }
                 }
                 .compositingGroup()
             }
@@ -166,6 +170,8 @@ private struct TravelFogHoles: View {
         TimelineView(.animation(minimumInterval: nil, paused: !isPreview && (strokes.isEmpty || regrowAfter == nil))) { timeline in
             Canvas { context, size in
                 let now = timeline.date
+                // Feather the brush inside the Canvas rather than blurring the whole (often empty) layer.
+                context.addFilter(.blur(radius: brush * 0.22))
                 for stroke in strokes {
                     draw(stroke.points, alpha: alpha(for: stroke, now: now), in: &context)
                 }
@@ -174,7 +180,6 @@ private struct TravelFogHoles: View {
                 }
             }
         }
-        .blur(radius: brush * 0.22)
     }
 
     private func alpha(for stroke: TravelFogStroke, now: Date) -> Double {

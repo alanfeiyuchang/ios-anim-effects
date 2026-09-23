@@ -67,7 +67,13 @@ private struct SnowfallDemo: View {
         }
         .contentShape(Rectangle())
         .gesture(gust)
-        .backgroundsHint(L("Drag sideways to blow wind", "左右拖动吹起风"), ctx)
+        .overlay(alignment: .bottom) {
+            // The hint sits on the pale snowbank, so it uses dark (light-scheme) secondary text for contrast.
+            DemoHint(text: L("Drag sideways to blow wind", "左右拖动吹起风"), ctx: ctx)
+                .padding(.bottom, 14)
+                .environment(\.colorScheme, .light)
+                .allowsHitTesting(false)
+        }
     }
 
     private var gust: some Gesture {

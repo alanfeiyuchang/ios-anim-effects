@@ -61,7 +61,8 @@ private struct ScrollCollapsingDemo: View {
             ScrollCollapsingBar(
                 progress: (offset / range).clamped(to: 0...1),
                 showsDivider: ctx.bool("divider"),
-                language: ctx.language
+                language: ctx.language,
+                trailingInset: ctx.isPreview ? 16 : 56
             )
         }
         .autoplay(ctx.isPreview, every: 2.2) {
@@ -85,6 +86,8 @@ private struct ScrollCollapsingBar: View {
     let progress: CGFloat
     let showsDivider: Bool
     let language: AppLanguage
+    /// Leaves room for the detail stage's reset button in the top-trailing corner.
+    var trailingInset: CGFloat = 16
 
     var body: some View {
         let p = progress
@@ -116,7 +119,7 @@ private struct ScrollCollapsingBar: View {
                 .frame(width: 30, height: 30)
                 .background(Palette.primary, in: Circle())
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.trailing, 16)
+                .padding(.trailing, trailingInset)
                 .offset(y: 15)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)

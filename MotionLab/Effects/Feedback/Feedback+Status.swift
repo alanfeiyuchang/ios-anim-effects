@@ -292,12 +292,15 @@ private struct CopyDemo: View {
                 Text(verbatim: "motion.app/k7Qx")
                     .font(.system(.subheadline, design: .monospaced))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .layoutPriority(1)
                 Spacer(minLength: 6)
                 copyButton
+                    .fixedSize()
             }
             .padding(.leading, 16)
             .padding(.trailing, 8)
-            .frame(width: 300, height: 58)
+            .frame(width: 316, height: 58)
             .demoCard(cornerRadius: 18)
             DemoHint(text: L("Tap Copy", "点击“复制”"), ctx: ctx)
         }

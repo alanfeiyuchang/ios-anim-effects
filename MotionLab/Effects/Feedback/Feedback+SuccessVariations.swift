@@ -184,6 +184,17 @@ private struct SparkMorphShape: View {
     }
 }
 
+private struct SparkProgressKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+private extension EnvironmentValues {
+    var sparkProgress: CGFloat {
+        get { self[SparkProgressKey.self] }
+        set { self[SparkProgressKey.self] = newValue }
+    }
+}
+
 /// Particles launched in an upward fan from the disc's rim, then pulled down by gravity.
 private struct SparkFountain: View {
     let count: Int

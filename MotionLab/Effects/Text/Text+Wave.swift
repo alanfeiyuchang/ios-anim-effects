@@ -35,11 +35,11 @@ private struct WaveDemo: View {
         TimelineView(.animation) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
             VStack(spacing: 6) {
-                Text(ctx.language == .zh ? "律动文字" : "Good Vibes")
+                Text(L("Good Vibes", "律动文字"), ctx.language)
                     .font(.system(size: 58, weight: .heavy, design: .rounded))
                     .foregroundStyle(Palette.sunset)
                     .textRenderer(renderer(time: time, scale: 1))
-                Text(ctx.language == .zh ? "每个字形都在呼吸" : "every glyph is alive")
+                Text(L("every glyph is alive", "每个字形都在呼吸"), ctx.language)
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
                     .textRenderer(renderer(time: time - 0.4, scale: 0.4))

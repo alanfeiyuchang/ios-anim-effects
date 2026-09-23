@@ -83,10 +83,7 @@ private struct CollapsingTabBarDemo: View {
             .overlay(Capsule().strokeBorder(Palette.stroke))
             .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
 
-            if !collapsed {
-                Spacer(minLength: 0)
-                    .frame(maxWidth: 0)
-            }
+            Spacer(minLength: 0)
 
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 18, weight: .semibold))
@@ -95,7 +92,6 @@ private struct CollapsingTabBarDemo: View {
                 .overlay(Circle().strokeBorder(Palette.stroke))
                 .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
         }
-        .frame(maxWidth: .infinity, alignment: collapsed ? .leading : .center)
         .padding(.horizontal, 20)
     }
 

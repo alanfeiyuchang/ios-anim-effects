@@ -31,6 +31,7 @@ private struct SpringChainDemo: View {
     let ctx: DemoContext
     @State private var target: CGPoint = .zero
     @State private var phase: Double = 0
+    @State private var touched = false
 
     private let area: CGFloat = 300
 
@@ -53,6 +54,7 @@ private struct SpringChainDemo: View {
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
+                    touched = true
                     target = CGPoint(x: value.location.x - area / 2, y: value.location.y - area / 2)
                 }
         )
@@ -61,7 +63,7 @@ private struct SpringChainDemo: View {
             DemoHint(text: L("Drag anywhere", "在任意位置拖动"), ctx: ctx)
                 .padding(.bottom, 14)
         }
-        .autoplay(ctx.isPreview, every: 0.42, delay: 0.2) { wander() }
+        .autoplay(ctx.isPreview || !touched, every: 0.42, delay: 0.2) { wander() }
     }
 
     private func wander() {

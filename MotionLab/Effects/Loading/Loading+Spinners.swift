@@ -209,6 +209,7 @@ extension Effect {
             radius: ctx.cg("radius"),
             multicolor: ctx.bool("color")
         )
+        .scaleEffect(ctx.isPreview ? 1 : 1.5)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -226,6 +227,10 @@ private struct OrbitDotsView: View {
         TimelineView(.animation) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             ZStack {
+                // Faint orbit track so the loader still reads when the dots clump together.
+                Circle()
+                    .stroke(Color.primary.opacity(0.06), lineWidth: 2)
+                    .frame(width: radius * 2, height: radius * 2)
                 ForEach(0..<count, id: \.self) { index in
                     Circle()
                         .fill(multicolor ? palette[index % palette.count] : Color.primary)

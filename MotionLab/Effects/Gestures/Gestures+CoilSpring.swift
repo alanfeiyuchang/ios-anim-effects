@@ -8,7 +8,7 @@ extension Effect {
         name: L("Hooke's Coil Spring", "胡克弹簧振子"),
         summary: L("Pull a weight hanging from a coil spring and watch it bob with real mass, stiffness and damping.", "拉下挂在弹簧上的砝码，看它按真实的质量、劲度与阻尼上下振荡。"),
         prompt: L(
-            "A 64 × 56 pt weight (continuous 16 pt corners, indigo-to-violet gradient, “1 kg” label) hangs from a ceiling bar on a steel-grey coil spring of 9 turns, 130 pt long at rest. Dragging the weight moves it vertically only, rubber-banded toward 150 pt of stretch and 90 pt of compression; the coil re-draws every frame, its turns spreading apart as it lengthens and its diameter narrowing up to 25% to conserve volume. A pointer on a tick ruler to the right tracks the weight. On release the weight is driven by a physical spring with mass 1, stiffness 90 and damping 3.5 (ζ ≈ 0.18), so it bobs through the rest line five or six times at ~1.5 Hz before settling, with a rigid haptic scaled to the pull. A physics-lab demo made tactile.",
+            "A 64 × 56 pt weight (continuous 16 pt corners, indigo-to-violet gradient, “1 kg” label) hangs from a ceiling bar on a steel-grey coil spring of 9 turns, 130 pt long at rest. The weight drags vertically only, rubber-banded toward 150 pt of stretch and 90 pt of compression; the coil re-draws every frame, its turns spreading apart as it lengthens and its diameter narrowing up to 25% to conserve volume. A pointer on a tick ruler to the right tracks the weight. On release the weight is driven by a physical spring with mass 1, stiffness 90 and damping 3.5 (ζ ≈ 0.18), so it bobs through the rest line five or six times at ~1.5 Hz before settling, with a rigid haptic scaled to the pull. Tactile lab physics.",
             "一个 64 × 56pt 的砝码（16pt 连续圆角，靛蓝到紫色渐变，标注“1 kg”）通过一根 9 圈的钢灰色螺旋弹簧挂在顶部横梁上，弹簧自然长度 130pt。拖动砝码时只能竖直移动，拉伸与压缩均带橡皮筋阻尼，分别趋近 150pt 与 90pt 的上限；弹簧每帧重绘，拉长时圈距拉开，直径最多收窄 25% 以保持体积感。右侧刻度尺上的指针同步指示砝码位置。松手后砝码由质量 1、劲度 90、阻尼 3.5（阻尼比约 0.18）的物理弹簧驱动，以约 1.5Hz 的频率穿过平衡位置五六次后才停稳，并按拉伸幅度触发硬朗触感。把物理实验室搬进指尖。"
         ),
         implementation: L(
@@ -16,7 +16,7 @@ extension Effect {
             "可动画的弹簧 Shape 根据当前长度重绘折线；松手使用 Animation.interpolatingSpring(mass:stiffness:damping:)，三个物理常数直接作为参数开放。"
         ),
         apis: ["interpolatingSpring(mass:stiffness:damping:)", "Shape", "animatableData", "DragGesture", "rubberBand"],
-        tags: ["spring", "hooke", "oscillation", "mass", "physics", "弹簧", "胡克定律", "振荡", "物理"],
+        tags: ["spring", "hooke", "oscillation", "physics", "弹簧", "胡克定律", "振荡", "物理"],
         params: [
             .slider("mass", L("Mass", "质量"), 0.4...3.0, default: 1),
             .slider("stiffness", L("Stiffness", "劲度"), 30...300, default: 90, step: 1, decimals: 0),

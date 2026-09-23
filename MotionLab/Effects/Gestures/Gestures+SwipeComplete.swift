@@ -8,7 +8,7 @@ extension Effect {
         name: L("Swipe to Complete", "右滑完成任务"),
         summary: L("Swipe a task right past a detent: it strikes itself through and sinks to the bottom of the list.", "把任务向右滑过阈值：文字划线勾掉，并沉到列表底部。"),
         prompt: L(
-            "Four 58 pt task rows (18 pt continuous corners, elevated surface, round checkbox, title, tinted dot). Dragging a row right slides it over a green well whose opacity rises with the pull while a checkmark scales from 60% to 100%. At 110 pt the row arms: the glyph fills with a bounce and a medium haptic clicks; beyond that the row resists with a rubber band. Released while armed, the row springs home (response 0.35 s, damping 0.75), its checkbox fills, a 1.5 pt line draws across the title left to right over 300 ms and the text fades to 40%; 450 ms later the row glides to the bottom of the list while the others slide up to close the gap. Swiping a finished task over an amber well restores it to the top. Satisfying, list-native closure.",
+            "Four 58 pt task rows (18 pt corners, round checkbox, title, tinted dot). Dragging a row right slides it over a green well whose opacity rises with the pull while a checkmark scales from 60% to 100%. At 110 pt the row arms: the glyph fills with a bounce and a medium haptic clicks; beyond it the row rubber-bands. Released while armed, the row springs home (response 0.35 s, damping 0.75), its checkbox fills, a 1.5 pt line draws across the title left to right over 300 ms and the text fades to 40%; 450 ms later the row glides to the bottom of the list as the others close the gap. Swiping a finished task over an amber well restores it to the top. Satisfying, list-native closure.",
             "四条高 58pt 的任务行（18pt 连续圆角、浮起表面、圆形复选框、标题与彩色小圆点）。向右拖动某行时，它滑过下方的绿色底槽，底槽不透明度随拉动增加，对勾图标从 60% 放大到 100%。拉到 110pt 时进入“就绪”：图标填充并弹跳一下，伴随一次中等触感；再往后则有橡皮筋阻力。就绪状态下松手，该行以弹簧（响应 0.35 秒、阻尼 0.75）回位，复选框填满，一条 1.5pt 的线在 300ms 内从左到右划过标题，文字淡到 40%；450ms 后该行滑到列表底部，其余各行上移补位。已完成的任务滑过琥珀色底槽即可恢复并回到顶部。干净利落，完成感十足。"
         ),
         implementation: L(
@@ -16,7 +16,7 @@ extension Effect {
             "每行挂载与页面滚动并行的水平 DragGesture（simultaneousGesture），竖向滚动不受影响；父视图保存偏移量，在 withAnimation 中切换完成状态，再用第二段弹簧重排数组，让 ForEach 动画化行的移动。就绪标记变为 true 时由 sensoryFeedback 触发触感。"
         ),
         apis: ["DragGesture", "simultaneousGesture", "sensoryFeedback", "symbolEffect(.bounce)", "scaleEffect(x:anchor:)", "ForEach"],
-        tags: ["swipe", "complete", "todo", "strikethrough", "list", "右滑", "完成", "待办", "删除线"],
+        tags: ["swipe", "complete", "todo", "strikethrough", "右滑", "完成", "待办", "删除线"],
         params: [
             .slider("threshold", L("Arm distance", "就绪距离"), 70...160, default: 110, step: 1, decimals: 0, unit: "pt"),
             .slider("sinkDelay", L("Sink delay", "下沉延迟"), 0.1...1.0, default: 0.45, unit: "s"),

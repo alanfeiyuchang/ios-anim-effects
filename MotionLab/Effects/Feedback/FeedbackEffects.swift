@@ -22,11 +22,11 @@ enum FeedbackEffects {
         .feedbackSparkBurst,
         .feedbackLevelUp,
         // Error variations
-        .feedbackJellyDeny,
+        .feedbackGlitchError,
         .feedbackLimitBounce,
         .feedbackFaceIDFail,
         // Badge variations
-        .feedbackCartFly,
+        .feedbackStreakFlame,
         .feedbackPresencePing,
         .feedbackFloatingHearts,
         // Overlay variations

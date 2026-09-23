@@ -1,207 +1,201 @@
 import SwiftUI
 
-// MARK: - Fly to cart
+// MARK: - Streak flame
 
 extension Effect {
-    static let feedbackCartFly = Effect(
-        id: "feedback.cart-fly",
+    static let feedbackStreakFlame = Effect(
+        id: "feedback.streak-flame",
         category: .feedback,
         interaction: .tap,
-        name: L("Fly to Cart", "飞入购物袋"),
-        summary: L("A product thumbnail arcs into the bag, which wiggles as its badge ticks up.", "商品缩略图沿弧线飞进购物袋，购物袋一晃，角标随之加一。"),
+        name: L("Streak Ignite", "连胜点燃"),
+        summary: L("Checking in re-lights a cold flame with a burst of rising embers and a filled day dot.", "签到让熄灭的火苗重新燃起，余烬升腾，今天的圆点被点亮。"),
         prompt: L(
-            "A product page: a 150 pt gradient product tile, name and price, an 'Add to Bag' pill, and a bag icon in the top-right corner with a red count badge. On tap a copy of the tile lifts off and flies along a quadratic arc — rising about 80 pt above the straight path — to the bag in 0.6 s ease-in, shrinking to 18% and tilting 20° as it accelerates. On arrival it vanishes into the bag, the bag wiggles (-12°, 10°, -6°, 0°) and swells to 115%, and the badge rolls to the new number while popping 1.0 → 1.35 → 1.0 on a bouncy spring, with a medium haptic. Tactile, spatial, satisfying.",
-            "一个商品页：150 pt 的渐变商品图块、名称与价格、“加入购物袋”胶囊按钮，右上角是带红色数字角标的购物袋图标。点击后图块的副本腾空而起，沿二次曲线弧线——比直线路径高出约 80 pt——以 0.6 秒缓入飞向购物袋，加速途中缩小到 18% 并倾斜 20°。抵达时它消失在袋中，购物袋左右摇晃（-12°、10°、-6°、0°）并膨胀到 115%，角标滚动到新数字，同时以弹跳弹簧在 1.0 → 1.35 → 1.0 间弹一下，伴随中等触感。有触感、有空间感、令人满足。"
+            "A streak card shows a 54 pt flame, a large rounded day count with 'day streak', and a row of seven 26 pt day dots — six filled amber, today's an empty ring. Before check-in the flame is cold: fully desaturated at 45% opacity. Tapping 'Check in' ignites it: the flame dips to 85%, surges to 135% and settles on a bouncy spring while wiggling ±6°, regains an amber → coral → red gradient with a warm glow, and releases 12 embers that rise about 60 pt over 0.9 s, drifting sideways and fading. The count rolls from 6 to 7, today's dot fills and pops 0 → 1.2 → 1.0, and a success haptic plays. Warm, motivating, habit-forming.",
+            "一张连胜卡片上有一簇 54 pt 的火苗、大号圆体天数与“天连胜”，以及一排七个 26 pt 的日期圆点——六个已填充琥珀色，今天的是空心圆环。签到前火苗是“冷”的：完全去饱和、透明度 45%。点击“签到”将其点燃：火苗先缩到 85%，再冲到 135%，以弹跳弹簧落定并左右摆动 ±6°，恢复琥珀 → 珊瑚 → 红色渐变与温暖的辉光，同时迸出 12 颗余烬，在 0.9 秒内向上飘约 60 pt、边飘边横移淡出。天数从 6 滚动到 7，今天的圆点被填满并 0 → 1.2 → 1.0 弹出，伴随成功触感。温暖、激励人心、让人想坚持。"
         ),
         implementation: L(
-            "Each flight is a fresh view (id) with an Animatable modifier that places it on a quadratic Bézier by progress; keyframeAnimators keyed on the arrival count wiggle the bag and pop the badge.",
-            "每次飞行都是一个新的视图（id），其 Animatable 修饰器按进度把它放在二次贝塞尔曲线上；以到达次数为触发器的 keyframeAnimator 让购物袋摇晃、角标弹跳。"
+            "A keyframeAnimator keyed on the ignite count scales and wiggles the flame; embers are value records rendered by a TimelineView from their age; saturation and a numericText count animate with the checked flag.",
+            "以点燃次数为触发器的 keyframeAnimator 缩放并摆动火苗；余烬是值记录，由 TimelineView 按“年龄”渲染；饱和度与 numericText 天数随签到状态动画。"
         ),
-        apis: ["Animatable", "ViewModifier", "position(x:y:)", "keyframeAnimator(initialValue:trigger:)", "contentTransition(.numericText)"],
-        tags: ["cart", "add to bag", "fly", "badge", "购物车", "加入购物袋", "飞入", "角标"],
+        apis: ["keyframeAnimator(initialValue:trigger:)", "TimelineView", "saturation(_:)", "contentTransition(.numericText)"],
+        tags: ["streak", "flame", "check-in", "habit", "连胜", "火焰", "签到", "习惯"],
         params: [
-            .slider("duration", L("Flight time", "飞行时长"), 0.3...1.2, default: 0.6, decimals: 2, unit: "s"),
-            .slider("arc", L("Arc height", "弧线高度"), 0...160, default: 80, decimals: 0, unit: "pt"),
+            .slider("embers", L("Embers", "余烬数"), 0...24, default: 12, step: 1, decimals: 0),
+            .slider("surge", L("Ignite surge", "点燃膨胀"), 1.1...1.6, default: 1.35, decimals: 2),
         ]
     ) { ctx in
-        CartFlyDemo(ctx: ctx)
+        StreakFlameDemo(ctx: ctx)
     }
 }
 
-private struct CartPose {
-    var angle: Double = 0
+private struct FlamePose {
     var scale: CGFloat = 1
+    var angle: Double = 0
 }
 
-private struct CartFlyDemo: View {
-    let ctx: DemoContext
-    @State private var count = 2
-    @State private var arrivals = 0
-    @State private var flightID = 0
-    @State private var flying = false
+private struct Ember: Identifiable {
+    let id: Int
+    let born: Date
+    let drift: CGFloat
+    let rise: CGFloat
+    let size: CGFloat
+}
 
-    private let size = CGSize(width: 300, height: 320)
-    private let tileCenter = CGPoint(x: 150, y: 132)
-    private let bagCenter = CGPoint(x: 268, y: 30)
+private struct StreakFlameDemo: View {
+    let ctx: DemoContext
+    @State private var checked = false
+    @State private var ignites = 0
+    @State private var embers: [Ember] = []
+    @State private var nextEmber = 0
 
     var body: some View {
         let zh = ctx.language == .zh
-        VStack(spacing: 10) {
-            ZStack(alignment: .topLeading) {
-                Color.clear
-                bag.position(bagCenter)
-                productTile.position(tileCenter)
-                VStack(spacing: 4) {
-                    Text(zh ? "云朵跑鞋" : "Cloud Runner")
-                        .font(.headline)
-                    Text(zh ? "¥899" : "$129")
-                        .font(.subheadline.monospacedDigit())
+        let days: Int = checked ? 7 : 6
+        VStack(spacing: 16) {
+            VStack(spacing: 14) {
+                ZStack {
+                    EmberField(embers: embers)
+                        .frame(width: 120, height: 120)
+                        .offset(y: -20)
+                    flame
+                }
+                .frame(height: 80)
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(days)")
+                        .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
+                        .contentTransition(.numericText(value: Double(days)))
+                    Text(zh ? "天连胜" : "day streak")
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
-                .position(x: 150, y: 236)
-                Button(action: add) {
-                    Label(zh ? "加入购物袋" : "Add to Bag", systemImage: "bag.badge.plus")
+                weekRow(zh: zh)
+                Button(action: toggle) {
+                    Text(checked ? (zh ? "今日已签到" : "Checked in") : (zh ? "签到" : "Check in"))
                         .font(.headline)
                         .foregroundStyle(.white)
-                        .frame(width: 200, height: 46)
-                        .background(Palette.primary, in: Capsule())
+                        .frame(width: 220, height: 46)
+                        .background(checked ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Palette.sunset), in: Capsule())
+                        .contentTransition(.opacity)
                 }
                 .buttonStyle(.plain)
-                .position(x: 150, y: 292)
-                if flying {
-                    CartFlyingThumb(start: tileCenter, end: bagCenter, arc: ctx.cg("arc"), duration: ctx["duration"])
-                        .id(flightID)
-                        .allowsHitTesting(false)
-                }
             }
-            .frame(width: size.width, height: size.height)
-            DemoHint(text: L("Tap Add to Bag", "点击“加入购物袋”"), ctx: ctx)
+            .padding(20)
+            .demoCard()
+            DemoHint(text: L("Tap Check in", "点击签到"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.6, delay: 0.5) { add() }
+        .autoplay(ctx.isPreview, every: 2.2, delay: 0.5) { toggle() }
     }
 
-    private var productTile: some View {
-        CartProductFace(side: 150)
-            .shadow(color: Palette.coral.opacity(0.3), radius: 16, y: 8)
-    }
-
-    private var bag: some View {
-        Image(systemName: "bag.fill")
-            .font(.system(size: 26))
-            .foregroundStyle(.primary)
-            .frame(width: 44, height: 44)
-            .overlay(alignment: .topTrailing) {
-                Text("\(count)")
-                    .font(.caption2.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.white)
-                    .contentTransition(.numericText(value: Double(count)))
-                    .frame(minWidth: 20, minHeight: 20)
-                    .background(Palette.red, in: Capsule())
-                    .keyframeAnimator(initialValue: CGFloat(1), trigger: arrivals) { content, scale in
-                        content.scaleEffect(scale)
-                    } keyframes: { _ in
-                        KeyframeTrack(\.self) {
-                            CubicKeyframe(1.35, duration: 0.12)
-                            SpringKeyframe(1.0, duration: 0.45, spring: .bouncy)
-                        }
-                    }
-                    .offset(x: 6, y: -4)
-            }
-            .keyframeAnimator(initialValue: CartPose(), trigger: arrivals) { content, pose in
+    private var flame: some View {
+        let surge: CGFloat = ctx.cg("surge")
+        return Image(systemName: "flame.fill")
+            .font(.system(size: 54))
+            .foregroundStyle(LinearGradient(colors: [Palette.amber, Palette.coral, Palette.red], startPoint: .top, endPoint: .bottom))
+            .saturation(checked ? 1 : 0)
+            .opacity(checked ? 1 : 0.45)
+            .shadow(color: Palette.coral.opacity(checked ? 0.6 : 0), radius: 14)
+            .animation(.easeOut(duration: 0.3), value: checked)
+            .keyframeAnimator(initialValue: FlamePose(), trigger: ignites) { content, pose in
                 content
-                    .rotationEffect(.degrees(pose.angle), anchor: .top)
-                    .scaleEffect(pose.scale)
+                    .scaleEffect(pose.scale, anchor: .bottom)
+                    .rotationEffect(.degrees(pose.angle), anchor: .bottom)
             } keyframes: { _ in
+                KeyframeTrack(\.scale) {
+                    CubicKeyframe(0.85, duration: 0.08)
+                    CubicKeyframe(surge, duration: 0.14)
+                    SpringKeyframe(1.0, duration: 0.5, spring: .bouncy)
+                }
                 KeyframeTrack(\.angle) {
-                    CubicKeyframe(-12, duration: 0.08)
-                    CubicKeyframe(10, duration: 0.1)
-                    CubicKeyframe(-6, duration: 0.1)
+                    LinearKeyframe(0, duration: 0.1)
+                    CubicKeyframe(6, duration: 0.1)
+                    CubicKeyframe(-6, duration: 0.12)
+                    CubicKeyframe(3, duration: 0.1)
                     CubicKeyframe(0, duration: 0.12)
                 }
-                KeyframeTrack(\.scale) {
-                    CubicKeyframe(1.15, duration: 0.1)
-                    SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
+            }
+    }
+
+    private func weekRow(zh: Bool) -> some View {
+        let labels: [String] = zh ? ["一", "二", "三", "四", "五", "六", "日"] : ["M", "T", "W", "T", "F", "S", "S"]
+        return HStack(spacing: 8) {
+            ForEach(0..<7, id: \.self) { index in
+                VStack(spacing: 4) {
+                    dayDot(index)
+                    Text(labels[index])
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
             }
-    }
-
-    private func add() {
-        guard !flying else { return }
-        let duration = ctx["duration"]
-        let live = !ctx.isPreview
-        if live { Haptics.tap() }
-        flightID += 1
-        flying = true
-        Task {
-            try? await Task.sleep(for: .seconds(duration))
-            flying = false
-            withAnimation(.snappy(duration: 0.3)) {
-                count = count >= 9 ? 1 : count + 1
-            }
-            arrivals += 1
-            if live { Haptics.tap(.medium) }
         }
     }
-}
 
-/// Places the view on a quadratic Bézier from `start` to `end`, lifted by `arc`.
-private struct CartArc: ViewModifier, Animatable {
-    var progress: CGFloat
-    let start: CGPoint
-    let end: CGPoint
-    let arc: CGFloat
-
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
-    }
-
-    func body(content: Content) -> some View {
-        let t: CGFloat = progress
-        let control = CGPoint(x: start.x + (end.x - start.x) * 0.25, y: min(start.y, end.y) - arc)
-        let a: CGFloat = (1 - t) * (1 - t)
-        let b: CGFloat = 2 * (1 - t) * t
-        let c: CGFloat = t * t
-        let x: CGFloat = a * start.x + b * control.x + c * end.x
-        let y: CGFloat = a * start.y + b * control.y + c * end.y
-        return content
-            .scaleEffect(1 - 0.82 * t)
-            .rotationEffect(.degrees(Double(20 * t)))
-            .opacity(t > 0.96 ? 0 : 1)
-            .position(x: x, y: y)
-    }
-}
-
-/// One flight: a fresh view per launch that animates its own progress along the arc.
-private struct CartFlyingThumb: View {
-    let start: CGPoint
-    let end: CGPoint
-    let arc: CGFloat
-    let duration: Double
-    @State private var progress: CGFloat = 0
-
-    var body: some View {
-        CartProductFace(side: 150)
-            .modifier(CartArc(progress: progress, start: start, end: end, arc: arc))
-            .onAppear {
-                withAnimation(.easeIn(duration: duration)) { progress = 1 }
-            }
-    }
-}
-
-private struct CartProductFace: View {
-    let side: CGFloat
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .fill(Palette.sunset)
-            .frame(width: side, height: side)
-            .overlay {
-                Image(systemName: "shoe.fill")
-                    .font(.system(size: side * 0.36, weight: .semibold))
+    private func dayDot(_ index: Int) -> some View {
+        let today = index == 6
+        let filled = !today || checked
+        return ZStack {
+            Circle().strokeBorder(Palette.amber.opacity(0.6), lineWidth: 2)
+            Circle()
+                .fill(Palette.amber.gradient)
+                .scaleEffect(filled ? 1 : 0.01)
+                .opacity(filled ? 1 : 0)
+                .animation(today ? Animation.spring(response: 0.35, dampingFraction: 0.45) : nil, value: filled)
+            if filled {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .heavy))
                     .foregroundStyle(.white)
             }
+        }
+        .frame(width: 26, height: 26)
+    }
+
+    private func toggle() {
+        if checked {
+            withAnimation(.smooth(duration: 0.3)) { checked = false }
+            return
+        }
+        let now = Date.now
+        embers.removeAll { now.timeIntervalSince($0.born) > 1.0 }
+        let count: Int = max(ctx.int("embers"), 0)
+        for _ in 0..<count {
+            embers.append(Ember(
+                id: nextEmber,
+                born: now,
+                drift: CGFloat.random(in: -26...26),
+                rise: CGFloat.random(in: 44...72),
+                size: CGFloat.random(in: 3...5.5)
+            ))
+            nextEmber += 1
+        }
+        ignites += 1
+        withAnimation(.snappy(duration: 0.3)) { checked = true }
+        if !ctx.isPreview { Haptics.success() }
+    }
+}
+
+private struct EmberField: View {
+    let embers: [Ember]
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: nil, paused: embers.isEmpty)) { timeline in
+            let now: Date = timeline.date
+            Canvas { context, size in
+                let origin = CGPoint(x: size.width / 2, y: size.height * 0.75)
+                for ember in embers {
+                    let age: Double = now.timeIntervalSince(ember.born)
+                    guard age >= 0 && age < 0.9 else { continue }
+                    let u: CGFloat = CGFloat(age / 0.9)
+                    let eased: CGFloat = 1 - (1 - u) * (1 - u)
+                    let x: CGFloat = origin.x + ember.drift * eased
+                    let y: CGFloat = origin.y - ember.rise * eased
+                    let r: CGFloat = ember.size * (1 - 0.5 * u)
+                    let color: Color = ember.id % 2 == 0 ? Palette.amber : Palette.coral
+                    let rect = CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)
+                    context.fill(Path(ellipseIn: rect), with: .color(color.opacity(Double(1 - u))))
+                }
+            }
+        }
+        .allowsHitTesting(false)
     }
 }
 

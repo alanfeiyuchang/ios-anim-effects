@@ -16,7 +16,7 @@ extension Effect {
             "每个格子知道自己在蛇形路径上的序号，并带有 .animation(spring.delay(d), value: filled)，d 从上一次的数量沿变化方向计算；Animatable 文本视图在相同总时长内计数。"
         ),
         apis: ["animation(_:value:)", "Animation.delay", "Animatable", "scaleEffect", "Color.mix(with:by:)"],
-        tags: ["waffle chart", "percentage", "kpi", "unit chart", "progress", "华夫格", "百分比", "指标", "进度"],
+        tags: ["waffle chart", "percentage", "kpi", "unit chart", "华夫格", "百分比", "指标", "进度"],
         params: [
             .slider("step", L("Square interval", "逐格间隔"), 0.004...0.03, default: 0.012, decimals: 3, unit: "s"),
             .slider("damping", L("Pop damping", "弹出阻尼"), 0.3...1.0, default: 0.55),

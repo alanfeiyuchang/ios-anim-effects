@@ -8,15 +8,15 @@ extension Effect {
         name: L("Checkpoint Slide to Pay", "分段滑动支付"),
         summary: L("A four-segment track whose knob sticks at each notch, lighting segments and steps as it goes.", "四段式滑轨：滑块在每个刻口处略作停顿，沿途点亮分段与步骤。"),
         prompt: L(
-            "A 290 × 64 pt capsule track is split into four segments by 3 pt gaps, with step labels above (Review · Verify · Authorize · Pay) and a 56 pt white card-glyph knob. Dragging is magnetic around each notch: within 18 pt of one, the knob's offset is eased quadratically so it sticks, then catches up as you pull through, and a rigid haptic clicks as each notch is passed. Every passed segment fills indigo with a squash pop (spring response 0.3 s, damping 0.5) and the matching label turns bold. Releasing at the end commits: the segments turn green in a left-to-right cascade 60 ms apart, the knob glyph becomes a checkmark and a success haptic plays. Releasing early springs the knob home while the segments switch off right to left, 50 ms apart. Staged, trustworthy, crisp.",
-            "一条 290 × 64pt 的胶囊滑轨被 3pt 的间隙分为四段，上方是步骤标签（核对 · 验证 · 授权 · 支付），左侧是带银行卡图标的 56pt 白色滑块。拖动在每个刻口附近带有磁性：距离刻口 18pt 以内时，滑块偏移按二次曲线缓动，仿佛被“吸住”，继续拉才追上手指，每越过一个刻口都会触发一次硬朗的“咔哒”触感。被越过的分段以挤压弹跳（弹簧响应 0.3 秒、阻尼 0.5）填充为靛蓝，对应标签变为粗体。拖到终点松手即提交：各分段从左到右以 60ms 间隔依次变绿，滑块图标变为对勾，并触发成功触感；中途松手时滑块弹回起点，各分段从右到左以 50ms 间隔依次熄灭。层次分明、值得信赖、干脆利落。"
+            "A 290 × 64 pt capsule track is split into four segments by 3 pt gaps, with step labels above (Review · Verify · Authorize · Pay) and a 56 pt white card-glyph knob. Dragging is magnetic around each notch: within 18 pt of one the knob's offset eases quadratically, so it sticks, then catches up, and a rigid haptic clicks as each notch is passed. Every passed segment fills indigo with a squash pop (spring response 0.3 s, damping 0.5) and the matching label turns bold. Releasing at the end commits: the segments turn green in a left-to-right cascade 60 ms apart, the glyph becomes a checkmark and a success haptic plays. Releasing early springs the knob home as segments switch off right to left. Staged, trustworthy, crisp.",
+            "一条 290 × 64pt 的胶囊滑轨被 3pt 的间隙分为四段，上方是步骤标签（核对 · 验证 · 授权 · 支付），左侧是带银行卡图标的 56pt 白色滑块。拖动在每个刻口附近带有磁性：距离刻口 18pt 以内时，滑块偏移按二次曲线缓动，仿佛被“吸住”，继续拉才追上手指，每越过一个刻口都会触发一次硬朗的“咔哒”触感。被越过的分段以挤压弹跳（弹簧响应 0.3 秒、阻尼 0.5）填充为靛蓝，对应标签变为粗体。拖到终点松手即提交：各分段从左到右以 60ms 间隔依次变绿，滑块图标变为对勾，并触发成功触感；中途松手时滑块弹回起点，各分段从右到左依次熄灭。层次分明、值得信赖、干脆利落。"
         ),
         implementation: L(
             "The drag translation passes through a notch-attraction function (quadratic inside the sticky radius, identity outside); each segment derives lit/done flags and carries its own .animation(value:) with an index-based delay, so cascades run forward on commit and backward on return.",
             "拖动位移先经过刻口吸附函数（黏滞半径内为二次曲线，半径外为恒等）；每个分段由此得出点亮 / 完成标记，并带有按序号延迟的 .animation(value:)，于是提交时正向级联、退回时反向级联。"
         ),
         apis: ["DragGesture", "animation(_:value:)", "Animation.delay", "scaleEffect(x:y:)", "contentTransition(.symbolEffect(.replace))"],
-        tags: ["slide to pay", "checkpoint", "detent", "segments", "confirm", "滑动支付", "分段", "刻口", "确认"],
+        tags: ["slide to pay", "checkpoint", "detent", "confirm", "滑动支付", "分段", "刻口", "确认"],
         params: [
             .slider("sticky", L("Sticky radius", "黏滞半径"), 0...30, default: 18, step: 1, decimals: 0, unit: "pt"),
             .slider("cascade", L("Cascade delay", "级联间隔"), 0.02...0.12, default: 0.06, unit: "s"),

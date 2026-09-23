@@ -16,7 +16,7 @@ extension Effect {
             "每块积木是独立视图，带有自己的 .animation(value:)：延迟由列与行决定，曲线由方向决定（掉出用缓入，落下用弹簧）；play() 先隐藏，220ms 后替换数据，再重新显示。"
         ),
         apis: ["animation(_:value:)", "Animation.delay", "offset(y:)", "Color.mix(with:by:)", "contentTransition(.numericText)"],
-        tags: ["unit chart", "bar chart", "bricks", "stack", "drop", "积木", "柱状图", "堆叠", "掉落"],
+        tags: ["unit chart", "bar chart", "bricks", "stack", "积木", "柱状图", "堆叠", "掉落"],
         params: [
             .slider("columnDelay", L("Column stagger", "列错峰"), 0...0.12, default: 0.05, unit: "s"),
             .slider("rowDelay", L("Row stagger", "行错峰"), 0...0.08, default: 0.035, unit: "s"),

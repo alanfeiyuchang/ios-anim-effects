@@ -16,7 +16,7 @@ extension Effect {
             "每片花瓣是一个环形扇区 Shape，其 animatableData 为外半径；每片使用 .animation(spring.delay(序号 × 间隔), value: 半径)，一次状态变化即可形成径向级联，rotationEffect 负责绽放时的扭转。"
         ),
         apis: ["Shape", "animatableData", "Path.addArc", "animation(_:value:)", "rotationEffect", "contentTransition(.numericText)"],
-        tags: ["rose chart", "polar area", "nightingale", "bloom", "radial", "玫瑰图", "极坐标", "南丁格尔", "绽放"],
+        tags: ["rose chart", "polar area", "nightingale", "bloom", "玫瑰图", "极坐标", "南丁格尔", "绽放"],
         params: [
             .slider("stagger", L("Stagger", "错峰间隔"), 0...0.12, default: 0.055, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.62),

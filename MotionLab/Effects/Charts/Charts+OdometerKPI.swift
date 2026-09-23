@@ -16,7 +16,7 @@ extension Effect {
             "每位数字是一个 0–9 的 VStack，按 −数字 × 行高偏移，并放在裁切且带渐变遮罩的框内，使用 .animation(spring.delay(位序 × 间隔), value: digit)。迷你折线是用 trim(from:to:) 揭示的 Path，在数据替换前后收回并重绘。"
         ),
         apis: ["offset(y:)", "clipped()", "mask", "animation(_:value:)", "trim(from:to:)", "symbolEffect(.bounce)"],
-        tags: ["odometer", "kpi", "rolling digits", "sparkline", "counter", "里程表", "数字滚轮", "指标卡", "迷你折线"],
+        tags: ["odometer", "kpi", "rolling digits", "sparkline", "里程表", "数字滚轮", "指标卡", "迷你折线"],
         params: [
             .slider("stagger", L("Digit stagger", "逐位延迟"), 0...0.15, default: 0.06, unit: "s"),
             .slider("damping", L("Wheel damping", "滚轮阻尼"), 0.4...1.0, default: 0.72),

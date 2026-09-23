@@ -16,7 +16,7 @@ extension Effect {
             "自定义 Shape 以可动画的端点构建二次曲线绳子，并根据当前长度计算线宽、返回 path.strokedPath，因此下垂与粗细会在弹簧的每一帧重新计算。"
         ),
         apis: ["Shape", "animatableData", "Path.strokedPath", "DragGesture", "rubberBand", "spring(response:dampingFraction:)"],
-        tags: ["slingshot", "bungee", "elastic", "rope", "tether", "弹弓", "弹力绳", "牵绳", "回弹"],
+        tags: ["slingshot", "bungee", "elastic", "rope", "弹弓", "弹力绳", "牵绳", "回弹"],
         params: [
             .slider("damping", L("Damping", "阻尼"), 0.15...0.9, default: 0.32),
             .slider("response", L("Spring response", "弹簧响应"), 0.3...1.0, default: 0.55, unit: "s"),

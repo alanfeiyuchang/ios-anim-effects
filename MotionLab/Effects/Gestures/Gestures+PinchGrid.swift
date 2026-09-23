@@ -8,15 +8,15 @@ extension Effect {
         name: L("Pinch Grid Density", "捏合切换网格密度"),
         summary: L("Pinch a photo grid to step between 2, 3 and 4 columns while every tile reflows in a cascade.", "捏合照片网格在 2、3、4 列之间切换，每张图块以瀑布式错峰重排。"),
         prompt: L(
-            "A 300 × 300 pt photo grid (6 pt gutters, 10 pt continuous corners, gradient tiles with white glyphs) clipped in a 28 pt rounded frame, with a column pill above. While pinching, the whole grid scales live around the pinch anchor, rubber-banded to about ±25%. Releasing past 115% steps to one column fewer (bigger tiles); below 87% one column more. Every tile then animates to its new frame on a spring (response 0.45 s, damping 0.8) delayed 15 ms × its index, so the reflow ripples from the top-left corner like Photos, while the live scale springs back to 1 in the same beat. The pill counts to the new column number with a numeric transition and a medium haptic confirms the step. Double-tap cycles density. Organised, tactile, spatially continuous.",
-            "一个 300 × 300pt 的照片网格（6pt 间距、10pt 连续圆角、渐变图块配白色图标）裁切在 28pt 圆角框内，上方有显示列数的胶囊。捏合过程中整个网格围绕捏合锚点实时缩放，超出约 ±25% 时有橡皮筋阻尼。松手时若放大超过 115% 就减少一列（图块变大），缩小到 87% 以下则增加一列。随后每个图块以弹簧（响应 0.45 秒、阻尼 0.8）移动到新位置，并按序号延迟 15ms，重排像“照片”那样从左上角荡漾开来，同时整体缩放在同一拍内弹回 1。胶囊以数字转场滚动到新列数，并伴随一次中等触感。双击可循环切换密度。井然有序、手感扎实、空间连续。"
+            "A 300 × 300 pt photo grid (6 pt gutters, gradient tiles with white glyphs) clipped in a 28 pt rounded frame, with a column pill above. While pinching, the whole grid scales live around the pinch anchor, rubber-banded to about ±25%. Releasing past 115% steps to one column fewer (bigger tiles); below 87% one column more. Every tile then animates to its new frame on a spring (response 0.45 s, damping 0.8) delayed 15 ms × its index, so the reflow ripples from the top-left corner like Photos, while the live scale springs back to 1 in the same beat. The pill counts to the new column number with a numeric transition and a medium haptic confirms the step. Double-tap cycles density. Tactile and spatially continuous.",
+            "一个 300 × 300pt 的照片网格（6pt 间距、渐变图块配白色图标）裁切在 28pt 圆角框内，上方有显示列数的胶囊。捏合过程中整个网格围绕捏合锚点实时缩放，超出约 ±25% 时有橡皮筋阻尼。松手时若放大超过 115% 就减少一列（图块变大），缩小到 87% 以下则增加一列。随后每个图块以弹簧（响应 0.45 秒、阻尼 0.8）移动到新位置，并按序号延迟 15ms，重排像“照片”那样从左上角荡漾开来，同时整体缩放在同一拍内弹回 1。胶囊以数字转场滚动到新列数，并伴随一次中等触感。双击可循环切换密度。井然有序、手感扎实、空间连续。"
         ),
         implementation: L(
             "MagnifyGesture drives a rubber-banded scaleEffect anchored at value.startAnchor; tiles are placed with explicit frames and positions computed from the column count, each with its own .animation(spring.delay(i × stagger), value: columns) so the reflow cascades.",
             "MagnifyGesture 驱动以 value.startAnchor 为锚点、带橡皮筋的 scaleEffect；图块根据列数计算出明确的尺寸与位置，每个图块单独使用 .animation(spring.delay(序号 × 间隔), value: columns)，让重排呈瀑布式。"
         ),
         apis: ["MagnifyGesture", "scaleEffect(_:anchor:)", "animation(_:value:)", "Animation.delay", "onTapGesture(count:)"],
-        tags: ["pinch", "grid", "zoom", "photos", "columns", "捏合", "网格", "缩放", "照片", "列数"],
+        tags: ["pinch", "grid", "zoom", "photos", "捏合", "网格", "缩放", "照片"],
         params: [
             .slider("stagger", L("Reflow stagger", "重排错峰"), 0...0.05, default: 0.015, decimals: 3, unit: "s"),
             .slider("response", L("Spring response", "弹簧响应"), 0.25...0.9, default: 0.45, unit: "s"),

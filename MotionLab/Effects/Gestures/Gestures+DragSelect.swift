@@ -16,7 +16,7 @@ extension Effect {
             "DragGesture 只挂在复选框列上，把 location.y 换算为行号；选择结果由按下时的快照加上刷过的范围重新计算，因此往回滑会恢复原状。对勾使用弹簧缩放，计数使用 contentTransition(.numericText)。"
         ),
         apis: ["DragGesture", "contentTransition(.numericText)", "spring(response:dampingFraction:)", "Haptics.selection", "Set"],
-        tags: ["multi-select", "drag select", "checkbox", "list", "batch", "多选", "滑动选择", "批量", "复选框"],
+        tags: ["multi-select", "drag select", "checkbox", "list", "多选", "滑动选择", "批量", "复选框"],
         params: [
             .slider("damping", L("Pop damping", "弹出阻尼"), 0.3...1.0, default: 0.5),
             .slider("shrink", L("Selected scale", "选中缩放"), 0.9...1.0, default: 0.97),

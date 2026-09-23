@@ -8,15 +8,15 @@ extension Effect {
         name: L("Pinch to Open", "捏合展开"),
         summary: L("Spread two fingers on a card to grow it live; past the threshold it blooms into a full page.", "双指张开，卡片随之实时放大；越过阈值便绽开为完整页面。"),
         prompt: L(
-            "A 170 × 128 pt album card (22 pt continuous corners, aurora gradient cover, title) rests at the centre. Spreading two fingers scales it live with the pinch, lifting its shadow from 10 to 26 pt and tilting 2° toward the anchor side, with rubber-band resistance above 1.6×. Crossing 1.3× arms it: a light haptic fires and a thin ring glows around the card. Releasing while armed hands the live scale over to a layout change: the card blooms into a 300 × 320 pt page on a spring (response 0.5 s, damping 0.78), the cover grows to a 150 pt header and body lines fade up 8 pt with a 60 ms stagger. Pinching the page below 0.8× (or double-tapping) folds it back into the card on the same spring. Releasing unarmed springs back. Direct, continuous, intentional.",
-            "一张 170 × 128pt 的相册卡片（22pt 连续圆角、极光渐变封面与标题）置于中央。双指张开时，卡片随捏合实时放大，投影从 10pt 抬升到 26pt，并朝锚点一侧倾斜 2°，超过 1.6 倍后带橡皮筋阻力。越过 1.3 倍即进入“就绪”：触发一次轻触感，卡片外缘亮起一圈细光环。就绪时松手，实时缩放会无缝交接为布局变化：卡片以弹簧（响应 0.5 秒、阻尼 0.78）绽开为 300 × 320pt 的页面，封面扩展为 150pt 的头图，正文行以 60ms 的错峰上移 8pt 淡入。在页面上捏合到 0.8 倍以下（或双击）即以同一弹簧折回卡片；未就绪松手则弹回原状。直接、连贯、意图明确。"
+            "A 170 × 128 pt album card (aurora gradient cover, title) rests at the centre. Spreading two fingers scales it live with the pinch, lifting its shadow and tilting 2° toward the anchor, with rubber-band resistance above 1.6×. Crossing 1.3× arms it: a light haptic fires and a thin ring glows around the card. Releasing while armed hands the live scale over to a layout change: the card blooms into a 300 × 320 pt page on a spring (response 0.5 s, damping 0.78), the cover grows to a 150 pt header and body lines fade up 8 pt with a 60 ms stagger. Pinching the page below 0.8× (or double-tapping) folds it back into the card on the same spring. Releasing unarmed springs back. Direct, continuous, intentional.",
+            "一张 170 × 128pt 的相册卡片（极光渐变封面与标题）置于中央。双指张开时，卡片随捏合实时放大，投影随之抬升，并朝锚点一侧倾斜 2°，超过 1.6 倍后带橡皮筋阻力。越过 1.3 倍即进入“就绪”：触发一次轻触感，卡片外缘亮起一圈细光环。就绪时松手，实时缩放会无缝交接为布局变化：卡片以弹簧（响应 0.5 秒、阻尼 0.78）绽开为 300 × 320pt 的页面，封面扩展为 150pt 的头图，正文行以 60ms 的错峰上移 8pt 淡入。在页面上捏合到 0.8 倍以下（或双击）即以同一弹簧折回卡片；未就绪松手则弹回原状。直接、连贯、意图明确。"
         ),
         implementation: L(
             "MagnifyGesture sets a live scale (rubber-banded) and an armed flag; onEnded toggles the expanded state and resets the scale in one spring so the layout frame and the gesture scale blend into a single motion. sensoryFeedback marks the threshold.",
             "MagnifyGesture 设置带橡皮筋的实时缩放与“就绪”标记；onEnded 在同一个弹簧中切换展开状态并重置缩放，让布局尺寸变化与手势缩放融合成一段连续运动。越过阈值时由 sensoryFeedback 提示。"
         ),
         apis: ["MagnifyGesture", "scaleEffect", "frame(width:height:)", "sensoryFeedback", "onTapGesture(count:)"],
-        tags: ["pinch", "open", "expand", "zoom", "card", "捏合", "展开", "放大", "卡片"],
+        tags: ["pinch", "open", "expand", "zoom", "捏合", "展开", "放大", "卡片"],
         params: [
             .slider("threshold", L("Open threshold", "展开阈值"), 1.1...1.6, default: 1.3, decimals: 2, unit: "×"),
             .slider("response", L("Spring response", "弹簧响应"), 0.3...0.9, default: 0.5, unit: "s"),

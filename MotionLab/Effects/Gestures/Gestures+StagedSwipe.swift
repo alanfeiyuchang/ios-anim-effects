@@ -8,15 +8,15 @@ extension Effect {
         name: L("Staged Swipe Scrub", "分段滑动操作"),
         summary: L("One swipe, three actions: the further you pull, the well shifts from Archive to Snooze to Delete.", "一次滑动、三种操作：拉得越远，底色从归档依次变为稍后与删除。"),
         prompt: L(
-            "Three 62 pt mail rows (18 pt continuous corners, avatar, sender, preview line). Swiping a row left reveals a well whose action depends on distance, like scrubbing: 70 pt arms Archive (indigo, archive box), every further 64 pt steps to Snooze (amber, clock) and then Delete (red, trash). At each step the well cross-fades its colour over 200 ms, the glyph swaps with a symbol replace transition and bounces, the caption changes and a selection haptic ticks; the icon stays centred in the revealed area as it widens. Releasing on a stage flings the row off to the left on a quick ease-in (250 ms), the list closes the gap on a spring (response 0.4 s, damping 0.85) and a chip confirms the action; releasing before the first stage springs back. Precise, expressive, fast triage.",
-            "三条高 62pt 的邮件行（18pt 连续圆角，头像、发件人与预览文字）。向左滑动时露出一个底槽，执行的操作取决于滑动距离，就像拖动刻度：到 70pt 进入“归档”（靛蓝、归档盒），此后每多 64pt 依次切换为“稍后”（琥珀、时钟）与“删除”（红色、垃圾桶）。每切换一段，底槽颜色在 200ms 内交叉渐变，图标通过符号替换转场切换并弹跳一下，说明文字随之改变，同时触发一次选择触感；图标始终居中于已露出的区域。在某一段松手时，该行以 250ms 的快速缓入向左甩出，列表以弹簧（响应 0.4 秒、阻尼 0.85）收拢空位，并弹出一枚确认小标签；未到第一段就松手则弹回原位。精准、表达力强，处理邮件又快又爽。"
+            "Three 62 pt mail rows (avatar, sender, preview). Swiping a row left reveals a well whose action depends on distance, like scrubbing: 70 pt arms Archive (indigo, archive box), every further 64 pt steps to Snooze (amber, clock) and then Delete (red, trash). At each step the well cross-fades its colour over 200 ms, the glyph swaps with a symbol replace transition and bounces, the caption changes and a selection haptic ticks; the icon stays centred in the revealed area as it widens. Releasing on a stage flings the row off to the left on a quick ease-in (250 ms), the list closes the gap on a spring (response 0.4 s, damping 0.85) and a chip confirms the action; releasing before the first stage springs back. Precise, expressive, fast triage.",
+            "三条高 62pt 的邮件行（头像、发件人与预览文字）。向左滑动时露出一个底槽，执行的操作取决于滑动距离，就像拖动刻度：到 70pt 进入“归档”（靛蓝、归档盒），此后每多 64pt 依次切换为“稍后”（琥珀、时钟）与“删除”（红色、垃圾桶）。每切换一段，底槽颜色在 200ms 内交叉渐变，图标通过符号替换转场切换并弹跳一下，说明文字随之改变，同时触发一次选择触感；图标始终居中于已露出的区域。在某一段松手时，该行以 250ms 的快速缓入向左甩出，列表以弹簧（响应 0.4 秒、阻尼 0.85）收拢空位，并弹出一枚确认小标签；未到第一段就松手则弹回原位。精准、表达力强，处理邮件又快又爽。"
         ),
         implementation: L(
             "The row's offset maps to a stage enum; the well reads it for colour, symbol and caption with animation(value:), and sensoryFeedback(.selection) fires on stage changes. Release animates the offset past the edge, then removes the item in a spring so the VStack reflows.",
             "行偏移量映射为阶段枚举；底槽据此决定颜色、图标与文字，并用 animation(value:) 过渡；阶段变化时由 sensoryFeedback(.selection) 触发触感。松手时先把偏移动画到屏幕外，再在弹簧中移除该项，让 VStack 重新排布。"
         ),
         apis: ["DragGesture", "simultaneousGesture", "contentTransition(.symbolEffect(.replace))", "sensoryFeedback(.selection)", "transition(.asymmetric)"],
-        tags: ["swipe", "mail", "triage", "archive", "snooze", "滑动", "邮件", "归档", "稍后", "分段"],
+        tags: ["swipe", "mail", "archive", "snooze", "滑动", "邮件", "归档", "稍后"],
         params: [
             .slider("first", L("First stage", "首段距离"), 50...110, default: 70, step: 1, decimals: 0, unit: "pt"),
             .slider("step", L("Stage step", "每段距离"), 40...90, default: 64, step: 1, decimals: 0, unit: "pt"),

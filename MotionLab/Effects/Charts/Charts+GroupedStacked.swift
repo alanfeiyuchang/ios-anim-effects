@@ -16,7 +16,7 @@ extension Effect {
             "用两个 Bool 拆分布局：lifted 控制每段的纵向偏移，merged 控制横向偏移与宽度。每段为每个 Bool 各挂一个带季度延迟的 .animation(value:)，切换时按正确顺序相隔 420ms 设置两个 Bool。"
         ),
         apis: ["animation(_:value:)", "Animation.delay", "offset(x:y:)", "matchedGeometryEffect", "Task.sleep"],
-        tags: ["stacked bar", "grouped bar", "staged transition", "morph", "chart", "堆叠柱状图", "分组柱状图", "分阶段过渡", "形变"],
+        tags: ["stacked bar", "grouped bar", "staged transition", "morph", "堆叠柱状图", "分组柱状图", "分阶段过渡", "形变"],
         params: [
             .slider("gap", L("Beat gap", "两拍间隔"), 0.2...0.8, default: 0.42, unit: "s"),
             .slider("stagger", L("Quarter stagger", "季度错峰"), 0...0.1, default: 0.04, unit: "s"),

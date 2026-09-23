@@ -8,15 +8,15 @@ extension Effect {
         name: L("Orbit Slingshot", "引力弹弓"),
         summary: L("Pull a moon back, see its predicted path, and release it into orbit around a glowing star.", "向后拉动卫星、预览轨迹，松手让它绕着发光恒星公转。"),
         prompt: L(
-            "A 300 pt dark-glass arena holds a 44 pt glowing star with a pulsing amber halo at its center and a 22 pt sky-blue moon resting 100 pt below it. Grabbing the moon and pulling it back works like a slingshot: the pull is capped at 90 pt, a dashed band stretches from the moon to its launch point, and a dotted preview of the next 2 s of trajectory updates live as you aim. On release the launch velocity is 3.5 × the pull vector, opposite to it, and the moon moves under inverse-square gravity (softened near the core), sweeping ellipses or slingshotting past the star with a fading 40-point comet trail. Hitting the star flashes it and respawns the moon; escaping the arena respawns it too. Cosmic, playful, genuinely physical.",
-            "一个 300pt 的深色玻璃场地中心有一颗 44pt 的发光恒星，外圈是缓缓脉动的琥珀色光晕；一颗 22pt 的天蓝色卫星静置在恒星下方 100pt 处。抓住卫星向后拉，就像拉弹弓：拉动距离上限 90pt，一条虚线皮筋从卫星连到发射点，同时以点线实时预览接下来 2 秒的飞行轨迹。松手后发射速度为拉动向量反方向的 3.5 倍，卫星在平方反比引力（核心附近做了软化）下运动：或划出椭圆轨道，或借恒星引力甩出，身后拖着 40 个点逐渐淡出的彗尾。撞上恒星会让它闪亮一下并重生卫星，飞出场地同样会重生。充满宇宙感、好玩，而且是真实的物理。"
+            "A 300 pt dark-glass arena holds a 44 pt glowing star with a pulsing amber halo at its center and a 22 pt sky-blue moon resting 100 pt below it. Grabbing the moon and pulling it back works like a slingshot: the pull is capped at 90 pt, a dashed band stretches from the moon to its launch point, and a dotted preview of the next 2 s of trajectory updates live as you aim. On release the launch velocity is 3.5 × the pull vector, opposite to it, and the moon moves under inverse-square gravity, sweeping ellipses or slingshotting past the star with a fading 40-point comet trail. Hitting the star flashes it and respawns the moon; escaping the arena respawns it too. Cosmic, playful, genuinely physical.",
+            "一个 300pt 的深色玻璃场地中心有一颗 44pt 的发光恒星，外圈是缓缓脉动的琥珀色光晕；一颗 22pt 的天蓝色卫星静置在恒星下方 100pt 处。抓住卫星向后拉，就像拉弹弓：拉动距离上限 90pt，一条虚线皮筋从卫星连到发射点，同时以点线实时预览接下来 2 秒的飞行轨迹。松手后发射速度为拉动向量反方向的 3.5 倍，卫星在平方反比引力下运动：或划出椭圆轨道，或借恒星引力甩出，身后拖着 40 个点逐渐淡出的彗尾。撞上恒星会让它闪亮一下并重生卫星，飞出场地同样会重生。充满宇宙感、好玩，而且是真实的物理。"
         ),
         implementation: L(
-            "A frame-stepped class integrates softened inverse-square gravity with two semi-implicit Euler sub-steps per frame; while aiming, the same integrator runs 60 steps ahead to draw the dotted prediction in a Canvas. The DragGesture lives on the moon only, in a named coordinate space.",
-            "逐帧推进的模型类以每帧两次半隐式欧拉子步积分带软化的平方反比引力；瞄准时用同一积分器向前推演 60 步，在 Canvas 中绘制点线预测轨迹。DragGesture 只挂在卫星上，使用具名坐标空间。"
+            "A frame-stepped class integrates softened inverse-square gravity with two semi-implicit Euler sub-steps per frame; while aiming, the same integrator runs 60 steps ahead to draw the dotted prediction in a Canvas. The DragGesture lives on the moon only and reads its translation as the pull vector.",
+            "逐帧推进的模型类以每帧两次半隐式欧拉子步积分带软化的平方反比引力；瞄准时用同一积分器向前推演 60 步，在 Canvas 中绘制点线预测轨迹。DragGesture 只挂在卫星上，其位移即为拉动向量。"
         ),
-        apis: ["TimelineView(.animation)", "Canvas", "DragGesture", "coordinateSpace(.named)", "StrokeStyle(dash:)"],
-        tags: ["orbit", "gravity", "slingshot", "trajectory", "space", "轨道", "引力", "弹弓", "轨迹预测"],
+        apis: ["TimelineView(.animation)", "Canvas", "DragGesture", "DragGesture.Value.translation", "StrokeStyle(dash:)"],
+        tags: ["orbit", "gravity", "slingshot", "trajectory", "轨道", "引力", "弹弓", "轨迹预测"],
         params: [
             .slider("gravity", L("Gravity", "引力强度"), 0.4...2.0, default: 1),
             .slider("power", L("Launch power", "发射力度"), 1.5...6.0, default: 3.5, decimals: 1),
@@ -135,7 +135,6 @@ private struct OrbitSlingshotDemo: View {
             }
             .frame(width: orbitArena, height: orbitArena)
             .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-            .coordinateSpace(.named("orbit"))
             DemoHint(text: L("Pull the moon back and release", "向后拉动卫星再松手"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -178,7 +177,7 @@ private struct OrbitSlingshotDemo: View {
     }
 
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 0, coordinateSpace: .named("orbit"))
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
             .onChanged { value in
                 if anchor == nil {
                     anchor = model.position

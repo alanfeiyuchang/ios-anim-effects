@@ -8,15 +8,15 @@ extension Effect {
         name: L("Arc Slide to Unlock", "弧形滑动解锁"),
         summary: L("Drag a knob around a 240° arc, ticking past detents, until the lock at the centre springs open.", "沿 240° 弧线拖动滑块、依次越过刻度，直到中心的锁弹开。"),
         prompt: L(
-            "A 220 pt arc track (14 pt stroke, 240° sweep open at the bottom) circles a padlock glyph. A 40 pt white knob sits at the lower-left end. Dragging it follows the finger's angle around the centre, never the straight line, and a mint-to-indigo angular gradient fills the arc behind it; eight detent ticks brighten as they are passed, each with a selection haptic, and big jumps across the gap are ignored so the knob can't teleport. Reaching the end commits immediately: the track flashes green, a ring pulses outward, the padlock swaps to open with a symbol replace and bounces, and a success haptic fires. Releasing early sends the knob back along the arc on a spring (response 0.6 s, damping 0.8), the fill unwinding with it. Circular, deliberate, satisfying.",
+            "A 220 pt arc track (14 pt stroke, 240° sweep open at the bottom) circles a padlock glyph. A 40 pt white knob sits at the lower-left end. Dragging it follows the finger's angle around the centre, never the straight line, and a mint-to-indigo angular gradient fills the arc behind it; eight detent ticks brighten as they are passed, each with a selection haptic, and big jumps across the gap are ignored so the knob can't teleport. Reaching the end commits: the track flashes green, a ring pulses outward, the padlock swaps to open with a symbol replace and bounces, and a success haptic fires. Releasing early sends the knob back along the arc on a spring (response 0.6 s, damping 0.8), the fill unwinding with it. Deliberate and satisfying.",
             "一条直径 220pt 的弧形轨道（描边 14pt，底部开口，共 240°）环绕着中心的锁图标，一个 40pt 的白色滑块位于左下端。拖动时滑块沿手指相对圆心的角度移动，始终贴着弧线而不是走直线，身后的弧段被薄荷绿到靛蓝的角向渐变填满；八个刻度在被越过时依次点亮，每越过一个触发一次选择触感；跨越底部缺口的大幅跳变会被忽略，滑块不会瞬移。到达终点立即提交：轨道闪成绿色，一圈光环向外扩散，锁通过符号替换变为打开状态并弹跳一下，同时触发成功触感。中途松手时，滑块以弹簧（响应 0.6 秒、阻尼 0.8）沿弧线退回，填充也随之倒卷。圆润、郑重、满足感十足。"
         ),
         implementation: L(
-            "The knob's angle comes from atan2 of the drag location in a named coordinate space; a GeometryEffect whose animatableData is the progress places it on the arc, so springs travel along the curve, and trim(from:to:) draws the fill.",
-            "滑块角度由具名坐标空间中拖动位置的 atan2 求得；以进度为 animatableData 的 GeometryEffect 把它放在弧线上，因此弹簧动画沿曲线运动；填充用 trim(from:to:) 绘制。"
+            "The knob's angle is atan2 of its start point on the arc plus the drag translation; a GeometryEffect whose animatableData is the progress places it on the arc, so springs travel along the curve, and trim(from:to:) draws the fill.",
+            "滑块角度由“起始点在弧上的位置 + 拖动位移”的 atan2 求得；以进度为 animatableData 的 GeometryEffect 把它放在弧线上，因此弹簧动画沿曲线运动；填充用 trim(from:to:) 绘制。"
         ),
-        apis: ["GeometryEffect", "trim(from:to:)", "AngularGradient", "atan2", "coordinateSpace(.named)", "contentTransition(.symbolEffect(.replace))"],
-        tags: ["arc", "unlock", "circular slider", "dial", "confirm", "弧形", "解锁", "圆形滑块", "确认"],
+        apis: ["GeometryEffect", "trim(from:to:)", "AngularGradient", "atan2", "DragGesture", "contentTransition(.symbolEffect(.replace))"],
+        tags: ["arc", "unlock", "circular slider", "confirm", "弧形", "解锁", "圆形滑块", "确认"],
         params: [
             .slider("detents", L("Detents", "刻度数"), 4...16, default: 8, step: 1, decimals: 0),
             .slider("damping", L("Return damping", "回弹阻尼"), 0.4...1.0, default: 0.8),
@@ -54,6 +54,7 @@ private struct ArcSlideDemo: View {
     @State private var unlocked = false
     @State private var dragging = false
     @State private var pulse = false
+    @State private var dragStart: CGFloat?
 
     var body: some View {
         let detents = max(ctx.int("detents"), 2)
@@ -81,7 +82,6 @@ private struct ArcSlideDemo: View {
         }
         .frame(width: arcRadius * 2, height: arcRadius * 2)
         .frame(width: arcSide, height: arcSide)
-        .coordinateSpace(.named("arc"))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
             DemoHint(text: L("Drag the knob around the arc", "沿弧线拖动滑块"), ctx: ctx)
@@ -124,14 +124,16 @@ private struct ArcSlideDemo: View {
     }
 
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 0, coordinateSpace: .named("arc"))
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
             .onChanged { value in
                 guard !unlocked else { return }
                 if !dragging {
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = true }
                 }
-                let dx = Double(value.location.x - arcSide / 2)
-                let dy = Double(value.location.y - arcSide / 2)
+                if dragStart == nil { dragStart = progress }
+                let startRadians = (arcStart + arcSweep * Double(dragStart ?? progress)) * .pi / 180
+                let dx = Double(arcRadius) * cos(startRadians) + Double(value.translation.width)
+                let dy = Double(arcRadius) * sin(startRadians) + Double(value.translation.height)
                 var relative = atan2(dy, dx) * 180 / .pi - arcStart
                 relative = relative.truncatingRemainder(dividingBy: 360)
                 if relative < 0 { relative += 360 }
@@ -144,6 +146,7 @@ private struct ArcSlideDemo: View {
                 if next >= 0.995 { unlock(haptic: true) }
             }
             .onEnded { _ in
+                dragStart = nil
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = false }
                 guard !unlocked else { return }
                 withAnimation(.spring(response: 0.6, dampingFraction: ctx["damping"])) { progress = 0 }

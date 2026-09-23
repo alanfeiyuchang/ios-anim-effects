@@ -12,11 +12,11 @@ extension Effect {
             "一个 56pt 的沙滩球（琥珀到珊瑚渐变，带一条白色色带以便看清旋转）静置在 300pt 圆角场地的地面上，下方的接触阴影会随小球升高而缩小变淡。抓起小球并抛出：松手速度即为初速度，随后 1800pt/s² 的重力把它拉成一条真实的抛物线。每次落地时竖直速度按 0.62 的恢复系数反弹，小球贴着地面最多压扁 25%、持续约 80ms，水平速度损失 8%；撞到墙壁和顶部同样会反弹。落地后小球以 v ∕ r 的角速度滚动，并在摩擦下逐渐停住。重击地面时伴随柔和触感。真实、有分量、令人满足的物理手感。"
         ),
         implementation: L(
-            "A frame-stepped class integrates gravity, restitution, rolling friction and squash inside a TimelineView that sleeps once the ball settles; a DragGesture in a named coordinate space holds the ball and hands its velocity to the model.",
-            "逐帧推进的模型类在 TimelineView 中积分重力、恢复系数、滚动摩擦与压扁，小球静止后时间线自动休眠；具名坐标空间中的 DragGesture 抓住小球，并把松手速度交给模型。"
+            "A frame-stepped class integrates gravity, restitution, rolling friction and squash inside a TimelineView that sleeps once the ball settles; a DragGesture on the ball moves it by its global translation and hands the release velocity to the model.",
+            "逐帧推进的模型类在 TimelineView 中积分重力、恢复系数、滚动摩擦与压扁，小球静止后时间线自动休眠；挂在小球上的 DragGesture 按全局位移移动小球，并把松手速度交给模型。"
         ),
-        apis: ["TimelineView(.animation)", "DragGesture.Value.velocity", "coordinateSpace(.named)", "scaleEffect(x:y:anchor:)", "rotationEffect"],
-        tags: ["gravity", "toss", "bounce", "parabola", "physics", "重力", "抛掷", "弹跳", "抛物线"],
+        apis: ["TimelineView(.animation)", "DragGesture.Value.velocity", "DragGesture.Value.translation", "scaleEffect(x:y:anchor:)", "rotationEffect"],
+        tags: ["gravity", "toss", "bounce", "parabola", "重力", "抛掷", "弹跳", "抛物线"],
         params: [
             .slider("gravity", L("Gravity", "重力"), 600...3200, default: 1800, step: 50, decimals: 0, unit: "pt/s²"),
             .slider("bounce", L("Restitution", "恢复系数"), 0.2...0.9, default: 0.62),
@@ -120,7 +120,7 @@ private final class TossModel {
 private struct GravityTossDemo: View {
     let ctx: DemoContext
     @State private var model = TossModel(position: CGPoint(x: 150, y: 272))
-    @State private var grab: CGSize?
+    @State private var grabStart: CGPoint?
     @State private var held = false
     @State private var awake = true
     @State private var userTouched = false
@@ -151,7 +151,6 @@ private struct GravityTossDemo: View {
                 }
             }
             .frame(width: arena.width, height: arena.height)
-            .coordinateSpace(.named("toss"))
             DemoHint(text: L("Grab the ball and throw it", "抓起小球抛出去"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -171,11 +170,10 @@ private struct GravityTossDemo: View {
     }
 
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 0, coordinateSpace: .named("toss"))
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
             .onChanged { value in
-                if grab == nil {
-                    let live = model.position
-                    grab = CGSize(width: value.startLocation.x - live.x, height: value.startLocation.y - live.y)
+                if grabStart == nil {
+                    grabStart = model.position
                     model.isHeld = true
                     model.velocity = .zero
                     userTouched = true
@@ -183,17 +181,17 @@ private struct GravityTossDemo: View {
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { held = true }
                     if !ctx.isPreview { Haptics.tap(.light) }
                 }
-                guard let offset = grab else { return }
-                let x: CGFloat = value.location.x - offset.width
-                let y: CGFloat = value.location.y - offset.height
+                guard let start = grabStart else { return }
+                let x: CGFloat = start.x + value.translation.width
+                let y: CGFloat = start.y + value.translation.height
                 model.position = CGPoint(
                     x: x.clamped(to: radius...(arena.width - radius)),
                     y: y.clamped(to: radius...(arena.height - radius))
                 )
             }
             .onEnded { value in
-                guard grab != nil else { return }
-                grab = nil
+                guard grabStart != nil else { return }
+                grabStart = nil
                 model.release(velocity: CGVector(
                     dx: value.velocity.width.clamped(to: -3200...3200),
                     dy: value.velocity.height.clamped(to: -3200...3200)

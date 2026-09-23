@@ -8,15 +8,15 @@ extension Effect {
         name: L("Velocity Detent Sheet", "速度感知分段面板"),
         summary: L("A Maps-style sheet that projects your flick forward and lands on the right detent.", "地图式底部面板：根据甩动速度预测落点，停在合适的档位。"),
         prompt: L(
-            "Inside a 230 × 320 pt phone frame (34 pt continuous corners) a map-like background sits under a bottom sheet with three detents: peek (74 pt visible), half (52%) and full (26 pt from the top). The sheet tracks the finger 1:1 and rubber-bands 40 pt past the top and bottom detents. On release it does not pick the nearest detent to where the finger stopped; it projects the position forward by velocity × 0.2 s, like UIScrollView deceleration, and springs (response 0.42 s, damping 0.82) to the detent closest to that projection, so a short, fast flick skips straight from peek to full. As the sheet rises the background dims by up to 30% and recedes to 94% scale; a selection haptic ticks when the detent changes. Fluid, predictive, native.",
-            "在 230 × 320pt 的手机框（34pt 连续圆角）中，地图式背景上方叠着一个底部面板，共三个档位：收起（露出 74pt）、半屏（52%）和全屏（距顶部 26pt）。面板 1:1 跟手，越过最高和最低档位后带 40pt 的橡皮筋阻尼。松手时并不是停到离手指最近的档位，而是像 UIScrollView 减速那样，用 速度 × 0.2 秒 预测落点，再以弹簧（响应 0.42 秒、阻尼 0.82）停到离预测点最近的档位；因此一次短促有力的上甩就能从收起直接跳到全屏。面板升起时背景最多压暗 30%，并后退缩小到 94%；档位切换时触发选择触感。流畅、可预判、原生质感。"
+            "Inside a 230 × 320 pt phone frame (34 pt continuous corners) a map-like background sits under a bottom sheet with three detents: peek (74 pt visible), half (52%) and full (26 pt from the top). The sheet tracks the finger 1:1 and rubber-bands 40 pt past the top and bottom detents. On release it does not pick the nearest detent to where the finger stopped; it projects the position forward by velocity × 0.2 s and springs (response 0.42 s, damping 0.82) to the detent closest to that projection, so a short, fast flick skips straight from peek to full. As the sheet rises the background dims by up to 30% and recedes to 94% scale; a selection haptic ticks when the detent changes. Fluid, predictive, native.",
+            "在 230 × 320pt 的手机框（34pt 连续圆角）中，地图式背景上方叠着一个底部面板，共三个档位：收起（露出 74pt）、半屏（52%）和全屏（距顶部 26pt）。面板 1:1 跟手，越过最高和最低档位后带 40pt 的橡皮筋阻尼。松手时并不是停到离手指最近的档位，而是用 速度 × 0.2 秒 预测落点，再以弹簧（响应 0.42 秒、阻尼 0.82）停到离预测点最近的档位；因此一次短促有力的上甩就能从收起直接跳到全屏。面板升起时背景最多压暗 30%，并后退缩小到 94%；档位切换时触发选择触感。流畅、可预判、原生质感。"
         ),
         implementation: L(
             "A DragGesture on the sheet only adds a rubber-banded translation to the current detent's top; onEnded projects top + velocity × projection and springs to the nearest detent, and the backdrop reads the same fraction for dimming and scale.",
             "仅挂在面板上的 DragGesture 在当前档位的顶部位置上叠加带橡皮筋的位移；onEnded 计算 顶部 + 速度 × 预测时长，并以弹簧吸附到最近档位；背景用同一比例计算压暗与缩放。"
         ),
         apis: ["DragGesture.Value.velocity", "rubberBand", "offset(y:)", "spring(response:dampingFraction:)", "Haptics.selection"],
-        tags: ["bottom sheet", "detent", "fling", "projection", "velocity", "底部面板", "档位", "甩动", "速度预测"],
+        tags: ["bottom sheet", "detent", "fling", "velocity", "底部面板", "档位", "甩动", "速度预测"],
         params: [
             .slider("projection", L("Velocity projection", "速度预测时长"), 0.0...0.4, default: 0.2, unit: "s"),
             .slider("response", L("Spring response", "弹簧响应"), 0.25...0.8, default: 0.42, unit: "s"),

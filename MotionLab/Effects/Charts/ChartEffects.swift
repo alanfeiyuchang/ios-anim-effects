@@ -15,5 +15,19 @@ enum ChartEffects {
         .chartsCandlestickLive,
         .chartsDonutToBars,
         .chartsStackedBars,
+        // Bar variations
+        .chartsLiquidBars,
+        .chartsBrickBars,
+        // Rings & gauges
+        .chartsSegmentedGauge,
+        .chartsRoseBloom,
+        // Chart morph
+        .chartsBarsToLine,
+        .chartsScatterHistogram,
+        .chartsGroupedStacked,
+        // KPIs
+        .chartsOdometerKPI,
+        .chartsBulletKPI,
+        .chartsWaffleKPI,
     ]
 }

@@ -16,7 +16,7 @@ extension Effect {
             "柱子是圆角矩形，其尺寸与位置在“整根柱子”与“圆点”之间插值，各自带 .animation(spring.delay(...), value: toLine)；折线是用 trim(from:to:) 揭示的 Path，在圆点落定后再动画；反向切换通过 Task 延迟调换先后顺序。"
         ),
         apis: ["trim(from:to:)", "animation(_:value:)", "Animation.delay", "Path", "position(x:y:)"],
-        tags: ["bar chart", "line chart", "morph", "chart type", "transition", "柱状图", "折线图", "形变", "图表切换"],
+        tags: ["bar chart", "line chart", "morph", "chart type", "柱状图", "折线图", "形变", "图表切换"],
         params: [
             .slider("stagger", L("Stagger", "错峰间隔"), 0...0.1, default: 0.04, unit: "s"),
             .slider("draw", L("Line draw", "折线绘制时长"), 0.3...1.2, default: 0.6, unit: "s"),

@@ -1,121 +1,167 @@
 import SwiftUI
 
-// MARK: - Jelly deny
+// MARK: - Glitch error
 
 extension Effect {
-    static let feedbackJellyDeny = Effect(
-        id: "feedback.jelly-deny",
+    static let feedbackGlitchError = Effect(
+        id: "feedback.glitch-error",
         category: .feedback,
         interaction: .tap,
-        name: L("Jelly Deny", "果冻拒绝"),
-        summary: L("A declined button wobbles like jelly — squash and stretch instead of a shake.", "被拒绝的按钮像果冻一样晃动——用挤压拉伸代替左右摇头。"),
+        name: L("Glitch Rejection", "故障风报错"),
+        summary: L("An invalid code glitches — RGB split and sliced jitter — then settles struck through in red.", "无效的代码像信号故障一样错位、色散、切片抖动，最后以红色删除线定格。"),
         prompt: L(
-            "A checkout card shows 'Visa •••• 4242 · Balance $86.20' above a 250 × 56 pt 'Pay $1,249' pill. On tap the payment is declined: instead of shaking sideways, the pill wobbles in place with volume-preserving squash and stretch — 112% × 88%, then 90% × 110%, 106% × 95%, 97% × 103%, each beat 0.1 s — before settling to 100% on a spring over 0.3 s. During the first beat it floods red and the label blur-replaces to 'Card declined', the balance line turns red, and an error haptic fires. After 1.8 s everything eases back to the indigo 'Pay' state. Soft, forgiving, unmistakably 'no'.",
-            "结账卡片上显示“Visa •••• 4242 · 余额 ¥86.20”，下方是一枚 250 × 56 pt 的“支付 ¥8,999”胶囊按钮。点击后支付被拒：按钮不是左右摇头，而是原地做保持体积的挤压拉伸——112% × 88%，然后 90% × 110%、106% × 95%、97% × 103%，每拍 0.1 秒——再以 0.3 秒弹簧回到 100%。第一拍时按钮被红色灌满，文字以模糊替换变为“卡片被拒绝”，余额一行同时变红，并触发错误触感。1.8 秒后一切平缓恢复为靛蓝的“支付”状态。柔软、宽容，却明确表达“不行”。"
+            "A checkout card has a promo field reading 'SPRING24' in 20 pt monospaced caps and an 'Apply' button. On tap the code is rejected with a digital glitch instead of a shake: for 0.45 s, stepping every 50 ms, the text splits into red and cyan ghosts offset up to ±5 pt in opposite directions while the main glyphs are cut into two horizontal slices at a random height that jitter sideways independently. Then it snaps clean, turns red with a strikethrough, the field border turns red, 'This code has expired' blur-replaces the hint and an error haptic fires. After 2.2 s it resets. Techy, unmistakable, a little edgy.",
+            "结账卡片中有一个优惠码输入框，显示 20 pt 等宽大写的“SPRING24”，旁边是“使用”按钮。点击后代码被拒绝，但不是左右摇头，而是一次数字故障：在 0.45 秒内每 50 毫秒跳变一次，文字分裂出红、青两层残影，向相反方向偏移最多 ±5 pt；主字形则在随机高度被切成上下两片，各自横向抖动。随后画面瞬间恢复干净，文字变红并加删除线，输入框边框变红，提示以模糊替换变为“该优惠码已过期”，并触发错误触感。2.2 秒后复位。科技感强、一眼明白、带点锋利。"
         ),
         implementation: L(
-            "A keyframeAnimator with separate X and Y scale tracks (each ending at 1) runs on a trigger counter; a declined flag cross-fades the fill and swaps the label with .blurReplace.",
-            "keyframeAnimator 以计数器为触发器，分别用 X、Y 两条缩放轨道（都以 1 结束）；拒绝标志交叉淡换填充色，并用 .blurReplace 切换文字。"
+            "While a glitching flag is set, a TimelineView derives a step index from the elapsed time and seeds a sine-hash for the ghost offsets and slice jitter; the slices are the same Text masked to top and bottom bands.",
+            "glitching 标志为真时，TimelineView 由经过时间得到步序号，并用正弦哈希生成残影偏移与切片抖动；两片切片是同一段 Text 分别遮罩上下两段。"
         ),
-        apis: ["keyframeAnimator(initialValue:trigger:)", "scaleEffect(x:y:)", "transition(.blurReplace)", "UINotificationFeedbackGenerator"],
-        tags: ["error", "declined", "jelly", "squash", "错误", "拒绝", "果冻", "挤压"],
+        apis: ["TimelineView(.animation(minimumInterval:paused:))", "mask(alignment:_:)", "strikethrough(_:color:)", "transition(.blurReplace)"],
+        tags: ["glitch", "error", "invalid", "rgb split", "故障", "错误", "无效", "色散"],
         params: [
-            .slider("amount", L("Squash amount", "挤压幅度"), 0.04...0.2, default: 0.12),
-            .slider("beat", L("Beat", "节拍"), 0.06...0.2, default: 0.1, unit: "s"),
+            .slider("intensity", L("Glitch offset", "故障偏移"), 1...10, default: 5, decimals: 0, unit: "pt"),
+            .slider("duration", L("Glitch time", "故障时长"), 0.2...1.0, default: 0.45, unit: "s"),
         ]
     ) { ctx in
-        JellyDenyDemo(ctx: ctx)
+        GlitchErrorDemo(ctx: ctx)
     }
 }
 
-private struct JellyPose {
-    var x: CGFloat = 1
-    var y: CGFloat = 1
-}
-
-private struct JellyDenyDemo: View {
+private struct GlitchErrorDemo: View {
     let ctx: DemoContext
-    @State private var declined = false
-    @State private var wobbles = 0
+    @State private var glitching = false
+    @State private var start = Date.distantPast
+    @State private var invalid = false
     @State private var token = 0
 
     var body: some View {
         let zh = ctx.language == .zh
-        VStack(spacing: 22) {
-            HStack(spacing: 12) {
-                Image(systemName: "creditcard.fill")
-                    .font(.title3)
-                    .foregroundStyle(Palette.blue)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(verbatim: "Visa •••• 4242")
-                        .font(.subheadline.weight(.semibold))
-                    Text(zh ? "余额 ¥86.20" : "Balance $86.20")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(declined ? AnyShapeStyle(Palette.red) : AnyShapeStyle(.secondary))
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(zh ? "优惠码" : "Promo code")
+                    .font(.subheadline.weight(.semibold))
+                HStack(spacing: 10) {
+                    GlitchText(
+                        text: "SPRING24",
+                        start: start,
+                        glitching: glitching,
+                        intensity: ctx.cg("intensity"),
+                        invalid: invalid
+                    )
+                    .padding(.horizontal, 14)
+                    .frame(height: 50)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(invalid ? Palette.red : Color.primary.opacity(0.1), lineWidth: invalid ? 1.5 : 1)
+                    }
+                    Button(action: apply) {
+                        Text(zh ? "使用" : "Apply")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 74, height: 50)
+                            .background(Palette.primary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
-                Spacer()
+                hint(zh: zh)
+                    .font(.caption.weight(.medium))
+                    .frame(height: 16)
             }
-            .frame(width: 250)
-            .padding(16)
-            .demoCard(cornerRadius: 18)
-            Button(action: pay) { pill(zh: zh) }
-                .buttonStyle(.plain)
-            DemoHint(text: L("Tap Pay", "点击支付"), ctx: ctx)
+            .frame(width: 270)
+            .padding(18)
+            .demoCard()
+            DemoHint(text: L("Tap Apply", "点击使用"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.easeInOut(duration: 0.25), value: declined)
-        .autoplay(ctx.isPreview, every: 2.8, delay: 0.5) { pay() }
+        .animation(.easeInOut(duration: 0.2), value: invalid)
+        .autoplay(ctx.isPreview, every: 3.0, delay: 0.5) { apply() }
     }
 
-    private func pill(zh: Bool) -> some View {
-        let a: CGFloat = ctx.cg("amount")
-        let beat: Double = ctx["beat"]
-        return ZStack {
-            Capsule().fill(Palette.primary)
-            Capsule().fill(Palette.red).opacity(declined ? 1 : 0)
-            if declined {
-                Label(zh ? "卡片被拒绝" : "Card declined", systemImage: "xmark.octagon.fill")
-                    .transition(.blurReplace)
-            } else {
-                Text(zh ? "支付 ¥8,999" : "Pay $1,249")
-                    .transition(.blurReplace)
-            }
-        }
-        .font(.headline)
-        .foregroundStyle(.white)
-        .frame(width: 250, height: 56)
-        .shadow(color: (declined ? Palette.red : Palette.indigo).opacity(0.35), radius: 14, y: 7)
-        .keyframeAnimator(initialValue: JellyPose(), trigger: wobbles) { content, pose in
-            content.scaleEffect(x: pose.x, y: pose.y)
-        } keyframes: { _ in
-            KeyframeTrack(\.x) {
-                CubicKeyframe(1 + a, duration: beat)
-                CubicKeyframe(1 - a * 0.83, duration: beat)
-                CubicKeyframe(1 + a * 0.5, duration: beat)
-                CubicKeyframe(1 - a * 0.25, duration: beat)
-                SpringKeyframe(1, duration: 0.3, spring: .smooth)
-            }
-            KeyframeTrack(\.y) {
-                CubicKeyframe(1 - a, duration: beat)
-                CubicKeyframe(1 + a * 0.83, duration: beat)
-                CubicKeyframe(1 - a * 0.42, duration: beat)
-                CubicKeyframe(1 + a * 0.25, duration: beat)
-                SpringKeyframe(1, duration: 0.3, spring: .smooth)
-            }
+    @ViewBuilder
+    private func hint(zh: Bool) -> some View {
+        if invalid {
+            Label(zh ? "该优惠码已过期" : "This code has expired", systemImage: "exclamationmark.circle.fill")
+                .foregroundStyle(Palette.red)
+                .transition(.blurReplace)
+        } else {
+            Text(zh ? "每单限用一个优惠码" : "One code per order")
+                .foregroundStyle(.secondary)
+                .transition(.blurReplace)
         }
     }
 
-    private func pay() {
-        guard !declined else { return }
+    private func apply() {
+        guard !glitching && !invalid else { return }
         token += 1
         let current = token
-        if !ctx.isPreview { Haptics.error() }
-        wobbles += 1
-        withAnimation(.easeOut(duration: 0.12)) { declined = true }
+        let duration: Double = max(ctx["duration"], 0.1)
+        start = .now
+        glitching = true
         Task {
-            try? await Task.sleep(for: .seconds(1.8))
+            try? await Task.sleep(for: .seconds(duration))
+            glitching = false
+            invalid = true
+            if !ctx.isPreview { Haptics.error() }
+            try? await Task.sleep(for: .seconds(2.2))
             guard token == current else { return }
-            withAnimation(.smooth(duration: 0.4)) { declined = false }
+            invalid = false
+        }
+    }
+}
+
+private struct GlitchText: View {
+    let text: String
+    let start: Date
+    let glitching: Bool
+    let intensity: CGFloat
+    let invalid: Bool
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: nil, paused: !glitching)) { timeline in
+            let elapsed: Double = max(0, timeline.date.timeIntervalSince(start))
+            let step: Int = Int(elapsed / 0.05)
+            if glitching {
+                glitched(step: step)
+            } else {
+                label
+                    .foregroundStyle(invalid ? Palette.red : Color.primary)
+                    .strikethrough(invalid, color: Palette.red)
+            }
+        }
+    }
+
+    private var label: some View {
+        Text(text)
+            .font(.system(size: 20, weight: .bold, design: .monospaced))
+            .frame(height: 24)
+    }
+
+    private static func hash(_ step: Int, _ salt: Int) -> CGFloat {
+        let seed: Double = Double(step * 31 + salt) * 12.9898
+        let value: Double = sin(seed) * 43758.5453
+        return CGFloat(value - floor(value))
+    }
+
+    private func glitched(step: Int) -> some View {
+        let red: CGFloat = (GlitchText.hash(step, 1) * 2 - 1) * intensity
+        let cyan: CGFloat = (GlitchText.hash(step, 2) * 2 - 1) * intensity
+        let split: CGFloat = 6 + 12 * GlitchText.hash(step, 3)
+        let top: CGFloat = (GlitchText.hash(step, 4) * 2 - 1) * intensity
+        let bottom: CGFloat = (GlitchText.hash(step, 5) * 2 - 1) * intensity
+        return ZStack(alignment: .leading) {
+            label.foregroundStyle(Color.red.opacity(0.7)).offset(x: abs(red))
+            label.foregroundStyle(Color.cyan.opacity(0.7)).offset(x: -abs(cyan))
+            label
+                .foregroundStyle(Color.primary)
+                .mask(alignment: .top) { Rectangle().frame(height: split) }
+                .offset(x: top)
+            label
+                .foregroundStyle(Color.primary)
+                .mask(alignment: .bottom) { Rectangle().frame(height: 24 - split) }
+                .offset(x: bottom)
         }
     }
 }

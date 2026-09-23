@@ -16,7 +16,7 @@ extension Effect {
             "每个刻度带有 .animation(.easeOut.delay(d), value: isLit)，d 由该刻度沿变化方向到上一次点亮数的距离计算；Animatable 文本视图以线性动画计数，时长与级联完全一致。"
         ),
         apis: ["animation(_:value:)", "Animation.delay", "Animatable", "rotationEffect", "Color.mix(with:by:)"],
-        tags: ["gauge", "led", "segments", "meter", "load", "仪表", "分段", "指示灯", "负载"],
+        tags: ["gauge", "led", "segments", "meter", "仪表", "分段", "指示灯", "负载"],
         params: [
             .slider("count", L("Segments", "分段数"), 16...40, default: 30, step: 1, decimals: 0),
             .slider("step", L("Tick interval", "逐格间隔"), 0.01...0.06, default: 0.025, decimals: 3, unit: "s"),

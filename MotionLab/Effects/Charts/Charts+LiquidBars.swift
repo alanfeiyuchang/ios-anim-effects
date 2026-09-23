@@ -16,7 +16,7 @@ extension Effect {
             "以液位为 animatableData 的 Shape 根据 TimelineView 提供的相位绘制波浪液面；弹簧负责液位动画，时间线让波浪持续流动，波幅从最近一次扰动开始指数衰减。"
         ),
         apis: ["Shape", "animatableData", "TimelineView(.animation)", "clipShape(Capsule())", "contentTransition(.numericText)"],
-        tags: ["liquid", "bar chart", "wave", "slosh", "water", "液体", "柱状图", "波浪", "晃动"],
+        tags: ["liquid", "bar chart", "wave", "slosh", "液体", "柱状图", "波浪", "晃动"],
         params: [
             .slider("damping", L("Slosh damping", "晃动阻尼"), 0.3...1.0, default: 0.55),
             .slider("stagger", L("Stagger", "错峰间隔"), 0...0.15, default: 0.06, unit: "s"),

@@ -8,7 +8,7 @@ extension Effect {
         name: L("Pull-Cord Switch", "拉绳开关"),
         summary: L("Tug a lamp's cord past a click point to switch it; the cord bounces back and the shade sways.", "把台灯拉绳拽过“咔哒”点即可开关，拉绳回弹、灯罩轻晃。"),
         prompt: L(
-            "A pendant lamp (110 pt trapezoid shade, bulb beneath) hangs at the top of the stage, and a thin cord drops 90 pt from the shade's edge to an 18 pt bead. Dragging the bead pulls the cord down 1:1, with rubber-band resistance toward 120 pt and a little sideways give. At 50 pt the switch arms: a rigid haptic clicks and the bead swells to 1.25×. Releasing while armed toggles the light: the bulb blooms amber with a 30 pt glow, a soft light cone fades in over 350 ms and the room icon below lights up, while the cord snaps back on a bouncy spring (response 0.35 s, damping 0.35) and the shade sways ±4° around its hook before settling. Releasing short just lets the cord bounce back. Tactile, nostalgic, delightful.",
+            "A pendant lamp (110 pt shade, bulb beneath) hangs at the top of the stage, and a thin cord drops 90 pt from the shade's edge to an 18 pt bead. Dragging the bead pulls the cord down 1:1, rubber-banded toward 120 pt, with a little sideways give. At 50 pt the switch arms: a rigid haptic clicks and the bead swells to 1.25×. Releasing while armed toggles the light: the bulb blooms amber with a 30 pt glow, a soft light cone fades in over 350 ms and the room icon below lights up, while the cord snaps back on a bouncy spring (response 0.35 s, damping 0.35) and the shade sways ±4° around its hook before settling. Releasing short just lets the cord bounce back. Tactile, nostalgic, delightful.",
             "舞台顶部悬挂着一盏吊灯（110pt 的梯形灯罩，下方是灯泡），灯罩边缘垂下一根 90pt 的细拉绳，末端是 18pt 的拉珠。拖动拉珠时拉绳 1:1 向下伸长，越往下阻力越大并趋近 120pt，左右也能轻微摆动。拉到 50pt 时开关就绪：触发一次硬朗的“咔哒”触感，拉珠放大到 1.25 倍。就绪时松手即切换灯光：灯泡绽放出带 30pt 光晕的琥珀色，一道柔和光锥在 350ms 内淡入，下方的房间图标随之点亮；同时拉绳以高弹性弹簧（响应 0.35 秒、阻尼 0.35）弹回，灯罩绕挂钩摆动 ±4° 后才停稳。未到位就松手，拉绳只是弹回。手感真实，带点怀旧，令人愉悦。"
         ),
         implementation: L(
@@ -16,7 +16,7 @@ extension Effect {
             "可动画的直线 Shape 把拉绳画到拉珠的位置；拉珠跟随带橡皮筋的 DragGesture，松手后二者一起弹回。灯罩使用 rotationEffect(anchor: .top)，先被踢到 4° 再交给欠阻尼弹簧回稳。"
         ),
         apis: ["DragGesture", "Shape", "animatableData", "rotationEffect(_:anchor:)", "sensoryFeedback"],
-        tags: ["pull cord", "lamp", "switch", "toggle", "skeuomorphic", "拉绳", "台灯", "开关", "拟物"],
+        tags: ["pull cord", "lamp", "switch", "toggle", "拉绳", "台灯", "开关", "拟物"],
         params: [
             .slider("threshold", L("Click distance", "触发距离"), 30...90, default: 50, step: 1, decimals: 0, unit: "pt"),
             .slider("damping", L("Cord bounce damping", "拉绳回弹阻尼"), 0.15...0.9, default: 0.35),

@@ -16,7 +16,7 @@ extension Effect {
             "rotationEffect(anchor: .top) 在每次拖动变化时由 DragGesture.Value.velocity 经欠阻尼弹簧驱动；带令牌的 Task 在停止移动时让角度回零，松手时再按回程距离施加一个反向摆动。"
         ),
         apis: ["DragGesture.Value.velocity", "rotationEffect(_:anchor:)", "spring(response:dampingFraction:)", "Task.sleep"],
-        tags: ["pendulum", "swing", "lanyard", "badge", "inertia", "钟摆", "摆动", "工牌", "惯性"],
+        tags: ["pendulum", "swing", "lanyard", "badge", "钟摆", "摆动", "工牌", "惯性"],
         params: [
             .slider("sensitivity", L("Swing sensitivity", "摆动灵敏度"), 0.3...2.0, default: 1),
             .slider("damping", L("Swing damping", "摆动阻尼"), 0.15...0.8, default: 0.4),

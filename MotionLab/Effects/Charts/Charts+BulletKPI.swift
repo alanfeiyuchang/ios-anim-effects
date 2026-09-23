@@ -16,7 +16,7 @@ extension Effect {
             "每一行是 Animatable 视图，animatableData 为实绩值，因此 body 能看到每一帧的插值并得出 crossed = 实绩 ≥ 目标；内部的 .animation(value: crossed) 让标记弹跳，sensoryFeedback(trigger: crossed) 在动画途中触发触感。"
         ),
         apis: ["Animatable", "timingCurve", "animation(_:value:)", "sensoryFeedback", "contentTransition(.numericText)"],
-        tags: ["bullet chart", "target", "goal", "kpi", "progress", "子弹图", "目标", "达成", "指标"],
+        tags: ["bullet chart", "target", "goal", "kpi", "子弹图", "目标", "达成", "指标"],
         params: [
             .slider("duration", L("Grow duration", "生长时长"), 0.6...2.4, default: 1.2, unit: "s"),
             .slider("stagger", L("Row stagger", "行错峰"), 0...0.4, default: 0.15, unit: "s"),

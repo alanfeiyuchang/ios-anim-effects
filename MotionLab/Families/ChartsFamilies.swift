@@ -11,7 +11,7 @@ enum ChartsFamilies {
             id: "charts.bar",
             category: .charts,
             name: L("Bar Charts", "柱状图"),
-            summary: L("Bars that grow, race and re-stack on springs.", "以弹簧生长、竞速与重新堆叠的柱状图。"),
+            summary: L("Bars that grow, race, re-stack, slosh and build brick by brick.", "生长、竞速、重新堆叠、液体晃荡与积木搭建的柱状图。"),
             symbol: "chart.bar.fill"
         ),
         EffectFamily(
@@ -25,7 +25,7 @@ enum ChartsFamilies {
             id: "charts.ring",
             category: .charts,
             name: L("Rings & Gauges", "圆环与仪表"),
-            summary: L("Donuts, activity rings and needles that sweep and settle.", "环形图、健身圆环与指针的扫动与回稳。"),
+            summary: L("Donuts, activity rings, needles, LED gauges and rose charts that sweep, bloom and settle.", "环形图、健身圆环、指针、LED 仪表与玫瑰图的扫动、绽放与回稳。"),
             symbol: "chart.pie.fill"
         ),
         EffectFamily(
@@ -39,7 +39,7 @@ enum ChartsFamilies {
             id: "charts.kpi",
             category: .charts,
             name: L("KPIs & Heatmaps", "指标与热力图"),
-            summary: L("Stat tiles and grids that count up or ripple into view.", "数字滚动或涟漪入场的指标卡与热力格。"),
+            summary: L("Stat tiles, bullet charts, waffles and heatmaps that count, roll or ripple into view.", "以计数、滚轮或涟漪方式入场的指标卡、子弹图、华夫格与热力格。"),
             symbol: "square.grid.3x3.fill"
         ),
     ]
@@ -49,6 +49,8 @@ enum ChartsFamilies {
         "charts.bar-grow": "charts.bar",
         "charts.bar-race": "charts.bar",
         "charts.stacked-bars": "charts.bar",
+        "charts.liquid-bars": "charts.bar",
+        "charts.brick-bars": "charts.bar",
         // Line charts
         "charts.line-draw": "charts.line",
         "charts.scrub-tooltip": "charts.line",
@@ -59,11 +61,19 @@ enum ChartsFamilies {
         "charts.donut-explode": "charts.ring",
         "charts.gauge-needle": "charts.ring",
         "charts.activity-rings": "charts.ring",
+        "charts.segmented-gauge": "charts.ring",
+        "charts.rose-bloom": "charts.ring",
         // Chart morph
         "charts.radar-morph": "charts.morph",
         "charts.donut-to-bars": "charts.morph",
+        "charts.bars-to-line": "charts.morph",
+        "charts.scatter-histogram": "charts.morph",
+        "charts.grouped-stacked": "charts.morph",
         // KPIs & heatmaps
         "charts.heatmap-cascade": "charts.kpi",
         "charts.kpi-count-up": "charts.kpi",
+        "charts.odometer-kpi": "charts.kpi",
+        "charts.bullet-kpi": "charts.kpi",
+        "charts.waffle-kpi": "charts.kpi",
     ]
 }

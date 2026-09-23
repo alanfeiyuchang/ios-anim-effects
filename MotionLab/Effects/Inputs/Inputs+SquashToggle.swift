@@ -139,8 +139,8 @@ private struct InputSquashToggleDemo: View {
         withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { pressing = true }
     }
 
-    private func release() {
-        if !ctx.isPreview { Haptics.tap() }
+    private func release(silent: Bool = false) {
+        if !ctx.isPreview && !silent { Haptics.tap() }
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             isOn.toggle()
             pressing = false
@@ -148,10 +148,12 @@ private struct InputSquashToggleDemo: View {
     }
 
     private func simulateTap() {
+        // Captured now: autoplay mutes haptics only for the synchronous part of the action.
+        let muted = Haptics.isMuted
         press()
         Task {
             try? await Task.sleep(for: .seconds(0.3))
-            release()
+            release(silent: muted)
         }
     }
 }

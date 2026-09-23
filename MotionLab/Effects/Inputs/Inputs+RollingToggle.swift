@@ -99,9 +99,10 @@ private struct RollingToggleDemo: View {
             isOn.toggle()
         }
         let delay = ctx["response"] * 0.6
+        let muted = ctx.isPreview || Haptics.isMuted
         Task {
             try? await Task.sleep(for: .seconds(delay))
-            if !ctx.isPreview { Haptics.tap() }
+            if !muted { Haptics.tap() }
         }
     }
 }

@@ -209,7 +209,8 @@ private struct ButtonAddToCartDemo: View {
         let response = ctx["response"]
         let hold = ctx["hold"]
         let fly = ctx.bool("fly")
-        let preview = ctx.isPreview
+        // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
+        let preview = ctx.isPreview || Haptics.isMuted
         if !preview { Haptics.tap() }
         withAnimation(.spring(response: response, dampingFraction: 0.75)) { added = true }
         if fly { flights += 1 }

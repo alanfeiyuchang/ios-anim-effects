@@ -134,9 +134,10 @@ private struct RockerSwitchDemo: View {
 
     private func flip() {
         withAnimation(.easeOut(duration: 0.08)) { pressed = true }
+        let muted = ctx.isPreview || Haptics.isMuted
         Task {
             try? await Task.sleep(for: .seconds(0.08))
-            if !ctx.isPreview { Haptics.tap(.rigid) }
+            if !muted { Haptics.tap(.rigid) }
             withAnimation(.spring(response: ctx["response"], dampingFraction: 0.9)) {
                 isOn.toggle()
                 pressed = false

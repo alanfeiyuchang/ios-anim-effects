@@ -107,6 +107,7 @@ private struct InchwormToggleDemo: View {
         let head = Animation.spring(response: ctx["head"], dampingFraction: 0.72)
         let tail = Animation.spring(response: ctx["tail"], dampingFraction: 0.62)
         let offStart: CGFloat = inset
+        let muted = ctx.isPreview || Haptics.isMuted
         let onStart: CGFloat = trackWidth - inset - knob
         withAnimation(head) {
             isOn = turningOn
@@ -120,7 +121,7 @@ private struct InchwormToggleDemo: View {
         Task {
             try? await Task.sleep(for: .seconds(ctx["lag"]))
             guard current == generation else { return }
-            if !ctx.isPreview { Haptics.tap() }
+            if !muted { Haptics.tap() }
             withAnimation(tail) {
                 stretched = false
                 if turningOn {

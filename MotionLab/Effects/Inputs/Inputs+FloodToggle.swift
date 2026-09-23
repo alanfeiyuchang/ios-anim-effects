@@ -133,10 +133,11 @@ private struct FloodToggleDemo: View {
             withAnimation(.easeIn(duration: floodDuration * 0.62)) { flooded = false }
             return
         }
+        let muted = ctx.isPreview || Haptics.isMuted
         Task {
             try? await Task.sleep(for: .seconds(0.05))
             guard current == generation else { return }
-            if !ctx.isPreview { Haptics.tap() }
+            if !muted { Haptics.tap() }
             withAnimation(.easeOut(duration: floodDuration)) { flooded = true }
             if ctx.bool("ripple") { ripples += 1 }
         }

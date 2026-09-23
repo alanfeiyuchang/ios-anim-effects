@@ -20,6 +20,7 @@ extension Effect {
         params: [
             .slider("duration", L("Hold duration", "按住时长"), 0.6...3.0, default: 1.5, unit: "s"),
             .slider("drain", L("Drain response", "回落响应"), 0.2...1.0, default: 0.45, unit: "s"),
+            .slider("shake", L("Edge shake", "临界抖动"), 0...4, default: 1.5, decimals: 1, unit: "pt"),
         ]
     ) { ctx in
         ButtonHoldToConfirmDemo(ctx: ctx)
@@ -107,6 +108,7 @@ private struct ButtonHoldToConfirmDemo: View {
         .shadow(color: Palette.red.opacity(pressing || confirmed ? 0.3 : 0.12), radius: 16, y: 8)
         .scaleEffect(pressing && !confirmed ? 0.97 : 1)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: pressing)
+        .modifier(HoldEdgeShake(active: pressing && !confirmed, hold: ctx["duration"], amount: ctx["shake"]))
         .onLongPressGesture(minimumDuration: ctx["duration"], maximumDistance: 40) {
             confirm()
         } onPressingChanged: { isPressing in
@@ -127,14 +129,14 @@ private struct ButtonHoldToConfirmDemo: View {
         withAnimation(.spring(response: ctx["drain"], dampingFraction: 1)) { progress = 0 }
     }
 
-    private func confirm() {
+    private func confirm(silent: Bool = false) {
         guard !confirmed else { return }
         pressing = false
         withAnimation(.snappy(duration: 0.25)) {
             progress = 1
             confirmed = true
         }
-        if !ctx.isPreview { Haptics.success() }
+        if !ctx.isPreview && !silent { Haptics.success() }
         Task {
             try? await Task.sleep(for: .seconds(1.4))
             withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
@@ -146,11 +148,41 @@ private struct ButtonHoldToConfirmDemo: View {
 
     private func simulateHold() {
         guard !confirmed else { return }
+        // Captured now: autoplay mutes haptics only for the synchronous part of the action.
+        let muted = Haptics.isMuted
         beginHold()
         let hold = ctx["duration"]
         Task {
             try? await Task.sleep(for: .seconds(hold))
-            confirm()
+            confirm(silent: muted)
+        }
+    }
+}
+
+/// Jitters the button sideways during the last ~28% of a hold, like a latch about to give.
+private struct HoldEdgeShake: ViewModifier {
+    let active: Bool
+    let hold: Double
+    let amount: Double
+
+    func body(content: Content) -> some View {
+        let lead = hold * 0.72
+        let beat = hold * 0.28 / 8
+        return content.keyframeAnimator(initialValue: 0.0, trigger: active) { view, jitter in
+            view.offset(x: active ? jitter : 0)
+        } keyframes: { _ in
+            KeyframeTrack(\.self) {
+                LinearKeyframe(0, duration: lead)
+                CubicKeyframe(amount * 0.4, duration: beat)
+                CubicKeyframe(-amount * 0.5, duration: beat)
+                CubicKeyframe(amount * 0.6, duration: beat)
+                CubicKeyframe(-amount * 0.7, duration: beat)
+                CubicKeyframe(amount * 0.8, duration: beat)
+                CubicKeyframe(-amount * 0.9, duration: beat)
+                CubicKeyframe(amount, duration: beat)
+                CubicKeyframe(-amount, duration: beat)
+                LinearKeyframe(0, duration: 0.05)
+            }
         }
     }
 }

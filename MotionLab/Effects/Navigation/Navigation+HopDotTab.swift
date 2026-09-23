@@ -11,8 +11,8 @@ extension Effect {
             "小圆点指示器沿弧线跳到新标签：空中拉长，落地压扁。"
         ),
         prompt: L(
-            "A floating tab bar with five outline icons and a 7 pt dot under the selected one. Selecting a tab makes the dot hop there: it travels horizontally on an ease-in-out curve over ≈0.42 s while rising on an arc whose apex is ≈22 pt plus a little extra for longer jumps; in flight it stretches to 80% × 125% along the arc, and on touchdown it squashes to ≈140% × 60% before springing back round. The landing icon dips 3 pt as if pushed by the impact and swaps to its filled variant, while the previous icon empties. Cartoon physics — squash, stretch, anticipation — in a 7 pt element.",
-            "悬浮标签栏上有五个线框图标，选中项下方有一枚 7pt 小圆点。切换标签时，圆点跳过去：水平方向以缓入缓出曲线在约 0.42 秒内移动，竖直方向沿弧线上升，顶点约 22pt，跳得越远弧线越高；空中沿运动方向拉长到 80% × 125%，落地瞬间压扁到约 140% × 60%，再弹回圆形。落点图标像被撞到一样下沉 3pt，并切换为实心版本，原图标变回线框。在一个 7pt 的元素里演绎挤压、拉伸与预备动作的卡通物理。"
+            "A floating tab bar with five outline icons and a 7 pt dot under the selected one. Selecting a tab makes the dot hop there: it travels horizontally on an ease-in-out curve over ≈0.42 s while rising on an arc whose apex is ≈22 pt plus a little extra for longer jumps; in flight it stretches vertically to 80% × 125%, and on touchdown it squashes to ≈140% × 60% before springing back round. The landing icon dips 3 pt as if pushed by the impact and swaps to its filled variant, while the previous icon empties. Cartoon physics — squash, stretch, anticipation — in a 7 pt element.",
+            "悬浮标签栏上有五个线框图标，选中项下方有一枚 7pt 小圆点。切换标签时，圆点跳过去：水平方向以缓入缓出曲线在约 0.42 秒内移动，竖直方向沿弧线上升，顶点约 22pt，跳得越远弧线越高；空中纵向拉长到 80% × 125%，落地瞬间压扁到约 140% × 60%，再弹回圆形。落点图标像被撞到一样下沉 3pt，并切换为实心版本，原图标变回线框。在一个 7pt 的元素里演绎挤压、拉伸与预备动作的卡通物理。"
         ),
         implementation: L(
             "The dot's x offset animates with a timing curve on the selection value, while a keyframeAnimator keyed on a hop counter plays the arc height and the stretch/squash scales; the landing icon runs its own delayed keyframe dip.",

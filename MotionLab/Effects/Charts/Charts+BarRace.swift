@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Horizontal bars that resize and overtake each other, gliding into their new ranks.", "水平条形同时伸缩并相互超越，平滑滑入新名次。"),
         prompt: L(
             "A ranked horizontal bar chart of six rows (26 pt tall, 8 pt gaps): rank number, label, a 150 pt capsule track with a gradient bar in each item’s color, and a counting value. Every refresh assigns new values and re-sorts descending in a single spring (response ≈ 0.6 s, damping ≈ 0.8): bars stretch or shrink to their new widths while the rows physically slide past each other to their new positions, so overtakes are visible rather than instant swaps. Rank digits roll with a numeric content transition, values count through intermediate numbers in sync with the bar widths, and the leader’s rank badge fills with its color. Motion is simultaneous but never chaotic because every property shares one spring. It tells the story of change, not just the result.",
-            "一张六行的排名水平条形图（行高 26pt、行距 8pt）：名次数字、标签、150pt 的胶囊轨道配各自颜色的渐变条，以及实时计数的数值。每次刷新都会赋予新数值，并在同一个弹簧（响应约 0.6 秒、阻尼约 0.8）中按降序重排：条形伸缩到新宽度的同时，各行真实地相互滑过、移动到新位置，超越过程清晰可见，而非瞬间换位。名次数字以数字内容转场滚动，数值与条形宽度同步经过每个中间值，第一名的名次徽章填充为其主题色。所有属性共享同一弹簧，因此动作同时发生却毫不杂乱。它讲述的是“变化的过程”，而不仅仅是结果。"
+            "一张六行的排名水平条形图（行高 26pt、行距 8pt）：名次、标签、150pt 胶囊轨道中的渐变条，以及实时计数的数值。每次刷新赋予新数值，并在同一个弹簧（响应约 0.6 秒、阻尼约 0.8）中按降序重排：条形伸缩到新宽度，各行同时相互滑过、移到新位置，超越过程清晰可见，而非瞬间换位。名次数字以数字内容转场滚动，数值与条宽同步经过每个中间值，第一名的名次徽章填充为其主题色。所有属性共享同一弹簧，同时发生却毫不杂乱。它讲述的是变化的过程，而不只是结果。"
         ),
         implementation: L(
             "Rows are a ForEach keyed by stable ids inside a VStack; values and array order change together in one withAnimation(.spring), so SwiftUI animates both the layout move and the bar widths. An Animatable label counts the value.",

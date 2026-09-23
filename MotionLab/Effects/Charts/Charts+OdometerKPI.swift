@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A revenue tile whose digits roll on independent mechanical wheels while the sparkline redraws.", "营收卡片：每位数字在独立的机械滚轮上滚动，迷你折线同步重绘。"),
         prompt: L(
             "A 300 pt KPI tile: caption, a 44 pt rounded-bold figure such as $48,209 built from five digit wheels (0–9 strips clipped to one digit and feathered top and bottom), a delta badge and a 70 pt sparkline with a gradient wash. On refresh the old sparkline retracts in 150 ms; then each digit wheel spins to its new digit on its own spring (response 0.7 s, damping 0.72), starting with the units and moving left 60 ms apart, so the number resolves right to left like a mechanical counter, passing through every digit in between. At the same moment the sparkline redraws left to right over 900 ms (ease-out) and the badge flips its arrow with a bounce and turns green or red. Mechanical, precise, satisfying.",
-            "一张 300pt 宽的 KPI 卡片：说明文字、由五个数字滚轮组成的 44pt 圆体粗数值（如 $48,209，每个滚轮是裁切到一位、上下羽化的 0–9 数字条）、涨跌徽章，以及一条 70pt 高、带渐变铺底的迷你折线。刷新时，旧折线先在 150ms 内收回；随后每个数字滚轮以各自的弹簧（响应 0.7 秒、阻尼 0.72）转到新数字，从个位开始向左逐位延迟 60ms，数字像机械计数器一样从右往左依次定格，并滚过中间的每一个数字。与此同时，折线在 900ms 内（缓出）从左到右重新绘出，徽章的箭头弹跳翻转，并变为绿色或红色。机械、精准、令人满足。"
+            "一张 300pt 宽的 KPI 卡片：说明文字、由五个数字滚轮组成的 44pt 圆体粗数值（如 $48,209，每个滚轮是裁切到一位、上下羽化的 0–9 数字条）、涨跌徽章，以及一条 70pt 高、带渐变铺底的迷你折线。刷新时旧折线先在 150ms 内收回；随后每个滚轮以各自的弹簧（响应 0.7 秒、阻尼 0.72）转到新数字，从个位起向左逐位延迟 60ms，像机械计数器般从右往左依次定格，并滚过中间每个数字。同时折线在 900ms 内（缓出）从左到右重绘，徽章箭头弹跳翻转并变为绿或红。机械而精准。"
         ),
         implementation: L(
             "Each digit is a VStack of 0–9 offset by −digit × height inside a clipped, gradient-masked frame, with .animation(spring.delay(position × stagger), value: digit). The sparkline is a Path revealed by trim(from:to:), reset and redrawn around the data swap.",

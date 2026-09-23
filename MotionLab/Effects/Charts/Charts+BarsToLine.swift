@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Each bar shrinks into a dot at its value, then a line threads through the dots — and back.", "每根柱子收缩成数值处的圆点，再由一条折线把圆点串起——也可反向还原。"),
         prompt: L(
             "An eight-month revenue card switches between a bar chart and a line chart in two beats. Bars → line: each 22 pt bar collapses from the baseline up into a 10 pt dot at its exact value on a spring (response 0.5 s, damping 0.75), 40 ms apart left to right; once the last dot lands, a 2.5 pt indigo line draws through them left to right over 600 ms (ease-in-out), and a soft gradient area fades in beneath it. Line → bars reverses the choreography: the line and area retract in 400 ms, then each dot drops a bar back down to the baseline with the same stagger. The values never leave their positions, so the eye follows every data point across the change. Legible, continuous, editorial.",
-            "一张八个月营收卡片以“两拍”在柱状图与折线图之间切换。柱 → 线：每根 22pt 宽的柱子从基线向上收拢，化作停在其精确数值处的 10pt 圆点，使用弹簧（响应 0.5 秒、阻尼 0.75），从左到右间隔 40ms；最后一个圆点落定后，一条 2.5pt 的靛蓝折线在 600ms 内（缓入缓出）从左到右穿过所有圆点绘出，下方柔和的渐变面积随之淡入。线 → 柱则反向编排：折线与面积在 400ms 内收回，随后每个圆点以相同错峰向下“放出”柱子直抵基线。数据点在切换中始终不离原位，视线可以追踪每一个数值。清晰、连贯、有编辑设计感。"
+            "一张八个月营收卡片以“两拍”在柱状图与折线图之间切换。柱 → 线：每根 22pt 宽的柱子向上收拢，化作停在精确数值处的 10pt 圆点（弹簧响应 0.5 秒、阻尼 0.75，从左到右间隔 40ms）；最后一个圆点落定后，一条 2.5pt 靛蓝折线在 600ms 内（缓入缓出）从左到右穿过所有圆点绘出，下方柔和的渐变面积随之淡入。线 → 柱反向编排：折线与面积在 400ms 内收回，每个圆点再以相同错峰向下“放出”柱子直抵基线。数据点始终不离原位，视线可追踪每个数值。"
         ),
         implementation: L(
             "Bars are rounded rectangles whose frame and position interpolate between a full bar and a dot, each with .animation(spring.delay(...), value: toLine); the line is a Path revealed with trim(from:to:) animated after the dots settle, and the reverse flips the order with Task delays.",

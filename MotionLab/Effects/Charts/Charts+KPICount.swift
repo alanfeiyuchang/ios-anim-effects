@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Four stat cards whose numbers count up with an expo ease, staggered like a dashboard waking up.", "四张数据卡片以指数缓动错峰计数，像仪表盘苏醒。"),
         prompt: L(
             "A 2 × 2 grid of KPI cards (143 × 124 pt, 20 pt continuous corners, elevated surface, hairline stroke): each shows a tinted glyph badge, a caption, a large rounded bold value (revenue, active users, conversion, latency) and a delta pill, plus a thin progress bar at the bottom. On appear the numbers count up from zero through every intermediate value on an expo-out curve (0.16, 1, 0.3, 1) over 1.6 s, card by card with 120 ms stagger, while the progress bars grow on the same curve and the delta pills fade and slide up 6 pt. Tapping refreshes the data and counts from the current values to the new ones, turning each pill green ▲ or red ▼. Tabular digits keep widths stable so nothing jitters. Confident, alive, executive-dashboard polish.",
-            "一个 2 × 2 的 KPI 卡片网格（每张 143 × 124pt，20pt 连续圆角，浮起表面与细描边）：每张包含彩色图标徽章、说明文字、大号圆体粗数值（营收、活跃用户、转化率、延迟）与涨跌胶囊，底部还有一条细进度条。出现时数字从 0 开始，以指数缓出曲线（0.16, 1, 0.3, 1）在 1.6 秒内逐一经过每个中间值递增，卡片间错开 120ms；进度条以同一曲线生长，涨跌胶囊淡入并上移 6pt。点击刷新数据时，数字从当前值滚动到新值，胶囊按涨跌变为绿色 ▲ 或红色 ▼。等宽数字确保宽度稳定、毫无抖动。自信、鲜活，有高管仪表盘般的精致感。"
+            "一个 2 × 2 的 KPI 卡片网格（每张 143 × 124pt，20pt 连续圆角，浮起表面与细描边）：每张含彩色图标徽章、说明文字、大号圆体粗数值（营收、活跃用户、转化率、延迟）、涨跌胶囊与底部细进度条。出现时数字从 0 以指数缓出曲线（0.16, 1, 0.3, 1）在 1.6 秒内逐一经过中间值递增，卡片间错开 120ms；进度条以同一曲线生长，涨跌胶囊淡入并上移 6pt。点击刷新时，数字从当前值滚到新值，胶囊按涨跌变为绿色 ▲ 或红色 ▼。等宽数字确保宽度稳定、毫无抖动。自信而精致。"
         ),
         implementation: L(
             "An Animatable text view interpolates the numeric value and formats it every frame, so the count passes through all intermediate numbers; each card gets its own withAnimation(.timingCurve(...).delay(i × stagger)).",

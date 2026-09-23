@@ -18,7 +18,7 @@ enum NavigationFamilies {
             id: "navigation.tab-bar",
             category: .navigation,
             name: L("Tab Bars & Docks", "标签栏与程序坞"),
-            summary: L("Bars that collapse with scroll or magnify under the finger.", "随滚动收起或在手指下放大的标签栏与程序坞。"),
+            summary: L("Tab bars and docks that collapse, notch, morph into search, ripple or magnify.", "会收起、开凹口、变形为搜索、泛起涟漪或放大的标签栏与程序坞。"),
             symbol: "dock.rectangle"
         ),
         EffectFamily(

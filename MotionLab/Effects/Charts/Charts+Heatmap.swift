@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A contribution grid that pops in as a ripple radiating from the cell you tap.", "贡献热力图以你点击的格子为圆心，涟漪般逐格弹出。"),
         prompt: L(
             "A 14 × 7 contribution heatmap of 16 pt rounded cells (4 pt corners, 4 pt gaps) in five intensity levels — 7% primary for empty, then mint at 30/55/80/100% — under a header with the yearly total. On appear the grid reveals from the top-left corner; tapping any cell makes the current cells shrink away in 180 ms, loads new data and then reveals it as a circular ripple centered on the tapped cell: each cell’s delay is its Euclidean distance × 35 ms, and it springs from 30% scale and 0 opacity to full size (response 0.45 s, damping 0.6, slight overshoot). The origin cell keeps a soft mint glow and the total rolls with a numeric transition. The wave makes a static grid feel alive and spatially connected to your touch.",
-            "一张 14 × 7 的贡献热力图，格子为 16pt 圆角方块（圆角 4pt、间距 4pt），分五档强度——空值为 7% 主色，其余为 30/55/80/100% 的薄荷绿——上方标题显示年度总数。出现时从左上角开始揭示；点击任意格子，现有格子先在 180ms 内缩小消失，载入新数据后以被点格子为圆心呈圆形涟漪逐格出现：每格延迟 = 与圆心的欧氏距离 × 35ms，从 30% 缩放、0 透明度以弹簧（响应 0.45 秒、阻尼 0.6，轻微过冲）弹到完整尺寸。圆心格保留柔和的薄荷绿辉光，总数以数字转场滚动。涟漪让静态网格充满生命力，并与指尖建立空间关联。"
+            "一张 14 × 7 的贡献热力图，格子为 16pt 圆角方块（圆角 4pt、间距 4pt），分五档强度：空值为 7% 主色，其余为 30/55/80/100% 的薄荷绿，上方标题显示年度总数。出现时从左上角开始揭示；点击任意格子，现有格子先在 180ms 内缩小消失，载入新数据后以被点格子为圆心呈圆形涟漪逐格出现：每格延迟 = 与圆心的距离 × 35ms，从 30% 缩放、0 透明度以弹簧（响应 0.45 秒、阻尼 0.6，轻微过冲）弹到完整尺寸。圆心格保留柔和辉光，总数以数字转场滚动。网格因此与指尖建立空间关联。"
         ),
         implementation: L(
             "Every cell applies .animation(revealed ? spring.delay(distance × stagger) : easeOut, value: revealed); a tap stores the origin, hides the grid, swaps the data after a short Task sleep and flips revealed back on.",

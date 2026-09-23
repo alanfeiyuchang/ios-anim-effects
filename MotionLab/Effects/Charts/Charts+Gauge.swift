@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A speed-test dial whose needle swings, overshoots and settles, with a readout that follows it.", "测速仪表盘，指针摆动、过冲、回稳，读数与之同步。"),
         prompt: L(
             "A 180° gauge 220 pt wide: an 18 pt round-capped track in 8% primary, an active arc painted with an angular mint → amber → red gradient, eleven tick marks (every fifth one longer) and a slim 4 pt needle pivoting on a 16 pt hub with a small surface-colored core. Setting a new value swings the needle on an under-damped spring (response ≈ 0.7 s, damping ≈ 0.45): it overshoots by about 20% of the distance traveled, swings back and settles in about a second. The active arc and the large rounded readout (“742 Mbps”, tabular digits) are driven by the very same interpolated value, so the number visibly overshoots and counts back with the needle. Tap anywhere on the dial to aim the needle at that angle. Mechanical, energetic, precise.",
-            "一个宽 220pt 的 180° 仪表盘：18pt 圆角端点的轨道为 8% 主色，激活弧线使用薄荷绿 → 琥珀 → 红的角向渐变，配 11 根刻度（每第五根更长），以及一根 4pt 细指针，绕 16pt 轴心旋转，轴心中央嵌一枚底色小圆点。设定新值时，指针以欠阻尼弹簧（响应约 0.7 秒、阻尼约 0.45）摆动：越过目标约为行程的 20%，回摆后约一秒内稳定。激活弧与大号圆体读数（“742 Mbps”，等宽数字）由同一个插值数值驱动，因此数字也会随指针过冲再回落。点击表盘任意位置即可让指针指向该角度。机械感、力量感与精准兼具。"
+            "一个宽 220pt 的 180° 仪表盘：18pt 圆角轨道为 8% 主色，激活弧线为薄荷绿 → 琥珀 → 红的角向渐变，配 11 根刻度（每第五根更长），以及一根 4pt 细指针绕 16pt 轴心旋转，轴心嵌一枚底色小圆点。设定新值时，指针以欠阻尼弹簧（响应约 0.7 秒、阻尼约 0.45）摆动：越过目标约行程的 20%，回摆后约一秒内稳定。激活弧与大号圆体读数（“742 Mbps”，等宽数字）由同一插值驱动，数字也随指针过冲再回落。点击表盘任意位置，指针即指向该角度。机械感、力量感与精准兼具。"
         ),
         implementation: L(
             "The whole face is an Animatable view keyed on value, so needle rotation, trimmed active arc and numeric readout are all computed from the same per-frame interpolated number; taps are converted to an angle with atan2.",

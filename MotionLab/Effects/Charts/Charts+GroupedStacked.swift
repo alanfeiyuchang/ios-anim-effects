@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A staged, two-beat transition: segments climb onto each other first, then slide together into one column.", "分两拍的过渡：各段先向上叠起，再横向并拢成一根柱子。"),
         prompt: L(
             "Five quarters of three product lines (indigo, pink, amber) shown first as grouped bars — three 12 pt columns side by side per quarter. On tap the chart turns into stacked bars in two separate beats, the classic staged transition: beat one lifts each segment vertically onto the ones before it, keeping its x and width (spring response 0.45 s, damping 0.8, 40 ms stagger per quarter); 420 ms later beat two slides the lifted segments sideways and widens them from 12 pt to 34 pt so they merge into one column. Going back reverses the order — first spread apart, then drop down — so no segment ever moves diagonally or overlaps another. The mode pill slides between Grouped and Stacked. Rigorous, legible, data-journalism grade.",
-            "五个季度、三条产品线（靛蓝、粉、琥珀）的数据，起初是分组柱状图——每季度三根 12pt 宽的柱子并排。点击后，图表分两拍变为堆叠柱状图，这是经典的分阶段过渡：第一拍，各段保持横向位置与宽度，只沿竖直方向叠到前面各段之上（弹簧响应 0.45 秒、阻尼 0.8，每季度错开 40ms）；420ms 后第二拍，抬起的各段横向滑动并从 12pt 加宽到 34pt，合并成一根柱子。切回时顺序相反——先横向分开，再落回基线——因此任何一段都不会斜向移动或与其他段重叠。模式胶囊在“分组”与“堆叠”之间滑动。严谨、清晰，达到数据新闻级别。"
+            "五个季度、三条产品线（靛蓝、粉、琥珀）的数据，起初是分组柱状图：每季度三根 12pt 宽的柱子并排。点击后图表分两拍变为堆叠柱状图：第一拍，各段保持横向位置与宽度，只竖直叠到前面各段之上（弹簧响应 0.45 秒、阻尼 0.8，每季度错开 40ms）；420ms 后第二拍，抬起的各段横向滑动并从 12pt 加宽到 34pt，合并成一根柱子。切回时顺序相反——先横向分开，再落回基线——任何一段都不会斜向移动或重叠。模式胶囊在“分组”与“堆叠”间滑动。严谨清晰，达到数据新闻水准。"
         ),
         implementation: L(
             "Two Bools split the layout: lifted drives each segment's y offset and merged drives its x offset and width. Each segment has one .animation(value:) per Bool with a quarter-based delay, and toggling sets the Bools 420 ms apart in the right order.",

@@ -46,7 +46,7 @@ struct ShaderArtwork: View {
             return Look(colors: [Palette.sky, Palette.blue, Palette.indigo], accent: Palette.mint, symbol: "water.waves", word: "RIPPLE",
                         disc: CGSize(width: -70, height: -110), dot: CGSize(width: 90, height: 96))
         case 3:
-            return Look(colors: [Palette.amber, Palette.coral, Palette.pink], accent: Color(hex: 0x3A1C71), symbol: "flame.fill", word: "EMBER",
+            return Look(colors: [Color(hex: 0x1E1B4B), Palette.indigo, Palette.violet], accent: Palette.sky, symbol: "flame.fill", word: "EMBER",
                         disc: CGSize(width: 86, height: 110), dot: CGSize(width: -84, height: -96))
         case 4:
             return Look(colors: [Palette.violet, Palette.pink, Palette.coral], accent: Palette.amber, symbol: "tornado", word: "TWIRL",

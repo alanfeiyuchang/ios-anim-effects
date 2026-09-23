@@ -8,8 +8,8 @@ extension Effect {
         name: L("Spots Grid Expand", "地点网格展开"),
         summary: L("Tap a photo tile and it grows into a detail card while the grid recedes behind it.", "点击照片方块，它会生长为详情卡片，其余网格退后虚化。"),
         prompt: L(
-            "A dark \"Spots\" widget holds a 3×2 grid of rounded landscape thumbnails. Tapping a tile lifts that exact photo out of the grid and morphs its position and size into the hero image of a 290 pt detail card (matched geometry, spring ≈0.5 s response, damping 0.82); simultaneously the grid scales back to 90%, blurs by 6 pt and fades to ~30%, while the card's surface fades and scales up from 94% and the title, stats and an orange \"Navigate\" pill rise 14 pt into place with a 120 ms delay. Tapping the card reverses everything and the photo flies back into its slot. A light haptic marks each open. Spatial, continuous and easy to follow.",
-            "深色“地点”小组件里是 3×2 的圆角风景缩略图网格。点击某个方块，这张照片会从网格中“浮起”，其位置与尺寸连续形变为 290pt 详情卡片的头图（matchedGeometryEffect，弹簧响应约 0.5 秒、阻尼 0.82）；与此同时网格缩小到 90%、模糊 6pt 并淡到约 30%，卡片底面从 94% 放大淡入，标题、数据和橙色“导航”胶囊按钮延迟 120 毫秒上移 14pt 就位。再次点击卡片，一切倒放，照片飞回原位。每次展开伴随轻触感。空间关系清晰、过渡连贯、易于理解。"
+            "A dark \"Spots\" widget holds a 3×2 grid of rounded landscape thumbnails. Tapping a tile lifts that exact photo out of the grid and morphs its position and size into the hero image of a 290 pt detail card (matched geometry, spring ≈0.5 s response, damping 0.82); simultaneously the grid scales back to 90%, blurs by 6 pt and fades to ~30%, while the card's surface fades and scales up from 94% and the stats row and an orange \"Navigate\" pill rise 14 pt into place with a 120 ms delay. The spot's name is printed on the photo itself, so it travels with the image from the tile's corner to the hero's corner, cross-fading from a 9 pt caption to a 22 pt title. Tapping the card reverses everything and the photo flies back into its slot. A light haptic marks each open. Spatial, continuous and easy to follow.",
+            "深色“地点”小组件里是 3×2 的圆角风景缩略图网格。点击某个方块，这张照片会从网格中“浮起”，其位置与尺寸连续形变为 290pt 详情卡片的头图（matchedGeometryEffect，弹簧响应约 0.5 秒、阻尼 0.82）；与此同时网格缩小到 90%、模糊 6pt 并淡到约 30%，卡片底面从 94% 放大淡入，数据行和橙色“导航”胶囊按钮延迟 120 毫秒上移 14pt 就位。地点名印在照片上，随照片从方块角落飞到头图角落，并由 9pt 小字交叉渐变为 22pt 标题。再次点击卡片，一切倒放，照片飞回原位。每次展开伴随轻触感。空间关系清晰、过渡连贯、易于理解。"
         ),
         implementation: L(
             "The tile and the detail hero share a matchedGeometryEffect id and are swapped by a single spring-animated selection; the detail container stays mounted so its backdrop and text animate with plain opacity/scale/offset.",
@@ -97,15 +97,8 @@ private struct SportSpotsDemo: View {
         ZStack {
             Color.clear
             if selected != index {
-                SpotPhoto(seed: sportSpots[index].seed)
+                SpotPhoto(seed: sportSpots[index].seed, name: sportSpots[index].name, large: false)
                     .matchedGeometryEffect(id: index, in: ns)
-                    .overlay(alignment: .bottomLeading) {
-                        Text(sportSpots[index].name)
-                            .font(.system(size: 9, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.white)
-                            .shadow(color: .black.opacity(0.6), radius: 3)
-                            .padding(7)
-                    }
             }
         }
         .frame(width: 84, height: 84)
@@ -118,7 +111,7 @@ private struct SportSpotsDemo: View {
             ZStack {
                 Color.clear
                 if let index = selected {
-                    SpotPhoto(seed: sportSpots[index].seed)
+                    SpotPhoto(seed: sportSpots[index].seed, name: sportSpots[index].name, large: true)
                         .matchedGeometryEffect(id: index, in: ns)
                 }
             }
@@ -157,11 +150,25 @@ private struct SportSpotsDemo: View {
     }
 }
 
+/// The photo carries its own name label, so the label rides the matched-geometry flight
+/// (cross-fading from caption size to title size) instead of popping in and out.
 private struct SpotPhoto: View {
     let seed: Int
+    let name: String
+    let large: Bool
 
     var body: some View {
         LandscapeArt(seed: seed)
+            .overlay(
+                LinearGradient(colors: [.clear, Color.black.opacity(large ? 0.55 : 0.35)], startPoint: .center, endPoint: .bottom)
+            )
+            .overlay(alignment: .bottomLeading) {
+                Text(name)
+                    .font(.system(size: large ? 22 : 9, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.white)
+                    .shadow(color: .black.opacity(0.6), radius: 3)
+                    .padding(large ? 14 : 7)
+            }
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.white.opacity(0.12)))
     }
@@ -174,9 +181,8 @@ private struct SpotDetailInfo: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Text(spot.name)
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.white)
+                Text(L("Tirol · Austria", "奥地利 · 蒂罗尔"), language)
+                    .signatureEyebrow()
                 Spacer(minLength: 0)
                 Label(spot.rating, systemImage: "star.fill")
                     .font(.system(size: 12, weight: .bold, design: .rounded))

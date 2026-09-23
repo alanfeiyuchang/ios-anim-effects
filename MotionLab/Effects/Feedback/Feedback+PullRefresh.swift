@@ -46,8 +46,8 @@ private struct PullRefreshDemo: View {
     @State private var pull: CGFloat = 0
     @State private var refreshing = false
     @State private var armed = false
-    @State private var items: [Int] = [2, 1, 0]
-    @State private var nextItem = 3
+    @State private var items: [Int] = [3, 2, 1, 0]
+    @State private var nextItem = 4
 
     private let threshold: CGFloat = 72
     private let holdHeight: CGFloat = 60

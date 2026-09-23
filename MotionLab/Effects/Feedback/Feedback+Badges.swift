@@ -48,6 +48,7 @@ private struct BadgeDemo: View {
                 roundButton("minus") { remove() }
                 roundButton("plus") { add() }
             }
+            DemoHint(text: L("Tap + or the app tile", "点击 + 或应用图块"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.1, delay: 0.5) {
@@ -162,12 +163,12 @@ extension Effect {
         name: L("Stacked Notifications", "堆叠通知"),
         summary: L("New banners drop onto a depth stack that fans out when tapped.", "新通知落入有纵深的堆叠，点击即展开成列表。"),
         prompt: L(
-            "Notification banners — 18 pt continuous-corner cards with an app glyph, app name, 'now' timestamp and a one-line message — rest in a collapsed stack: each card behind the front one is offset 11 pt down, scaled 5% smaller and dimmed 20% more, so only slivers peek out. A new banner drops in from 80 pt above, scaling from 92% and fading in on a spring (response 0.5 s, damping 0.78), pushing the others one step back; the oldest dissolves once more than three exist. Tapping the stack fans the cards out into a full list with 10 pt gaps on the same spring — the container grows with them so the controls below glide down — and tapping again folds them back. Layered, orderly and tactile.",
-            "通知横幅——18 pt 连续圆角卡片，包含应用图标、应用名、“现在”时间戳与一行消息——平时收拢成一叠：前卡之后的每张卡片下移 11 pt、缩小 5%、再暗 20%，只露出细细的边缘。新横幅从上方 80 pt 处落入，同时从 92% 放大并淡入，弹簧参数为响应 0.5 秒、阻尼 0.78，把其余卡片各往后推一层；超过三张时最旧的一张溶解消失。点击堆叠，卡片以同样的弹簧展开成间距 10 pt 的完整列表，容器随之增高、下方按钮一同顺滑下移；再次点击则收拢回去。层次分明、井然有序、富有触感。"
+            "Notification banners — 18 pt continuous-corner cards with an app glyph, app name, 'now' timestamp and a one-line message — rest in a collapsed stack: each card behind the front one is offset 11 pt down, scaled 5% smaller and shaded with a 7% darker tint (never made transparent, so nothing shows through), so only solid slivers peek out. A new banner drops in from 80 pt above, scaling from 92% and fading in on a spring (response 0.5 s, damping 0.78), pushing the others one step back; the oldest dissolves once more than three exist. Tapping the stack fans the cards out into a full list with 10 pt gaps on the same spring — the container grows with them so the controls below glide down — and tapping again folds them back. Layered, orderly and tactile.",
+            "通知横幅——18 pt 连续圆角卡片，包含应用图标、应用名、“现在”时间戳与一行消息——平时收拢成一叠：前卡之后的每张卡片下移 11 pt、缩小 5%，并叠加 7% 的暗色（而非降低透明度，后方内容不会透出），只露出细细的实色边缘。新横幅从上方 80 pt 处落入，同时从 92% 放大并淡入，弹簧参数为响应 0.5 秒、阻尼 0.78，把其余卡片各往后推一层；超过三张时最旧的一张溶解消失。点击堆叠，卡片以同样的弹簧展开成间距 10 pt 的完整列表，容器随之增高、下方按钮一同顺滑下移；再次点击则收拢回去。层次分明、井然有序、富有触感。"
         ),
         implementation: L(
-            "A ZStack of cards derives offset, scale, opacity and zIndex from each card's index; insertion uses an asymmetric offset + scale + opacity transition.",
-            "ZStack 中每张卡片依据索引计算偏移、缩放、透明度与 zIndex；插入使用由位移、缩放与淡入组合的非对称过渡。"
+            "A ZStack of cards derives offset, scale, a dark tint overlay and zIndex from each card's index; insertion uses an asymmetric offset + scale + opacity transition.",
+            "ZStack 中每张卡片依据索引计算偏移、缩放、暗色叠层与 zIndex；插入使用由位移、缩放与淡入组合的非对称过渡。"
         ),
         apis: ["ZStack", "zIndex", "AnyTransition.asymmetric", "spring(response:dampingFraction:)"],
         tags: ["notifications", "stack", "banner", "lock screen", "通知", "堆叠", "横幅", "锁屏"],
@@ -247,12 +248,12 @@ private struct StackedBannersDemo: View {
                     sample: BannerSample.all[item.id % BannerSample.all.count],
                     language: ctx.language,
                     // Collapsed back cards are blank plates; otherwise their icons peek out under the front card.
-                    showsContent: expanded || index == 0
+                    showsContent: expanded || index == 0,
+                    // Back cards recede by darkening, never by transparency, so cards behind don't show through.
+                    dim: expanded ? 0 : 0.07 * Double(index)
                 )
                     .frame(height: cardHeight)
                     .scaleEffect(expanded ? 1 : 1 - 0.05 * CGFloat(index), anchor: .top)
-                    .brightness(expanded ? 0 : -0.04 * Double(index))
-                    .opacity(expanded ? 1 : 1 - 0.2 * Double(index))
                     .offset(y: expanded ? CGFloat(index) * (cardHeight + 10) : CGFloat(index) * ctx.cg("peek"))
                     .zIndex(Double(-index))
                     .transition(
@@ -284,6 +285,7 @@ private struct BannerCard: View {
     let sample: BannerSample
     let language: AppLanguage
     var showsContent: Bool = true
+    var dim: Double = 0
 
     var body: some View {
         HStack(spacing: 12) {
@@ -311,6 +313,11 @@ private struct BannerCard: View {
         .padding(.horizontal, 13)
         .frame(maxHeight: .infinity)
         .background(Palette.elevated, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.black.opacity(dim))
+                .allowsHitTesting(false)
+        }
         .overlay { RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.stroke) }
         .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
     }

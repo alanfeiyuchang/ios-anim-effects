@@ -39,7 +39,7 @@ private struct IslandState {
 private let islandStates: [IslandState] = [
     IslandState(symbol: "airpodspro", tint: .white, title: L("AirPods Pro", "AirPods Pro"), detail: L("Connected · 82%", "已连接 · 82%")),
     IslandState(symbol: "timer", tint: Palette.amber, title: L("Timer", "计时器"), detail: L("04:59 remaining", "剩余 04:59")),
-    IslandState(symbol: "checkmark.circle.fill", tint: Palette.green, title: L("Payment complete", "支付完成"), detail: L("¥ 128.00 to Studio", "已向工作室支付 ¥128.00")),
+    IslandState(symbol: "checkmark.circle.fill", tint: Palette.green, title: L("Payment complete", "支付完成"), detail: L("$18.00 to Studio", "已向工作室支付 ¥128.00")),
     IslandState(symbol: "moon.fill", tint: Palette.violet, title: L("Focus on", "专注模式"), detail: L("Notifications silenced", "通知已静音")),
 ]
 

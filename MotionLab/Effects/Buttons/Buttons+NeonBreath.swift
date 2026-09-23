@@ -8,8 +8,8 @@ extension Effect {
         name: L("Neon Breath", "霓虹呼吸"),
         summary: L("A neon tube glow that slowly breathes and flickers on tap.", "缓慢呼吸的霓虹灯管辉光，点击时闪烁。"),
         prompt: L(
-            "A dark capsule outlined by a 2 pt neon tube in electric cyan, with the label set in the same glowing color. The glow breathes on a slow sine wave (~2.4 s per cycle): stacked shadows swell from a tight 4 pt halo to a 22 pt bloom and back, while the tube’s brightness lifts by 0.25 at the peak; a blurred reflection pools on the floor below and pulses in sync. Tapping the button triggers a quick neon-sign flicker — opacity stutters 1 → 0.35 → 1 → 0.6 → 1 within ~350 ms — plus a light haptic. It feels atmospheric and nocturnal, like a sign humming in a rainy alley.",
-            "深色胶囊按钮，外圈是一条 2pt 的电光青色霓虹灯管，文字也使用同色发光。辉光以缓慢的正弦节奏呼吸（每周期约 2.4 秒）：多层阴影从紧贴的 4pt 光晕扩散到 22pt 的柔光再收回，灯管在峰值时亮度提升 0.25；下方地面有一片模糊的倒影同步明暗。点击按钮会触发一次霓虹招牌般的闪烁——不透明度在约 350 毫秒内按 1 → 0.35 → 1 → 0.6 → 1 抖动——并伴随轻触觉。氛围感十足，像雨夜小巷里嗡嗡作响的霓虹招牌。"
+            "Mounted on a near-black wall panel (so it reads in light mode too), a dark capsule is outlined by a 2 pt neon tube in electric cyan, with the label set in the same glowing color. The glow breathes on a slow sine wave (~2.4 s per cycle): stacked shadows swell from a tight 4 pt halo to a 22 pt bloom and back, while the tube’s brightness lifts by 0.25 at the peak; a blurred reflection pools on the floor below and a faint colored wash spills across the panel, both pulsing in sync. Tapping the button triggers a quick neon-sign flicker — opacity stutters 1 → 0.35 → 1 → 0.6 → 1 within ~350 ms — plus a light haptic. It feels atmospheric and nocturnal, like a sign humming in a rainy alley.",
+            "按钮安装在一块近黑色的墙面面板上（浅色模式下同样醒目）：深色胶囊外圈是一条 2pt 的电光青色霓虹灯管，文字也使用同色发光。辉光以缓慢的正弦节奏呼吸（每周期约 2.4 秒）：多层阴影从紧贴的 4pt 光晕扩散到 22pt 的柔光再收回，灯管在峰值时亮度提升 0.25；下方地面的模糊倒影与洒在面板上的淡淡彩色光晕同步明暗。点击按钮会触发一次霓虹招牌般的闪烁——不透明度在约 350 毫秒内按 1 → 0.35 → 1 → 0.6 → 1 抖动——并伴随轻触觉。氛围感十足，像雨夜小巷里嗡嗡作响的霓虹招牌。"
         ),
         implementation: L(
             "TimelineView computes a sine-based breath value that scales layered shadows and stroke brightness; a keyframeAnimator keyed on a tap counter plays the flicker on opacity.",
@@ -65,6 +65,13 @@ private struct ButtonNeonBreathDemo: View {
                 flickers += 1
                 Haptics.tap()
             }
+            .padding(.horizontal, 36)
+            .padding(.top, 58)
+            .padding(.bottom, 34)
+            .background { ButtonNeonPanel(language: ctx.language) }
+            // Keep the coloured wash on the wall.
+            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
             Spacer()
             DemoHint(text: L("Tap to flicker", "点击让它闪烁"), ctx: ctx)
                 .padding(.bottom, 18)
@@ -89,6 +96,17 @@ private struct ButtonNeonTube: View {
         let glow = 4 + (bloom - 4) * CGFloat(breath)
         VStack(spacing: 14) {
             face(glow: glow)
+                .background {
+                    // Coloured wash spilling onto the wall, breathing with the tube.
+                    RadialGradient(
+                        colors: [neon.opacity(0.1 + 0.1 * breath), .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 170
+                    )
+                    .frame(width: 320, height: 240)
+                    .allowsHitTesting(false)
+                }
             Capsule()
                 .fill(neon)
                 .frame(width: 180, height: 14)
@@ -112,5 +130,27 @@ private struct ButtonNeonTube: View {
                     .shadow(color: neon, radius: glow * 0.25)
                     .shadow(color: neon.opacity(0.7), radius: glow)
             )
+    }
+}
+
+/// The dark wall the sign hangs on, so the neon reads in light mode as well as dark.
+private struct ButtonNeonPanel: View {
+    let language: AppLanguage
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 28, style: .continuous)
+            .fill(LinearGradient(colors: [Color(hex: 0x161824), Color(hex: 0x06070B)], startPoint: .top, endPoint: .bottom))
+            .overlay(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.08))
+            )
+            .overlay(alignment: .topLeading) {
+                Text(L("Open late", "营业至深夜"), language)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .tracking(1.4)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.white.opacity(0.4))
+                    .padding(18)
+            }
     }
 }

@@ -69,6 +69,12 @@ private struct ContextPopoverDemo: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap ⋯ on the note", "点击笔记上的 ⋯"), ctx: ctx)
+                .padding(.bottom, 14)
+                .opacity(open ? 0 : 1)
+                .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 1.6) { setOpen(!open) }
     }
 
@@ -86,7 +92,12 @@ private struct ContextPopoverDemo: View {
                 moreButton
             }
             .zIndex(1)
-            PlaceholderLines(count: 3)
+            Text(ctx.language == .zh
+                 ? "转场统一改用弹簧；标签栏指示器需要更柔和的回弹。周五前定稿。"
+                 : "Switch every transition to springs; the tab indicator needs a softer bounce. Final by Friday.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18)
         .frame(width: 290)
@@ -139,7 +150,7 @@ private struct PopoverNoteRow: View {
 
     private let notes: [(String, Color, LocalizedText, LocalizedText)] = [
         ("lightbulb.fill", Palette.amber, L("Onboarding ideas", "新手引导灵感"), L("Yesterday", "昨天")),
-        ("paintpalette.fill", Palette.pink, L("Colour tokens", "色彩变量"), L("Monday", "周一")),
+        ("paintpalette.fill", Palette.pink, L("Color tokens", "色彩变量"), L("Monday", "周一")),
     ]
 
     var body: some View {

@@ -8,8 +8,8 @@ extension Effect {
         name: L("Jelly Stretch", "果冻拉伸"),
         summary: L("A gel blob that stretches with drag velocity and wobbles back into shape.", "随拖拽速度拉长的果冻球，松手后摇晃回弹。"),
         prompt: L(
-            "A 110 pt glossy gel sphere (violet-to-pink gradient, white specular highlight at the upper left, a soft contact shadow on the floor that does not deform) follows the finger. Its shape is driven by velocity, not position: speed maps to a strain of up to 45%, stretching the blob along the direction of travel and thinning it perpendicular, with direction and magnitude smoothed by a fast 150 ms spring so it never jitters. On release it flies back to center on an under-damped spring (response ≈ 0.5 s, damping ≈ 0.4); because strain is stored as a signed tensor, the overshoot turns into a squash, so the blob jiggles stretch → squash → stretch before coming to rest. Playful, squishy and alive.",
-            "一个 110pt 的光泽果冻球（紫到粉渐变、左上角白色高光、地面上不参与形变的柔和接触阴影）跟随手指移动。形变由速度而非位置驱动：速度映射为最高 45% 的应变，沿运动方向拉长、垂直方向变细，方向和幅度经 150ms 的快速弹簧平滑，绝不抖动。松手后以欠阻尼弹簧（响应约 0.5 秒、阻尼约 0.4）飞回中心；由于应变以带符号的张量存储，过冲会自然变成挤压，于是果冻经历“拉长 → 压扁 → 拉长”的晃动后才静止。俏皮、软糯、充满生命力。"
+            "A 110 pt glossy gel sphere (violet-to-pink gradient, white specular highlight at the upper left, a soft contact shadow on the floor that does not deform) follows the finger. Its shape is driven by velocity, not position: speed maps to a strain of up to 45%, stretching the blob along the direction of travel and thinning it perpendicular, with direction and magnitude smoothed by a fast 150 ms spring so it never jitters; if the finger holds still for ~80 ms the strain relaxes back to round (response 0.3 s) while the blob stays under the finger. On release it flies back to center on an under-damped spring (response ≈ 0.5 s, damping ≈ 0.4); because strain is stored as a signed tensor, the overshoot turns into a squash, so the blob jiggles stretch → squash → stretch before coming to rest. Playful, squishy and alive.",
+            "一个 110pt 的光泽果冻球（紫到粉渐变、左上角白色高光、地面上不参与形变的柔和接触阴影）跟随手指移动。形变由速度而非位置驱动：速度映射为最高 45% 的应变，沿运动方向拉长、垂直方向变细，方向和幅度经 150ms 的快速弹簧平滑，绝不抖动；手指停住约 80ms 后，应变会以弹簧（响应 0.3 秒）松弛回圆形，果冻仍停在指下。松手后以欠阻尼弹簧（响应约 0.5 秒、阻尼约 0.4）飞回中心；由于应变以带符号的张量存储，过冲会自然变成挤压，于是果冻经历“拉长 → 压扁 → 拉长”的晃动后才静止。俏皮、软糯、充满生命力。"
         ),
         implementation: L(
             "Velocity is converted to a traceless strain tensor (s·cos2θ, s·sin2θ) animated through a custom GeometryEffect that builds an affine stretch around the view center; negative strain naturally becomes a squash.",
@@ -60,6 +60,8 @@ private struct JellyDemo: View {
     @State private var offset: CGSize = .zero
     @State private var strain: CGSize = .zero
     @State private var isDragging = false
+    /// Bumped on every drag change; a pending relax only fires if no newer movement arrived.
+    @State private var moveToken = 0
 
     var body: some View {
         ZStack {
@@ -109,8 +111,20 @@ private struct JellyDemo: View {
                 withAnimation(.interactiveSpring(response: 0.15, dampingFraction: 0.86)) {
                     strain = strainFor(velocity: value.velocity)
                 }
+                relaxWhenStill()
             }
             .onEnded { _ in release() }
+    }
+
+    /// DragGesture stops reporting when the finger holds still, so the last velocity would freeze the stretch.
+    private func relaxWhenStill() {
+        moveToken += 1
+        let token = moveToken
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.08))
+            guard token == moveToken, isDragging else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) { strain = .zero }
+        }
     }
 
     private func strainFor(velocity: CGSize) -> CGSize {

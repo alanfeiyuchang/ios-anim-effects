@@ -11,17 +11,17 @@ extension Effect {
             "选择入住与退房：端点圆点滑动、区间色带伸缩，总价数字滚动更新。"
         ),
         prompt: L(
-            "A dark booking card shows two weeks of July as a 7-column grid of rounded digits, with a nightly rate and total below. The first tap sets check-in, the second sets check-out. The two endpoint circles (orange gradient, black digits) glide between cells via shared geometry, and a translucent orange capsule band stretches or shrinks behind the days in between, split across week rows, all on one spring (response 0.4 s, damping 0.78). The nights label and the large total price roll to their new values with a numeric content transition. The Reserve pill brightens once a valid range exists. Each tap gives a selection haptic. It feels decisive, informative and smooth.",
-            "暗色预订卡片以 7 列网格展示七月的两周日期，数字为圆体，下方是每晚价格与总价。第一次点击设入住日，第二次设退房日。两个端点圆（橙色渐变、黑色数字）通过共享几何在格子间滑动，一条半透明橙色胶囊色带在中间日期背后伸缩，跨周时分行显示，整体使用同一弹簧（响应 0.4 秒、阻尼 0.78）。晚数和醒目的总价用数字滚动过渡更新到新值。选出有效区间后，「预订」按钮随之点亮。每次点击都有选择触感。整体果断、信息清晰、过渡顺滑。"
+            "A dark booking card shows two weeks of July as a 7-column grid of rounded digits, with a nightly rate and total below. The first tap sets check-in, the second sets check-out. The two endpoint circles (orange gradient, black digits) glide between cells via shared geometry, and a translucent orange band stretches or shrinks behind the days in between, split across week rows with its ends squared off where it continues into the next or previous week, all on one spring (response 0.4 s, damping 0.78). The nights label (e.g. \"3 nights · $186/night\") and the large total price roll to their new values with a numeric content transition. The Reserve pill brightens once a valid range exists. Each tap gives a selection haptic. It feels decisive, informative and smooth.",
+            "暗色预订卡片以 7 列网格展示七月的两周日期，数字为圆体，下方是每晚价格与总价。第一次点击设入住日，第二次设退房日。两个端点圆（橙色渐变、黑色数字）通过共享几何在格子间滑动，一条半透明橙色色带在中间日期背后伸缩，跨周时分行显示，且在延续到上一周或下一周的一端改为方角，整体使用同一弹簧（响应 0.4 秒、阻尼 0.78）。晚数（如「3 晚 · ¥1,280/晚」）和醒目的总价用数字滚动过渡更新到新值，中文界面统一以人民币计价。选出有效区间后，「预订」按钮随之点亮。每次点击都有选择触感。整体果断、信息清晰、过渡顺滑。"
         ),
         implementation: L(
-            "Endpoint circles are matchedGeometryEffect backgrounds inside the start and end DayCells; each week row draws one Capsule whose width and x-offset come from the range's intersection with that row, all animated with one spring. Prices use contentTransition(.numericText(value:)).",
-            "端点圆是入住、退房日期格中的 matchedGeometryEffect 背景；每个周行绘制一枚 Capsule，其宽度与横向偏移由区间与该行的交集计算，并由同一弹簧驱动；价格使用 contentTransition(.numericText(value:))。"
+            "Endpoint circles are matchedGeometryEffect backgrounds inside the start and end DayCells; each week row draws one UnevenRoundedRectangle (squared where the range crosses a week break) whose width and x-offset come from the range's intersection with that row, all animated with one spring. Prices use contentTransition(.numericText(value:)).",
+            "端点圆是入住、退房日期格中的 matchedGeometryEffect 背景；每个周行绘制一个 UnevenRoundedRectangle（区间跨周处为方角），其宽度与横向偏移由区间与该行的交集计算，并由同一弹簧驱动；价格使用 contentTransition(.numericText(value:))。"
         ),
         apis: ["matchedGeometryEffect", "contentTransition(.numericText)", "Text(_:format:)", "spring(response:dampingFraction:)"],
         tags: ["calendar", "date range", "booking", "price", "日历", "日期区间", "预订", "价格"],
         params: [
-            .slider("rate", L("Nightly rate", "每晚价格"), 80...400, default: 186, step: 1, decimals: 0),
+            .slider("rate", L("Nightly rate (USD)", "每晚价格（美元基准）"), 80...400, default: 186, step: 1, decimals: 0),
             .slider("response", L("Spring response", "弹簧响应"), 0.2...0.8, default: 0.4, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.5...1, default: 0.78),
         ]
@@ -56,32 +56,41 @@ private struct TravelDateRangeDemo: View {
     private var zh: Bool { ctx.language == .zh }
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
     private var nights: Int { max(end - start, 0) }
-    private var rate: Int { Int(ctx["rate"].rounded()) }
+    /// The slider is in US dollars; Chinese shows a rounded yuan rate (≈ ×6.88, e.g. $186 → ¥1,280).
+    private var rate: Int {
+        zh ? Int((ctx["rate"] * 6.88 / 10).rounded()) * 10 : Int(ctx["rate"].rounded())
+    }
     private var total: Int { nights * rate }
 
     var body: some View {
         SignatureStage {
-            VStack(alignment: .leading, spacing: 12) {
-                header
-                weekdays
-                VStack(spacing: 6) {
-                    ForEach(0..<2, id: \.self) { week in
-                        TravelWeekRow(
-                            week: week,
-                            start: start,
-                            end: end,
-                            cell: Self.cell,
-                            firstDay: Self.firstDay,
-                            ns: ns,
-                            onTap: tap
-                        )
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                VStack(alignment: .leading, spacing: 12) {
+                    header
+                    weekdays
+                    VStack(spacing: 6) {
+                        ForEach(0..<2, id: \.self) { week in
+                            TravelWeekRow(
+                                week: week,
+                                start: start,
+                                end: end,
+                                cell: Self.cell,
+                                firstDay: Self.firstDay,
+                                ns: ns,
+                                onTap: tap
+                            )
+                        }
                     }
+                    footer
                 }
-                footer
+                .padding(16)
+                .frame(width: 7 * Self.cell + 32)
+                .signatureCard()
+                Spacer(minLength: 0)
+                DemoHint(text: L("Tap a check-in day, then a check-out day", "先点入住日，再点退房日"), ctx: ctx)
+                    .padding(.bottom, 14)
             }
-            .padding(16)
-            .frame(width: 7 * Self.cell + 32)
-            .signatureCard()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 1.6) {
@@ -128,7 +137,7 @@ private struct TravelDateRangeDemo: View {
     private var footer: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 0) {
-                Text(zh ? "\(nights) 晚 · ¥\(rate)/晚" : "\(nights) nights · $\(rate)/night")
+                Text(zh ? "\(nights) 晚 · ¥\(rate.formatted())/晚" : "\(nights) nights · $\(rate.formatted())/night")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(Signature.textSecondary)
                     .contentTransition(.numericText(value: Double(nights)))
@@ -201,9 +210,19 @@ private struct TravelWeekRow: View {
         }
     }
 
+    /// Ends that continue into the previous/next week are squared off, so the band reads as one run.
     private var band: some View {
         let range = span ?? (lo: 0, hi: 0)
-        return Capsule()
+        let round = (cell - 4) / 2
+        let continuesIn = start < week * 7
+        let continuesOut = end > week * 7 + 6
+        return UnevenRoundedRectangle(
+            topLeadingRadius: continuesIn ? 3 : round,
+            bottomLeadingRadius: continuesIn ? 3 : round,
+            bottomTrailingRadius: continuesOut ? 3 : round,
+            topTrailingRadius: continuesOut ? 3 : round,
+            style: .continuous
+        )
             .fill(Signature.accent.opacity(0.2))
             .frame(width: CGFloat(range.hi - range.lo + 1) * cell, height: cell - 4)
             .offset(x: CGFloat(range.lo) * cell)

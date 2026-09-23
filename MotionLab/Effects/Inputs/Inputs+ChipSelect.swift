@@ -8,8 +8,8 @@ extension Effect {
         name: L("Morphing Tag Chips", "形变标签选择"),
         summary: L("Chips fill, grow a checkmark and reflow their neighbours.", "标签被选中时填充颜色、长出对勾，并推动周围标签重新排布。"),
         prompt: L(
-            "A wrapping cloud of capsule tags (15 pt medium text, 14 pt horizontal padding) on quiet gray fills. Selecting a tag morphs it in one spring (response 0.4 s, damping 0.7): the fill crossfades to an indigo-to-violet gradient, the label turns white, and a small checkmark scales in from 30% at the leading edge, widening the capsule; neighbouring chips smoothly reflow to their new positions instead of jumping. The chip dips to 94% under the finger and rebounds. A header counter (\"3 selected\") rolls its digit. Deselecting reverses the morph. Light, flexible and satisfying to tap through during onboarding.",
-            "一组自动换行的胶囊标签（15pt 中等字重、左右内边距 14pt），底色为安静的浅灰。选中某个标签时，由同一条弹簧（响应 0.4 秒、阻尼 0.7）完成形变：底色交叉过渡为靛蓝到紫罗兰渐变，文字变白，左侧一个小对勾从 30% 缩放出现，把胶囊撑宽；相邻标签平滑流动到新位置而不是跳变。手指按下时标签缩到 94% 再回弹。顶部计数（“已选 3 个”）数字滚动更新。取消选择则反向形变。轻盈灵活，特别适合引导页中连续点选兴趣。"
+            "On an onboarding card, a wrapping cloud of capsule tags (15 pt medium text, 14 pt horizontal padding) on quiet gray fills. Selecting a tag morphs it in one spring (response 0.4 s, damping 0.7): the fill crossfades to an indigo-to-violet gradient, the label turns white, and a small checkmark scales in from 30% at the leading edge, widening the capsule; neighbouring chips smoothly reflow to their new positions instead of jumping. The chip dips to 94% under the finger and rebounds. A header counter (\"3 selected\") rolls its digit. Deselecting reverses the morph. Light, flexible and satisfying to tap through during onboarding.",
+            "引导页卡片上是一组自动换行的胶囊标签（15pt 中等字重、左右内边距 14pt），底色为安静的浅灰。选中某个标签时，由同一条弹簧（响应 0.4 秒、阻尼 0.7）完成形变：底色交叉过渡为靛蓝到紫罗兰渐变，文字变白，左侧一个小对勾从 30% 缩放出现，把胶囊撑宽；相邻标签平滑流动到新位置而不是跳变。手指按下时标签缩到 94% 再回弹。顶部计数（“已选 3 个”）数字滚动更新。取消选择则反向形变。轻盈灵活，特别适合引导页中连续点选兴趣。"
         ),
         implementation: L(
             "Chips live in a custom flow Layout; toggling selection inside withAnimation lets SwiftUI animate each chip's size change and the resulting layout reflow, while the checkmark uses an insertion transition.",
@@ -20,6 +20,7 @@ extension Effect {
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...0.9, default: 0.4, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.7),
+            .slider("press", L("Press dip", "按下缩放"), 0.85...1.0, default: 0.94),
         ]
     ) { ctx in
         InputChipSelectDemo(ctx: ctx)
@@ -54,15 +55,14 @@ private struct InputChipSelectDemo: View {
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(Palette.indigo)
                     .contentTransition(.numericText(value: Double(selected.count)))
-                if ctx.language == .en {
-                    counterCaption("selected")
-                }
+                counterCaption(ctx.language == .zh ? "个" : "selected")
             }
             FlowLayout(spacing: 8) {
                 ForEach(topics.indices, id: \.self) { index in
                     InputChip(
                         title: topics[index](ctx.language),
-                        isSelected: selected.contains(index)
+                        isSelected: selected.contains(index),
+                        pressScale: ctx.cg("press")
                     ) {
                         toggle(index)
                     }
@@ -71,6 +71,11 @@ private struct InputChipSelectDemo: View {
         }
         .padding(20)
         .frame(width: 310)
+        .demoCard(cornerRadius: 24)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap tags to pick your interests", "点选你感兴趣的标签"), ctx: ctx)
+                .offset(y: 34)
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 0.8, delay: 0.4) { previewTick() }
     }
@@ -101,6 +106,7 @@ private struct InputChipSelectDemo: View {
 private struct InputChip: View {
     let title: String
     let isSelected: Bool
+    let pressScale: CGFloat
     let action: () -> Void
 
     var body: some View {
@@ -128,14 +134,16 @@ private struct InputChip: View {
             }
             .shadow(color: Palette.indigo.opacity(isSelected ? 0.3 : 0), radius: 8, y: 4)
         }
-        .buttonStyle(InputChipPressStyle())
+        .buttonStyle(InputChipPressStyle(scale: pressScale))
     }
 }
 
 private struct InputChipPressStyle: ButtonStyle {
+    let scale: CGFloat
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .scaleEffect(configuration.isPressed ? scale : 1)
             .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }

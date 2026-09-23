@@ -35,12 +35,12 @@ private struct IconsPlaneValues {
     var press: Double = 1
 }
 
-/// The flight curve in a 300×300 stage: from the button up-left, then to the top-right corner.
+/// The flight curve in a 300×222 scene: from the button up-left, then to the top-right corner.
 private struct IconsPlaneCurve {
     let swoop: Double
 
-    var start: CGPoint { CGPoint(x: 150, y: 214) }
-    var control: CGPoint { CGPoint(x: CGFloat(150 - 150 * swoop), y: CGFloat(60 + 60 * (1 - swoop))) }
+    var start: CGPoint { CGPoint(x: 150, y: 170) }
+    var control: CGPoint { CGPoint(x: CGFloat(150 - 150 * swoop), y: CGFloat(50 + 50 * (1 - swoop))) }
     var end: CGPoint { CGPoint(x: 296, y: 12) }
 
     func point(_ progress: Double) -> CGPoint {
@@ -84,7 +84,7 @@ private struct IconsPlaneDemo: View {
         let hold = 0.6
         VStack(spacing: 4) {
             Color.clear
-                .frame(width: 300, height: 262)
+                .frame(width: 300, height: IconsPlaneScene.height)
                 .keyframeAnimator(initialValue: IconsPlaneValues(), trigger: launches) { content, value in
                     content.overlay(alignment: .topLeading) {
                         IconsPlaneScene(value: value, curve: curve, trail: trail, sent: sent)
@@ -124,7 +124,6 @@ private struct IconsPlaneDemo: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(sent ? AnyShapeStyle(Palette.green) : AnyShapeStyle(.secondary))
                 .contentTransition(.opacity)
-            DemoHint(text: L("Tap to send", "点击发送"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: max(duration, 0.4) + 1.5) { send() }
@@ -145,6 +144,9 @@ private struct IconsPlaneDemo: View {
 }
 
 private struct IconsPlaneScene: View {
+    /// Button centre sits at y 170, leaving just the caption below it.
+    static let height: CGFloat = 222
+
     let value: IconsPlaneValues
     let curve: IconsPlaneCurve
     let trail: Bool
@@ -176,7 +178,7 @@ private struct IconsPlaneScene: View {
                 .opacity(value.opacity)
                 .position(position)
         }
-        .frame(width: 300, height: 262, alignment: .topLeading)
+        .frame(width: 300, height: IconsPlaneScene.height, alignment: .topLeading)
     }
 
     private var button: some View {

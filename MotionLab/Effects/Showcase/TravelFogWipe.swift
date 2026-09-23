@@ -11,8 +11,8 @@ extension Effect {
             "手指划过即可擦去照片上的雾气，停手后玻璃又慢慢重新起雾。"
         ),
         prompt: L(
-            "A full-bleed travel photo card (280×260 pt, 26 pt continuous corners) sits beneath a frosted fog layer — a system blur material that frosts the photo beneath it, washed with ~15% white — with a small “Drag anywhere to wipe the fog” pill at the bottom. As the finger moves, a soft round brush (~44 pt wide, edges feathered by a ~10 pt blur) erases the fog along the exact stroke path, revealing the crisp photo like wiping a steamed-up window; a soft haptic ticks as each stroke begins and the hint pill fades out over 300 ms. Each cleared stroke holds for 1.2 s, then fades back linearly over ~3.5 s so the glass re-fogs on its own. It feels tactile, playful and invites exploration.",
-            "一张全幅旅行照片卡片（280×260pt，26pt 连续圆角）上盖着一层磨砂雾气：系统模糊材质把下方照片磨成毛玻璃，再叠约 15% 白色，底部是「随意拖动，擦去雾气」的提示胶囊。手指滑动时，一支约 44pt 宽、边缘经约 10pt 模糊羽化的圆形笔刷沿轨迹实时擦掉雾层，露出清晰的原图，就像擦拭起雾的车窗。每次落笔都有一下轻柔触感，提示胶囊在 300 毫秒内淡出。每道擦痕保留 1.2 秒，再用约 3.5 秒线性回凝，玻璃自己慢慢重新起雾。触感真实、俏皮，让人忍不住想多擦几下。"
+            "A full-bleed travel photo card (280×260 pt, 26 pt continuous corners) sits beneath a frosted fog layer — a system blur material that frosts the photo beneath it, washed with only ~6% white so the scene stays recognisable — with a small “Drag anywhere to wipe the fog” pill at the bottom. As the finger moves, a soft round brush (~44 pt wide, edges feathered by a ~10 pt blur) erases the fog along the exact stroke path, revealing the crisp photo like wiping a steamed-up window; a soft haptic ticks as each stroke begins and the hint pill fades out over 300 ms. Each cleared stroke holds for 1.2 s, then fades back linearly over ~3.5 s so the glass re-fogs on its own. On arrival a ghost finger draws one wavy wipe across the photo over ~1 s and lets it re-fog, teaching the gesture without words. It feels tactile, playful and invites exploration.",
+            "一张全幅旅行照片卡片（280×260pt，26pt 连续圆角）上盖着一层磨砂雾气：系统模糊材质把下方照片磨成毛玻璃，只叠约 6% 白色，照片内容依然可辨，底部是「随意拖动，擦去雾气」的提示胶囊。手指滑动时，一支约 44pt 宽、边缘经约 10pt 模糊羽化的圆形笔刷沿轨迹实时擦掉雾层，露出清晰的原图，就像擦拭起雾的车窗。每次落笔都有一下轻柔触感，提示胶囊在 300 毫秒内淡出。每道擦痕保留 1.2 秒，再用约 3.5 秒线性回凝，玻璃自己慢慢重新起雾。进入页面时，一根“隐形手指”会在约 1 秒内自动擦出一道波浪形痕迹，随后重新起雾，无需文字即可教会手势。触感真实、俏皮，让人忍不住想多擦几下。"
         ),
         implementation: L(
             "The fog is a blurred copy of the photo masked by a Rectangle minus a Canvas of accumulated drag strokes (blendMode(.destinationOut) inside compositingGroup); a TimelineView fades each stroke back by age.",
@@ -37,6 +37,8 @@ private struct TravelFogStroke {
     var points: [CGPoint]
     /// Last time the stroke was extended; regrowth is measured from here.
     var touched: Date
+    /// The on-arrival demonstration stroke always re-fogs, even with regrowth turned off.
+    var isDemo = false
 }
 
 // MARK: - Demo
@@ -45,6 +47,8 @@ private struct TravelFogDemo: View {
     let ctx: DemoContext
     @State private var strokes: [TravelFogStroke] = []
     @State private var isDrawing = false
+    @State private var demoRunning = false
+    @State private var demoTask: Task<Void, Never>?
 
     private var zh: Bool { ctx.language == .zh }
     private var regrowAfter: Double? { ctx.bool("regrow") ? ctx["regrowTime"] : nil }
@@ -58,11 +62,38 @@ private struct TravelFogDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         // Drop strokes once they have fully re-fogged so the hole TimelineView can pause again.
-        .task(id: "\(strokes.count)-\(isDrawing)") {
-            guard let regrow = regrowAfter, !isDrawing, !strokes.isEmpty else { return }
+        .task(id: "\(strokes.count)-\(isDrawing)-\(demoRunning)") {
+            guard !isDrawing, !demoRunning, !strokes.isEmpty else { return }
+            let regrow = regrowAfter ?? ctx["regrowTime"]
             try? await Task.sleep(for: .seconds(TravelFogHoles.hold + regrow + 0.1))
             guard !Task.isCancelled else { return }
             prune()
+        }
+        .onAppear(perform: startDemoWipe)
+        .onDisappear { demoTask?.cancel() }
+    }
+
+    /// Detail stage: a ghost finger wipes one wavy stroke so the gesture is self-explanatory.
+    private func startDemoWipe() {
+        guard !ctx.isPreview, strokes.isEmpty else { return }
+        demoTask?.cancel()
+        demoTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { return }
+            let steps = 36
+            func point(_ i: Int) -> CGPoint {
+                let u = Double(i) / Double(steps)
+                return CGPoint(x: 280 * (0.12 + 0.76 * u), y: 260 * (0.56 + 0.15 * sin(u * .pi * 2.5)))
+            }
+            demoRunning = true
+            strokes.append(TravelFogStroke(points: [point(0)], touched: Date(), isDemo: true))
+            for i in 1...steps {
+                try? await Task.sleep(for: .milliseconds(28))
+                guard !Task.isCancelled, demoRunning, let last = strokes.indices.last, strokes[last].isDemo else { return }
+                strokes[last].points.append(point(i))
+                strokes[last].touched = Date()
+            }
+            demoRunning = false
         }
     }
 
@@ -88,10 +119,10 @@ private struct TravelFogDemo: View {
         Rectangle()
             .fill(fogMaterial)
             .environment(\.colorScheme, .light)
-            .overlay(Color.white.opacity(0.1 + ctx["frost"] / 150))
+            .overlay(Color.white.opacity(0.02 + ctx["frost"] / 300))
             .overlay(
                 LinearGradient(
-                    colors: [Color.white.opacity(0.22), .clear, Color.white.opacity(0.12)],
+                    colors: [Color.white.opacity(0.1), .clear, Color.white.opacity(0.05)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -106,6 +137,7 @@ private struct TravelFogDemo: View {
                             strokes: strokes,
                             brush: ctx.cg("brush"),
                             regrowAfter: regrowAfter,
+                            demoRegrow: ctx["regrowTime"],
                             isPreview: ctx.isPreview
                         )
                         .blendMode(.destinationOut)
@@ -143,6 +175,11 @@ private struct TravelFogDemo: View {
     private var wipe: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                if demoRunning {
+                    // A real finger takes over from the ghost stroke.
+                    demoTask?.cancel()
+                    demoRunning = false
+                }
                 let now = Date()
                 if isDrawing, let last = strokes.indices.last {
                     strokes[last].points.append(value.location)
@@ -160,13 +197,18 @@ private struct TravelFogDemo: View {
     }
 
     private func prune() {
-        guard let regrow = regrowAfter else { return }
         let now = Date()
-        strokes.removeAll { now.timeIntervalSince($0.touched) > TravelFogHoles.hold + regrow }
+        let demoRegrow = ctx["regrowTime"]
+        strokes.removeAll { stroke in
+            guard let regrow = regrowAfter ?? (stroke.isDemo ? demoRegrow : nil) else { return false }
+            return now.timeIntervalSince(stroke.touched) > TravelFogHoles.hold + regrow
+        }
     }
 
     private func reset() {
         Haptics.tap()
+        demoTask?.cancel()
+        demoRunning = false
         strokes.removeAll()
     }
 }
@@ -179,10 +221,16 @@ private struct TravelFogHoles: View {
     let strokes: [TravelFogStroke]
     let brush: CGFloat
     let regrowAfter: Double?
+    let demoRegrow: Double
     let isPreview: Bool
 
+    private var paused: Bool {
+        guard !isPreview else { return false }
+        return strokes.isEmpty || (regrowAfter == nil && !strokes.contains { $0.isDemo })
+    }
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: !isPreview && (strokes.isEmpty || regrowAfter == nil))) { timeline in
+        TimelineView(.animation(minimumInterval: nil, paused: paused)) { timeline in
             Canvas { context, size in
                 let now = timeline.date
                 // Feather the brush inside the Canvas rather than blurring the whole (often empty) layer.
@@ -198,7 +246,7 @@ private struct TravelFogHoles: View {
     }
 
     private func alpha(for stroke: TravelFogStroke, now: Date) -> Double {
-        guard let regrow = regrowAfter else { return 1 }
+        guard let regrow = regrowAfter ?? (stroke.isDemo ? demoRegrow : nil) else { return 1 }
         let age = now.timeIntervalSince(stroke.touched) - Self.hold
         return age <= 0 ? 1 : max(0, 1 - age / regrow)
     }

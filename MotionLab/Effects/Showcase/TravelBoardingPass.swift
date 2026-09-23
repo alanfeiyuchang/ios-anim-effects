@@ -11,12 +11,12 @@ extension Effect {
             "向下拉票根，沿齿孔撕下后翻滚坠落；点击票面翻转显示条形码。"
         ),
         prompt: L(
-            "A cream boarding pass (270 pt wide) sits on a dark stage: a main panel with HGH → NCE and flight details, then a 74 pt stub, separated by a dashed perforation with half-circle notches cut into both edges. Dragging the stub down makes it follow the finger at 85% of the drag distance. It hinges from its top-left corner by up to ~6° plus a slight sideways drift, and a rigid haptic clicks when the pull passes the 90 pt tear threshold. Released past the threshold, the stub tears free: it falls 420 pt with an ease-in “gravity” curve over 600 ms while spinning ~22°, a success haptic fires, and after 1.3 s a fresh stub springs back in from 90% scale. Released short of the threshold, it snaps back with a bouncy spring. Tapping the main panel flips it 180° in 3D over 0.55 s, and the faces swap exactly at the halfway point to reveal a barcode. It feels physical, crisp and satisfying.",
-            "暗色舞台上放着一张奶油白登机牌（宽 270pt）：主票面写着 HGH → NCE 和航班信息，下方是 74pt 高的票根，两者之间是一条虚线齿孔，两侧各切出半圆缺口。向下拖动票根时，它以拖动距离的 85% 跟手移动，以左上角为铰点最多倾斜约 6°，并随手指略微横向漂移；拉过 90pt 撕裂阈值时触发一下清脆的硬朗触感。超过阈值后松手，票根被撕下：以缓入的「重力」曲线在 600 毫秒内下坠 420pt，同时旋转约 22°，触发成功触感；1.3 秒后新的票根从 90% 缩放弹回原位。未达阈值松手，票根会带着弹性回弹。点击主票面，它以 0.55 秒做 180° 立体翻转，正反面恰好在一半时交换，露出条形码。整体有真实的物理感，干脆利落，令人满足。"
+            "A cream boarding pass (270 pt wide) sits on a dark stage: a main panel with HGH → NCE and flight details, then a 74 pt stub, separated by a dashed perforation with half-circle notches cut into both edges. Dragging the stub down makes it follow the finger at 85% of the drag distance. It hinges from its top-left corner by up to ~6° plus a slight sideways drift, and a rigid haptic clicks when the pull passes the 90 pt tear threshold. Released past the threshold, the stub tears free: it falls 420 pt with an ease-in “gravity” curve over 600 ms while spinning ~22°, a success haptic fires, and after 1.3 s a fresh stub springs back in from 90% scale. Released short of the threshold, it snaps back with a bouncy spring. Tapping the main panel flips the whole ticket — panel and attached stub together — 180° in 3D over 0.55 s, with faces swapping exactly at the halfway point to reveal a barcode and the stub's back. It feels physical, crisp and satisfying.",
+            "暗色舞台上放着一张奶油白登机牌（宽 270pt）：主票面写着 HGH → NCE 和航班信息，下方是 74pt 高的票根，两者之间是一条虚线齿孔，两侧各切出半圆缺口。向下拖动票根时，它以拖动距离的 85% 跟手移动，以左上角为铰点最多倾斜约 6°，并随手指略微横向漂移；拉过 90pt 撕裂阈值时触发一下清脆的硬朗触感。超过阈值后松手，票根被撕下：以缓入的「重力」曲线在 600 毫秒内下坠 420pt，同时旋转约 22°，触发成功触感；1.3 秒后新的票根从 90% 缩放弹回原位。未达阈值松手，票根会带着弹性回弹。点击主票面，整张票（主票面连同票根）以 0.55 秒一起做 180° 立体翻转，正反面恰好在一半时交换，露出条形码和票根背面。整体有真实的物理感，干脆利落，令人满足。"
         ),
         implementation: L(
-            "Two custom Shapes built with Path(roundedRect:cornerRadii:) minus notch ellipses via Path.subtracting; the stub is driven by a DragGesture offset/rotation with a threshold, and the fall and regrow are sequenced with withAnimation and a Task. The flip uses rotation3DEffect, with the face opacity swapped by a delayed zero-length animation.",
-            "两个自定义 Shape 由 Path(roundedRect:cornerRadii:) 减去缺口椭圆（Path.subtracting）得到；票根由 DragGesture 驱动偏移与旋转并设撕裂阈值，坠落与复原用 withAnimation 和 Task 串联；翻转使用 rotation3DEffect，正反面透明度通过延迟的瞬时动画在中点切换。"
+            "Two custom Shapes built with Path(roundedRect:cornerRadii:) minus notch ellipses via Path.subtracting; the stub is driven by a DragGesture offset/rotation with a threshold, and the fall and regrow are sequenced with withAnimation and a Task. The flip is one rotation3DEffect on the panel + stub stack, with each piece's face opacity swapped by a delayed zero-length animation.",
+            "两个自定义 Shape 由 Path(roundedRect:cornerRadii:) 减去缺口椭圆（Path.subtracting）得到；票根由 DragGesture 驱动偏移与旋转并设撕裂阈值，坠落与复原用 withAnimation 和 Task 串联；翻转是作用于主票面与票根整体的一个 rotation3DEffect，各部分正反面透明度通过延迟的瞬时动画在中点切换。"
         ),
         apis: ["DragGesture", "Path.subtracting", "rotation3DEffect", "withAnimation", "Haptics"],
         tags: ["ticket", "boarding pass", "tear", "flip", "gravity", "登机牌", "撕票", "翻转", "重力"],
@@ -69,11 +69,15 @@ private struct TravelBoardingDemo: View {
     var body: some View {
         SignatureStage {
             VStack(spacing: 0) {
-                TravelTicketMain(zh: zh, flipped: flipped, flipDuration: ctx["flip"])
-                    .onTapGesture(perform: flip)
-                    .zIndex(1)
-                stub
-                    .zIndex(2)
+                // Panel and stub flip as one physical ticket around the shared vertical axis.
+                VStack(spacing: 0) {
+                    TravelTicketMain(zh: zh, flipped: flipped, flipDuration: ctx["flip"])
+                        .onTapGesture(perform: flip)
+                        .zIndex(1)
+                    stub
+                        .zIndex(2)
+                }
+                .rotation3DEffect(.degrees(flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
                 DemoHint(text: L("Pull the stub down · tap to flip", "下拉票根撕下 · 点击翻面"), ctx: ctx)
                     .padding(.top, 16)
             }
@@ -88,7 +92,7 @@ private struct TravelBoardingDemo: View {
     }
 
     private var stub: some View {
-        TravelTicketStub(zh: zh, armed: armed)
+        TravelTicketStub(zh: zh, armed: armed, flipped: flipped, flipDuration: ctx["flip"])
             .rotationEffect(.degrees(stubAngle), anchor: .topLeading)
             .offset(x: torn ? pull.width * 0.3 + 30 : pull.width * 0.3, y: torn ? 420 : pull.height)
             .scaleEffect(regrowing ? 0.9 : 1, anchor: .top)
@@ -182,7 +186,6 @@ private struct TravelTicketMain: View {
                 .fill(LinearGradient(colors: [Signature.paper, Color(hex: 0xE6E2D9)], startPoint: .top, endPoint: .bottom))
                 .shadow(color: Color.black.opacity(0.4), radius: 16, y: 8)
         }
-        .rotation3DEffect(.degrees(flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
         .contentShape(Rectangle())
     }
 }
@@ -277,8 +280,48 @@ private struct TravelTicketBack: View {
 private struct TravelTicketStub: View {
     let zh: Bool
     let armed: Bool
+    let flipped: Bool
+    let flipDuration: Double
 
     var body: some View {
+        ZStack {
+            front
+                .opacity(flipped ? 0 : 1)
+            back
+                .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
+                .opacity(flipped ? 1 : 0)
+        }
+        // Same midpoint face swap as the main panel, so the whole ticket turns over together.
+        .animation(.linear(duration: 0.001).delay(flipDuration / 2), value: flipped)
+        .frame(width: 270, height: 74)
+        .background {
+            TravelTicketShape(perforationOnTop: true)
+                .fill(LinearGradient(colors: [Color(hex: 0xE9E5DC), Color(hex: 0xDDD8CD)], startPoint: .top, endPoint: .bottom))
+                .shadow(color: Color.black.opacity(0.35), radius: 12, y: 6)
+        }
+        .overlay(alignment: .top) {
+            Line()
+                .stroke(Signature.ink.opacity(0.25), style: StrokeStyle(lineWidth: 1.2, dash: [4, 4]))
+                .frame(height: 1)
+                .padding(.horizontal, 16)
+        }
+        .contentShape(Rectangle())
+    }
+
+    private var back: some View {
+        HStack {
+            Text(zh ? "请保留此票根" : "Keep this stub")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Signature.ink.opacity(0.55))
+            Spacer(minLength: 0)
+            Text(verbatim: "SEQ 042")
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .foregroundStyle(Signature.accentHot)
+        }
+        .padding(.horizontal, 18)
+    }
+
+    private var front: some View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
                 Text(zh ? "登机组别" : "Boarding group")
@@ -294,19 +337,6 @@ private struct TravelTicketStub: View {
                 .contentTransition(.symbolEffect(.replace))
         }
         .padding(.horizontal, 18)
-        .frame(width: 270, height: 74)
-        .background {
-            TravelTicketShape(perforationOnTop: true)
-                .fill(LinearGradient(colors: [Color(hex: 0xE9E5DC), Color(hex: 0xDDD8CD)], startPoint: .top, endPoint: .bottom))
-                .shadow(color: Color.black.opacity(0.35), radius: 12, y: 6)
-        }
-        .overlay(alignment: .top) {
-            Line()
-                .stroke(Signature.ink.opacity(0.25), style: StrokeStyle(lineWidth: 1.2, dash: [4, 4]))
-                .frame(height: 1)
-                .padding(.horizontal, 16)
-        }
-        .contentShape(Rectangle())
     }
 
     private struct Line: Shape {

@@ -11,7 +11,7 @@ extension Effect {
             "向下滚动时悬浮标签栏收缩为一枚小胶囊，向上滚动即恢复。"
         ),
         prompt: L(
-            "A floating frosted tab bar with four tabs plus a separate circular search button hovers over a scrolling feed. When the user scrolls down past ~24 pt with intent (more than 4 pt per frame), the bar minimises: unselected tabs scale to 60% and fade out while the capsule contracts around the selected icon, all on a smooth spring (response ≈0.4 s, damping ≈0.85), giving the content more room. Any upward scroll, or returning to the top, expands it again with the tabs popping back in. The search button stays put as an anchor. Direction-aware and unobtrusive — the chrome gets out of the way while reading and is instantly available when you reach for it.",
+            "A floating frosted tab bar with four tabs plus a separate circular search button hovers over a scrolling feed. When the user scrolls down past ~24 pt with intent (more than 4 pt per frame), the bar minimizes: unselected tabs scale to 60% and fade out while the capsule contracts around the selected icon, all on a smooth spring (response ≈0.4 s, damping ≈0.85), giving the content more room. Any upward scroll, or returning to the top, expands it again with the tabs popping back in. The search button stays put as an anchor. Direction-aware and unobtrusive — the chrome gets out of the way while reading and is instantly available when you reach for it.",
             "一条磨砂质感的悬浮标签栏（四个标签，外加独立的圆形搜索按钮）浮在可滚动的信息流之上。当用户向下滚动超过约 24pt 且意图明确（每帧超过 4pt）时，标签栏最小化：未选中的标签缩小到 60% 并淡出，胶囊收拢到只包住当前选中的图标，全部采用平滑的弹簧（响应约 0.4 秒、阻尼约 0.85），为内容腾出空间。任何向上滚动或回到顶部时，标签栏重新展开，各标签依次弹回。搜索按钮始终保持原位作为锚点。它能感知滚动方向且不打扰：阅读时自动让位，需要时随手可得。"
         ),
         implementation: L(
@@ -40,13 +40,19 @@ private struct CollapsingTabBarDemo: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(ctx.language == .zh ? "为你推荐" : "For You")
+                        .font(.title2.weight(.bold))
+                    DemoHint(text: L("Scroll down to shrink the bar, up to restore it", "向下滚动收起标签栏，向上滚动恢复"), ctx: ctx)
+                }
+                .padding(.horizontal, 4)
                 ForEach(0..<14, id: \.self) { index in
-                    FeedCard(index: index)
+                    FeedCard(index: index, language: ctx.language)
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 52) // first card starts below the stage's reset button
+            .padding(.top, 16)
         }
         .scrollIndicators(.hidden)
         .contentMargins(.bottom, 90, for: .scrollContent)
@@ -132,15 +138,47 @@ private struct CollapsingTabBarDemo: View {
     }
 }
 
+private struct FeedPost {
+    let symbol: String
+    let title: LocalizedText
+    let meta: LocalizedText
+}
+
+private let feedPosts: [FeedPost] = [
+    FeedPost(symbol: "sun.horizon.fill", title: L("Chasing golden hour", "追逐黄金时刻"), meta: L("Mia · Photography · 4 min", "米娅 · 摄影 · 4 分钟")),
+    FeedPost(symbol: "fork.knife", title: L("Five-minute breakfast bowls", "五分钟早餐碗"), meta: L("Kai · Food · 3 min", "凯 · 美食 · 3 分钟")),
+    FeedPost(symbol: "figure.hiking", title: L("A weekend on the ridge", "山脊上的周末"), meta: L("Lena · Travel · 6 min", "莉娜 · 旅行 · 6 分钟")),
+    FeedPost(symbol: "paintbrush.pointed.fill", title: L("Color theory for UI", "界面色彩理论"), meta: L("Sam · Design · 8 min", "萨姆 · 设计 · 8 分钟")),
+    FeedPost(symbol: "music.note", title: L("Songs for deep focus", "深度专注歌单"), meta: L("Noor · Music · 2 min", "努尔 · 音乐 · 2 分钟")),
+    FeedPost(symbol: "leaf.fill", title: L("Keeping ferns alive", "养活蕨类的秘诀"), meta: L("Ava · Home · 5 min", "艾娃 · 家居 · 5 分钟")),
+    FeedPost(symbol: "bicycle", title: L("Commuting by bike", "骑车通勤这一年"), meta: L("Leo · City · 7 min", "利奥 · 城市 · 7 分钟")),
+]
+
 private struct FeedCard: View {
     let index: Int
+    let language: AppLanguage
 
     var body: some View {
+        let post = feedPosts[index % feedPosts.count]
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Palette.spectrum[index % Palette.spectrum.count].gradient)
                 .frame(width: 56, height: 56)
-            PlaceholderLines(count: 2)
+                .overlay {
+                    Image(systemName: post.symbol)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(post.title, language)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Text(post.meta, language)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
         }
         .padding(12)
         .demoCard(cornerRadius: 20)

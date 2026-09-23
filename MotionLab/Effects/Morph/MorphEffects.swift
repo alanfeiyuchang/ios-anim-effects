@@ -2,6 +2,7 @@ enum MorphEffects {
     static let all: [Effect] = [
         .morphButtonToCard,
         .morphHeroCard,
+        .morphNativeZoom,
         .morphFabMenu,
         .morphZoomSheet,
         .morphMiniPlayer,

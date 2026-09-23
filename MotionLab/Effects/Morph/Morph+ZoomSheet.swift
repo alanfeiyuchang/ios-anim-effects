@@ -36,13 +36,14 @@ private struct ZoomSheetDemo: View {
     @State private var open = false
     @State private var showContent = false
     @State private var dragY: CGFloat = 0
+    @Environment(\.colorScheme) private var colorScheme
 
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
     private var presence: CGFloat { open ? 1 - min(max(dragY, 0) / 220, 1) : 0 }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ZoomBackdrop()
+            ZoomBackdrop(language: ctx.language)
                 .scaleEffect(1 - (1 - ctx.cg("recede")) * presence, anchor: .top)
             Color.black
                 .opacity(0.25 * Double(presence))
@@ -58,9 +59,26 @@ private struct ZoomSheetDemo: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: open ? .top : .bottomLeading) {
+            hint
+        }
         .autoplay(ctx.isPreview, every: 2.2) {
             if open { close() } else { present() }
         }
+    }
+
+    /// Closed: points at the share button. Open: sits on the photo and explains the hidden drag.
+    private var hint: some View {
+        DemoHint(
+            text: open ? L("Drag the sheet down to close", "向下拖动面板即可关闭") : L("Tap the share button", "点击分享按钮"),
+            ctx: ctx
+        )
+        .environment(\.colorScheme, open ? .dark : colorScheme)
+        .padding(.top, open ? 30 : 0)
+        .padding(.leading, open ? 0 : 24)
+        .padding(.bottom, open ? 0 : 38)
+        .opacity(dragY > 4 ? 0 : 1)
+        .allowsHitTesting(false)
     }
 
     private var shareButton: some View {
@@ -187,6 +205,8 @@ private struct ShareSheetPanel: View {
 }
 
 private struct ZoomBackdrop: View {
+    let language: AppLanguage
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -197,11 +217,20 @@ private struct ZoomBackdrop: View {
                         .foregroundStyle(.white.opacity(0.85))
                 }
                 .frame(height: 150)
-            PlaceholderLines(count: 3)
-                .padding(.horizontal, 4)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(language == .zh ? "海边日落" : "Sunset over the bay")
+                    .font(.headline)
+                Text(language == .zh ? "9 月 12 日 · 18:42 · 旧金山" : "Sep 12 · 6:42 PM · San Francisco")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(language == .zh ? "云层压得很低，最后一缕光把整片海湾染成了琥珀色。" : "Low clouds, and the last light turned the whole bay amber.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            }
+            .padding(.horizontal, 4)
         }
         .padding(20)
-        .padding(.top, 32) // clear the stage's reset button
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }

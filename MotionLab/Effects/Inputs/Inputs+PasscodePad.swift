@@ -8,8 +8,8 @@ extension Effect {
         name: L("Passcode Keypad", "密码键盘"),
         summary: L("Keys glow on touch, dots pop in, a wrong code shakes, the right one unlocks.", "按键触碰发光、圆点弹入，输错会抖动，输对即解锁。"),
         prompt: L(
-            "A lock-screen style passcode pad: a lock glyph and title above four 13 pt outline dots, then a 3 × 4 grid of 56 pt round keys with large digits and tiny letter captions. Touching a key flashes its fill instantly to 26% and releases it with a 350 ms ease-out fade, like backlit glass, with a light haptic. Each digit fills the next dot, which pops from 85% on a bouncy spring (response 0.3 s, damping 0.55). On the fourth digit a wrong code turns the dots red and shakes the row with a decaying horizontal keyframe wobble (±14 pt → 0 in ~450 ms) plus an error haptic, then clears; the right code turns the dots green, the lock springs open via a symbol replace and a success haptic fires. Familiar, precise and reassuring.",
-            "锁屏风格的密码键盘：顶部是锁形图标与标题，下方四个 13pt 描边圆点，再往下是 3 × 4 的 56pt 圆形按键，大号数字下方配细小字母。手指触碰按键时底色瞬间提亮到 26%，松手后以 350 毫秒缓出淡回，像背光玻璃一样，并伴随轻触觉。每输入一位，下一个圆点被填满，并以弹性弹簧（响应 0.3 秒、阻尼 0.55）从 85% 弹入。输满四位后：若密码错误，圆点变红，整行以逐渐衰减的水平关键帧抖动（±14pt → 0，约 450 毫秒），并触发错误触觉后清空；若正确，圆点变绿，锁通过符号替换弹开，并触发成功触觉。熟悉、精准、令人安心。"
+            "A lock-screen style passcode pad: a lock glyph and title above four 13 pt outline dots, then a 3 × 4 grid of 54 pt round keys (12 pt row gap) with large digits and tiny letter captions. Touching a key flashes its fill instantly to 26% and releases it with a 350 ms ease-out fade, like backlit glass, with a light haptic. Each digit fills the next dot, which pops from 85% on a bouncy spring (response 0.3 s, damping 0.55). On the fourth digit a wrong code turns the dots red and shakes the row with a decaying horizontal keyframe wobble (±14 pt → 0 in ~450 ms) plus an error haptic, then clears; the right code turns the dots green, the lock springs open via a symbol replace and a success haptic fires. Familiar, precise and reassuring.",
+            "锁屏风格的密码键盘：顶部是锁形图标与标题，下方四个 13pt 描边圆点，再往下是 3 × 4 的 54pt 圆形按键（行距 12pt），大号数字下方配细小字母。手指触碰按键时底色瞬间提亮到 26%，松手后以 350 毫秒缓出淡回，像背光玻璃一样，并伴随轻触觉。每输入一位，下一个圆点被填满，并以弹性弹簧（响应 0.3 秒、阻尼 0.55）从 85% 弹入。输满四位后：若密码错误，圆点变红，整行以逐渐衰减的水平关键帧抖动（±14pt → 0，约 450 毫秒），并触发错误触觉后清空；若正确，圆点变绿，锁通过符号替换弹开，并触发成功触觉。熟悉、精准、令人安心。"
         ),
         implementation: L(
             "Keys are Buttons with a custom ButtonStyle whose fill animation is nil on press and ease-out on release; the dots read the entered string, and a keyframeAnimator on a shake counter wobbles the row. The lock glyph uses contentTransition(.symbolEffect(.replace)).",
@@ -46,7 +46,7 @@ private struct InputPasscodePadDemo: View {
     private static let keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"]
     private static let letters = ["", "ABC", "DEF", "GHI", "JKL", "MNO", "PQRS", "TUV", "WXYZ", "", "", ""]
 
-    private let keySize: CGFloat = 56
+    private let keySize: CGFloat = 54
 
     private var dotColor: Color {
         switch status {
@@ -69,6 +69,8 @@ private struct InputPasscodePadDemo: View {
                 .padding(.top, 10)
                 .padding(.bottom, 12)
         }
+        // Breathing room above the lock header so it never kisses the stage edge.
+        .padding(.top, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 0.32, delay: 0.5) { previewTick() }
     }
@@ -122,7 +124,7 @@ private struct InputPasscodePadDemo: View {
 
     private var keypad: some View {
         let columns = Array(repeating: GridItem(.fixed(keySize), spacing: 18), count: 3)
-        return LazyVGrid(columns: columns, spacing: 8) {
+        return LazyVGrid(columns: columns, spacing: 12) {
             ForEach(Self.keys.indices, id: \.self) { index in
                 key(index)
             }

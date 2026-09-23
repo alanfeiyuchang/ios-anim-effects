@@ -17,5 +17,6 @@ enum TextEffects {
         .textLyrics,
         .textMaskedLines,
         .textCircularBadge,
+        .textVariableWeight,
     ]
 }

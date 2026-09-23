@@ -11,7 +11,7 @@ extension Effect {
             "下划线的前后两端由各自的弹簧驱动，移动时像橡皮筋一样拉伸。"
         ),
         prompt: L(
-            "A row of text tabs (For You, Following, Trending, Live) with a 3 pt rounded underline hugging the selected label's exact width. When a new tab is chosen, the underline's two ends move independently: the edge facing the direction of travel leaps first on a quick spring (response ≈0.28 s), while the trailing edge follows ≈120 ms later on a softer spring, so the line first stretches across both tabs and then contracts onto the new label like a rubber band. Labels cross-fade from secondary grey to primary, a faint indigo glow sits under the line, and the content card below swaps with a blur-replace. Playful, organic and precise.",
+            "A row of text tabs (For You, Following, Trending, Live) with a 3 pt rounded underline hugging the selected label's exact width. When a new tab is chosen, the underline's two ends move independently: the edge facing the direction of travel leaps first on a quick spring (response ≈0.28 s), while the trailing edge follows ≈120 ms later on a softer spring, so the line first stretches across both tabs and then contracts onto the new label like a rubber band. Labels cross-fade from secondary gray to primary, a faint indigo glow sits under the line, and the content card below swaps with a blur-replace. Playful, organic and precise.",
             "一排文字标签（推荐、关注、热门、直播），下方是一条 3pt 的圆角下划线，精确贴合当前选中文字的宽度。切换标签时，下划线的两端独立运动：朝移动方向的一端先以快速弹簧（响应约 0.28 秒）跃出，另一端延迟约 120 毫秒以更柔和的弹簧跟上——线条先横跨两个标签被拉长，再像橡皮筋一样收缩到新标签下方。文字颜色在次级灰与主色间过渡，下划线下方衬着一层淡淡的靛蓝光晕，下方内容卡片以模糊替换切换。俏皮、有机，又不失精准。"
         ),
         implementation: L(
@@ -32,6 +32,12 @@ extension Effect {
 
 private let elasticTabs: [LocalizedText] = [L("For You", "推荐"), L("Following", "关注"), L("Trending", "热门"), L("Live", "直播")]
 private let elasticSymbols: [String] = ["sparkles", "person.2.fill", "flame.fill", "dot.radiowaves.left.and.right"]
+private let elasticCards: [(LocalizedText, LocalizedText)] = [
+    (L("Picked for you", "为你精选"), L("12 new posts from creators you watch most.", "你常看的创作者发布了 12 条新内容。")),
+    (L("From people you follow", "来自你的关注"), L("Mia and Kai shared new work this morning.", "米娅和凯今天上午分享了新作品。")),
+    (L("Trending now", "正在热议"), L("#SpringPhysics is up 240% in the last hour.", "#弹簧物理 近一小时热度上涨 240%。")),
+    (L("Live · 2.4k watching", "直播中 · 2.4k 人在看"), L("Motion design Q&A with the Studio team.", "与工作室团队的动效设计问答。")),
+]
 
 private struct ElasticUnderlineDemo: View {
     let ctx: DemoContext
@@ -49,6 +55,7 @@ private struct ElasticUnderlineDemo: View {
                     .id(selected)
                     .transition(.blurReplace)
             }
+            DemoHint(text: L("Tap a tab", "点击任一标签"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.3) {
@@ -102,8 +109,13 @@ private struct ElasticUnderlineDemo: View {
             Image(systemName: elasticSymbols[selected])
                 .font(.system(size: 30, weight: .semibold))
                 .foregroundStyle(Palette.primary)
-            PlaceholderLines(count: 3)
-                .frame(width: 200)
+            Text(elasticCards[selected].0, ctx.language)
+                .font(.headline)
+            Text(elasticCards[selected].1, ctx.language)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(22)
         .frame(width: 280)

@@ -11,11 +11,11 @@ extension Effect {
             "离线横幅推开内容，重连时信号脉动，恢复后转绿并收起。"
         ),
         prompt: L(
-            "Inside an app screen, a 46 pt full-width banner slides down from under the navigation bar when the connection drops, physically pushing the feed below it on a spring (response 0.5 s, damping 0.82) while the feed desaturates and fades to 55% so stale content reads as stale. The offline banner is graphite with a wifi.slash glyph and a small 'Retry' capsule. Retrying tints it indigo, swaps the glyph to wifi with arcs lighting up in sequence, and cross-fades the text to 'Reconnecting…'. On success it flushes green, the glyph becomes a checkmark via a symbol replace, 'Back online' fades in with a success haptic, colour returns to the feed, and after a short hold the banner retracts and the content glides back up. Honest, calm and self-resolving.",
+            "Inside an app screen, a 46 pt full-width banner slides down from under the navigation bar when the connection drops, physically pushing the feed below it on a spring (response 0.5 s, damping 0.82) while the feed desaturates and fades to 55% so stale content reads as stale. The offline banner is graphite with a wifi.slash glyph and a small 'Retry' capsule. Retrying tints it indigo, swaps the glyph to wifi with arcs lighting up in sequence, and cross-fades the text to 'Reconnecting…'. On success it flushes green, the glyph becomes a checkmark via a symbol replace, 'Back online' fades in with a success haptic, color returns to the feed, and after a short hold the banner retracts and the content glides back up. Honest, calm and self-resolving.",
             "在一个应用页面里，网络断开时一条 46 pt 通栏横幅从导航栏下方滑出，以弹簧（响应 0.5 秒、阻尼 0.82）实实在在地把下方信息流往下推；同时信息流褪色并淡到 55%，让用户一眼看出内容已过时。离线横幅为石墨色，带 wifi.slash 图标和一枚小“重试”胶囊。点击重试后横幅变为靛蓝，图标换成 Wi-Fi 且信号弧依次点亮，文字交叉淡变为“正在重新连接…”。连接成功时横幅转为绿色，图标以符号替换变成对勾，“已恢复连接”淡入并伴随成功触感，信息流重新上色；短暂停留后横幅收回，内容顺滑上移复位。诚实、平静、能自我恢复。"
         ),
         implementation: L(
-            "A four-phase enum drives an if-inserted banner (move-from-top transition inside a clipped VStack so the feed reflows), its background colour, a symbol replace + variableColor effect and the feed's saturation; a tokenised Task sequences reconnect → restored → hidden.",
+            "A four-phase enum drives an if-inserted banner (move-from-top transition inside a clipped VStack so the feed reflows), its background color, a symbol replace + variableColor effect and the feed's saturation; a tokenized Task sequences reconnect → restored → hidden.",
             "四段状态枚举驱动横幅的插入（在裁切的 VStack 中使用自顶部移入的转场，使信息流随之重排）、背景色、符号替换与可变色特效以及信息流的饱和度；带令牌的 Task 依次推进“重连 → 恢复 → 隐藏”。"
         ),
         apis: ["transition(.move(edge:))", "contentTransition(.symbolEffect(.replace))", "symbolEffect(.variableColor)", "saturation"],

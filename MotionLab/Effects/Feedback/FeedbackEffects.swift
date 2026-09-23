@@ -3,6 +3,7 @@ enum FeedbackEffects {
         .feedbackToast,
         .feedbackSuccessCheck,
         .feedbackErrorShake,
+        .feedbackInlineValidation,
         .feedbackConfetti,
         .feedbackIsland,
         .feedbackConnectionBanner,

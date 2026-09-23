@@ -8,12 +8,12 @@ extension Effect {
         name: L("Add to Bag", "加入购物袋"),
         summary: L("The button morphs into a check while an item arcs into the bag.", "按钮收缩成对勾，商品沿弧线飞入购物袋。"),
         prompt: L(
-            "A product card (gradient thumbnail, name, rating, price) with a wide capsule \"Add to Bag\" button; a bag icon with a count badge floats at the top-right. On tap the capsule collapses from 220 pt to a 60 pt circle on a spring (response 0.45 s, damping 0.75), turning green as its label cross-fades into a bold checkmark. At the same moment a mini copy of the product image lifts off the thumbnail at 130% and flies a parabolic arc (peaking ~44 pt above the bag, ~600 ms, ease-in-out), shrinking to 40% and tilting 18° as it drops in. On landing the bag does a symbol bounce, the badge pops and its number rolls up, and a success haptic fires. After ~1.2 s the button springs back to its pill. Delightful, legible commerce feedback.",
-            "商品卡片（渐变缩略图、名称、评分、价格）底部是一枚“加入购物袋”宽胶囊按钮，右上角悬浮着带数量角标的购物袋。点击后，胶囊以弹簧（响应 0.45 秒、阻尼 0.75）从 220pt 宽收缩为 60pt 的圆并变绿，文字交叉淡出为粗对勾。与此同时，一枚商品缩略图副本以 130% 从原图上“拎起”，沿抛物线（最高点比购物袋高约 44pt，约 600 毫秒，缓入缓出）飞入购物袋，途中缩到 40% 并倾斜 18°。落袋瞬间购物袋做一次符号弹跳，角标弹起、数字上滚，并触发成功触觉；约 1.2 秒后按钮弹回胶囊形态。清晰易懂又令人愉悦的电商反馈。"
+            "A product card (gradient thumbnail, name, rating, price) with a wide capsule \"Add to Bag\" button; a bag icon with a count badge floats at the top-right. On tap the capsule collapses from 220 pt to a 60 pt circle on a spring (response 0.45 s, damping 0.75), turning green as its label cross-fades into a bold checkmark. At the same moment a copy of the product image lifts off the thumbnail at exactly its 64 pt size, swells to 108% in the first 100 ms, then flies a parabolic arc (peaking ~44 pt above the bag, ~600 ms total, ease-in-out), shrinking to 30% and tilting 18° as it drops in. On landing the bag does a symbol bounce, the badge pops to 145% and springs back (response 0.3 s, damping 0.45) while its number rolls up, and a success haptic fires. After ~1.2 s the button springs back to its pill. Delightful, legible commerce feedback.",
+            "商品卡片（渐变缩略图、名称、评分、价格）底部是一枚“加入购物袋”宽胶囊按钮，右上角悬浮着带数量角标的购物袋。点击后，胶囊以弹簧（响应 0.45 秒、阻尼 0.75）从 220pt 宽收缩为 60pt 的圆并变绿，文字交叉淡出为粗对勾。与此同时，一枚与缩略图同为 64pt 的商品图副本从原位“拎起”，前 100 毫秒放大到 108%，再沿抛物线（最高点比购物袋高约 44pt，总计约 600 毫秒，缓入缓出）飞入购物袋，途中缩到 30% 并倾斜 18°。落袋瞬间购物袋做一次符号弹跳，角标弹大到 145% 再以弹簧（响应 0.3 秒、阻尼 0.45）回落，数字同时上滚，并触发成功触觉；约 1.2 秒后按钮弹回胶囊形态。清晰易懂又令人愉悦的电商反馈。"
         ),
         implementation: L(
-            "Width, color and label swap animate together with a spring; a KeyframeAnimator view with separate x/y/scale/rotation/opacity tracks flies the thumbnail on an arc; the bag uses symbolEffect(.bounce) and the badge numericText.",
-            "宽度、颜色与文字切换由同一弹簧驱动；KeyframeAnimator 视图用独立的 x/y/缩放/旋转/透明度轨道让缩略图沿弧线飞行；购物袋使用 symbolEffect(.bounce)，角标使用 numericText。"
+            "Width, color and label swap animate together with a spring; a KeyframeAnimator view with separate x/y/scale/rotation/opacity tracks flies the thumbnail on an arc; the bag uses symbolEffect(.bounce) and the badge a keyframeAnimator pop plus numericText.",
+            "宽度、颜色与文字切换由同一弹簧驱动；KeyframeAnimator 视图用独立的 x/y/缩放/旋转/透明度轨道让缩略图沿弧线飞行；购物袋使用 symbolEffect(.bounce)，角标使用 keyframeAnimator 弹跳与 numericText。"
         ),
         apis: ["KeyframeAnimator", "symbolEffect(.bounce)", "numericText", "transition"],
         tags: ["cart", "shop", "morph", "success", "购物车", "加购", "电商", "形变"],
@@ -128,6 +128,14 @@ private struct ButtonAddToCartDemo: View {
                     .contentTransition(.numericText(value: Double(count)))
                     .frame(minWidth: 22, minHeight: 22)
                     .background(Palette.pink, in: Capsule())
+                    .keyframeAnimator(initialValue: 1.0, trigger: count) { content, scale in
+                        content.scaleEffect(scale)
+                    } keyframes: { _ in
+                        KeyframeTrack(\.self) {
+                            CubicKeyframe(1.45, duration: 0.12)
+                            SpringKeyframe(1, duration: 0.45, spring: Spring(response: 0.3, dampingRatio: 0.45))
+                        }
+                    }
                     .offset(x: 4, y: -4)
             }
     }
@@ -162,7 +170,7 @@ private struct ButtonAddToCartDemo: View {
         let start = thumbCenter
         let end = bagCenter
         return KeyframeAnimator(initialValue: ButtonFlyFrame(), trigger: flights) { frame in
-            ButtonProductThumb(side: 40)
+            ButtonProductThumb(side: 64)
                 .scaleEffect(frame.scale)
                 .rotationEffect(.degrees(frame.spin))
                 .opacity(frame.opacity)
@@ -179,8 +187,10 @@ private struct ButtonAddToCartDemo: View {
                 CubicKeyframe(Double(end.y), duration: 0.26)
             }
             KeyframeTrack(\.scale) {
-                MoveKeyframe(1.3)
-                CubicKeyframe(0.4, duration: 0.6)
+                // Starts exactly over the 64 pt thumbnail, lifts a touch, then shrinks into the bag.
+                MoveKeyframe(1)
+                CubicKeyframe(1.08, duration: 0.1)
+                CubicKeyframe(0.3, duration: 0.5)
             }
             KeyframeTrack(\.spin) {
                 MoveKeyframe(0)

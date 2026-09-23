@@ -55,7 +55,7 @@ private struct StepProgressDemo: View {
                             .combined(with: .opacity)
                     )
             }
-            // No inner clip: a tight clip rectangle cut the card's shadow into a visible grey box.
+            // No inner clip: a tight clip rectangle cut the card's shadow into a visible gray box.
             // The stage itself clips pages as they push in/out.
             .frame(maxWidth: .infinity)
             .frame(height: 136)
@@ -193,7 +193,7 @@ private struct StepPage: View {
     let language: AppLanguage
 
     private static let details: [LocalizedText] = [
-        L("2 items · ¥ 468", "2 件商品 · ¥468"),
+        L("2 items · $64.00", "2 件商品 · ¥468"),
         L("Home · 88 Bund Rd", "家 · 外滩路 88 号"),
         L("Visa •••• 4242", "Visa •••• 4242"),
         L("Order confirmed", "订单已确认"),

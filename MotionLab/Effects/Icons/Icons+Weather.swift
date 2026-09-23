@@ -8,8 +8,8 @@ extension Effect {
         name: L("Ambient Weather Icon", "氛围天气图标"),
         summary: L("Rotating sun rays, drifting clouds, rain and lightning.", "旋转的阳光、漂浮的云、雨滴与闪电。"),
         prompt: L(
-            "A living weather glyph built from layers: a warm radial-gradient sun whose twelve rounded rays rotate slowly (≈20°/s) and breathe in length, soft white clouds that drift a few points side to side on offset sine waves, slanted rain streaks that fall and fade in a staggered loop, and, in storm mode, an amber bolt that double-flashes every few seconds while the clouds darken. Switching condition springs the sun behind the cloud (scale 70%, offset up-left) and cross-fades the precipitation. Everything loops seamlessly — calm, glanceable ambience worthy of a widget.",
-            "由多层组成的“活”天气图标：暖色径向渐变的太阳，十二道圆角光芒以约每秒 20° 缓慢旋转并伸缩呼吸；柔白的云朵沿相位错开的正弦波左右漂移几个点；倾斜的雨丝按错落节奏下落并淡出；在雷暴模式下，云层变暗，一道琥珀色闪电每隔几秒连闪两下。切换天气时，太阳以弹簧动画退到云后（缩放 70%、向左上偏移），降水层交叉淡入淡出。所有动画无缝循环——安静、一瞥即懂，足以放进小组件。"
+            "A living weather glyph built from layers: a warm radial-gradient sun whose twelve rounded rays rotate slowly (≈20°/s) and breathe in length, soft cool-grey clouds (off-white fading to blue-grey, so they hold their shape on light backgrounds) that drift a few points side to side on offset sine waves, slanted rain streaks that fall and fade in a staggered loop, and, in storm mode, an amber bolt that double-flashes every few seconds while the clouds darken. A label and a four-glyph condition strip beneath always name the live condition; tapping the stage cycles sunny → cloudy → rain → storm (or tap a glyph to jump), starting from the chosen condition. Switching springs the sun behind the cloud (scale 70%, offset up-left) and cross-fades the precipitation. Everything loops seamlessly — calm, glanceable ambience worthy of a widget.",
+            "由多层组成的“活”天气图标：暖色径向渐变的太阳，十二道圆角光芒以约每秒 20° 缓慢旋转并伸缩呼吸；冷灰色的云朵（由近白过渡到蓝灰，浅色背景下也轮廓清晰）沿相位错开的正弦波左右漂移几个点；倾斜的雨丝按错落节奏下落并淡出；在雷暴模式下，云层变暗，一道琥珀色闪电每隔几秒连闪两下。下方的文字与四枚天气图标条始终标明当前天气；从所选的初始天气开始，点击舞台依次切换晴 → 多云 → 雨 → 雷暴（也可直接点选图标）。切换时，太阳以弹簧动画退到云后（缩放 70%、向左上偏移），降水层交叉淡入淡出。所有动画无缝循环——安静、一瞥即懂，足以放进小组件。"
         ),
         implementation: L(
             "A TimelineView(.animation) supplies time to a layered ZStack (rotating ray Capsules, SF Symbol clouds, falling Capsule drops); condition changes animate with a spring keyed to the mode.",
@@ -18,7 +18,7 @@ extension Effect {
         apis: ["TimelineView(.animation)", "RadialGradient", "rotationEffect", "animation(_:value:)"],
         tags: ["weather", "sun", "rain", "ambient", "天气", "太阳", "下雨", "氛围"],
         params: [
-            .choice("mode", L("Condition", "天气"), [L("Sunny", "晴"), L("Cloudy", "多云"), L("Rain", "雨"), L("Storm", "雷暴")], default: 1),
+            .choice("mode", L("Starting condition", "初始天气"), [L("Sunny", "晴"), L("Cloudy", "多云"), L("Rain", "雨"), L("Storm", "雷暴")], default: 1),
             .slider("speed", L("Speed", "速度"), 0.3...2, default: 1),
         ]
     ) { ctx in
@@ -26,11 +26,14 @@ extension Effect {
     }
 }
 
+private let weatherSymbols = ["sun.max.fill", "cloud.sun.fill", "cloud.rain.fill", "cloud.bolt.fill"]
+
 private struct WeatherDemo: View {
     let ctx: DemoContext
-    @State private var offset = 0
+    /// Condition picked on the stage; `nil` follows the Starting condition parameter.
+    @State private var picked: Int?
 
-    private var mode: Int { (ctx.int("mode") + offset) % 4 }
+    private var mode: Int { (picked ?? ctx.int("mode")).clamped(to: 0...3) }
 
     private var label: LocalizedText {
         switch mode {
@@ -42,8 +45,8 @@ private struct WeatherDemo: View {
     }
 
     var body: some View {
-        VStack(spacing: 18) {
-            TimelineView(.animation) { timeline in
+        VStack(spacing: 16) {
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 WeatherScene(
                     time: timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3_600) * ctx["speed"],
                     mode: mode
@@ -56,12 +59,43 @@ private struct WeatherDemo: View {
                 .foregroundStyle(.secondary)
                 .contentTransition(.opacity)
                 .animation(.snappy, value: mode)
-            DemoHint(text: L("Tap to change the weather", "点击切换天气"), ctx: ctx)
+            conditionPicker
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
-        .onTapGesture { offset += 1 }
-        .autoplay(ctx.isPreview, every: 2.8) { offset += 1 }
+        .onTapGesture { select((mode + 1) % 4) }
+        // Changing the parameter restarts from that condition.
+        .onChange(of: ctx.int("mode")) { _, _ in picked = nil }
+        .autoplay(ctx.isPreview, every: 2.8) { select((mode + 1) % 4) }
+    }
+
+    /// Shows which condition is live; tap a glyph to jump straight to it.
+    private var conditionPicker: some View {
+        HStack(spacing: 6) {
+            ForEach(weatherSymbols.indices, id: \.self) { i in
+                Image(systemName: weatherSymbols[i])
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(i == mode ? Color.white : Color.secondary)
+                    .frame(width: 40, height: 30)
+                    .background {
+                        if i == mode {
+                            Capsule().fill(Palette.primary)
+                        }
+                    }
+                    .contentShape(Capsule())
+                    .onTapGesture { select(i) }
+            }
+        }
+        .padding(4)
+        .background(Color.primary.opacity(0.06), in: Capsule())
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: mode)
+    }
+
+    private func select(_ next: Int) {
+        guard next != mode else { return }
+        if !ctx.isPreview { Haptics.selection() }
+        picked = next
     }
 }
 
@@ -103,8 +137,9 @@ private struct WeatherScene: View {
 
     private func cloud(size: CGFloat, dx: CGFloat, dy: CGFloat, phase: Double) -> some View {
         let drift = CGFloat(sin(time * 0.7 + phase) * 6)
-        let top = stormy ? Color(white: 0.62) : Color(white: 0.99)
-        let bottom = stormy ? Color(white: 0.42) : Color(white: 0.84)
+        // Cool blue-grey rather than pure white, so clouds keep their shape on light stages too.
+        let top = stormy ? Color(hex: 0x9AA3B5) : Color(hex: 0xF1F4F9)
+        let bottom = stormy ? Color(hex: 0x5C6477) : Color(hex: 0xAAB5C8)
         return Image(systemName: "cloud.fill")
             .font(.system(size: size))
             .foregroundStyle(LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom))

@@ -10,14 +10,14 @@ extension Effect {
         name: L("Blur-In Toast", "模糊滑入吐司"),
         summary: L("A frosted capsule toast that springs in out of a blur and slips away.", "磨砂胶囊吐司从模糊中弹入，再悄然滑走。"),
         prompt: L(
-            "A compact frosted-glass capsule toast — a green check badge, a bold title and a secondary caption — lives just off the top (or bottom) edge. On trigger it travels 110 pt into view on a spring (response ≈0.45 s, damping 0.72) while simultaneously sharpening from a 10 pt blur, scaling from 86% to 100% and fading in, landing with a slight overshoot; a success haptic fires the instant it launches. After a ~2 s hold it retreats along the same path on a 0.35 s smooth curve, blurring out as it goes. Re-triggering while visible restarts the timer instead of stacking. It feels light, polished and never interrupts.",
-            "一枚紧凑的磨砂玻璃胶囊吐司——绿色对勾徽标、粗体标题与次级说明——停在画面顶部（或底部）外侧。触发后它以弹簧（响应约 0.45 秒、阻尼 0.72）滑入画面 110 pt，同时从 10 pt 模糊逐渐清晰、从 86% 放大到 100% 并淡入，落位时带一点轻微过冲；触发的同一刻伴随成功触感。停留约 2 秒后，沿原路以 0.35 秒平滑曲线退出，边走边重新模糊。显示期间再次触发只会重置计时，不会叠加。轻盈、精致，从不打断用户。"
+            "A compact frosted-glass capsule toast — a green check badge, a bold title and a secondary caption — lives just off the top (or bottom) edge. On trigger it travels 110 pt into view on a spring (response ≈0.45 s, damping 0.72) while simultaneously sharpening from a 10 pt blur, scaling from 86% to 100% and fading in, landing with a slight overshoot; a success haptic fires the instant it launches. After a ~2 s hold it retreats along the same path on a 0.35 s smooth curve, blurring out as it goes. Swiping it toward its edge dismisses it early — it follows the finger 1:1, and a drag of ~30 pt or a flick sends it off on a 0.3 s smooth curve, while a shorter drag springs back and a drag the other way rubber-bands. Re-triggering while visible restarts the timer instead of stacking. It feels light, polished and never interrupts.",
+            "一枚紧凑的磨砂玻璃胶囊吐司——绿色对勾徽标、粗体标题与次级说明——停在画面顶部（或底部）外侧。触发后它以弹簧（响应约 0.45 秒、阻尼 0.72）滑入画面 110 pt，同时从 10 pt 模糊逐渐清晰、从 86% 放大到 100% 并淡入，落位时带一点轻微过冲；触发的同一刻伴随成功触感。停留约 2 秒后，沿原路以 0.35 秒平滑曲线退出，边走边重新模糊。也可以把它朝所在边缘划走：吐司 1:1 跟手，拖动约 30 pt 或快速一甩即以 0.3 秒平滑曲线离场，距离不足则弹回原位，反方向拖动呈橡皮筋阻尼。显示期间再次触发只会重置计时，不会叠加。轻盈、精致，从不打断用户。"
         ),
         implementation: L(
-            "Offset, blur, scale and opacity are all driven by one Boolean inside a spring; a tokenised Task handles auto-dismiss.",
-            "位移、模糊、缩放与透明度都由同一个布尔值在弹簧动画中驱动；带令牌的 Task 负责自动消失。"
+            "Offset, blur, scale and opacity are all driven by one Boolean inside a spring; a tokenized Task handles auto-dismiss, and a DragGesture adds swipe-to-dismiss that cancels the token.",
+            "位移、模糊、缩放与透明度都由同一个布尔值在弹簧动画中驱动；带令牌的 Task 负责自动消失，DragGesture 提供划走关闭并作废该令牌。"
         ),
-        apis: ["offset(y:)", "blur(radius:)", "regularMaterial", "Task.sleep(for:)"],
+        apis: ["offset(y:)", "blur(radius:)", "regularMaterial", "Task.sleep(for:)", "DragGesture"],
         tags: ["toast", "snackbar", "notification", "blur", "吐司", "轻提示", "通知", "模糊"],
         params: [
             .choice("edge", L("Edge", "出现位置"), [L("Top", "顶部"), L("Bottom", "底部")], default: 0),
@@ -34,6 +34,7 @@ private struct ToastDemo: View {
     let ctx: DemoContext
     @State private var shown = false
     @State private var token = 0
+    @State private var dragY: CGFloat = 0
 
     var body: some View {
         let fromTop = ctx.int("edge") == 0
@@ -43,7 +44,9 @@ private struct ToastDemo: View {
                 .scaleEffect(shown ? 1 : 0.86)
                 .blur(radius: shown ? 0 : ctx["blur"])
                 .opacity(shown ? 1 : 0)
-                .offset(y: shown ? 0 : (fromTop ? -110 : 110))
+                .offset(y: (shown ? 0 : (fromTop ? -110 : 110)) + dragY)
+                .gesture(swipeAway(fromTop: fromTop))
+                .allowsHitTesting(shown)
                 .padding(fromTop ? .top : .bottom, 28)
         }
         .overlay {
@@ -58,14 +61,39 @@ private struct ToastDemo: View {
                         .shadow(color: Palette.indigo.opacity(0.35), radius: 12, y: 6)
                 }
                 .buttonStyle(.plain)
-                DemoHint(text: L("Tap to save", "点击保存"), ctx: ctx)
+                DemoHint(text: L("Tap Save Photo, then swipe the toast away", "点击“保存图片”，再把吐司划走"), ctx: ctx)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["hold"] + 1.4, delay: 0.4) { show() }
     }
 
+    /// Swiping toward the toast's own edge dismisses it early; the other way rubber-bands.
+    private func swipeAway(fromTop: Bool) -> some Gesture {
+        DragGesture(minimumDistance: 4)
+            .onChanged { value in
+                let toward = fromTop ? -value.translation.height : value.translation.height
+                let travel = toward > 0 ? toward : rubberBand(toward, limit: 14)
+                dragY = fromTop ? -travel : travel
+            }
+            .onEnded { value in
+                let predicted = fromTop ? -value.predictedEndTranslation.height : value.predictedEndTranslation.height
+                let toward = fromTop ? -value.translation.height : value.translation.height
+                if toward > 30 || predicted > 90 {
+                    token += 1 // cancel the pending auto-dismiss
+                    if !ctx.isPreview { Haptics.tap(.soft) }
+                    withAnimation(.smooth(duration: 0.3)) {
+                        shown = false
+                        dragY = 0
+                    }
+                } else {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { dragY = 0 }
+                }
+            }
+    }
+
     private func show() {
+        dragY = 0
         token += 1
         let current = token
         let hold = ctx["hold"]

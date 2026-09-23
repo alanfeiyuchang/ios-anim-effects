@@ -11,14 +11,14 @@ extension Effect {
             "带流光文字和跃动箭头的引导胶囊，按下先挤压，再舒展成通栏面板。"
         ),
         prompt: L(
-            "An onboarding screen over a golden-hour mountain photo ends in a cream “Get Started” pill (56 pt tall) with a lime circular arrow badge. At rest, an orange highlight band sweeps across the label every 2.2 s, and the arrow nudges 6 pt to the right on a loop (ease-out push, springy return). On tap, the pill first squashes like jelly (x 108%, y 95%) over ~160 ms, then its background morphs via shared geometry into a full-width rounded sheet on a spring (response 0.5 s, damping 0.78). The title flies into the sheet header while the photo behind scales to 106%, blurs 6 pt and dims 15%. The sheet’s fields fade and rise 10 pt one after another at 50 ms intervals. A medium haptic confirms the press. It feels eager, elastic and welcoming.",
-            "引导页以金色时刻的雪山照片为背景，底部是一枚奶油白「立即开始」胶囊（高 56pt），右侧带青柠色圆形箭头徽章。静止时，一道橙色高光每 2.2 秒扫过文字，箭头循环向右轻推 6pt（缓出前推、弹性回位）。点击后，胶囊先像果冻一样挤压变形（横向 108%、纵向 95%，约 160 毫秒），随后背景通过共享几何以弹簧（响应 0.5 秒、阻尼 0.78）变形为通栏圆角面板。标题飞入面板顶部，背后照片放大到 106%、模糊 6pt、压暗 15%。面板内的输入项依次淡入并上移 10pt，间隔 50 毫秒。按下时伴随一次中等强度的触感。整体热情、有弹性，让人愿意开始。"
+            "An onboarding screen over a golden-hour mountain photo ends in a cream “Get Started” pill (56 pt tall) with a lime circular arrow badge. At rest, an orange highlight band sweeps across the label every 2.2 s, and the arrow nudges 6 pt to the right on a loop (ease-out push, springy return). The instant a finger touches down, the pill squashes like jelly (x 108%, y 95%) on a quick ~160 ms spring and holds while pressed; on release its background morphs via shared geometry into a full-width rounded sheet on a spring (response 0.5 s, damping 0.78). The title flies into the sheet header while the photo behind scales to 106%, blurs 6 pt and dims 15%. The sheet’s fields fade and rise 10 pt one after another at 50 ms intervals. A medium haptic confirms the press. It feels eager, elastic and welcoming.",
+            "引导页以金色时刻的雪山照片为背景，底部是一枚奶油白「立即开始」胶囊（高 56pt），右侧带青柠色圆形箭头徽章。静止时，一道橙色高光每 2.2 秒扫过文字，箭头循环向右轻推 6pt（缓出前推、弹性回位）。手指按下的瞬间，胶囊以约 160 毫秒的快速弹簧像果冻一样挤压变形（横向 108%、纵向 95%）并在按住期间保持；松手后背景通过共享几何以弹簧（响应 0.5 秒、阻尼 0.78）变形为通栏圆角面板。标题飞入面板顶部，背后照片放大到 106%、模糊 6pt、压暗 15%。面板内的输入项依次淡入并上移 10pt，间隔 50 毫秒。按下时伴随一次中等强度的触感。整体热情、有弹性，让人愿意开始。"
         ),
         implementation: L(
-            "A three-step withAnimation(_:completion:) chain: squash scale, then the matchedGeometryEffect morph from pill to sheet, then the staggered body reveal. The shimmer is a TimelineView-driven gradient masked by the label, and the arrow uses phaseAnimator.",
-            "用 withAnimation(_:completion:) 串联三段：先挤压缩放，再由 matchedGeometryEffect 把胶囊变形为面板，最后错峰显示面板内容。流光是 TimelineView 驱动、以文字为遮罩的渐变，箭头使用 phaseAnimator。"
+            "A custom ButtonStyle squashes the pill from configuration.isPressed on touch-down; the release action runs a withAnimation(_:completion:) chain — the matchedGeometryEffect morph from pill to sheet, then the staggered body reveal. The shimmer is a TimelineView-driven gradient masked by the label, and the arrow uses phaseAnimator.",
+            "自定义 ButtonStyle 读取 configuration.isPressed，在按下瞬间挤压胶囊；松手后的动作用 withAnimation(_:completion:) 串联：先由 matchedGeometryEffect 把胶囊变形为面板，再错峰显示面板内容。流光是 TimelineView 驱动、以文字为遮罩的渐变，箭头使用 phaseAnimator。"
         ),
-        apis: ["matchedGeometryEffect", "withAnimation(_:completion:)", "phaseAnimator", "TimelineView", "mask(alignment:_:)"],
+        apis: ["ButtonStyle", "matchedGeometryEffect", "withAnimation(_:completion:)", "phaseAnimator", "TimelineView"],
         tags: ["onboarding", "get started", "shimmer", "expand", "引导页", "开始", "流光", "展开"],
         params: [
             .slider("stretch", L("Squash amount", "挤压幅度"), 0...0.2, default: 0.08),
@@ -57,7 +57,7 @@ private struct TravelGetStartedDemo: View {
                         stretch: ctx.cg("stretch"),
                         squeezed: squeezed,
                         shimmer: ctx.bool("shimmer"),
-                        onTap: toggle
+                        onTap: expand
                     )
                     .padding(.bottom, 24)
                 }
@@ -70,6 +70,7 @@ private struct TravelGetStartedDemo: View {
         .autoplay(ctx.isPreview, every: 2.4) { toggle() }
     }
 
+    /// Autoplay path: simulate the touch-down squash, then release into the morph.
     private func toggle() {
         if expanded {
             if !ctx.isPreview { Haptics.tap() }
@@ -79,17 +80,23 @@ private struct TravelGetStartedDemo: View {
                 withAnimation(spring) { expanded = false }
             }
         } else {
-            if !ctx.isPreview { Haptics.tap(.medium) }
             withAnimation(.spring(response: 0.16, dampingFraction: 0.7)) {
                 squeezed = true
             } completion: {
-                withAnimation(spring) {
-                    squeezed = false
-                    expanded = true
-                } completion: {
-                    withAnimation(.easeOut(duration: 0.3)) { showBody = true }
-                }
+                expand()
             }
+        }
+    }
+
+    /// Release: the ButtonStyle already squashed on touch-down, so morph straight away.
+    private func expand() {
+        guard !expanded else { return }
+        if !ctx.isPreview { Haptics.tap(.medium) }
+        withAnimation(spring) {
+            squeezed = false
+            expanded = true
+        } completion: {
+            withAnimation(.easeOut(duration: 0.3)) { showBody = true }
         }
     }
 }
@@ -151,8 +158,20 @@ private struct TravelStartPill: View {
                     .shadow(color: Signature.accent.opacity(0.35), radius: 18, y: 8)
             }
         }
-        .buttonStyle(.plain)
-        .scaleEffect(x: squeezed ? 1 + stretch : 1, y: squeezed ? 1 - stretch * 0.6 : 1)
+        .buttonStyle(TravelSquashStyle(stretch: stretch, forced: squeezed))
+    }
+}
+
+/// Jelly squash on touch-down (x grows, y shrinks), sprung back on release. `forced` lets autoplay simulate a press.
+private struct TravelSquashStyle: ButtonStyle {
+    let stretch: CGFloat
+    let forced: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        let down = configuration.isPressed || forced
+        return configuration.label
+            .scaleEffect(x: down ? 1 + stretch : 1, y: down ? 1 - stretch * 0.6 : 1)
+            .animation(.spring(response: 0.16, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 

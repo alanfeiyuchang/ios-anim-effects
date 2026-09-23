@@ -8,12 +8,12 @@ extension Effect {
         name: L("Best Line Trail", "最佳路线轨迹"),
         summary: L("A glowing gradient trail carves down the mountain with a marker and live elevation readout.", "发光渐变轨迹沿山坡滑下，标记点与实时海拔读数随之移动。"),
         prompt: L(
-            "A dark BEST LINE card shows a faint ridge silhouette and a dotted ghost of the descent route. On appear, an orange-to-red gradient trail carves along the S-shaped curve from summit to valley over ~2.4 s (ease-in-out), glowing with an 8 pt orange shadow; a white marker with a translucent halo sits exactly on the trail's leading tip and carries a small capsule tag whose elevation counts down from 2,256 m to 860 m as it descends. The footer distance ticks up from 0.0 to 1.4 km in sync. Tap replays the run; dragging horizontally scrubs the marker along the line. Smooth, cinematic and satisfying, like replaying your best run.",
-            "深色“最佳路线”卡片上有一道若隐若现的山脊剪影和虚线描出的下滑路线。出现时，橙到红的渐变轨迹沿 S 形曲线从山顶滑向谷底，用时约 2.4 秒（ease-in-out），并带 8pt 橙色辉光；白色标记点连同半透明光晕精确贴在轨迹最前端，头顶的小胶囊标签显示海拔，从 2,256 米随下降递减到 860 米；底部距离同步从 0.0 增长到 1.4 公里。点击重播，横向拖动可让标记点沿路线来回拖放。顺滑、有电影感，就像回放自己最漂亮的一趟滑行。"
+            "A dark BEST LINE card shows a faint ridge silhouette and a dotted ghost of the descent route. On appear, an orange-to-red gradient trail carves along the S-shaped curve from summit to valley over ~2.4 s (ease-in-out), glowing with an 8 pt orange shadow; a white marker with a translucent halo sits exactly on the trail's leading tip and carries a small capsule tag whose elevation counts down from 2,256 m to 860 m as it descends. The footer distance ticks up from 0.0 to 1.4 km in sync. Tap replays the run; dragging horizontally scrubs the marker to the point of the line directly under the finger. Smooth, cinematic and satisfying, like replaying your best run.",
+            "深色“最佳路线”卡片上有一道若隐若现的山脊剪影和虚线描出的下滑路线。出现时，橙到红的渐变轨迹沿 S 形曲线从山顶滑向谷底，用时约 2.4 秒（ease-in-out），并带 8pt 橙色辉光；白色标记点连同半透明光晕精确贴在轨迹最前端，头顶的小胶囊标签显示海拔，从 2,256 米随下降递减到 860 米；底部距离同步从 0.0 增长到 1.4 公里。点击重播，横向拖动时，标记点会落在手指正下方的路线位置上。顺滑、有电影感，就像回放自己最漂亮的一趟滑行。"
         ),
         implementation: L(
-            "An Animatable view gets the interpolated progress each frame, trims the route path with trimmedPath(from:to:) and reads its currentPoint to place the marker and derive elevation and distance.",
-            "自定义 Animatable 视图逐帧获得插值后的进度，用 trimmedPath(from:to:) 截取路线，并读取其 currentPoint 来放置标记点、换算海拔与距离。"
+            "An Animatable view gets the interpolated progress each frame, trims the route path with trimmedPath(from:to:) and reads its currentPoint to place the marker and derive elevation and distance; scrubbing looks up the sampled path fraction whose x is nearest the finger.",
+            "自定义 Animatable 视图逐帧获得插值后的进度，用 trimmedPath(from:to:) 截取路线，并读取其 currentPoint 来放置标记点、换算海拔与距离；拖动时在预采样表中查找 x 最接近手指的路径比例。"
         ),
         apis: ["Animatable", "Path.trimmedPath(from:to:)", "Path.currentPoint", "StrokeStyle", "task(id:)"],
         tags: ["path animation", "route", "trail", "elevation", "路径动画", "路线", "轨迹", "海拔"],
@@ -42,6 +42,27 @@ private enum BestLineRoute {
         p.addCurve(to: CGPoint(x: w * 0.62, y: h * 0.6), control1: CGPoint(x: w * 0.58, y: h * 0.44), control2: CGPoint(x: w * 0.42, y: h * 0.68))
         p.addCurve(to: CGPoint(x: w * 0.96, y: h * 0.92), control1: CGPoint(x: w * 0.82, y: h * 0.52), control2: CGPoint(x: w * 0.72, y: h * 0.9))
         return p
+    }
+
+    /// (fraction, x) samples along the route, used to scrub by horizontal position.
+    static let samples: [(fraction: CGFloat, x: CGFloat)] = {
+        let full = path(in: size)
+        let count = 160
+        return (0...count).map { i in
+            let f = CGFloat(i) / CGFloat(count)
+            let x = full.trimmedPath(from: 0, to: max(f, 0.001)).currentPoint?.x ?? 0
+            return (f, x)
+        }
+    }()
+
+    /// The path fraction whose point lies closest to `x` horizontally — so the marker sits under the finger.
+    static func fraction(nearestX x: CGFloat) -> CGFloat {
+        var best: (fraction: CGFloat, distance: CGFloat) = (0, .greatestFiniteMagnitude)
+        for sample in samples {
+            let d = abs(sample.x - x)
+            if d < best.distance { best = (sample.fraction, d) }
+        }
+        return best.fraction
     }
 }
 
@@ -79,8 +100,11 @@ private struct SportBestLineDemo: View {
     private var scrubGesture: some Gesture {
         DragGesture()
             .onChanged { value in
-                let f = ((value.location.x - 20) / BestLineRoute.size.width).clamped(to: 0...1)
-                progress = f
+                // Card content is inset 20 pt; map the finger's x to the route point directly beneath it.
+                let x = (value.location.x - 20).clamped(to: 0...BestLineRoute.size.width)
+                var immediate = Transaction()
+                immediate.disablesAnimations = true
+                withTransaction(immediate) { progress = BestLineRoute.fraction(nearestX: x) }
             }
     }
 

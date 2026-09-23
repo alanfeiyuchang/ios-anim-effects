@@ -10,12 +10,12 @@ extension Effect {
         name: L("Touch Ripple", "触点涟漪"),
         summary: L("A Metal water ripple that radiates from where you tap.", "从触点向外扩散的 Metal 水波涟漪。"),
         prompt: L(
-            "On tap, a circular water ripple radiates outward from the exact touch point across the whole surface. Each pixel is displaced along the radial direction by a damped sine wave — amplitude ≈12 pt, frequency ≈15, exponential decay ≈8 — that reaches it after a delay proportional to its distance (wave speed ≈1200 pt/s), so the ring visibly travels. Crests are brightened by ~30% to fake a specular highlight. Each point settles within about half a second of the ring passing, so the whole ripple is gone in well under a second; subsequent taps restart it from the new point, feeling like touching the surface of liquid glass.",
-            "点击时，一圈水波从精确的触点位置向整个画面扩散。每个像素沿径向被一条衰减正弦波推移——振幅约 12pt、频率约 15、指数衰减约 8——并按其与触点的距离延迟到达（波速约 1200pt/s），因此能清楚看到波环向外推进。波峰处亮度提升约 30%，模拟高光反射。波环经过后每一点约半秒即归于平静，整圈涟漪不到一秒便完全消散；再次点击则从新位置重新激起，如同触碰一块液态玻璃。"
+            "On tap, a circular water ripple radiates outward from the exact touch point across the whole surface. Each pixel is displaced along the radial direction by a damped sine wave — amplitude ≈12 pt, frequency ≈15, exponential decay ≈8 — that reaches it after a delay proportional to its distance (wave speed ≈1200 pt/s), so the ring visibly travels. Crests are brightened by ~30% to fake a specular highlight. Each point settles within about half a second of the ring passing, and the shader switches off as soon as the farthest corner has calmed (≈ 0.9 s at the defaults), so the effect costs nothing at rest; subsequent taps restart it from the new point, feeling like touching the surface of liquid glass.",
+            "点击时，一圈水波从精确的触点位置向整个画面扩散。每个像素沿径向被一条衰减正弦波推移——振幅约 12pt、频率约 15、指数衰减约 8——并按其与触点的距离延迟到达（波速约 1200pt/s），因此能清楚看到波环向外推进。波峰处亮度提升约 30%，模拟高光反射。波环经过后每一点约半秒即归于平静；最远的角落一旦平息（默认约 0.9 秒）着色器便立即关闭，静止时零开销。再次点击则从新位置重新激起，如同触碰一块液态玻璃。"
         ),
         implementation: L(
-            "A [[stitchable]] Metal layer shader samples the view at a radially displaced position. A keyframeAnimator drives the elapsed time from 0 to the duration each time the tap trigger changes.",
-            "[[stitchable]] Metal layerEffect 着色器在径向偏移后的位置对视图采样；每次点击改变 trigger，由 keyframeAnimator 将经过时间从 0 线性推进到时长。"
+            "A [[stitchable]] Metal layer shader samples the view at a radially displaced position. A keyframeAnimator drives the elapsed time each time the tap trigger changes, over a duration derived from wave speed and decay (travel to the farthest corner plus ~4.6 / decay to settle within 1%).",
+            "[[stitchable]] Metal layerEffect 着色器在径向偏移后的位置对视图采样；每次点击改变 trigger，由 keyframeAnimator 推进经过时间；时长由波速与衰减推导（波传到最远角的时间 + 约 4.6 / 衰减，使振幅降到 1% 以内）。"
         ),
         apis: ["layerEffect", "ShaderLibrary", "keyframeAnimator", "onTapGesture(coordinateSpace:)", "Metal"],
         tags: ["ripple", "water", "shader", "metal", "涟漪", "水波", "着色器", "WWDC24"],
@@ -59,21 +59,22 @@ extension Effect {
         id: "shader.magnifier",
         category: .shaders,
         interaction: .gesture,
-        name: L("Lens Magnifier", "透镜放大镜"),
-        summary: L("Drag a bulging lens that magnifies whatever is beneath it.", "拖动一枚凸透镜，放大其下方的内容。"),
+        name: L("Glass Lens", "玻璃透镜"),
+        summary: L("Drag a glass sphere that magnifies, bends light at its rim and splits it into color.", "拖动一颗玻璃球：中心放大、边缘折光，并把光分解出彩色色边。"),
         prompt: L(
-            "A circular convex lens follows the finger across dense typographic content. Inside the lens radius (≈70 pt) pixels are pulled toward the center with a quadratic falloff — strongest magnification at the core, blending seamlessly to 1× at the rim — so text bulges like a drop of water rather than being cropped and scaled. A hairline white ring and soft shadow outline the lens. On lift-off the lens springs back to rest with response 0.4 s, damping 0.7.",
-            "一枚圆形凸透镜跟随手指在密集的文字内容上移动。透镜半径（约 70pt）内的像素以二次方衰减向圆心收拢——中心放大最强、边缘平滑过渡回 1 倍——文字如水滴般鼓起，而非生硬地裁切放大。透镜外缘有一圈细白线与柔和阴影。松手后透镜以弹簧（响应 0.4 秒、阻尼 0.7）回到中心。"
+            "A glass sphere with a 70 pt radius floats over dense typography on a dark grid. A Metal layer shader treats it as a spherical cap: the core magnifies up to 2× with a quadratic falloff, the steep rim bends rays inward so the grid lines curve hard at the edge, and red and blue refract by different amounts near the rim, leaving a thin cyan/orange dispersion fringe. A specular highlight from the top-left and slight rim shading give it volume. Grabbing anywhere on the lens keeps the finger's offset; on release it springs home (response 0.45 s, damping 0.7). Optical, precise and tangible.",
+            "一颗半径约 70pt 的玻璃球悬浮在深色网格与密集文字之上。Metal layerEffect 着色器把它当作球冠计算：中心按二次方衰减最多放大 2 倍；陡峭的边缘把光线向内折弯，网格线在边缘处强烈弯曲；红、蓝通道在边缘折射程度不同，留下一圈细细的青橙色散色边。左上方的镜面高光与轻微的边缘暗化带来体积感。在透镜任意位置按住拖动都会保持手指与球心的相对偏移；松手后以弹簧（响应 0.45 秒、阻尼 0.7）回到中心。光学、精准、可触可感。"
         ),
         implementation: L(
-            "A Metal distortion shader remaps positions within a radius toward the lens center; DragGesture updates the center, which is passed as float2.",
-            "Metal distortionEffect 将半径内的坐标向透镜中心重映射；DragGesture 更新中心点并以 float2 传入着色器。"
+            "A [[stitchable]] layer shader computes a spherical-cap height per pixel, remaps samples for magnification plus rim refraction, samples R/G/B with different refraction for dispersion and adds a Blinn-style highlight; an Animatable modifier springs the center.",
+            "[[stitchable]] layerEffect 着色器逐像素计算球冠高度，重映射采样点实现中心放大与边缘折射，并以不同折射量分别采样 R/G/B 形成色散，再叠加镜面高光；Animatable 修饰器让球心以弹簧移动。"
         ),
-        apis: ["distortionEffect", "DragGesture", "Shader.Argument.float2", "Metal"],
-        tags: ["magnifier", "lens", "bulge", "loupe", "放大镜", "透镜", "凸起", "鱼眼"],
+        apis: ["layerEffect", "Animatable", "DragGesture", "Shader.Argument.float2", "Metal"],
+        tags: ["lens", "glass", "refraction", "dispersion", "magnifier", "透镜", "玻璃", "折射", "色散", "放大镜"],
         params: [
             .slider("radius", L("Radius", "半径"), 40...120, default: 70, decimals: 0, unit: "pt"),
             .slider("strength", L("Magnification", "放大强度"), 0.1...0.8, default: 0.5),
+            .slider("dispersion", L("Dispersion", "色散"), 0...1, default: 0.5),
         ]
     ) { ctx in
         MagnifierDemo(ctx: ctx)
@@ -86,12 +87,12 @@ extension Effect {
         name: L("Twirl", "漩涡扭转"),
         summary: L("Drag to twist the content into a vortex that springs back.", "拖动将内容拧成漩涡，松手后弹回。"),
         prompt: L(
-            "Pressing and dragging on the surface twists the content into a vortex centered on the finger. Rotation is strongest at the core and falls off quadratically to zero at a ≈110 pt radius, so the pattern spirals smoothly without tearing. Horizontal drag distance maps to twist angle (up to ±2.5 rad). Releasing lets the vortex unwind with an underdamped spring (response 0.6 s, damping 0.5), overshooting slightly the other way before settling — playful, liquid and tactile.",
-            "在画面上按住拖动，内容会以手指为中心被拧成漩涡。旋转在中心最强，并以二次方衰减至约 110pt 半径处为零，因此图案平滑盘旋而不撕裂。水平拖动距离映射为扭转角度（最大 ±2.5 弧度）。松手后漩涡以欠阻尼弹簧（响应 0.6 秒、阻尼 0.5）解旋，并轻微反向过冲后稳定——俏皮、流体、富有触感。"
+            "Pressing and dragging on the surface twists the content into a vortex whose center rides under the finger, so the swirl can be stirred around the card. Rotation is strongest at the core and falls off quadratically to zero at a ≈110 pt radius, so the pattern spirals smoothly without tearing. Drag distance maps to twist angle (up to ±2.5 rad), with the sign taken from the horizontal direction. Releasing lets the vortex unwind in place with an underdamped spring (response 0.6 s, damping 0.5), overshooting slightly the other way before settling — playful, liquid and tactile.",
+            "在画面上按住拖动，内容会被拧成漩涡，漩涡中心始终跟随手指，可以在卡片上“搅动”。旋转在中心最强，并以二次方衰减至约 110pt 半径处为零，因此图案平滑盘旋而不撕裂。拖动距离映射为扭转角度（最大 ±2.5 弧度），方向由水平拖动方向决定。松手后漩涡在原地以欠阻尼弹簧（响应 0.6 秒、阻尼 0.5）解旋，并轻微反向过冲后稳定——俏皮、流体、富有触感。"
         ),
         implementation: L(
-            "A Metal distortion shader rotates sample coordinates by an angle that decays with distance. The angle lives in an Animatable ViewModifier so a spring can animate it back to zero.",
-            "Metal distortionEffect 以随距离衰减的角度旋转采样坐标；角度放在遵循 Animatable 的 ViewModifier 中，以便用弹簧动画回到零。"
+            "A Metal distortion shader rotates sample coordinates by an angle that decays with distance. The angle and center live in an Animatable ViewModifier; the center tracks the drag location and a spring animates the angle back to zero.",
+            "Metal distortionEffect 以随距离衰减的角度旋转采样坐标；角度与中心放在遵循 Animatable 的 ViewModifier 中，中心跟随拖动位置，松手后用弹簧把角度动画回零。"
         ),
         apis: ["distortionEffect", "Animatable", "DragGesture", "spring"],
         tags: ["swirl", "twirl", "vortex", "漩涡", "扭曲", "旋转"],
@@ -113,7 +114,7 @@ private struct RippleDemo: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            ShaderArtwork()
+            ShaderArtwork(variant: 2)
                 .modifier(RippleEffect(
                     at: origin,
                     trigger: trigger,
@@ -151,7 +152,11 @@ private struct RippleEffect<T: Equatable>: ViewModifier {
         let frequency = frequency
         let decay = decay
         let speed = speed
-        let duration: TimeInterval = 3
+        // Wave reaches the farthest corner of the 260 × 300 card, then decays to 1% (e^-4.6).
+        let far = [CGPoint(x: 0, y: 0), CGPoint(x: 260, y: 0), CGPoint(x: 0, y: 300), CGPoint(x: 260, y: 300)]
+            .map { hypot($0.x - origin.x, $0.y - origin.y) }
+            .max() ?? 400
+        let duration: TimeInterval = Double(far) / max(speed, 1) + 4.6 / max(decay, 0.5)
         content.keyframeAnimator(initialValue: 0.0, trigger: trigger) { view, elapsed in
             view.modifier(RippleShaderModifier(
                 origin: origin,
@@ -223,37 +228,71 @@ private struct WaveDemo: View {
 private struct MagnifierDemo: View {
     let ctx: DemoContext
     @State private var center: CGPoint?
+    /// Offset from the finger to the lens center, captured when a drag starts on the lens.
+    @State private var grab: CGSize?
     @State private var size: CGSize = CGSize(width: 340, height: 340)
 
     var body: some View {
-        ShaderClock(paused: !ctx.isPreview, preview: ctx.isPreview) { time in
-            ShaderGridArtwork()
-                .modifier(BulgeLensModifier(center: currentCenter(time: time), radius: ctx["radius"], strength: ctx["strength"]))
-        }
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in center = value.location }
-                .onEnded { _ in
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { center = nil }
-                }
-        )
+        let radius = ctx["radius"]
+        let home = CGPoint(x: size.width / 2, y: size.height / 2)
+        ShaderGridArtwork()
+            .modifier(GlassLensModifier(
+                center: center ?? home,
+                radius: radius,
+                magnify: ctx["strength"],
+                dispersion: ctx["dispersion"]
+            ))
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in drag(value, home: home, radius: CGFloat(radius)) }
+                    .onEnded { _ in
+                        grab = nil
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { center = nil }
+                    }
+            )
+            .autoplay(ctx.isPreview, every: 1.8, delay: 0.3) { glide(home: home) }
     }
 
-    private func currentCenter(time: Double) -> CGPoint {
-        if let center { return center }
-        let mid = CGPoint(x: size.width / 2, y: size.height / 2)
-        guard ctx.isPreview else { return mid }
-        return CGPoint(x: mid.x + cos(time * 1.2) * 80, y: mid.y + sin(time * 1.6) * 60)
+    private func drag(_ value: DragGesture.Value, home: CGPoint, radius: CGFloat) {
+        let current = center ?? home
+        if grab == nil {
+            let dx = current.x - value.startLocation.x
+            let dy = current.y - value.startLocation.y
+            // Grabbing the lens keeps the finger's offset; touching elsewhere pulls the lens under the finger.
+            grab = hypot(dx, dy) <= radius ? CGSize(width: dx, height: dy) : .zero
+            Haptics.tap(.soft)
+        }
+        let offset = grab ?? .zero
+        let target = CGPoint(
+            x: (value.location.x + offset.width).clamped(to: 0...max(size.width, 1)),
+            y: (value.location.y + offset.height).clamped(to: 0...max(size.height, 1))
+        )
+        withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.86)) { center = target }
+    }
+
+    /// Simulated drag: glide to a spot over the text, then spring home.
+    private func glide(home: CGPoint) {
+        let spot = CGPoint(
+            x: home.x + CGFloat.random(in: -90...90),
+            y: home.y + (Bool.random() ? -40 : 30)
+        )
+        withAnimation(.spring(response: 0.7, dampingFraction: 0.78)) { center = spot }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.9))
+            guard grab == nil else { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { center = nil }
+        }
     }
 }
 
-/// Animatable so the release spring moves the bulge and its rim together (shader arguments don't animate on their own).
-private struct BulgeLensModifier: ViewModifier, Animatable {
+/// Animatable so springs move the lens (shader arguments don't animate on their own).
+private struct GlassLensModifier: ViewModifier, Animatable {
     var center: CGPoint
     var radius: Double
-    var strength: Double
+    var magnify: Double
+    var dispersion: Double
 
     var animatableData: AnimatablePair<CGFloat, CGFloat> {
         get { AnimatablePair(center.x, center.y) }
@@ -262,16 +301,20 @@ private struct BulgeLensModifier: ViewModifier, Animatable {
 
     func body(content: Content) -> some View {
         content
-            .distortionEffect(
-                ShaderLibrary.mlBulge(.float2(center), .float(radius), .float(strength)),
+            .layerEffect(
+                ShaderLibrary.mlGlassLens(.float2(center), .float(radius), .float(magnify), .float(dispersion)),
                 maxSampleOffset: CGSize(width: radius, height: radius)
             )
             .overlay {
                 Circle()
-                    .strokeBorder(Color.white.opacity(0.7), lineWidth: 1)
+                    .strokeBorder(
+                        LinearGradient(colors: [.white.opacity(0.75), .white.opacity(0.1), .white.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: 1
+                    )
                     .frame(width: radius * 2, height: radius * 2)
-                    .shadow(color: .black.opacity(0.35), radius: 10, y: 6)
+                    .shadow(color: .black.opacity(0.35), radius: 12, y: 8)
                     .position(center)
+                    .allowsHitTesting(false)
             }
     }
 }
@@ -285,29 +328,38 @@ private struct SwirlDemo: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            ShaderArtwork()
+            ShaderArtwork(variant: 4)
                 .modifier(SwirlModifier(center: center, radius: ctx["radius"], angle: angle))
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
-                            center = value.startLocation
+                            // The vortex rides under the finger; distance sets the twist, horizontal direction its sign.
+                            center = value.location
                             let maxAngle = ctx["maxAngle"]
-                            angle = (Double(value.translation.width) / 60).clamped(to: -maxAngle...maxAngle)
+                            let distance = Double(hypot(value.translation.width, value.translation.height))
+                            let sign: Double = value.translation.width < 0 ? -1 : 1
+                            angle = (sign * distance / 60).clamped(to: -maxAngle...maxAngle)
                         }
                         .onEnded { _ in
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) { angle = 0 }
                         }
                 )
-            DemoHint(text: L("Press and drag sideways", "按住并左右拖动"), ctx: ctx)
+            DemoHint(text: L("Press and stir around", "按住并拖动搅动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.6, delay: 0.2) {
-            center = CGPoint(x: 130, y: 150)
-            withAnimation(.easeInOut(duration: 0.5)) { angle = ctx["maxAngle"] }
-            Task {
-                try? await Task.sleep(for: .seconds(0.6))
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) { angle = 0 }
-            }
+        .autoplay(ctx.isPreview, every: 1.8, delay: 0.2) { stir() }
+    }
+
+    /// Simulated stir: the vortex travels diagonally while twisting, then unwinds in place.
+    private func stir() {
+        center = CGPoint(x: 90, y: 110)
+        withAnimation(.easeInOut(duration: 0.6)) {
+            center = CGPoint(x: 170, y: 190)
+            angle = ctx["maxAngle"]
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.7))
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) { angle = 0 }
         }
     }
 }
@@ -317,9 +369,12 @@ private struct SwirlModifier: ViewModifier, Animatable {
     var radius: Double
     var angle: Double
 
-    var animatableData: Double {
-        get { angle }
-        set { angle = newValue }
+    var animatableData: AnimatablePair<Double, AnimatablePair<CGFloat, CGFloat>> {
+        get { AnimatablePair(angle, AnimatablePair(center.x, center.y)) }
+        set {
+            angle = newValue.first
+            center = CGPoint(x: newValue.second.first, y: newValue.second.second)
+        }
     }
 
     func body(content: Content) -> some View {

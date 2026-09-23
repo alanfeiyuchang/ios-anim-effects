@@ -52,6 +52,12 @@ private struct AlertPopDemo: View {
                 .allowsHitTesting(presented)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap Delete Account", "点击“删除账户”"), ctx: ctx)
+                .padding(.bottom, 14)
+                .opacity(presented ? 0 : 1)
+                .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 1.8, delay: 0.6) {
             if presented { dismiss() } else { present() }
         }
@@ -210,6 +216,10 @@ private struct UndoSnackbarDemo: View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 14) {
                 mailCard
+                if !deleted {
+                    DemoHint(text: L("Tap the trash to delete the email", "点击垃圾桶删除邮件"), ctx: ctx)
+                        .transition(.opacity)
+                }
                 if deleted && !snack {
                     Button(ctx.language == .zh ? "重置演示" : "Reset demo", action: undo)
                         .font(.footnote.weight(.semibold))

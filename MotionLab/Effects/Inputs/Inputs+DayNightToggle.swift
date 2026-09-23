@@ -8,8 +8,8 @@ extension Effect {
         name: L("Day / Night Toggle", "昼夜切换开关"),
         summary: L("The sun rolls across and becomes a cratered moon under the stars.", "太阳滚动到另一端化作月亮，星空随之浮现。"),
         prompt: L(
-            "A large illustrated theme switch (180 × 76 pt capsule). Day: a sky-blue gradient track, a golden sun knob on the left wrapped in three concentric translucent halo rings, and puffy white clouds resting along the bottom right. On tap the knob rolls to the right on a spring (response 0.6 s, damping 0.78), rotating as it travels while its fill shifts from warm amber to pale lunar gray and three craters fade in. The track crossfades to a deep navy night gradient, the clouds sink out of view, and five tiny stars scale in on the left with a 60 ms stagger and a gentle twinkle. Toggling back plays everything in reverse. Whimsical, cinematic and instantly readable.",
-            "大尺寸插画风主题开关（180 × 76pt 胶囊）。白天：天蓝渐变轨道，左侧是金色太阳旋钮，外围环绕三圈半透明同心光晕，右下方铺着蓬松的白云。点击后旋钮以弹簧（响应 0.6 秒、阻尼 0.78）滚向右侧，一边移动一边旋转，填充从暖琥珀色过渡为浅月灰，并浮现三个陨石坑。轨道交叉过渡为深藏青夜空渐变，云朵下沉消失，左侧五颗小星星以 60 毫秒错峰缩放出现并轻轻闪烁。再次点击全部反向播放。充满童趣与电影感，一眼就懂。"
+            "A large illustrated theme switch (180 × 76 pt capsule). Day: a sky-blue gradient track, a golden sun knob on the left — given depth by a radial gradient from a pale-yellow core to a deep-orange rim, a soft specular highlight near 10 o'clock and a warm outer glow — wrapped in three concentric translucent halo rings, and puffy white clouds resting along the bottom right. On tap the knob rolls to the right on a spring (response 0.6 s, damping 0.78), rotating as it travels while its fill shifts from warm amber to pale lunar gray and three craters fade in. The track crossfades to a deep navy night gradient, the clouds sink out of view, and five tiny stars scale in on the left with a 60 ms stagger and a gentle twinkle. Toggling back plays everything in reverse. Whimsical, cinematic and instantly readable.",
+            "大尺寸插画风主题开关（180 × 76pt 胶囊）。白天：天蓝渐变轨道，左侧是金色太阳旋钮——由浅黄内核到深橙边缘的径向渐变、10 点钟方向的柔和高光和一圈暖色外发光营造立体感——外围环绕三圈半透明同心光晕，右下方铺着蓬松的白云。点击后旋钮以弹簧（响应 0.6 秒、阻尼 0.78）滚向右侧，一边移动一边旋转，填充从暖琥珀色过渡为浅月灰，并浮现三个陨石坑。轨道交叉过渡为深藏青夜空渐变，云朵下沉消失，左侧五颗小星星以 60 毫秒错峰缩放出现并轻轻闪烁。再次点击全部反向播放。充满童趣与电影感，一眼就懂。"
         ),
         implementation: L(
             "Every layer (track gradients, halos, clouds, stars, craters) reads one isNight flag; a single spring transaction animates offsets, rotation and opacities, with per-star delays via animation(_:value:).",
@@ -41,7 +41,10 @@ private struct InputDayNightDemo: View {
             Text(isNight ? L("Dark", "深色") : L("Light", "浅色"), ctx.language)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
+                .contentTransition(.opacity)
             Spacer()
+            DemoHint(text: L("Tap the switch", "点击开关切换昼夜"), ctx: ctx)
+                .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.6, delay: 0.5) { toggle() }
@@ -95,8 +98,7 @@ private struct InputDayNightSwitch: View {
 
     private var knob: some View {
         ZStack {
-            Circle()
-                .fill(LinearGradient(colors: [Color(hex: 0xFFD35C), Color(hex: 0xFFA62B)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            InputSunFace()
             Circle()
                 .fill(LinearGradient(colors: [Color(hex: 0xF1F3FA), Color(hex: 0xC4CAD9)], startPoint: .topLeading, endPoint: .bottomTrailing))
                 .opacity(isNight ? 1 : 0)
@@ -105,8 +107,42 @@ private struct InputDayNightSwitch: View {
         }
         .frame(width: 60, height: 60)
         .rotationEffect(.degrees(isNight ? 0 : -120))
+        .shadow(color: Color(hex: 0xFFB02E).opacity(isNight ? 0 : 0.65), radius: 12)
         .shadow(color: .black.opacity(0.25), radius: 6, x: 2, y: 3)
         .offset(x: knobX)
+    }
+}
+
+/// A sun with volume: radial core-to-rim gradient, a rim that darkens toward the lower right,
+/// and a soft specular highlight near 10 o'clock.
+private struct InputSunFace: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color(hex: 0xFFF1A8), Color(hex: 0xFFC83D), Color(hex: 0xFF9A1F)],
+                        center: UnitPoint(x: 0.36, y: 0.32),
+                        startRadius: 2,
+                        endRadius: 40
+                    )
+                )
+            Circle()
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.55), .clear, Color(hex: 0xC4580A).opacity(0.45)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+            Ellipse()
+                .fill(Color.white.opacity(0.55))
+                .frame(width: 18, height: 10)
+                .rotationEffect(.degrees(-35))
+                .blur(radius: 3)
+                .offset(x: -12, y: -14)
+        }
     }
 }
 

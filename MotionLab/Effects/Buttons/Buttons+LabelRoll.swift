@@ -8,14 +8,14 @@ extension Effect {
         name: L("Label Roll", "文字翻滚"),
         summary: L("Each letter rolls out and back in, one after another.", "按钮文字逐字向上翻滚，替换成一模一样的新文字。"),
         prompt: L(
-            "A near-black capsule CTA (\"Get started\" with a trailing arrow) with a faint top sheen, paired with a quieter outline button. On tap every character of the label slides up out of a 24 pt clipping line while an identical copy rises in from below, each letter on its own spring (response 0.45 s, damping 0.85) with a 25 ms left-to-right stagger, so the word ripples like a split-flap wave. As the wave reaches the end, the arrow shoots out to the right and a fresh one slides in from the left. The swap is invisible at rest, so it can repeat forever. The button dips to 97% on press with a light haptic. Crisp, editorial and quietly playful — the web's favourite hover, adapted for touch.",
-            "接近纯黑的胶囊主按钮（“立即开始”+ 尾部箭头），顶部带一层极淡的光泽，旁边是一枚更安静的描边次按钮。点击后，文字中的每个字符都在 24pt 高的裁切行内向上滑出，一模一样的副本同时从下方升起；每个字各自使用弹簧（响应 0.45 秒、阻尼 0.85），从左到右错开 25 毫秒，整行文字像翻牌一样掀起一道波浪。波浪抵达末尾时，箭头向右射出，新的箭头从左侧滑入。静止时替换不可见，因此可以无限重复。按下时按钮轻压到 97% 并伴随轻触觉。利落、有编辑感又带点俏皮——把网页上最受欢迎的悬停动效搬到了触屏上。"
+            "A near-black capsule CTA (\"Get started\" with a trailing arrow) with a faint top sheen, paired with a quieter outline button. On tap every character of the label slides up out of a 24 pt clipping line while an identical copy rises in from below, each letter on its own spring (response 0.45 s, damping 0.85) with a 25 ms left-to-right stagger, so the word ripples like a split-flap wave while keeping its original kerning. As the wave reaches the last letter, the arrow shoots out to the right and a fresh one slides in from the left. The swap is invisible at rest, so it can repeat forever. The button dips to 97% on press with a light haptic. Crisp, editorial and quietly playful — the web's favourite hover, adapted for touch.",
+            "接近纯黑的胶囊主按钮（“立即开始”+ 尾部箭头），顶部带一层极淡的光泽，旁边是一枚更安静的描边次按钮。点击后，文字中的每个字符都在 24pt 高的裁切行内向上滑出，一模一样的副本同时从下方升起；每个字各自使用弹簧（响应 0.45 秒、阻尼 0.85），从左到右错开 25 毫秒，整行文字像翻牌一样掀起一道波浪，且保持原有字距。波浪抵达最后一个字时，箭头向右射出，新的箭头从左侧滑入。静止时替换不可见，因此可以无限重复。按下时按钮轻压到 97% 并伴随轻触觉。利落、有编辑感又带点俏皮——把网页上最受欢迎的悬停动效搬到了触屏上。"
         ),
         implementation: L(
-            "Each character is a ZStack of two identical Texts offset by one line height inside a clipped row; a rolled flag offsets them by one line with a per-index delayed spring via animation(_:value:), then resets instantly inside a transaction with disablesAnimations.",
-            "每个字符是由两份相同 Text 组成的 ZStack，二者相距一个行高，放在裁切的行容器中；rolled 状态通过 animation(_:value:) 以按索引延迟的弹簧把它们平移一个行高，结束后在 disablesAnimations 的事务中瞬间复位。"
+            "The label stays one Text (so kerning is intact) drawn by a custom TextRenderer: an animatable clock runs linearly, and each glyph slice is drawn twice — leaving and arriving — offset by an analytic spring evaluated at clock − index × stagger; afterwards the clock resets instantly with disablesAnimations.",
+            "标签仍是一个完整的 Text（保留原有字距），由自定义 TextRenderer 绘制：一个可动画的时钟线性推进，每个字形切片绘制两次（离开与进入），其位移取时钟减去序号 × 错峰后代入解析弹簧函数的值；结束后在 disablesAnimations 事务中瞬间复位时钟。"
         ),
-        apis: ["animation(_:value:)", "Transaction.disablesAnimations", "clipped()", "offset", "ButtonStyle"],
+        apis: ["TextRenderer", "Text.Layout", "Animatable", "Transaction.disablesAnimations", "ButtonStyle"],
         tags: ["text roll", "hover", "stagger", "letters", "文字翻滚", "逐字", "错峰", "按钮文字"],
         params: [
             .slider("stagger", L("Letter stagger", "逐字间隔"), 0...0.06, default: 0.025, decimals: 3, unit: "s"),
@@ -30,6 +30,7 @@ extension Effect {
 private struct ButtonLabelRollDemo: View {
     let ctx: DemoContext
     @State private var rolled = false
+    @State private var clock: Double = 0
 
     private var title: String { ctx.language == .zh ? "立即开始" : "Get started" }
 
@@ -61,16 +62,20 @@ private struct ButtonLabelRollDemo: View {
     private var primaryButton: some View {
         Button(action: roll) {
             HStack(spacing: 8) {
-                ButtonRollingLabel(
-                    text: title,
-                    rolled: rolled,
-                    direction: ctx.int("direction") == 1 ? -1 : 1,
-                    stagger: ctx["stagger"],
-                    response: ctx["response"]
-                )
+                Text(verbatim: title)
+                    .textRenderer(
+                        ButtonRollRenderer(
+                            clock: clock,
+                            stagger: ctx["stagger"],
+                            response: ctx["response"],
+                            direction: ctx.int("direction") == 1 ? -1 : 1
+                        )
+                    )
+                    .clipped()
                 ButtonRollingArrow(
                     rolled: rolled,
-                    delay: Double(title.count) * ctx["stagger"] * 0.6,
+                    // Fires as the wave reaches the last letter.
+                    delay: Double(max(title.count - 1, 0)) * ctx["stagger"],
                     response: ctx["response"]
                 )
             }
@@ -103,47 +108,62 @@ private struct ButtonLabelRollDemo: View {
     private func roll() {
         guard !rolled else { return }
         if !ctx.isPreview { Haptics.tap() }
-        rolled = true
         let settle = ctx["response"] * 2 + Double(title.count) * ctx["stagger"]
-        Task {
-            try? await Task.sleep(for: .seconds(settle))
+        rolled = true
+        // The renderer evaluates each glyph's spring itself, so the clock just runs linearly.
+        withAnimation(.linear(duration: settle)) { clock = settle }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(settle + 0.05))
             // Both copies are identical, so snapping back is invisible and the roll can repeat.
             var transaction = Transaction()
             transaction.disablesAnimations = true
-            withTransaction(transaction) { rolled = false }
+            withTransaction(transaction) {
+                rolled = false
+                clock = 0
+            }
         }
     }
 }
 
-/// A row of characters; each one is two stacked copies inside a clipped line.
-private struct ButtonRollingLabel: View {
-    let text: String
-    let rolled: Bool
-    let direction: CGFloat
-    let stagger: Double
-    let response: Double
+/// Rolls every glyph of one laid-out Text (kerning intact): each glyph is drawn leaving and arriving,
+/// driven by an analytic underdamped spring (damping 0.85) started `index × stagger` after the clock.
+private struct ButtonRollRenderer: TextRenderer {
+    var clock: Double
+    var stagger: Double
+    var response: Double
+    var direction: Double
 
-    private let lineHeight: CGFloat = 24
+    var animatableData: Double {
+        get { clock }
+        set { clock = newValue }
+    }
 
-    var body: some View {
-        let glyphs = text.map { String($0) }
-        HStack(spacing: 0) {
-            ForEach(glyphs.indices, id: \.self) { index in
-                ZStack {
-                    Text(verbatim: glyphs[index])
-                    Text(verbatim: glyphs[index])
-                        .offset(y: lineHeight * direction)
+    private static func spring(_ t: Double, response: Double) -> Double {
+        guard t > 0 else { return 0 }
+        let zeta = 0.85
+        let omega = 2 * Double.pi / max(response, 0.05)
+        let damped = omega * (1 - zeta * zeta).squareRoot()
+        let decay = exp(-zeta * omega * t)
+        return 1 - decay * (cos(damped * t) + (zeta * omega / damped) * sin(damped * t))
+    }
+
+    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
+        var index = 0
+        for line in layout {
+            for run in line {
+                for glyph in run {
+                    let progress = Self.spring(clock - Double(index) * stagger, response: response)
+                    let travel = Double(glyph.typographicBounds.rect.height) + 4
+                    var leaving = context
+                    leaving.translateBy(x: 0, y: CGFloat(-travel * progress * direction))
+                    leaving.draw(glyph)
+                    var arriving = context
+                    arriving.translateBy(x: 0, y: CGFloat(travel * (1 - progress) * direction))
+                    arriving.draw(glyph)
+                    index += 1
                 }
-                .frame(height: lineHeight)
-                .offset(y: rolled ? -lineHeight * direction : 0)
-                .animation(
-                    rolled ? Animation.spring(response: response, dampingFraction: 0.85).delay(Double(index) * stagger) : nil,
-                    value: rolled
-                )
             }
         }
-        .frame(height: lineHeight)
-        .clipped()
     }
 }
 

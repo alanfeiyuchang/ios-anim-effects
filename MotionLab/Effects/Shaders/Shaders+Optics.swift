@@ -35,12 +35,12 @@ extension Effect {
         name: L("Kaleidoscope", "万花筒"),
         summary: L("Mirrored wedges of live artwork that slowly turn; drag to twist the tube.", "镜像楔形实时拼出花纹并缓缓旋转，拖动即可转动镜筒。"),
         prompt: L(
-            "A 280 pt circular window shows a kaleidoscope built from colourful artwork. A Metal layer shader converts every pixel to polar coordinates, folds the angle into N mirrored wedges (8 by default) and samples the source at the folded angle, so a single slice repeats as a seamless rosette. Two rotations run at once: the sampled wedge turns at ≈ 0.35 rad/s — like rotating the tube, so the pattern continuously blooms and re-forms — while the whole rosette counter-drifts at ≈ 0.15 rad/s. Dragging horizontally twists the tube directly, and a soft rim light and outer glow frame the lens. Hypnotic, precise and endlessly varied.",
-            "一个 280pt 的圆形视窗呈现由彩色插画构成的万花筒。Metal layerEffect 着色器把每个像素转换到极坐标，将角度折叠为 N 个镜像楔形（默认 8 个），再按折叠后的角度采样原图，于是一小片内容被无缝复制成完整的花窗。两个旋转同时进行：采样楔形以约 0.35 rad/s 转动——如同旋转镜筒，图案不断绽放、重组；整朵花窗则以约 0.15 rad/s 反向缓慢漂移。水平拖动可直接扭转镜筒，边缘的柔和轮廓光与外发光为镜片收边。催眠、精确，且变化无穷。"
+            "A 280 pt circular window shows a kaleidoscope built from full-bleed artwork whose motifs — dots, petals, bars and sparks — are scattered on three rings around the whole circle, so every slice holds something. A Metal layer shader converts every pixel to polar coordinates, wraps the angle into one of N wedges (8 by default) and mirrors it about the wedge center into [0, π/N], then samples the source at that angle and the same radius, so a single slice repeats as a seamless, truly mirrored rosette. Two rotations run at once: the sampled wedge turns at ≈ 0.35 rad/s — like rotating the tube, so the pattern continuously blooms and re-forms — while the whole rosette counter-drifts at ≈ 0.15 rad/s. Dragging horizontally twists the tube directly, and a soft rim light and outer glow frame the lens. Hypnotic, precise and endlessly varied.",
+            "一个 280pt 的圆形视窗呈现由满版插画构成的万花筒：圆点、花瓣、短条与星芒分布在环绕整圈的三道圆环上，任何一片楔形都有内容。Metal layerEffect 着色器把每个像素转换到极坐标，把角度归入 N 个楔形之一（默认 8 个），再以楔形中线为轴镜像折叠到 [0, π/N]，然后以该角度、同一半径采样原图，于是一小片内容被无缝复制成真正镜像对称的花窗。两个旋转同时进行：采样楔形以约 0.35 rad/s 转动——如同旋转镜筒，图案不断绽放、重组；整朵花窗则以约 0.15 rad/s 反向缓慢漂移。水平拖动可直接扭转镜筒，边缘的柔和轮廓光与外发光为镜片收边。催眠、精确，且变化无穷。"
         ),
         implementation: L(
-            "visualEffect feeds the view size into a [[stitchable]] layer shader that folds atan2 angles into mirrored segments; ShaderClock supplies speed-scaled time and a DragGesture adds a manual spin offset.",
-            "visualEffect 将视图尺寸传入 [[stitchable]] layerEffect 着色器，把 atan2 角度折叠为镜像分段；ShaderClock 提供按速度缩放的时间，DragGesture 叠加手动旋转偏移。"
+            "visualEffect feeds the view size into a [[stitchable]] layer shader that folds atan2 angles into mirrored segments; maxSampleOffset spans the whole 280 pt window because folded samples can land anywhere in it. ShaderClock supplies speed-scaled time, a Canvas draws the radial motifs and a horizontal-first DragGesture adds a manual spin offset.",
+            "visualEffect 将视图尺寸传入 [[stitchable]] layerEffect 着色器，把 atan2 角度折叠为镜像分段；折叠后的采样点可能落在视窗任意位置，因此 maxSampleOffset 覆盖整个 280pt。ShaderClock 提供按速度缩放的时间，Canvas 绘制环形分布的图案，水平优先的 DragGesture 叠加手动旋转偏移。"
         ),
         apis: ["layerEffect", "visualEffect", "TimelineView", "DragGesture", "Metal"],
         tags: ["kaleidoscope", "mirror", "symmetry", "polar", "pattern", "万花筒", "镜像", "对称", "花纹"],
@@ -139,12 +139,18 @@ private struct ChromaticDemo: View {
             DemoHint(text: L("Drag or flick the card", "拖动或甩动卡片"), ctx: ctx)
         }
         .padding(.bottom, 8)
-        .autoplay(ctx.isPreview, every: 0.9, delay: 0.3) { autoSwipe() }
+        .autoplay(ctx.isPreview, every: 1.2, delay: 0.3) { autoSwipe() }
     }
 
+    /// Simulated flick: throw the card out, then let the spring pull it home so the split blooms and closes.
     private func autoSwipe() {
         flip.toggle()
-        model.target = flip ? CGSize(width: CGFloat.random(in: -90...90), height: CGFloat.random(in: -50...50)) : .zero
+        let side: CGFloat = flip ? 1 : -1
+        model.target = CGSize(width: side * CGFloat.random(in: 70...100), height: CGFloat.random(in: -50...50))
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.35))
+            model.target = .zero
+        }
     }
 }
 
@@ -163,7 +169,7 @@ private struct ChromaticCard: View {
         let tilt = Double(velocity.width / 90).clamped(to: -8...8)
         // The lens fringe blooms with motion too, so a card at rest is perfectly clean.
         let radial = fringe * Double(min(length / 6, 1))
-        ShaderArtwork()
+        ShaderArtwork(variant: 5)
             .visualEffect { content, proxy in
                 content.layerEffect(
                     ShaderLibrary.mlChromatic(.float2(proxy.size), .float2(shift), .float(radial)),
@@ -182,6 +188,7 @@ private struct KaleidoscopeDemo: View {
     let ctx: DemoContext
     @State private var spinOffset: Double = 0
     @State private var dragSpin: Double = 0
+    @State private var dragging = false
 
     var body: some View {
         let segments = ctx["segments"]
@@ -199,7 +206,8 @@ private struct KaleidoscopeDemo: View {
                                 .float(time * 0.35 + manual),
                                 .float(zoom)
                             ),
-                            maxSampleOffset: .zero
+                            // Folded samples can land anywhere in the window, up to its full size away.
+                            maxSampleOffset: CGSize(width: 280, height: 280)
                         )
                     }
                     .clipShape(Circle())
@@ -209,22 +217,39 @@ private struct KaleidoscopeDemo: View {
             .shadow(color: Palette.violet.opacity(0.35), radius: 24, y: 10)
             .contentShape(Circle())
             .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in dragSpin = Double(value.translation.width) / 70 }
+                // Horizontal-first with a small slop, so a vertical swipe still scrolls the page.
+                DragGesture(minimumDistance: 10)
+                    .onChanged { value in
+                        if !dragging {
+                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                            dragging = true
+                        }
+                        dragSpin = Double(value.translation.width) / 70
+                    }
                     .onEnded { _ in
                         spinOffset += dragSpin
                         dragSpin = 0
+                        dragging = false
                     }
             )
             DemoHint(text: L("Drag sideways to turn the tube", "左右拖动以转动镜筒"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .autoplay(ctx.isPreview, every: 4, delay: 0.2) { introTwist() }
+    }
+
+    /// A quarter-turn flourish on arrival shows the tube can be twisted.
+    private func introTwist() {
+        withAnimation(.spring(response: 1.1, dampingFraction: 0.8)) { spinOffset += 0.9 }
     }
 }
 
-/// Colourful, asymmetric source art: a single wedge of it becomes the whole rosette.
+/// Full-bleed source art with motifs spread around every angle on three rings, so whichever
+/// slice the tube samples, the rosette has shapes to mirror.
 private struct KaleidoSource: View {
     let time: Double
+
+    private static let colors: [Color] = [Palette.amber, Palette.mint, Palette.pink, .white, Palette.sky, Palette.coral, Palette.violet]
 
     var body: some View {
         ZStack {
@@ -233,30 +258,42 @@ private struct KaleidoSource: View {
                 center: .center,
                 angle: .degrees(time * 12)
             )
-            Circle()
-                .fill(Palette.amber)
-                .frame(width: 70, height: 70)
-                .offset(x: 70 + 14 * cos(time * 0.7), y: 30 + 10 * sin(time * 0.9))
-            Circle()
-                .fill(.white.opacity(0.85))
-                .frame(width: 34, height: 34)
-                .offset(x: 105, y: -26 + 18 * sin(time * 0.6))
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Palette.mint)
-                .frame(width: 26, height: 90)
-                .rotationEffect(.degrees(time * 20))
-                .offset(x: 40, y: 64)
-            Image(systemName: "sparkle")
-                .font(.system(size: 44, weight: .bold))
-                .foregroundStyle(.white)
-                .offset(x: 58, y: -8)
-            Capsule()
-                .fill(Palette.coral)
-                .frame(width: 110, height: 14)
-                .rotationEffect(.degrees(28))
-                .offset(x: 90, y: 100)
+            RadialGradient(colors: [.white.opacity(0.55), .clear], center: .center, startRadius: 0, endRadius: 70)
+            Canvas { context, size in
+                let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                drawRing(&context, center: center, radius: 46 + 6 * sin(time * 0.8), count: 7, size: 18, style: 0, phase: time * 0.2)
+                drawRing(&context, center: center, radius: 92 + 8 * sin(time * 0.6 + 1), count: 9, size: 30, style: 1, phase: -time * 0.15)
+                drawRing(&context, center: center, radius: 138 + 10 * cos(time * 0.5), count: 11, size: 24, style: 2, phase: time * 0.1)
+                drawRing(&context, center: center, radius: 180, count: 13, size: 16, style: 0, phase: -time * 0.12)
+            }
         }
         .frame(width: 280, height: 280)
+    }
+
+    /// style 0: dots, 1: petals, 2: rotated bars. Colors cycle per motif so neighbours differ.
+    private func drawRing(_ context: inout GraphicsContext, center: CGPoint, radius: Double, count: Int, size: CGFloat, style: Int, phase: Double) {
+        for index in 0..<count {
+            let angle = Double(index) / Double(count) * 2 * .pi + phase
+            let point = CGPoint(x: center.x + CGFloat(cos(angle) * radius), y: center.y + CGFloat(sin(angle) * radius))
+            let color = Self.colors[(index + style * 2) % Self.colors.count]
+            let scale = CGFloat(0.7 + 0.3 * Double(index % 3))
+            let w = size * scale
+            switch style {
+            case 1:
+                let petal = Path(ellipseIn: CGRect(x: -w * 0.35, y: -w * 0.8, width: w * 0.7, height: w * 1.6))
+                    .applying(CGAffineTransform(rotationAngle: CGFloat(angle + .pi / 2)))
+                    .applying(CGAffineTransform(translationX: point.x, y: point.y))
+                context.fill(petal, with: .color(color.opacity(0.92)))
+            case 2:
+                let bar = Path(roundedRect: CGRect(x: -w * 0.18, y: -w, width: w * 0.36, height: w * 2), cornerRadius: w * 0.18)
+                    .applying(CGAffineTransform(rotationAngle: CGFloat(angle * 1.5 + time * 0.4)))
+                    .applying(CGAffineTransform(translationX: point.x, y: point.y))
+                context.fill(bar, with: .color(color))
+            default:
+                context.fill(Path(ellipseIn: CGRect(x: point.x - w / 2, y: point.y - w / 2, width: w, height: w)), with: .color(color))
+                context.fill(Path(ellipseIn: CGRect(x: point.x - w / 5, y: point.y - w / 5, width: w * 0.4, height: w * 0.4)), with: .color(Color(hex: 0x1B1464).opacity(0.55)))
+            }
+        }
     }
 }
 
@@ -276,7 +313,7 @@ private struct EdgeScanModifier: ViewModifier, Animatable {
         content.layerEffect(
             ShaderLibrary.mlEdgeScan(.float(scanY), .float(band), .color(tint), .float(3.2)),
             maxSampleOffset: CGSize(width: 2, height: 2),
-            isEnabled: scanY > EdgeScanDemo.restTop + 1
+            isEnabled: scanY > EdgeScanDemo.restTop(band: band) + 1
         )
     }
 }
@@ -285,8 +322,9 @@ private struct EdgeScanDemo: View {
     let ctx: DemoContext
     @State private var scanned = false
 
-    static let restTop: Double = -60
-    static let restBottom: Double = 360
+    /// Rest positions sit 3 glow-heights beyond the 300 pt card, where the exponential glow is < 5%.
+    static func restTop(band: Double) -> Double { -3 * band }
+    static func restBottom(band: Double) -> Double { 300 + 3 * band }
 
     private var tint: Color {
         switch ctx.int("tint") {
@@ -297,11 +335,12 @@ private struct EdgeScanDemo: View {
     }
 
     var body: some View {
+        let band = ctx["band"]
         VStack(spacing: 14) {
-            ShaderArtwork()
+            ShaderArtwork(variant: 6)
                 .modifier(EdgeScanModifier(
-                    scanY: scanned ? EdgeScanDemo.restBottom : EdgeScanDemo.restTop,
-                    band: ctx["band"],
+                    scanY: scanned ? EdgeScanDemo.restBottom(band: band) : EdgeScanDemo.restTop(band: band),
+                    band: band,
                     tint: tint
                 ))
                 .shadow(color: tint.opacity(scanned ? 0.45 : 0.15), radius: 22, y: 10)
@@ -310,7 +349,17 @@ private struct EdgeScanDemo: View {
             DemoHint(text: L("Tap to scan / restore", "点击扫描 / 还原"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.2, delay: 0.4) { sweep() }
+        .autoplay(ctx.isPreview, every: ctx["duration"] * 2 + 1.6, delay: 0.4) { scanAndRestore() }
+    }
+
+    /// Autoplay / arrival intro: scan down, hold the wireframe briefly, then sweep back up.
+    private func scanAndRestore() {
+        let duration = ctx["duration"]
+        withAnimation(.easeInOut(duration: duration)) { scanned = true }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(duration + 0.6))
+            withAnimation(.easeInOut(duration: duration)) { scanned = false }
+        }
     }
 
     private func sweep() {

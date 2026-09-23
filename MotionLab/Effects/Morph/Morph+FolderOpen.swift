@@ -11,7 +11,7 @@ extension Effect {
             "主屏文件夹膨胀为玻璃面板，内部迷你图标长成完整应用。"
         ),
         prompt: L(
-            "A home screen on a deep indigo-to-pink wallpaper shows a 3 × 3 grid of 56 pt app icons with labels; the centre cell is a frosted folder holding a 2 × 2 cluster of 20 pt mini icons. Tapping the folder grows its glass tile into a 212 pt panel with 34 pt continuous corners at the centre of the screen while each mini icon travels and scales into a full 58 pt app in the same 2 × 2 arrangement — one matched-geometry spring (response ≈0.48 s, damping ≈0.8) moves everything together. The folder name fades in above the panel and app labels rise in beneath their icons. Behind it, the other icons recede to 88%, blur 6 pt and fade to 45%, and the wallpaper dims 15%. Tapping outside reverses it, the apps shrinking back into the tile. Spatial, tactile, unmistakably iOS.",
+            "A home screen on a deep indigo-to-pink wallpaper shows a 3 × 3 grid of 56 pt app icons with labels; the center cell is a frosted folder holding a 2 × 2 cluster of 20 pt mini icons. Tapping the folder grows its glass tile into a 212 pt panel with 34 pt continuous corners at the center of the screen while each mini icon travels and scales into a full 58 pt app in the same 2 × 2 arrangement — one matched-geometry spring (response ≈0.48 s, damping ≈0.8) moves everything together. The folder name fades in above the panel and app labels rise in beneath their icons. Behind it, the other icons recede to 88%, blur 6 pt and fade to 45%, and the wallpaper dims 15%. Tapping outside reverses it, the apps shrinking back into the tile. Spatial, tactile, unmistakably iOS.",
             "深靛蓝到粉色渐变壁纸上的主屏幕，排着 3 × 3 个 56 pt 的应用图标与名称；正中间是一个磨砂文件夹，里面是 2 × 2 排列的 20 pt 迷你图标。点击文件夹，它的玻璃图块在屏幕中央生长为 212 pt、34 pt 连续圆角的面板，每个迷你图标同时移动并放大为 58 pt 的完整应用，保持 2 × 2 排列——同一条几何匹配弹簧（响应约 0.48 秒、阻尼约 0.8）让所有元素一起运动。文件夹名称在面板上方淡入，应用名称在图标下方浮现。背后的其余图标缩小到 88%、模糊 6 pt 并淡到 45%，壁纸变暗 15%。点击空白处反向收起，应用缩回图块之中。空间感强、有触感，一眼就是 iOS。"
         ),
         implementation: L(
@@ -36,7 +36,7 @@ private struct HomeApp {
     let name: LocalizedText
 }
 
-/// The eight regular apps around the folder (the folder sits in the centre cell).
+/// The eight regular apps around the folder (the folder sits in the center cell).
 private let homeApps: [HomeApp] = [
     HomeApp(symbol: "message.fill", colors: [Palette.green, Palette.mint], name: L("Messages", "信息")),
     HomeApp(symbol: "safari.fill", colors: [Palette.sky, Palette.blue], name: L("Safari", "Safari")),

@@ -43,7 +43,7 @@ extension Effect {
         category: .loading,
         interaction: .state,
         name: L("Glowing Progress Bar", "辉光进度条"),
-        summary: L("A gradient bar with a soft bloom and a travelling sheen.", "带柔和辉光与流动高光的渐变进度条。"),
+        summary: L("A gradient bar with a soft bloom and a traveling sheen.", "带柔和辉光与流动高光的渐变进度条。"),
         prompt: L(
             "A 250 × 8 pt capsule track at 8% label-color opacity inside a floating card, with a title on the left and a percentage on the right. Progress arrives in irregular network-like chunks; each step glides with a 0.45 s smooth, bounce-free curve while the percentage rolls digit by digit. The fill is a mint → sky → violet gradient with a blurred duplicate beneath it that blooms like a neon glow, and a white 55% sheen sweeps across the fill every 1.6 s. On completion a success haptic fires and the bar holds full. Calm, precise and quietly luxurious.",
             "悬浮卡片中有一条 250 × 8 pt 的胶囊轨道（8% 文字色），左侧为标题、右侧为百分比。进度以不规则的“网络式”分段到达，每一段以 0.45 秒无回弹的平滑曲线滑行，百分比数字逐位滚动。填充为薄荷绿 → 天蓝 → 紫罗兰渐变，下方叠一层模糊副本，像霓虹一样晕出辉光；一道 55% 白色高光每 1.6 秒扫过填充区。完成时触发成功触感并保持满格。沉静、精准，透着克制的高级感。"

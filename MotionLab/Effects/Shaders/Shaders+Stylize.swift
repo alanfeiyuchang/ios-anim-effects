@@ -8,12 +8,12 @@ extension Effect {
         name: L("Pixelate Swap", "像素化切换"),
         summary: L("Content dissolves into pixels, swaps, and resolves again.", "内容碎成像素块、替换后再重新清晰。"),
         prompt: L(
-            "Tapping the card transitions its content through a mosaic: the image quantizes into progressively larger square cells (1 → ≈28 pt) over ≈375 ms with an ease-in curve, the content is swapped at peak coarseness where the change is invisible, then the cells shrink back to full resolution over ≈410 ms with an ease-out. The effect reads like a retro game scene cut, precise and digital, while staying perfectly smooth because cell size animates continuously.",
-            "点击卡片时，内容通过马赛克完成切换：画面在约 375 毫秒内以 ease-in 曲线量化为逐渐变大的方形像素块（1 → 约 28pt），在最粗糙、肉眼无法分辨的瞬间替换内容，随后在约 410 毫秒内以 ease-out 曲线收缩回完整清晰度。效果如同复古游戏的场景切换，精准而数字化，同时因像素尺寸连续插值而保持丝滑。"
+            "Tapping the card transitions its content through a mosaic: the image quantizes into progressively larger square cells (1 → ≈28 pt) over ≈375 ms with an ease-in curve; at peak coarseness the two scenes cross-fade under the mosaic for 80 ms, so the swap reads as blocks changing color rather than a hard cut, then the cells shrink back to full resolution over ≈410 ms with an ease-out. The effect reads like a retro game scene cut, precise and digital, while staying perfectly smooth because cell size animates continuously.",
+            "点击卡片时，内容通过马赛克完成切换：画面在约 375 毫秒内以 ease-in 曲线量化为逐渐变大的方形像素块（1 → 约 28pt），在最粗糙时两幅画面于马赛克之下交叉淡化 80 毫秒，切换看起来只是色块变色而非生硬跳切，随后在约 410 毫秒内以 ease-out 曲线收缩回完整清晰度。效果如同复古游戏的场景切换，精准而数字化，同时因像素尺寸连续插值而保持丝滑。"
         ),
         implementation: L(
-            "A Metal layer shader samples the center of each cell. The cell size lives in an Animatable ViewModifier, animated up, content swapped, then animated down.",
-            "Metal layerEffect 对每个像素格的中心点采样；像素尺寸存放在 Animatable ViewModifier 中，先动画放大、替换内容，再动画缩小。"
+            "A Metal layer shader samples the center of each cell of a ZStack holding both scenes. The cell size lives in an Animatable ViewModifier: animated up, the scenes cross-fade for 80 ms at peak, then it animates down.",
+            "Metal layerEffect 对叠放两幅画面的 ZStack 按像素格中心采样；像素尺寸存放在 Animatable ViewModifier 中：先动画放大，在峰值处两幅画面交叉淡化 80 毫秒，再动画缩小。"
         ),
         apis: ["layerEffect", "Animatable", "withAnimation", "Metal"],
         tags: ["pixelate", "mosaic", "retro", "transition", "像素", "马赛克", "复古", "转场"],
@@ -32,12 +32,12 @@ extension Effect {
         name: L("Burn Dissolve", "燃烧溶解"),
         summary: L("Noise-driven disintegration with a glowing ember edge.", "由噪声驱动、带发光余烬边缘的溶解消散。"),
         prompt: L(
-            "The card disintegrates into nothing along an organic fractal-noise mask: as progress runs from 0 to 1 over ≈1.2 s (ease-in-out), pixels whose noise value falls below the moving threshold vanish, while a thin band just above the threshold glows in a hot ember color, like paper burning away. Tapping again reverses the process so the card re-materializes from the ashes. The edge stays crisp yet irregular, conveying a dramatic, magical deletion.",
-            "卡片沿着有机的分形噪声遮罩逐渐消散：进度在约 1.2 秒内（ease-in-out）从 0 推进到 1，噪声值低于移动阈值的像素消失，而阈值上方的一窄条边缘呈炽热的余烬色发光，如同纸张被火焰烧尽。再次点击则反向播放，卡片从灰烬中重新凝聚。边缘清晰却不规则，传达出戏剧化、带魔法感的删除动作。"
+            "The card disintegrates into nothing along an organic fractal-noise mask: as progress runs from 0 to 1 over ≈1.2 s (ease-in-out), pixels whose noise value falls below the moving threshold vanish behind a smooth, anti-aliased cut, and just inside it a thin ember ramp runs white-hot → edge color → charred brown before the untouched artwork, like paper burning away. Tapping again reverses the process so the card re-materializes from the ashes. The edge stays clean yet irregular, conveying a dramatic, magical deletion.",
+            "卡片沿着有机的分形噪声遮罩逐渐消散：进度在约 1.2 秒内（ease-in-out）从 0 推进到 1，噪声值低于移动阈值的像素在平滑抗锯齿的切口后消失；切口内侧是一窄条余烬渐变——白热 → 边缘色 → 焦褐——再过渡回未受影响的画面，如同纸张被火焰烧尽。再次点击则反向播放，卡片从灰烬中重新凝聚。边缘干净却不规则，传达出戏剧化、带魔法感的删除动作。"
         ),
         implementation: L(
-            "A Metal color shader compares 4-octave value noise against an animated threshold and mixes in an edge color; progress is an Animatable modifier value.",
-            "Metal colorEffect 将 4 层倍频值噪声与动画阈值比较，并在边缘混合发光色；进度由 Animatable modifier 插值。"
+            "A Metal color shader compares 4-octave value noise against an animated threshold, smoothsteps alpha across a tiny band for an anti-aliased cut and maps the distance above it to a white-hot → edge → char ramp; progress is an Animatable modifier value.",
+            "Metal colorEffect 将 4 层倍频值噪声与动画阈值比较，在极窄区间内 smoothstep 透明度得到抗锯齿切口，并把高出阈值的距离映射为白热 → 边缘色 → 焦褐的渐变；进度由 Animatable modifier 插值。"
         ),
         apis: ["colorEffect", "Animatable", "fbm noise", "Metal"],
         tags: ["dissolve", "burn", "disintegrate", "delete", "溶解", "燃烧", "消散", "删除"],
@@ -57,8 +57,8 @@ extension Effect {
         name: L("RGB Glitch", "RGB 故障"),
         summary: L("Chromatic split and slice jitter, with a tap-triggered burst.", "色差分离与切片抖动，点击触发强烈故障。"),
         prompt: L(
-            "A cyberpunk glitch: the red and blue channels drift a few points apart horizontally for a permanent chromatic-aberration fringe, faint scanlines modulate brightness, and six times per second the 14 pt horizontal slices are re-rolled so that roughly one in five tears sideways, jittering at 12 fps by up to ±26 pt × intensity. A tap spikes the intensity to maximum for 400 ms and then snaps back, like a corrupted signal momentarily losing sync. Motion is deliberately steppy and unsmoothed, yet sparse enough to stay legible.",
-            "赛博朋克风格的故障效果：红、蓝通道在水平方向错开数个点，形成常驻的色差边缘；细微的扫描线调制亮度；14pt 高的水平切片每秒重新随机 6 次，约五分之一被横向撕裂，并以每秒 12 帧抖动，最大位移为 ±26pt × 强度。点击会让强度瞬间拉满 400 毫秒后骤然恢复，如同信号短暂失步。运动刻意呈阶跃、不做平滑，但足够稀疏以保持可读。"
+            "A cyberpunk glitch: the red and blue channels drift a few points apart horizontally for a permanent chromatic-aberration fringe, faint scanlines modulate brightness, and several times per second the horizontal slices are re-rolled so that roughly one in five tears sideways, jittering at twice the re-roll rate by up to ±26 pt × intensity. A tap spikes the intensity to maximum for 400 ms and then snaps back, like a corrupted signal momentarily losing sync. Motion is deliberately steppy and unsmoothed, yet sparse enough to stay legible.",
+            "赛博朋克风格的故障效果：红、蓝通道在水平方向错开数个点，形成常驻的色差边缘；细微的扫描线调制亮度；水平切片每秒重新随机数次，约五分之一被横向撕裂，并以两倍于重随机的频率抖动，最大位移为 ±26pt × 强度。点击会让强度瞬间拉满 400 毫秒后骤然恢复，如同信号短暂失步。运动刻意呈阶跃、不做平滑，但足够稀疏以保持可读。"
         ),
         implementation: L(
             "A Metal layer shader samples R/G/B at offset positions and shifts hashed horizontal bands per time step; TimelineView supplies time.",
@@ -68,6 +68,9 @@ extension Effect {
         tags: ["glitch", "chromatic aberration", "cyberpunk", "故障", "色差", "赛博朋克", "RGB"],
         params: [
             .slider("intensity", L("Intensity", "强度"), 0...1, default: 0.35),
+            .slider("split", L("RGB split", "RGB 分离"), 0...12, default: 4, decimals: 1, unit: "pt"),
+            .slider("slice", L("Slice height", "切片高度"), 6...30, default: 14, decimals: 0, unit: "pt"),
+            .slider("rate", L("Re-roll rate", "重随机频率"), 2...12, default: 6, decimals: 0, unit: "/s"),
         ]
     ) { ctx in
         GlitchDemo(ctx: ctx)
@@ -80,18 +83,19 @@ extension Effect {
         name: L("CRT Monitor", "CRT 显示器"),
         summary: L("Curved glass, rolling scanlines and a soft vignette.", "弧面玻璃、滚动扫描线与柔和暗角。"),
         prompt: L(
-            "Content is rendered as if on a vintage CRT: the image is barrel-distorted so edges bow outward, with pure black outside the curved glass; fine horizontal scanlines crawl continuously while a slow brightness roll sweeps down the screen every ~3 s; red and blue channels are offset by ~1 pt for phosphor bleed, and a radial vignette darkens the edges by ~28%, more in the corners. The result feels warm, nostalgic and analog without sacrificing legibility.",
-            "内容仿佛显示在复古 CRT 显示器上：画面呈桶形畸变、边缘向外鼓起，弧面玻璃外为纯黑；细密的水平扫描线持续蠕动，同时每约 3 秒有一道缓慢的亮度波自上而下扫过屏幕；红、蓝通道偏移约 1pt 模拟荧光粉溢色，径向暗角使边缘变暗约 28%，四角更暗。整体温暖、怀旧、充满模拟质感，同时不牺牲可读性。"
+            "Content is rendered as if on a vintage CRT: the image is barrel-distorted so edges bow outward, with pure black outside the curved glass; fine horizontal scanlines crawl continuously while a slow brightness roll sweeps down the screen every ~3 s; red and blue channels are offset by ~1.2 pt with a faint trailing smear for phosphor bleed, and a radial vignette darkens the edges by ~28%, more in the corners. The result feels warm, nostalgic and analog without sacrificing legibility.",
+            "内容仿佛显示在复古 CRT 显示器上：画面呈桶形畸变、边缘向外鼓起，弧面玻璃外为纯黑；细密的水平扫描线持续蠕动，同时每约 3 秒有一道缓慢的亮度波自上而下扫过屏幕；红、蓝通道偏移约 1.2pt 并带一丝拖尾，模拟荧光粉溢色；径向暗角使边缘变暗约 28%，四角更暗。整体温暖、怀旧、充满模拟质感，同时不牺牲可读性。"
         ),
         implementation: L(
-            "A Metal layer shader remaps UVs with barrel distortion and multiplies scanline, roll and vignette terms; visualEffect provides the view size.",
-            "Metal layerEffect 通过桶形畸变重映射 UV，并叠乘扫描线、亮度滚动与暗角；visualEffect 提供视图尺寸。"
+            "A Metal layer shader remaps UVs with barrel distortion, samples R/B at a bleed offset plus a trailing smear, and multiplies scanline (depth-controlled), roll and vignette terms; visualEffect provides the view size.",
+            "Metal layerEffect 通过桶形畸变重映射 UV，按溢色偏移采样 R/B 并叠加拖尾，再叠乘可调深度的扫描线、亮度滚动与暗角；visualEffect 提供视图尺寸。"
         ),
         apis: ["layerEffect", "visualEffect", "TimelineView", "Metal"],
         tags: ["crt", "retro", "scanline", "vhs", "复古", "扫描线", "显示器", "怀旧"],
         params: [
             .slider("curvature", L("Curvature", "曲率"), 0...0.3, default: 0.12),
-            .toggle("enabled", L("Effect on", "开启效果"), default: true),
+            .slider("scanlines", L("Scanline strength", "扫描线强度"), 0...0.5, default: 0.18),
+            .slider("bleed", L("Color bleed", "溢色"), 0...4, default: 1.2, decimals: 1, unit: "pt"),
         ]
     ) { ctx in
         CRTDemo(ctx: ctx)
@@ -101,20 +105,22 @@ extension Effect {
         id: "shader.halftone",
         category: .shaders,
         interaction: .loop,
-        name: L("Halftone", "半色调网点"),
-        summary: L("Live content rendered as a print-style dot screen.", "实时内容以印刷网点风格呈现。"),
+        name: L("CMYK Halftone", "CMYK 半色调"),
+        summary: L("Live artwork separated into four rotated ink screens, like a press print.", "实时画面被分解为四层旋转网屏，如同印刷机印出。"),
         prompt: L(
-            "Moving content is rendered through a halftone screen: the surface is divided into a regular grid (≈9 pt cells) and each cell draws a single anti-aliased dot whose color is sampled from the cell center and whose radius grows as brightness falls, recreating comic-book / risograph print texture. Because the underlying gradient artwork slowly rotates, the dots swell and shrink in waves, producing a tactile, editorial motion texture.",
-            "动态内容通过半色调网屏渲染：画面被划分为规则网格（约 9pt 一格），每格绘制一个抗锯齿圆点，颜色取自格中心，半径随亮度降低而增大，重现漫画 / 孔版印刷的网点质感。由于底层渐变图形缓慢旋转，圆点会成片地膨胀收缩，形成富有触感的杂志排版风格动态纹理。"
+            "A slowly animating sunset poster is printed live with process inks. A Metal layer shader separates each pixel into cyan, magenta, yellow and black, then draws each ink as its own dot screen at the classic angles (C 15°, M 75°, Y 0°, K 45°): every rotated cell samples the artwork at its center and grows a dot whose area follows that ink's amount. The inks multiply over warm off-white paper, so overlapping dots mix into reds, greens and deep blues and the familiar rosette moiré appears. As the sun drifts and the hills scroll, dots swell and shrink in waves — tactile, editorial and unmistakably printed.",
+            "一张缓慢变化的日落海报被实时“印刷”出来。Metal layerEffect 着色器把每个像素分解为青、品红、黄、黑四种油墨，并按经典网角（C 15°、M 75°、Y 0°、K 45°）分别绘制网屏：每个旋转网格在中心对画面采样，网点面积随该油墨的用量变化。四色在暖白纸张上相乘叠印，重叠的网点混出红、绿与深蓝，经典的玫瑰斑网纹随之出现。随着太阳漂移、山丘滚动，网点成片地胀缩——富有触感、杂志感十足，一眼就是印刷品。"
         ),
         implementation: L(
-            "A Metal layer shader samples each cell center, computes luminance and draws a smoothstep-edged disc; the content below animates with TimelineView.",
-            "Metal layerEffect 对每个网格中心采样、计算亮度并用 smoothstep 绘制圆点边缘；下层内容由 TimelineView 驱动动画。"
+            "A [[stitchable]] layer shader loops over four screens: rotate the position into screen space, snap to the cell center, rotate back, sample, convert RGB to CMYK and draw an anti-aliased dot, multiplying each ink over paper; a Canvas scene animates underneath.",
+            "[[stitchable]] layerEffect 着色器循环处理四层网屏：把坐标旋转到网屏空间、吸附到网格中心再旋回，采样后将 RGB 转为 CMYK，绘制抗锯齿网点并把各色油墨相乘叠印在纸色上；下层由 Canvas 绘制动态场景。"
         ),
-        apis: ["layerEffect", "TimelineView", "AngularGradient", "Metal"],
-        tags: ["halftone", "print", "comic", "dots", "半色调", "网点", "印刷", "漫画"],
+        apis: ["layerEffect", "TimelineView", "Canvas", "Metal"],
+        tags: ["halftone", "cmyk", "print", "rosette", "risograph", "半色调", "网点", "印刷", "四色", "网角"],
         params: [
-            .slider("cell", L("Cell size", "网格尺寸"), 4...20, default: 9, decimals: 0, unit: "pt"),
+            .slider("cell", L("Screen size", "网格尺寸"), 4...16, default: 7, decimals: 0, unit: "pt"),
+            .slider("angle", L("Screen rotation", "网屏旋转"), 0...90, default: 0, decimals: 0, unit: "°"),
+            .slider("gain", L("Dot gain", "网点扩大"), 0.6...1.6, default: 1.0, unit: "×"),
         ]
     ) { ctx in
         HalftoneDemo(ctx: ctx)
@@ -127,12 +133,12 @@ extension Effect {
         name: L("Plasma Field", "等离子场"),
         summary: L("A generative, endlessly flowing iridescent field.", "程序生成、无限流动的虹彩能量场。"),
         prompt: L(
-            "A full-bleed generative background of flowing iridescent plasma: four overlapping sine fields (horizontal, vertical, diagonal and radial) are summed and mapped through a cosine color palette, so bands of cyan, violet and gold continuously fold into one another. The palette itself slowly rotates, the motion never repeats visibly, and there are no hard edges — an ambient, liquid, high-energy surface suited to splash screens or premium paywalls.",
-            "全屏程序化生成的流动虹彩等离子背景：水平、竖直、对角与径向四组正弦场叠加后，通过余弦调色板映射成颜色，青、紫、金色带持续相互翻卷。调色板本身缓慢轮转，画面无可见重复、没有硬边——一种充满能量的液态氛围表面，适合启动页或高级付费墙。"
+            "A full-bleed generative background of flowing iridescent plasma: four overlapping sine fields (horizontal, vertical, diagonal and radial) are summed and mapped onto a deliberately limited, cyclic three-stop ramp — cyan → violet → gold — while the troughs of the field sink into deep indigo, so luminous bands fold into one another over dark valleys. The ramp slowly advances, the motion never repeats visibly, and there are no hard edges — an ambient, liquid, high-energy surface suited to splash screens or premium paywalls.",
+            "全屏程序化生成的流动虹彩等离子背景：水平、竖直、对角与径向四组正弦场叠加后，映射到刻意克制的三色循环色带——青 → 紫 → 金——场的低谷则沉入深靛蓝，明亮的色带在暗色谷底之上持续翻卷。色带缓慢推进，画面无可见重复、没有硬边——一种充满能量的液态氛围表面，适合启动页或高级付费墙。"
         ),
         implementation: L(
-            "A Metal color shader computes the color purely from position, size and time on a Rectangle; no source pixels are needed.",
-            "在 Rectangle 上使用 Metal colorEffect，仅依据位置、尺寸与时间计算颜色，无需源像素。"
+            "A Metal color shader computes the color purely from position, size and time on a Rectangle — four sine fields feed a smoothstepped three-stop ramp shaded toward indigo in the troughs; no source pixels are needed.",
+            "在 Rectangle 上使用 Metal colorEffect，仅依据位置、尺寸与时间计算颜色——四组正弦场驱动平滑过渡的三色色带，低谷向靛蓝压暗，无需源像素。"
         ),
         apis: ["colorEffect", "visualEffect", "TimelineView", "Metal"],
         tags: ["plasma", "generative", "iridescent", "background", "等离子", "生成艺术", "虹彩", "背景"],
@@ -187,14 +193,20 @@ private struct DissolveModifier: ViewModifier, Animatable {
 private struct PixelateDemo: View {
     let ctx: DemoContext
     @State private var size: Double = 1
-    @State private var variant = 0
+    @State private var showSecond = false
     @State private var busy = false
 
     var body: some View {
         VStack(spacing: 14) {
-            ShaderArtwork(variant: variant)
-                .modifier(PixelateModifier(size: size))
-                .onTapGesture(perform: swapContent)
+            ZStack {
+                ShaderArtwork(variant: 0)
+                    .opacity(showSecond ? 0 : 1)
+                ShaderArtwork(variant: 1)
+                    .opacity(showSecond ? 1 : 0)
+            }
+            .modifier(PixelateModifier(size: size))
+            .contentShape(Rectangle())
+            .onTapGesture(perform: swapContent)
             DemoHint(text: L("Tap to swap content", "点击切换内容"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -206,9 +218,11 @@ private struct PixelateDemo: View {
         busy = true
         let half = ctx["duration"] / 2
         withAnimation(.easeIn(duration: half)) { size = ctx["maxSize"] }
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(for: .seconds(half))
-            variant = 1 - variant
+            // Cross-fade under the coarsest mosaic so the swap never reads as a cut.
+            withAnimation(.linear(duration: 0.08)) { showSecond.toggle() }
+            try? await Task.sleep(for: .seconds(0.08))
             withAnimation(.easeOut(duration: half * 1.1)) { size = 1 }
             try? await Task.sleep(for: .seconds(half * 1.1))
             busy = false
@@ -230,7 +244,7 @@ private struct DissolveDemo: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            ShaderArtwork()
+            ShaderArtwork(variant: 3)
                 .modifier(DissolveModifier(progress: gone ? 1 : 0, scale: ctx["scale"], edge: edgeColor))
                 .contentShape(Rectangle())
                 .onTapGesture { toggle() }
@@ -267,8 +281,14 @@ private struct GlitchDemo: View {
                 let intensity = bursting ? 1.0 : ctx["intensity"]
                 GlitchCard()
                     .layerEffect(
-                        ShaderLibrary.mlGlitch(.float(time), .float(intensity)),
-                        maxSampleOffset: CGSize(width: 32, height: 0)
+                        ShaderLibrary.mlGlitch(
+                            .float(time),
+                            .float(intensity),
+                            .float(ctx["split"]),
+                            .float(ctx["slice"]),
+                            .float(ctx["rate"])
+                        ),
+                        maxSampleOffset: CGSize(width: 48, height: 0)
                     )
             }
             .onTapGesture { triggerBurst() }
@@ -313,14 +333,14 @@ private struct CRTDemo: View {
 
     var body: some View {
         let curvature = ctx["curvature"]
-        let enabled = ctx.bool("enabled")
+        let scanlines = ctx["scanlines"]
+        let bleed = ctx["bleed"]
         ShaderClock(preview: ctx.isPreview) { time in
             CRTScreen(time: time)
                 .visualEffect { content, proxy in
                     content.layerEffect(
-                        ShaderLibrary.mlCRT(.float2(proxy.size), .float(time), .float(curvature)),
-                        maxSampleOffset: CGSize(width: 40, height: 40),
-                        isEnabled: enabled
+                        ShaderLibrary.mlCRT(.float2(proxy.size), .float(time), .float(curvature), .float(scanlines), .float(bleed)),
+                        maxSampleOffset: CGSize(width: 60, height: 60)
                     )
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
@@ -366,20 +386,53 @@ private struct HalftoneDemo: View {
 
     var body: some View {
         let cell = ctx["cell"]
+        let angle = ctx["angle"] * .pi / 180
+        let gain = ctx["gain"]
         ShaderClock(preview: ctx.isPreview) { time in
-            ZStack {
-                AngularGradient(colors: [Palette.pink, Palette.amber, Palette.mint, Palette.sky, Palette.violet, Palette.pink], center: .center, angle: .degrees(time * 30))
-                RadialGradient(colors: [.white, .clear], center: UnitPoint(x: 0.5 + 0.3 * cos(time), y: 0.5 + 0.3 * sin(time * 0.8)), startRadius: 0, endRadius: 160)
-                Image(systemName: "star.fill")
-                    .font(.system(size: 120, weight: .black))
-                    .foregroundStyle(Color(hex: 0x1B1B2F))
-                    .rotationEffect(.degrees(time * -20))
-            }
-            .frame(width: 270, height: 270)
-            .layerEffect(ShaderLibrary.mlHalftone(.float(cell)), maxSampleOffset: CGSize(width: cell, height: cell))
-            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+            HalftonePoster(time: time)
+                .frame(width: 270, height: 300)
+                .layerEffect(
+                    ShaderLibrary.mlHalftoneCMYK(.float(cell), .float(angle), .float(gain)),
+                    maxSampleOffset: CGSize(width: cell, height: cell)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// A sunset poster: warm sky, drifting sun and two scrolling hill silhouettes.
+private struct HalftonePoster: View {
+    let time: Double
+
+    var body: some View {
+        Canvas { context, size in
+            let rect = CGRect(origin: .zero, size: size)
+            context.fill(Path(rect), with: .linearGradient(
+                Gradient(colors: [Color(hex: 0x3A2E8C), Palette.pink, Palette.amber]),
+                startPoint: .zero,
+                endPoint: CGPoint(x: 0, y: size.height * 0.75)
+            ))
+            let sun = CGPoint(x: size.width * (0.5 + 0.18 * cos(time * 0.4)), y: size.height * (0.42 + 0.06 * sin(time * 0.5)))
+            context.fill(Path(ellipseIn: CGRect(x: sun.x - 56, y: sun.y - 56, width: 112, height: 112)), with: .color(Color(hex: 0xFFE27A)))
+            context.fill(hill(size, base: 0.66, amplitude: 22, frequency: 1.6, phase: time * 0.35), with: .color(Color(hex: 0xE2365B)))
+            context.fill(hill(size, base: 0.8, amplitude: 16, frequency: 2.3, phase: -time * 0.5), with: .color(Color(hex: 0x14365A)))
+        }
+    }
+
+    private func hill(_ size: CGSize, base: CGFloat, amplitude: CGFloat, frequency: CGFloat, phase: Double) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: size.height))
+        var x: CGFloat = 0
+        while x <= size.width + 6 {
+            let y = size.height * base + amplitude * CGFloat(sin(Double(x / size.width * frequency * 2 * .pi) + phase))
+            path.addLine(to: CGPoint(x: x, y: y))
+            x += 6
+        }
+        path.addLine(to: CGPoint(x: size.width, y: size.height))
+        path.closeSubpath()
+        return path
     }
 }
 

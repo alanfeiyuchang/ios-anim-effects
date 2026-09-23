@@ -11,7 +11,7 @@ extension Effect {
             "紧凑的搜索胶囊伸展为输入框，并展开实时结果面板。"
         ),
         prompt: L(
-            "A frosted 50 pt search pill with a magnifier sits at the bottom of the screen. Tapping it stretches the same capsule to full width on a spring (response ≈0.45 s, damping ≈0.85) — the magnifier slides to the leading edge, a blinking caret appears and a clear button fades in — while the content behind blurs to 8 pt and dims. A frosted results panel grows upward from the field, scaling from 94% at its bottom edge. As the query is typed, results rise into the panel with a 45 ms stagger, the typed prefix highlighted in the brand colour, while the 'Recent' header rolls into a result count with a numeric text transition. Closing collapses the field back to the pill and folds the panel into it.",
+            "A frosted 50 pt search pill with a magnifier sits at the bottom of the screen. Tapping it stretches the same capsule to full width on a spring (response ≈0.45 s, damping ≈0.85) — the magnifier slides to the leading edge, a blinking caret appears and a clear button fades in — while the content behind blurs to 8 pt and dims. A frosted results panel grows upward from the field, scaling from 94% at its bottom edge. As the query is typed, results rise into the panel with a 45 ms stagger, the typed prefix highlighted in the brand color, while the 'Recent' header rolls into a result count with a numeric text transition. Closing collapses the field back to the pill and folds the panel into it.",
             "屏幕底部是一枚高 50pt、带放大镜的磨砂搜索胶囊。点击后同一个胶囊以弹簧（响应约 0.45 秒、阻尼约 0.85）伸展到整行宽度——放大镜滑到最左侧，出现闪烁的光标，清除按钮淡入；背后的内容同步模糊到 8pt 并变暗。一块磨砂结果面板从输入框向上生长，以底边为锚点从 94% 放大。随着输入，结果行以 45 毫秒间隔依次升入面板，已输入的前缀以品牌色高亮，面板标题也从“最近搜索”以数字滚动过渡切换为结果数量。关闭时输入框收回为胶囊，面板一并折叠进去。"
         ),
         implementation: L(
@@ -245,7 +245,6 @@ private struct SearchBackdrop: View {
             }
         }
         .padding(18)
-        .padding(.top, 32) // clear the stage's reset button
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }

@@ -8,8 +8,8 @@ extension Effect {
         name: L("Checkmark Draw", "对勾描绘"),
         summary: L("A ring traces itself, the tick strokes in, then the badge pops.", "圆环先自行描出，对勾随后画入，徽章轻弹定格。"),
         prompt: L(
-            "A success badge assembles in three overlapping beats. First a rounded-cap ring strokes itself clockwise from 12 o'clock over ~0.6 s with an ease-in-out curve while a pale tinted disc fades up behind it. At ~70% of the ring, the checkmark draws from its short left arm through the corner to the long right arm with a fast ease-out (≈0.35 s). As the tick lands the badge springs from 90% to full size with a lively under-damped overshoot (damping 0.5), and a thin halo ring expands to 150% while fading out; a success haptic fires on the pop. Clean, affirmative and satisfying.",
-            "成功徽章分三个相互重叠的节拍组装。首先，一条圆头描边的圆环从 12 点方向顺时针自行描出，约 0.6 秒、缓入缓出，同时背后一枚浅色圆底渐显。圆环画到约 70% 时，对勾从左侧短边经过拐点画向右侧长边，使用快速缓出（约 0.35 秒）。对勾落定的瞬间，徽章以欠阻尼弹簧（阻尼 0.5）从 90% 弹回原尺寸并带轻快过冲，一道细光环扩散到 150% 并淡出；弹出时触发成功触感。干净、肯定、令人满足。"
+            "A success badge assembles in three overlapping beats. First a rounded-cap ring strokes itself clockwise from 12 o'clock over ~0.6 s with an ease-in-out curve while a pale tinted disc fades up behind it. At ~70% of the ring, the checkmark draws from its short left arm through the corner to the long right arm with a fast ease-out (≈0.35 s). As the tick lands the badge springs from 90% to full size with a lively under-damped overshoot (damping 0.5), and a thin halo ring — invisible until this moment — flashes in at 50% opacity and expands to 150% while fading out; a success haptic fires on the pop. Clean, affirmative and satisfying.",
+            "成功徽章分三个相互重叠的节拍组装。首先，一条圆头描边的圆环从 12 点方向顺时针自行描出，约 0.6 秒、缓入缓出，同时背后一枚浅色圆底渐显。圆环画到约 70% 时，对勾从左侧短边经过拐点画向右侧长边，使用快速缓出（约 0.35 秒）。对勾落定的瞬间，徽章以欠阻尼弹簧（阻尼 0.5）从 90% 弹回原尺寸并带轻快过冲，一道此前完全不可见的细光环以 50% 不透明度闪现，随即扩散到 150% 并淡出；弹出时触发成功触感。干净、肯定、令人满足。"
         ),
         implementation: L(
             "Circle and a custom check Path both use .trim(from:to:) driven by state; the sequence is chained with Animation.delay after an instant, non-animated reset.",
@@ -33,6 +33,8 @@ private struct CheckmarkDemo: View {
     @State private var tick: CGFloat = 0
     @State private var pop = false
     @State private var halo = false
+    /// The halo ring is invisible until the burst, so nothing shows before the stroke draws.
+    @State private var haloVisible = false
 
     private var color: Color {
         switch ctx.int("color") {
@@ -54,17 +56,15 @@ private struct CheckmarkDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { play() }
+        // On the detail stage the shell's intro play fires this once on arrival.
         .autoplay(ctx.isPreview, every: 2.6, delay: 0.2) { play() }
-        .onAppear {
-            if !ctx.isPreview { play() }
-        }
     }
 
     private var badge: some View {
         let line = ctx.cg("lineWidth")
         return ZStack {
             Circle()
-                .stroke(color.opacity(halo ? 0 : 0.5), lineWidth: 2)
+                .stroke(color.opacity(haloVisible && !halo ? 0.5 : 0), lineWidth: 2)
                 .scaleEffect(halo ? 1.5 : 1)
             Circle()
                 .fill(color.opacity(0.14))
@@ -92,14 +92,19 @@ private struct CheckmarkDemo: View {
             tick = 0
             pop = false
             halo = false
+            haloVisible = false
         }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(60))
             withAnimation(.easeInOut(duration: duration)) { ring = 1 }
             withAnimation(.easeOut(duration: 0.35).delay(duration * 0.7)) { tick = 1 }
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.5).delay(duration * 0.7 + 0.25)) { pop = true }
-            withAnimation(.easeOut(duration: 0.7).delay(duration * 0.7 + 0.25)) { halo = true }
             try? await Task.sleep(for: .seconds(duration * 0.7 + 0.25))
+            // Burst: the halo appears at 50% at the badge's edge, then expands and fades out.
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { haloVisible = true }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) { pop = true }
+            withAnimation(.easeOut(duration: 0.7)) { halo = true }
             if !ctx.isPreview { Haptics.success() }
         }
     }

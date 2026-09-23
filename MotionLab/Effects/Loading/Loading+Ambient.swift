@@ -269,8 +269,8 @@ extension Effect {
         name: L("Radar Pulse", "雷达脉冲"),
         summary: L("Concentric rings ripple out from a glowing core.", "同心圆环从发光核心向外涟漪扩散。"),
         prompt: L(
-            "A 72 pt gradient core disc with a white antenna glyph and a soft colored shadow sits at the center. Three rings are emitted from behind it in an even stagger across a 2.2 s period; each expands from the core's edge to about 2.6× its size on a quadratic ease-out, its tinted fill fading from 18% to 0 and its 1.5 pt hairline stroke from 60% to 0. The core breathes subtly (±3%). Over a 6 s scene, three nearby-device avatars (40 pt, white rim) pop onto the radar one after another, 1.1 s apart, on a back-out curve that overshoots ~10%, then all fade together before the search restarts, under a 'Looking for nearby devices…' caption. Calm and hopeful, like AirDrop discovery.",
-            "中心是一枚 72 pt 的渐变圆形核心，内含白色天线图标并带柔和彩色投影。三圈圆环在 2.2 秒周期内均匀错峰地从核心背后发出：每圈以二次缓出从核心边缘扩大到约 2.6 倍，着色填充从 18% 淡到 0，1.5 pt 细描边从 60% 淡到 0；核心本身轻微呼吸（±3%）。在 6 秒一轮的场景中，三枚附近设备的头像（40 pt、白色描边）每隔 1.1 秒依次以回弹曲线“啵”地出现在雷达上，约有 10% 过冲，随后一起淡出、重新开始搜索；下方写着“正在查找附近的设备…”。平静而充满期待，就像隔空投送的发现过程。"
+            "A 72 pt gradient core disc with a white antenna glyph and a soft colored shadow sits at the center. Three rings are emitted from behind it in an even stagger across a 2.2 s period; each expands from the core's edge to about 2.6× its size on a quadratic ease-out, its tinted fill fading from 18% to 0 and its 1.5 pt hairline stroke from 60% to 0. The core breathes subtly (±3%). Over a 6 s scene that starts the moment the view appears, three nearby-device avatars (40 pt, white rim) pop onto the radar one after another, 1.1 s apart, on a back-out curve that overshoots ~10%, then all fade together before the search restarts, under a 'Looking for nearby devices…' caption. Calm and hopeful, like AirDrop discovery.",
+            "中心是一枚 72 pt 的渐变圆形核心，内含白色天线图标并带柔和彩色投影。三圈圆环在 2.2 秒周期内均匀错峰地从核心背后发出：每圈以二次缓出从核心边缘扩大到约 2.6 倍，着色填充从 18% 淡到 0，1.5 pt 细描边从 60% 淡到 0；核心本身轻微呼吸（±3%）。在视图出现时开始计时、6 秒一轮的场景中，三枚附近设备的头像（40 pt、白色描边）每隔 1.1 秒依次以回弹曲线“啵”地出现在雷达上，约有 10% 过冲，随后一起淡出、重新开始搜索；下方写着“正在查找附近的设备…”。平静而充满期待，就像隔空投送的发现过程。"
         ),
         implementation: L(
             "A TimelineView derives each ring's normalized age from a shared clock plus index offset and maps it to frame size and opacity; peer avatars use a back-out easing of the same clock for their pop-in.",
@@ -308,16 +308,20 @@ private struct PulseRingsView: View {
     let tint: Color
 
     private let core: CGFloat = 72
+    /// The avatar scene is timed from when the demo appears, so it always opens on an empty
+    /// radar and the first peer pops in ~0.8 s later (not wherever the wall clock happens to be).
+    @State private var sceneStart = Date()
 
     var body: some View {
         TimelineView(.animation) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
+            let scene = max(timeline.date.timeIntervalSince(sceneStart), 0)
             ZStack {
                 ForEach(0..<count, id: \.self) { index in
                     ring(age: ((t / period) + Double(index) / Double(count)).truncatingRemainder(dividingBy: 1))
                 }
                 ForEach(0..<PulsePeer.all.count, id: \.self) { index in
-                    peer(index, t: t)
+                    peer(index, t: scene)
                 }
                 coreDisc(breath: 1 + 0.03 * sin(t * 2 * .pi / period))
             }

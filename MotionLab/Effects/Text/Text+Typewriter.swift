@@ -33,7 +33,8 @@ private struct TypewriterDemo: View {
 
     private var phrases: [String] {
         ctx.language == .zh
-            ? ["你好，世界。", "让设计动起来。", "每一帧都算数。"]
+            // 14 full-width characters each: long enough to show the rhythm, short enough for one line at 17 pt.
+            ? ["好的设计，会在指尖轻轻呼吸。", "让每一帧动效，都有它的理由。", "从灵感到上线，只差一次回车。"]
             : ["Hello, world.", "Design in motion.", "Every frame counts."]
     }
 
@@ -42,7 +43,7 @@ private struct TypewriterDemo: View {
             header
             HStack(alignment: .center, spacing: 2) {
                 Text(typed)
-                    .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                    .font(.system(size: ctx.language == .zh ? 17 : 22, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Caret(style: ctx.int("caret"), isTyping: isTyping)

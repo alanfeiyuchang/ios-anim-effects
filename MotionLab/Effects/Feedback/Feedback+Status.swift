@@ -10,8 +10,8 @@ extension Effect {
         name: L("Error Shake", "错误抖动"),
         summary: L("A passcode field that shakes 'no' with a decaying keyframe wiggle.", "密码框以衰减的关键帧左右摇头表示“不对”。"),
         prompt: L(
-            "A passcode card with four filled dots inside a capsule field and an 'Unlock' button. On a wrong attempt the field shakes horizontally like a head saying no: −16 → +13 → −9 → +5 → −2 pt over roughly 360 ms of short cubic segments, then settles to 0 on a snappy spring, each swing smaller than the last. At the same moment the dots and hairline border flush to system red, an error haptic fires, and a red 'Wrong passcode' caption drops in 6 pt from above; everything eases back to neutral after 1.2 s. Firm but not alarming.",
-            "密码卡片中，一条胶囊输入框里有四个实心圆点，下方是“解锁”按钮。输入错误时，输入框像“摇头说不”一样左右抖动：在约 360 毫秒内以数段短促的三次曲线经过 −16 → +13 → −9 → +5 → −2 pt，最后以利落的弹簧归零，每次摆幅都比上次更小。与此同时圆点与细描边变为系统红色，触发错误触感，一行红色“密码错误”从上方 6 pt 处落入；1.2 秒后一切缓缓恢复常态。坚定而不惊吓。"
+            "A passcode card with four filled dots inside a capsule field and an 'Unlock' button. On a wrong attempt the field shakes horizontally like a head saying no: −16 → +13 → −9 → +5 → −2 pt over roughly 360 ms of short cubic segments, then settles to 0 on a snappy spring, each swing smaller than the last. At the same moment the dots and hairline border flush to system red, an error haptic fires, and the 'Enter Passcode' heading gives way in place to a red 'Wrong passcode. Try again.' caption that drops in 6 pt from above (overlaid, so no empty row is reserved for it); everything eases back to neutral after 1.2 s. Firm but not alarming.",
+            "密码卡片中，一条胶囊输入框里有四个实心圆点，下方是“解锁”按钮。输入错误时，输入框像“摇头说不”一样左右抖动：在约 360 毫秒内以数段短促的三次曲线经过 −16 → +13 → −9 → +5 → −2 pt，最后以利落的弹簧归零，每次摆幅都比上次更小。与此同时圆点与细描边变为系统红色，触发错误触感，“输入密码”标题原位让出，红色“密码错误，请重试”从上方 6 pt 处落入（两者叠放，不为错误文案预留空行）；1.2 秒后一切缓缓恢复常态。坚定而不惊吓。"
         ),
         implementation: L(
             "keyframeAnimator keyed on an attempt counter plays a decaying CubicKeyframe sequence on x-offset; a Boolean tints the field red for 1.2 s.",
@@ -42,8 +42,19 @@ private struct ErrorShakeDemo: View {
         let a = ctx.cg("amplitude")
         let s = ctx["speed"]
         VStack(spacing: 18) {
-            Text(ctx.language == .zh ? "输入密码" : "Enter Passcode")
-                .font(.headline)
+            // The error caption overlays the heading in place, so no empty row is reserved for it.
+            ZStack {
+                Text(ctx.language == .zh ? "输入密码" : "Enter Passcode")
+                    .font(.headline)
+                    .opacity(isError ? 0 : 1)
+                    .offset(y: isError ? 6 : 0)
+                Text(ctx.language == .zh ? "密码错误，请重试" : "Wrong passcode. Try again.")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Palette.red)
+                    .fixedSize()
+                    .opacity(isError ? 1 : 0)
+                    .offset(y: isError ? 0 : -6)
+            }
             PasscodeField(isError: isError)
                 .keyframeAnimator(initialValue: ShakeOffset(), trigger: attempts) { content, value in
                     content.offset(x: value.x)
@@ -57,11 +68,6 @@ private struct ErrorShakeDemo: View {
                         SpringKeyframe(0, duration: 0.2 * s, spring: .snappy)
                     }
                 }
-            Text(ctx.language == .zh ? "密码错误，请重试" : "Wrong passcode. Try again.")
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(Palette.red)
-                .opacity(isError ? 1 : 0)
-                .offset(y: isError ? 0 : -6)
             Button(action: fail) {
                 Text(ctx.language == .zh ? "解锁" : "Unlock")
                     .font(.headline)
@@ -73,6 +79,11 @@ private struct ErrorShakeDemo: View {
         }
         .padding(24)
         .demoCard(cornerRadius: 26)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap Unlock", "点击“解锁”"), ctx: ctx)
+                .fixedSize()
+                .offset(y: 30)
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.0, delay: 0.5) { fail() }
     }
@@ -264,7 +275,7 @@ extension Effect {
             "圆角卡片中的分享链接栏：左侧链接图标、中间等宽字体网址，右侧是带文档图标的“复制”胶囊按钮。点击时按钮先压缩到 94%，文档图标通过符号替换过渡形变为对勾，文字交叉淡变为“已复制”，胶囊宽度随之以利落弹簧重新伸缩，底色从中性色转为绿色。与此同时，一枚写着“链接已复制”的深色小气泡从按钮上方上浮 10 pt 并淡入；约 1.6 秒后全部复原。无需弹窗，也能给出清晰、安心的确认。"
         ),
         implementation: L(
-            "contentTransition(.symbolEffect(.replace)) swaps the SF Symbol; a tokenised Task reverts the state; the tooltip is an overlay driven by offset and opacity.",
+            "contentTransition(.symbolEffect(.replace)) swaps the SF Symbol; a tokenized Task reverts the state; the tooltip is an overlay driven by offset and opacity.",
             "contentTransition(.symbolEffect(.replace)) 切换 SF Symbol，带令牌的 Task 负责复原，提示气泡是由位移与透明度驱动的 overlay。"
         ),
         apis: ["contentTransition(.symbolEffect(.replace))", "contentTransition(.interpolate)", "snappy", "overlay(alignment:content:)"],

@@ -7,7 +7,7 @@ extension Effect {
         interaction: .tap,
         name: L("Mini Player Expand", "迷你播放器展开"),
         summary: L(
-            "A docked now-playing bar grows into the full player, its artwork flying to centre stage.",
+            "A docked now-playing bar grows into the full player, its artwork flying to center stage.",
             "底部正在播放条生长为完整播放器，封面飞向舞台中央。"
         ),
         prompt: L(
@@ -63,6 +63,16 @@ private struct MiniPlayerDemo: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: expanded ? .top : .bottom) {
+            DemoHint(
+                text: expanded ? L("Drag the player down to close", "向下拖动播放器即可收起") : L("Tap the now-playing bar", "点击正在播放条"),
+                ctx: ctx
+            )
+            .padding(.top, expanded ? 12 : 0)
+            .padding(.bottom, expanded ? 0 : 88)
+            .opacity(dragY > 4 ? 0 : 1)
+            .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 1.5) { previewAdvance() }
     }
 
@@ -283,7 +293,7 @@ private struct PlayerLibrary: View {
 
     private let albums: [(String, [Color])] = [
         ("music.note", [Palette.violet, Palette.indigo]),
-        ("guitars.fill", [Palette.mint, Palette.sky]),
+        ("waveform", [Palette.mint, Palette.sky]),
         ("pianokeys", [Palette.pink, Palette.coral]),
         ("headphones", [Palette.sky, Palette.blue]),
     ]

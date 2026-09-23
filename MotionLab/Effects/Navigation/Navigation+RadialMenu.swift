@@ -11,11 +11,11 @@ extension Effect {
             "操作项沿弧线扇形展开，手指滑到目标上松开即可选中。"
         ),
         prompt: L(
-            "A 60 pt gradient attach button sits at the bottom centre of a chat screen. Tapping — or pressing and holding — fans five circular actions out along a 160° arc of ~110 pt radius: each flies from the button's centre, spinning in from –90° and scaling from 30% to 100% on a bouncy spring (response ≈0.42 s, damping ≈0.68), staggered 35 ms left to right, while the plus turns into a × and a scrim dims the page. Without lifting the finger, sliding toward an action magnetically highlights it — it grows to 125% with a coloured glow, its label pops above, and a selection tick fires; releasing on it confirms with a success haptic and the arc collapses back into the button in reverse order, faster.",
+            "A 60 pt gradient attach button sits at the bottom center of a chat screen. Tapping — or pressing and holding — fans five circular actions out along a 160° arc of ~110 pt radius: each flies from the button's center, spinning in from –90° and scaling from 30% to 100% on a bouncy spring (response ≈0.42 s, damping ≈0.68), staggered 35 ms left to right, while the plus turns into a × and a scrim dims the page. Without lifting the finger, sliding toward an action magnetically highlights it — it grows to 125% with a colored glow, its label pops above, and a selection tick fires; releasing on it confirms with a success haptic and the arc collapses back into the button in reverse order, faster.",
             "聊天界面底部中央是一枚 60pt 的渐变“附件”按钮。点击或按住时，五个圆形操作项沿半径约 110pt、跨度 160° 的弧线扇形展开：每一项从按钮中心飞出，自 –90° 旋转进入并从 30% 放大到 100%，采用富有弹性的弹簧（响应约 0.42 秒、阻尼约 0.68），从左到右错开 35 毫秒；同时加号转为 ×，页面覆盖一层遮罩。手指不离开屏幕、向某一项滑动时，该项被「磁吸」高亮——放大到 125% 并带有彩色辉光，名称在上方弹出，并触发选择触觉；在其上松手即确认选择，伴随成功触觉，弧形菜单以更快的速度按相反顺序收回按钮。"
         ),
         implementation: L(
-            "Items are positioned with trigonometric offsets from the button centre and animate with per-index delayed springs; one DragGesture(minimumDistance: 0) opens the menu, hit-tests the finger against item positions and commits on release.",
+            "Items are positioned with trigonometric offsets from the button center and animate with per-index delayed springs; one DragGesture(minimumDistance: 0) opens the menu, hit-tests the finger against item positions and commits on release.",
             "各项以按钮中心为原点、用三角函数计算偏移，并以逐项延迟的弹簧动画；一个 DragGesture(minimumDistance: 0) 负责展开菜单、将手指与各项位置做命中测试，并在松手时确认。"
         ),
         apis: ["DragGesture", "offset", "rotationEffect", "animation(_:value:)", "UISelectionFeedbackGenerator"],

@@ -11,7 +11,7 @@ extension Effect {
             "随滑动连续伸展、蠕动或膨胀的页码圆点。"
         ),
         prompt: L(
-            "A horizontally paged carousel of gradient cards with a row of 8 pt page dots beneath. The indicator is bound to the live scroll offset, not the settled page: in Stretch mode the active dot widens into a 26 pt capsule and hands that width to its neighbour proportionally as the user drags, colour and opacity blending with it; in Worm mode a single capsule crawls between dots — its leading edge races ahead during the first half of the swipe and its trailing edge catches up in the second; in Scale mode dots swell to 160%. Because it tracks the finger 1:1 and settles with the paging spring, it feels physically connected to the content.",
+            "A horizontally paged carousel of gradient cards with a row of 8 pt page dots beneath. The indicator is bound to the live scroll offset, not the settled page: in Stretch mode the active dot widens into a 26 pt capsule and hands that width to its neighbor proportionally as the user drags, color and opacity blending with it; in Worm mode a single capsule crawls between dots — its leading edge races ahead during the first half of the swipe and its trailing edge catches up in the second; in Scale mode dots swell to 160%. Because it tracks the finger 1:1 and settles with the paging spring, it feels physically connected to the content.",
             "一个水平分页的渐变卡片轮播，下方是一排 8pt 的页码圆点。指示器绑定实时滚动偏移，而不是停稳后的页码：在「伸展」模式下，当前圆点拉宽为 26pt 的胶囊，并随手指拖动按比例把宽度「交接」给相邻圆点，颜色与透明度同步混合；在「蠕虫」模式下，一个胶囊在圆点间爬行——滑动前半段头部先冲出去，后半段尾部再追上；在「缩放」模式下圆点膨胀到 160%。由于它 1:1 跟随手指并随分页弹簧落定，指示器与内容在物理上紧密相连。"
         ),
         implementation: L(
@@ -51,6 +51,7 @@ private struct PageDotsDemo: View {
                 style: ctx.int("style"),
                 activeWidth: ctx.cg("width")
             )
+            DemoHint(text: L("Swipe the cards", "左右滑动卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.4) {

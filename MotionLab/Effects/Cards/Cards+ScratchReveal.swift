@@ -8,8 +8,8 @@ extension Effect {
         name: L("Scratch Card", "刮刮卡"),
         summary: L("Scratch a metallic foil off a reward card; past a threshold it clears itself.", "用手指刮开奖励卡上的金属涂层，超过阈值后自动揭晓。"),
         prompt: L(
-            "A 280×170 pt reward card hides its prize under a brushed-metal foil with a fine diagonal pinstripe and an embossed “Scratch here” label. The finger erases the foil along its path with a round brush (~30 pt) whose edge is feathered by a ~6 pt blur, leaving soft, powdery strokes and a light selection tick every few new cells. Coverage is sampled on a coarse grid; once ~55% is gone, the remaining foil dissolves in 350 ms while scaling up 4%, and the prize beneath — a bold gradient amount with sparkles — springs from 92% to 100% (response 0.45 s, damping 0.6) with a success haptic. Tactile, suspenseful and rewarding.",
-            "一张 280×170 pt 的奖励卡，奖品藏在带细斜纹拉丝质感、压印「刮开此处」字样的金属涂层下。手指沿轨迹以约 30 pt 的圆形笔刷擦除涂层，笔刷边缘经约 6 pt 模糊羽化，留下柔和如粉末般的刮痕，每刮开若干新区域便有一次轻微的选择触感。系统在粗网格上统计刮开比例；超过约 55% 后，剩余涂层在 350 毫秒内放大 4% 并消散，下方的奖品——渐变大字金额与闪光——以弹簧（响应 0.45 秒、阻尼 0.6）从 92% 弹到 100%，伴随成功触感。有手感、有悬念、有回报。"
+            "A 280×170 pt reward card hides its prize under a brushed-metal foil with a fine diagonal pinstripe and an embossed “Scratch here” label. The finger erases the foil along its path with a round brush (~30 pt) whose edge is feathered by a ~6 pt blur, leaving soft, powdery strokes and a light selection tick every few new cells. Coverage is sampled on a coarse grid; once ~55% is gone, the remaining foil dissolves in 350 ms while scaling up 4%, and the prize beneath — a bold gradient amount with sparkles — springs from 92% to 100% (response 0.45 s, damping 0.6) with a success haptic. On arrival a single short swoosh is scratched by itself to invite the finger. Tactile, suspenseful and rewarding.",
+            "一张 280×170 pt 的奖励卡，奖品藏在带细斜纹拉丝质感、压印「刮开此处」字样的金属涂层下。手指沿轨迹以约 30 pt 的圆形笔刷擦除涂层，笔刷边缘经约 6 pt 模糊羽化，留下柔和如粉末般的刮痕，每刮开若干新区域便有一次轻微的选择触感。系统在粗网格上统计刮开比例；超过约 55% 后，剩余涂层在 350 毫秒内放大 4% 并消散，下方的奖品——渐变大字金额与闪光——以弹簧（响应 0.45 秒、阻尼 0.6）从 92% 弹到 100%，伴随成功触感。进入页面时会自动刮出一道短短的弧线，邀请手指接着刮。有手感、有悬念、有回报。"
         ),
         implementation: L(
             "The foil is masked by a Canvas that fills its rect, then adds a blur filter (≈20% of the brush) and strokes the recorded drag paths with blendMode .destinationOut for feathered edges; a Set of touched grid cells estimates coverage and triggers the reveal animation.",
@@ -146,6 +146,10 @@ private struct CardsScratchDemo: View {
 
     /// Preview: sweep a zig-zag brush across the card, hold the prize, then deal a fresh card.
     private func autoScratch() {
+        guard ctx.isPreview else {
+            introStroke()
+            return
+        }
         let size = CardsScratchMetrics.size
         let steps = 90
         if autoStep < steps {
@@ -169,6 +173,25 @@ private struct CardsScratchDemo: View {
             autoStep = -1
         }
         autoStep += 1
+    }
+}
+
+extension CardsScratchDemo {
+    /// Detail stage, once on arrival: one short, soft swoosh across the foil to invite the finger
+    /// (well under the auto-reveal threshold).
+    fileprivate func introStroke() {
+        guard strokes.isEmpty, !revealed else { return }
+        strokes.append([])
+        Task { @MainActor in
+            for step in 0..<18 {
+                let t = CGFloat(step) / 17
+                let point = CGPoint(x: 70 + 140 * t, y: 96 - 34 * sin(t * .pi))
+                guard !strokes.isEmpty, !revealed else { return }
+                // Drawn only (not counted towards coverage), so the intro stays silent.
+                strokes[strokes.count - 1].append(point)
+                try? await Task.sleep(for: .milliseconds(24))
+            }
+        }
     }
 }
 

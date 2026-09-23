@@ -43,6 +43,12 @@ private struct LiquidGlassDemo: View {
             toolbar
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap the + button", "点击“+”按钮"), ctx: ctx)
+                .environment(\.colorScheme, .dark)
+                .padding(.bottom, 16)
+                .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 1.8) { toggle() }
     }
 

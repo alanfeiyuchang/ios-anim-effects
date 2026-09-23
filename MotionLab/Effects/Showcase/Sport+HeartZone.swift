@@ -78,7 +78,6 @@ private struct SportHeartDemo: View {
                 HeartCenter(bpm: bpm, zone: zone, beats: beats, halo: ctx.bool("halo") ? halo : 0, language: ctx.language)
             }
             .frame(width: 200, height: 200)
-            .padding(.bottom, -24)
         }
         .padding(20)
         .frame(width: 280)

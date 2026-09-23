@@ -13,5 +13,6 @@ enum ScrollEffects {
         .scrollInsertRemove,
         .scrollArcDial,
         .scrollStickySections,
+        .scrollIndexScrubber,
     ]
 }

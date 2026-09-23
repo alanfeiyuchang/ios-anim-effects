@@ -11,7 +11,7 @@ extension Effect {
             "悬浮标签栏：选中胶囊在标签间滑行，图标轻快弹跳。"
         ),
         prompt: L(
-            "A floating, frosted capsule tab bar with four icon tabs. The selected tab sits on a gradient pill and reveals its label beside the icon. Tapping another tab slides the pill to it as one continuous shape on a spring (response ≈0.4 s, damping ≈0.78) — it stretches to fit the new label rather than jumping — while the old label collapses and the new one fades in from 80% scale anchored to the icon. The newly selected icon plays a single symbol bounce, icon tints cross-fade between white and secondary grey, and a selection haptic fires. Page content above swaps with a soft blur-replace. Fluid, tactile and unmistakably iOS.",
+            "A floating, frosted capsule tab bar with four icon tabs. The selected tab sits on a gradient pill and reveals its label beside the icon. Tapping another tab slides the pill to it as one continuous shape on a spring (response ≈0.4 s, damping ≈0.78) — it stretches to fit the new label rather than jumping — while the old label collapses and the new one fades in from 80% scale anchored to the icon. The newly selected icon plays a single symbol bounce, icon tints cross-fade between white and secondary gray, and a selection haptic fires. Page content above swaps with a soft blur-replace. Fluid, tactile and unmistakably iOS.",
             "一条悬浮的磨砂胶囊标签栏，包含四个图标标签。选中项位于渐变胶囊之上，并在图标旁显示文字。点击其他标签时，胶囊作为同一个连续形状以弹簧（响应约 0.4 秒、阻尼约 0.78）滑向目标，并伸缩以容纳新文字而非瞬移；旧标签文字收起，新文字以图标为锚点从 80% 缩放淡入。新选中的图标轻快地弹跳一次，图标颜色在白色与次级灰之间过渡，并触发选择触觉。上方页面内容以柔和的模糊替换切换。流畅、有触感，极具 iOS 味道。"
         ),
         implementation: L(

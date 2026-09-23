@@ -8,8 +8,8 @@ extension Effect {
         name: L("Slide to Confirm", "滑动确认"),
         summary: L("A shimmering track whose knob must be dragged to the end to commit.", "带流光文字的滑轨，把滑块拖到尽头才会提交。"),
         prompt: L(
-            "A 290 × 64 pt capsule track with a 56 pt white knob (chevron glyph, soft shadow) inset 4 pt on the left. The label “Slide to confirm” carries a light band that sweeps across it every 2 s. Dragging moves the knob 1:1 while an aurora-gradient fill trails behind it and the label fades out twice as fast as the knob travels; pulling past either end is rubber-banded. Releasing beyond 80% of the travel (or flicking hard past halfway) snaps the knob to the end on a spring (response 0.35 s, damping 0.8), the whole track floods green, the chevron morphs into a checkmark via a symbol replace transition and a success haptic plays; after 1.8 s it resets. Releasing short springs the knob back (damping 0.7). Deliberate and safe, yet delightful.",
-            "一条 290 × 64pt 的胶囊滑轨，左侧内嵌 4pt 放置 56pt 的白色滑块（双箭头图标、柔和投影）。“滑动以确认”文字上每 2 秒扫过一道高光。拖动时滑块 1:1 跟手，身后拖出极光渐变填充，文字以滑块行程两倍的速度淡出；超出两端均有橡皮筋阻尼。松手时若超过行程 80%（或在过半后快速甩动），滑块以弹簧（响应 0.35 秒、阻尼 0.8）吸附到终点，整条滑轨铺满绿色，箭头通过符号替换转场变为对勾，并触发成功触感；1.8 秒后自动复位。未达阈值则以弹簧（阻尼 0.7）弹回起点。操作郑重安全，又不失愉悦。"
+            "A 290 × 64 pt capsule track with a 56 pt white knob (chevron glyph, soft shadow) inset 4 pt on the left. The label “Slide to confirm” carries a light band that sweeps across it every 2 s. Touching the knob presses it to 94% with a tighter shadow; dragging moves it 1:1 while an aurora-gradient fill, always clipped inside the track, trails behind it and the label fades out twice as fast as the knob travels; pulling past either end is rubber-banded. Releasing beyond 80% of the travel (or flicking hard past halfway) snaps the knob to the end on a spring (response 0.35 s, damping 0.8), the whole track floods green, the chevron morphs into a checkmark via a symbol replace transition and a success haptic plays; after 1.8 s it resets. Releasing short springs the knob back (damping 0.7). Deliberate and safe, yet delightful.",
+            "一条 290 × 64pt 的胶囊滑轨，左侧内嵌 4pt 放置 56pt 的白色滑块（双箭头图标、柔和投影）。“滑动以确认”文字上每 2 秒扫过一道高光。按住滑块时它收缩到 94%、投影收紧；拖动时滑块 1:1 跟手，身后拖出始终裁切在滑轨之内的极光渐变填充，文字以滑块行程两倍的速度淡出；超出两端均有橡皮筋阻尼。松手时若超过行程 80%（或在过半后快速甩动），滑块以弹簧（响应 0.35 秒、阻尼 0.8）吸附到终点，整条滑轨铺满绿色，箭头通过符号替换转场变为对勾，并触发成功触感；1.8 秒后自动复位。未达阈值则以弹簧（阻尼 0.7）弹回起点。操作郑重安全，又不失愉悦。"
         ),
         implementation: L(
             "A DragGesture on the knob drives a clamped, rubber-banded x offset; a TimelineView animates the label’s gradient shimmer and contentTransition(.symbolEffect(.replace)) swaps the glyph on success.",
@@ -30,6 +30,7 @@ private struct SlideToConfirmDemo: View {
     let ctx: DemoContext
     @State private var x: CGFloat = 0
     @State private var confirmed = false
+    @State private var pressed = false
 
     private let trackWidth: CGFloat = 290
     private let knob: CGFloat = 56
@@ -44,7 +45,8 @@ private struct SlideToConfirmDemo: View {
                     .fill(confirmed ? AnyShapeStyle(Palette.green.gradient) : AnyShapeStyle(Color.primary.opacity(0.07)))
                 Capsule()
                     .fill(Palette.aurora)
-                    .frame(width: knob + inset * 2 + max(x, 0))
+                    // Never wider than the track, even while the knob is rubber-banding past the end.
+                    .frame(width: min(trackWidth, knob + inset * 2 + max(x, 0)))
                     .opacity(confirmed ? 0 : 0.3 + 0.7 * Double(progress))
                 label(progress: progress)
                 knobView
@@ -68,7 +70,7 @@ private struct SlideToConfirmDemo: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
         } else {
-            ShimmerText(text: ctx.language == .zh ? "滑动以确认" : "Slide to confirm")
+            ShimmerText(text: ctx.language == .zh ? "滑动以确认" : "Slide to confirm", preview: ctx.isPreview, paused: progress > 0.5)
                 .padding(.leading, knob)
                 .frame(maxWidth: .infinity)
                 .opacity(Double(max(1 - progress * 2, 0)))
@@ -86,13 +88,16 @@ private struct SlideToConfirmDemo: View {
                     .foregroundStyle(confirmed ? Palette.green : Palette.indigo)
                     .contentTransition(.symbolEffect(.replace))
             }
-            .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
+            .shadow(color: .black.opacity(pressed ? 0.12 : 0.18), radius: pressed ? 4 : 8, y: pressed ? 2 : 4)
+            .scaleEffect(pressed ? 0.94 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: pressed)
     }
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
                 guard !confirmed else { return }
+                if !pressed { pressed = true }
                 let raw = value.translation.width
                 if raw < 0 {
                     x = rubberBand(raw, limit: 20)
@@ -103,6 +108,7 @@ private struct SlideToConfirmDemo: View {
                 }
             }
             .onEnded { value in
+                pressed = false
                 guard !confirmed else { return }
                 let flicked = value.predictedEndTranslation.width > maxX * 1.2 && x > maxX * 0.5
                 if x > maxX * ctx.cg("threshold") || flicked {
@@ -140,9 +146,12 @@ private struct SlideToConfirmDemo: View {
 
 private struct ShimmerText: View {
     let text: String
+    let preview: Bool
+    /// Stops the shimmer once the label has faded out.
+    let paused: Bool
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: paused)) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             let phase = CGFloat(t.truncatingRemainder(dividingBy: 2.0) / 2.0)
             Text(text)

@@ -34,12 +34,14 @@ private struct CardsAccordionItem {
     let colors: [Color]
     let amount: String
     let bars: [CGFloat]
+    /// Two short detail rows: the largest charge and the budget status.
+    let notes: [LocalizedText]
 }
 
 private let cardsAccordionItems: [CardsAccordionItem] = [
-    CardsAccordionItem(title: L("Travel", "旅行"), subtitle: L("12 transactions", "12 笔交易"), symbol: "airplane", colors: [Palette.sky, Palette.blue], amount: "$1,284", bars: [22, 36, 28, 44, 30, 18, 40]),
-    CardsAccordionItem(title: L("Dining", "餐饮"), subtitle: L("28 transactions", "28 笔交易"), symbol: "fork.knife", colors: [Palette.amber, Palette.coral], amount: "$642", bars: [30, 24, 40, 20, 44, 34, 26]),
-    CardsAccordionItem(title: L("Shopping", "购物"), subtitle: L("9 transactions", "9 笔交易"), symbol: "bag.fill", colors: [Palette.violet, Palette.pink], amount: "$918", bars: [18, 28, 22, 34, 26, 44, 38]),
+    CardsAccordionItem(title: L("Travel", "旅行"), subtitle: L("12 transactions", "12 笔交易"), symbol: "airplane", colors: [Palette.sky, Palette.blue], amount: "$1,284", bars: [22, 36, 28, 44, 30, 18, 40], notes: [L("Largest: flight to Tokyo · $486", "最大一笔：飞往东京 · $486"), L("64% of monthly budget", "已用月度预算 64%")]),
+    CardsAccordionItem(title: L("Dining", "餐饮"), subtitle: L("28 transactions", "28 笔交易"), symbol: "fork.knife", colors: [Palette.amber, Palette.coral], amount: "$642", bars: [30, 24, 40, 20, 44, 34, 26], notes: [L("Largest: Friday dinner · $92", "最大一笔：周五晚餐 · $92"), L("On track · $158 left", "进度正常 · 剩余 $158")]),
+    CardsAccordionItem(title: L("Shopping", "购物"), subtitle: L("9 transactions", "9 笔交易"), symbol: "bag.fill", colors: [Palette.violet, Palette.pink], amount: "$918", bars: [18, 28, 22, 34, 26, 44, 38], notes: [L("Largest: running shoes · $139", "最大一笔：跑鞋 · $139"), L("12% over budget", "超出预算 12%")]),
 ]
 
 private let cardsAccordionReveal: AnyTransition = .asymmetric(
@@ -151,7 +153,18 @@ private struct CardsAccordionCard: View {
                 }
             }
             .frame(height: 44, alignment: .bottom)
-            PlaceholderLines(count: 2)
+            VStack(alignment: .leading, spacing: 5) {
+                ForEach(item.notes.indices, id: \.self) { i in
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(item.colors[0])
+                            .frame(width: 5, height: 5)
+                        Text(item.notes[i], language)
+                            .font(.caption)
+                            .foregroundStyle(i == 0 ? Color.primary : Color.secondary)
+                    }
+                }
+            }
         }
         .padding([.horizontal, .bottom], 14)
     }

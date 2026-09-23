@@ -11,6 +11,7 @@ enum NavigationEffects {
         .navigationBottomSheet,
         .navigationRadialMenu,
         .navigationContextPopover,
+        .navigationContextMenuLift,
         .navigationStepProgress,
         .navigationDockMagnify,
     ]

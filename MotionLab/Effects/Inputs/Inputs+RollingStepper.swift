@@ -8,8 +8,8 @@ extension Effect {
         name: L("Rolling Stepper", "滚动数字步进器"),
         summary: L("Digits roll in the direction you step and resist at the limits.", "数字按步进方向滚动，到达边界时产生阻力回弹。"),
         prompt: L(
-            "A compact capsule stepper with circular minus and plus buttons flanking a large rounded, monospaced number. Each tap presses its button to 88% and springs back, and the number rolls vertically in the direction of change — incoming digits slide up and blur-in when incrementing, down when decrementing — on a snappy spring (~300 ms); the number also nudges 4 pt toward the tapped side. At a limit the disabled button dims, and further taps make the number lurch 8 pt toward that side and bounce back with a keyframed wobble, tinting red briefly, with a rigid haptic. Precise, tactile and honest about boundaries.",
-            "紧凑的胶囊步进器，左右是圆形的减号与加号按钮，中间是大号圆体等宽数字。每次点击，对应按钮压缩到 88% 后弹回，数字按变化方向纵向滚动——增加时新数字自下而上模糊入场，减少时自上而下——由约 300 毫秒的利落弹簧驱动，同时数字朝被点击的一侧轻推 4pt。到达上下限时，对应按钮变暗；继续点击会让数字朝该侧冲出 8pt 再以关键帧摆动弹回，短暂泛红，并伴随一次硬朗的触觉。精准、可触，并诚实地表达边界。"
+            "A booking card for a lakeside cabin (photo thumbnail, dates, a guests row and a total) whose guest count is a compact capsule stepper: circular minus and plus buttons flanking a large rounded, monospaced number. Each tap presses its button to 88% and springs back, and the number rolls vertically in the direction of change — incoming digits slide up and blur-in when incrementing, down when decrementing — on a snappy spring (~300 ms); the number also nudges 4 pt toward the tapped side. The card's total price rolls to its new value with the same numeric transition. At a limit (1 guest, or the maximum) the disabled button dims, and further taps make the number lurch 8 pt toward that side and bounce back with a keyframed wobble, tinting red briefly, with a rigid haptic. Precise, tactile and honest about boundaries.",
+            "一张湖畔小屋的预订卡片（照片缩略图、日期、入住人数与总价），人数由紧凑的胶囊步进器控制：左右是圆形的减号与加号按钮，中间是大号圆体等宽数字。每次点击，对应按钮压缩到 88% 后弹回，数字按变化方向纵向滚动——增加时新数字自下而上模糊入场，减少时自上而下——由约 300 毫秒的利落弹簧驱动，同时数字朝被点击的一侧轻推 4pt。卡片底部的总价也以同样的数字滚动过渡更新。到达上下限（1 人或最大人数）时，对应按钮变暗；继续点击会让数字朝该侧冲出 8pt 再以关键帧摆动弹回，短暂泛红，并伴随一次硬朗的触觉。精准、可触，并诚实地表达边界。"
         ),
         implementation: L(
             "contentTransition(.numericText(value:)) rolls digits in the right direction; a keyframeAnimator keyed on a limit-hit counter adds the rubber-band wobble, and a ButtonStyle provides the press scale.",
@@ -29,6 +29,7 @@ extension Effect {
 private struct InputRollingStepperDemo: View {
     let ctx: DemoContext
     @State private var value = 2
+    private let minimum = 1
     @State private var nudge: CGFloat = 0
     @State private var limitHits = 0
     @State private var limitSide: Double = 1
@@ -38,13 +39,12 @@ private struct InputRollingStepperDemo: View {
     private var maximum: Int { max(ctx.int("max"), 1) }
 
     var body: some View {
-        VStack(spacing: 18) {
-            Spacer()
-            Text(L("Guests", "入住人数"), ctx.language)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
-            stepper
-            Spacer()
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            card
+            Spacer(minLength: 0)
+            DemoHint(text: L("Tap + or −, then push past the limits", "点击加减，再试试超出上下限"), ctx: ctx)
+                .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: maximum) { _, newMax in
@@ -53,25 +53,73 @@ private struct InputRollingStepperDemo: View {
         .autoplay(ctx.isPreview, every: 0.7, delay: 0.4) { previewTick() }
     }
 
+    private var zh: Bool { ctx.language == .zh }
+    private var total: Int { zh ? 1_680 + value * 320 : 240 + value * 45 }
+
+    private var card: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                LandscapeArt(seed: 2)
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("Lakeside Cabin", "湖畔小木屋"), ctx.language)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text(L("2 nights · Jul 8 – 10", "2 晚 · 7月8日 – 10日"), ctx.language)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            Divider()
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("Guests", "入住人数"), ctx.language)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(zh ? "最多 \(maximum) 人" : "Up to \(maximum)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                stepper
+            }
+            Divider()
+            HStack(alignment: .firstTextBaseline) {
+                Text(L("Total", "总价"), ctx.language)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+                Text(verbatim: (zh ? "¥" : "$") + total.formatted())
+                    .font(.system(.title3, design: .rounded).weight(.bold).monospacedDigit())
+                    .foregroundStyle(.primary)
+                    .contentTransition(.numericText(value: Double(total)))
+            }
+        }
+        .padding(18)
+        .frame(width: 310)
+        .demoCard(cornerRadius: 24)
+    }
+
     private var stepper: some View {
-        HStack(spacing: 18) {
-            stepButton(symbol: "minus", enabled: value > 0) { change(-1) }
+        HStack(spacing: 8) {
+            stepButton(symbol: "minus", enabled: value > minimum) { change(-1) }
             number
             stepButton(symbol: "plus", enabled: value < maximum) { change(1) }
         }
-        .padding(8)
-        .background(Palette.elevated, in: Capsule())
+        .padding(5)
+        .background(Color.primary.opacity(0.05), in: Capsule())
         .overlay(Capsule().strokeBorder(Palette.stroke))
-        .shadow(color: .black.opacity(0.1), radius: 16, y: 8)
     }
 
     private var number: some View {
         let side = limitSide
         return Text("\(value)")
-            .font(.system(size: 44, weight: .bold, design: .rounded).monospacedDigit())
+            .font(.system(size: 30, weight: .bold, design: .rounded).monospacedDigit())
             .foregroundStyle(flash ? Palette.red : Color.primary)
             .contentTransition(.numericText(value: Double(value)))
-            .frame(width: 84)
+            .frame(width: 48)
             .offset(x: nudge)
             .keyframeAnimator(initialValue: 0.0, trigger: limitHits) { content, shift in
                 content.offset(x: shift * side)
@@ -87,9 +135,9 @@ private struct InputRollingStepperDemo: View {
     private func stepButton(symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(enabled ? Color.white : Color.secondary)
-                .frame(width: 52, height: 52)
+                .frame(width: 40, height: 40)
                 .background {
                     Circle().fill(enabled ? AnyShapeStyle(Palette.ocean) : AnyShapeStyle(Color.primary.opacity(0.08)))
                 }
@@ -100,7 +148,7 @@ private struct InputRollingStepperDemo: View {
 
     private func change(_ delta: Int) {
         let target = value + delta
-        guard (0...maximum).contains(target) else {
+        guard (minimum...maximum).contains(target) else {
             hitLimit(side: Double(delta))
             return
         }
@@ -128,7 +176,7 @@ private struct InputRollingStepperDemo: View {
 
     private func previewTick() {
         let atTop = value >= maximum
-        let atBottom = value <= 0
+        let atBottom = value <= minimum
         if atTop && direction > 0 {
             hitLimit(side: 1)
             direction = -1

@@ -8,8 +8,8 @@ extension Effect {
         name: L("Notification Stack", "通知堆叠"),
         summary: L("Lock-screen style grouped notifications that unfold into a list.", "锁屏式分组通知，点击后逐条展开成列表。"),
         prompt: L(
-            "A group of four notification cards (300×64 pt, 18 pt corners) is collapsed into a stack: only the front card shows content, while two plates peek beneath it, each 10 pt lower and 5% narrower, their content hidden. Tapping the group unfolds it into a vertical list with 8 pt gaps — each card springs to its slot (response ≈0.5 s, damping ≈0.78) with a 40 ms stagger top to bottom, scaling back to 100% and fading its content in as it separates. The header pill cross-fades from “4 new” to “Show less”. Tapping again gathers the cards back behind the first one in reverse order. Tidy, calm and unmistakably iOS.",
-            "四条通知卡片（300×64 pt，18 pt 圆角）收拢成一叠：只有最前面的卡片显示内容，其下方露出两层底板，每层下移 10 pt、收窄 5%，内容隐藏。点击该组后展开成竖向列表，间距 8 pt——每张卡片以弹簧（响应约 0.5 秒、阻尼约 0.78）从上到下错开 40 毫秒依次落位，缩放恢复到 100%，分离时内容淡入。标题胶囊从「4 条新通知」淡入淡出切换为「收起」。再次点击，卡片按相反顺序收回到第一张之后。整洁、从容，是地道的 iOS 手感。"
+            "Beneath a large lock-screen clock and date, a group of four notification cards (300×60 pt, 18 pt corners) is collapsed into a stack: only the front card shows content, while two plates peek beneath it, each 12 pt lower and 5% narrower, their content hidden and faintly tinted with their app's colour so the layers read clearly. Tapping the group unfolds it into a vertical list with 6 pt gaps — each card springs to its slot (response ≈0.5 s, damping ≈0.78) with a 40 ms stagger top to bottom, scaling back to 100%, shedding its tint and fading its content in as it separates, while the clock condenses to half size and the date fades to make room. The header pill cross-fades from “4 new” to “Show less”. Tapping again gathers the cards back behind the first one in reverse order. Tidy, calm and unmistakably iOS.",
+            "锁屏大号时钟与日期下方，四条通知卡片（300×60 pt，18 pt 圆角）收拢成一叠：只有最前面的卡片显示内容，其下方露出两层底板，每层下移 12 pt、收窄 5%，内容隐藏，并带一抹所属 App 的淡色，层次一目了然。点击该组后展开成竖向列表，间距 6 pt——每张卡片以弹簧（响应约 0.5 秒、阻尼约 0.78）从上到下错开 40 毫秒依次落位，缩放恢复到 100%，分离时褪去底色、内容淡入；同时时钟收缩到一半大小、日期淡出，为列表让出空间。标题胶囊从「4 条新通知」淡入淡出切换为「收起」。再次点击，卡片按相反顺序收回到第一张之后。整洁、从容，是地道的 iOS 手感。"
         ),
         implementation: L(
             "Cards share a top-aligned ZStack; collapsed vs expanded offsets, scales and content opacity are computed per index, each with a delayed .animation(_:value:) for the stagger.",
@@ -46,11 +46,17 @@ private struct CardsNotificationDemo: View {
     let ctx: DemoContext
     @State private var expanded = false
 
-    private let rowHeight: CGFloat = 64
-    private let gap: CGFloat = 8
+    private let rowHeight: CGFloat = 60
+    private let gap: CGFloat = 6
+    private let plateStep: CGFloat = 12
+
+    private var spring: Animation {
+        .spring(response: ctx["response"], dampingFraction: ctx["damping"])
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
+            clock
             header
             ZStack(alignment: .top) {
                 ForEach(cardsNotificationItems.indices, id: \.self) { i in
@@ -59,14 +65,33 @@ private struct CardsNotificationDemo: View {
             }
             // The group's footprint follows its state so the collapsed stack sits centred on the
             // stage instead of hugging the top of an empty, list-sized frame.
-            .frame(width: 300, height: expanded ? 4 * rowHeight + 3 * gap : rowHeight + 20, alignment: .top)
-            .animation(.spring(response: ctx["response"], dampingFraction: ctx["damping"]), value: expanded)
+            .frame(width: 300, height: expanded ? 4 * rowHeight + 3 * gap : rowHeight + 2 * plateStep, alignment: .top)
+            .animation(spring, value: expanded)
             DemoHint(text: L("Tap the stack", "点击通知组"), ctx: ctx)
                 .frame(width: 300)
                 .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.0) { toggle() }
+    }
+
+    /// Lock-screen clock: large at rest, condensing to a small time when the list needs the room.
+    private var clock: some View {
+        VStack(spacing: 0) {
+            Text(verbatim: "9:41")
+                .font(.system(size: 60, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .scaleEffect(expanded ? 0.5 : 1, anchor: .top)
+                .frame(height: expanded ? 34 : 64, alignment: .top)
+            Text(L("Tuesday, June 9", "6月9日 星期二"), ctx.language)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .opacity(expanded ? 0 : 1)
+                .frame(height: expanded ? 0 : 20)
+                .clipped()
+        }
+        .frame(width: 300)
+        .animation(spring, value: expanded)
     }
 
     private var header: some View {
@@ -88,19 +113,23 @@ private struct CardsNotificationDemo: View {
 
     private func row(_ i: Int) -> some View {
         let depth = CGFloat(i)
+        let item = cardsNotificationItems[i]
         let order = expanded ? i : cardsNotificationItems.count - 1 - i
-        let spring = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
-            .delay(Double(order) * ctx["stagger"])
-        return CardsNotificationRow(item: cardsNotificationItems[i], language: ctx.language, height: rowHeight)
+        let delayed = spring.delay(Double(order) * ctx["stagger"])
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        return CardsNotificationRow(item: item, language: ctx.language, height: rowHeight)
             .opacity(expanded || i == 0 ? 1 : 0.001)
-            .background(Palette.elevated, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Palette.elevated, in: shape)
+            // Collapsed plates pick up a hint of their app's colour so the depth reads as layers.
+            .overlay(shape.fill(item.colors[0].opacity(expanded || i == 0 ? 0 : 0.14)).allowsHitTesting(false))
+            .overlay(shape.strokeBorder(Palette.stroke))
             .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
             .scaleEffect(expanded ? 1 : 1 - depth * 0.05, anchor: .top)
-            .offset(y: expanded ? depth * (rowHeight + gap) : depth * 10)
+            .offset(y: expanded ? depth * (rowHeight + gap) : depth * plateStep)
             .opacity(expanded || i < 3 ? 1 : 0)
             .zIndex(Double(cardsNotificationItems.count - i))
             .onTapGesture(perform: toggle)
-            .animation(spring, value: expanded)
+            .animation(delayed, value: expanded)
     }
 
     private func toggle() {

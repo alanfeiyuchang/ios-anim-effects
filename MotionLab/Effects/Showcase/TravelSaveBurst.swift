@@ -15,10 +15,10 @@ extension Effect {
             "一张竖版目的地照片卡片（布拉耶斯湖），标题与收藏数旁边是一枚磨砂书签按钮。双击照片时，在触点处弹出一枚 64pt 的橙色渐变大书签：从 20% 缩放、−18° 以弹簧（响应 0.3 秒、阻尼 0.5）弹到 100%，150 毫秒后在 350 毫秒内上飘 50pt、缩到 80% 并淡出。与此同时，小按钮切换为实心橙色书签并做一次符号弹跳，10 颗橙色与青柠色相间的火花以 600 毫秒缓出径向飞出 38pt，边飞边缩到 20% 并淡出。收藏数滚动加一，并触发成功触感。一条带缩略图的暗色「已收藏到 2026 夏日」提示从顶部滑下，1.6 秒后自动收起。整体有庆祝感，但依然克制精致。"
         ),
         implementation: L(
-            "The big bookmark and the spark ring are keyed with .id(counter), so each save re-creates them and their onAppear animations replay; the toast is dismissed by .task(id:) after a sleep, and the button uses contentTransition(.symbolEffect(.replace)) + symbolEffect(.bounce).",
-            "大书签和火花环使用 .id(计数器)，每次收藏都会重建并重播 onAppear 动画；提示条由 .task(id:) 延时后收起；按钮使用 contentTransition(.symbolEffect(.replace)) 与 symbolEffect(.bounce)。"
+            "The big bookmark and the spark ring are keyed with .id(counter), so each save re-creates them; the bookmark runs one keyframeAnimator timeline (pop, 150 ms hold, float) and the ring replays its onAppear animation; the toast is dismissed by .task(id:) after a sleep, and the button uses contentTransition(.symbolEffect(.replace)) + symbolEffect(.bounce).",
+            "大书签和火花环使用 .id(计数器)，每次收藏都会重建；大书签按一条 keyframeAnimator 时间线（弹出、停留 150 毫秒、上飘）播放，火花环重播 onAppear 动画；提示条由 .task(id:) 延时后收起；按钮使用 contentTransition(.symbolEffect(.replace)) 与 symbolEffect(.bounce)。"
         ),
-        apis: ["onTapGesture(count:coordinateSpace:perform:)", "withAnimation(_:completion:)", "symbolEffect(.bounce)", "task(id:)", "contentTransition(.numericText)"],
+        apis: ["onTapGesture(count:coordinateSpace:perform:)", "keyframeAnimator", "symbolEffect(.bounce)", "task(id:)", "contentTransition(.numericText)"],
         tags: ["bookmark", "save", "double tap", "burst", "particles", "收藏", "书签", "双击", "粒子"],
         params: [
             .slider("particles", L("Spark count", "火花数量"), 6...16, default: 10, step: 1, decimals: 0),
@@ -49,8 +49,14 @@ private struct TravelSaveBurstDemo: View {
 
     var body: some View {
         SignatureStage {
-            card
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                card
+                Spacer(minLength: 0)
+                DemoHint(text: L("Double-tap the photo to save it", "双击照片即可收藏"), ctx: ctx)
+                    .padding(.bottom, 14)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 1.5, delay: 0.4) {
             if saved {
@@ -178,27 +184,53 @@ private struct TravelSaveBurstDemo: View {
 
 // MARK: - Pieces
 
+private struct TravelBookmarkFrame {
+    var scale: Double = 0.2
+    var rotation: Double = -18
+    var lift: Double = 0
+    var opacity: Double = 0
+}
+
+/// One fixed timeline: pop (0–300 ms), hold 150 ms, float away (450–800 ms). Keyframes keep the
+/// float-away start exact instead of waiting for the pop spring to settle.
 private struct TravelBigBookmark: View {
-    /// 0 = hidden, 1 = popped, 2 = floated away.
-    @State private var stage = 0
+    @State private var fire = 0
 
     var body: some View {
         Image(systemName: "bookmark.fill")
             .font(.system(size: 64, weight: .bold))
             .foregroundStyle(Signature.accentGradient)
             .shadow(color: Signature.accent.opacity(0.6), radius: 16)
-            .scaleEffect(stage == 0 ? 0.2 : (stage == 1 ? 1 : 0.8))
-            .rotationEffect(.degrees(stage == 0 ? -18 : 0))
-            .offset(y: stage == 2 ? -50 : 0)
-            .opacity(stage == 2 ? 0 : 1)
-            .allowsHitTesting(false)
-            .onAppear {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
-                    stage = 1
-                } completion: {
-                    withAnimation(.easeIn(duration: 0.35).delay(0.15)) { stage = 2 }
+            .keyframeAnimator(initialValue: TravelBookmarkFrame(), trigger: fire) { content, frame in
+                content
+                    .scaleEffect(frame.scale)
+                    .rotationEffect(.degrees(frame.rotation))
+                    .offset(y: frame.lift)
+                    .opacity(frame.opacity)
+            } keyframes: { _ in
+                KeyframeTrack(\.scale) {
+                    MoveKeyframe(0.2)
+                    SpringKeyframe(1, duration: 0.3, spring: Spring(response: 0.3, dampingRatio: 0.5))
+                    LinearKeyframe(1, duration: 0.15)
+                    CubicKeyframe(0.8, duration: 0.35)
+                }
+                KeyframeTrack(\.rotation) {
+                    MoveKeyframe(-18)
+                    SpringKeyframe(0, duration: 0.3, spring: Spring(response: 0.3, dampingRatio: 0.5))
+                }
+                KeyframeTrack(\.lift) {
+                    MoveKeyframe(0)
+                    LinearKeyframe(0, duration: 0.45)
+                    CubicKeyframe(-50, duration: 0.35)
+                }
+                KeyframeTrack(\.opacity) {
+                    MoveKeyframe(1)
+                    LinearKeyframe(1, duration: 0.45)
+                    CubicKeyframe(0, duration: 0.35)
                 }
             }
+            .allowsHitTesting(false)
+            .onAppear { fire += 1 }
     }
 }
 

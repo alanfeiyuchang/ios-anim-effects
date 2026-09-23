@@ -11,14 +11,14 @@ extension Effect {
             "青柠色选中胶囊在筛选标签间滑动，目的地卡片以错峰弹簧重新排布。"
         ),
         prompt: L(
-            "A dark “Plan Trips With Ease” card holds a segmented row of filter chips (All · Trails · Nights · Lakes) on a 6% white track, above a 3-column grid of photo tiles. Tapping a chip slides a single lime capsule (with a faint lime glow) behind the new label via shared geometry on a spring (response 0.42 s, damping 0.78); the label flips from muted white to black. Tiles that no longer match shrink out within 150 ms, surviving tiles glide to their new grid slots, and incoming tiles scale up from 60% with opacity, each delayed 45 ms after the previous. The count label rolls with a numeric content transition. A selection haptic marks each change. It feels fluid, organized and effortless.",
-            "暗色「轻松规划旅程」卡片上方是一排分段筛选标签（全部 · 步道 · 夜景 · 湖泊），底轨为 6% 白色，下面是三列照片卡片网格。点击标签后，唯一一枚青柠色胶囊（带淡淡的青柠辉光）通过共享几何以弹簧（响应 0.42 秒、阻尼 0.78）滑到新标签背后，文字由浅灰白变成黑色。不再符合条件的卡片在 150 毫秒内缩小消失，保留的卡片平滑滑到新格位，新卡片从 60% 缩放加淡入出现，每张比上一张晚 45 毫秒。计数文字用数字滚动过渡更新。每次切换都有一下选择触感。整体流畅、有条理，操作毫不费力。"
+            "A dark “Plan Trips With Ease” card holds a segmented row of filter chips (All · Trails · Nights · Lakes) on a 6% white track, above a 3-column grid of photo tiles. Tapping a chip slides a single lime capsule (with a faint lime glow) behind the new label via shared geometry on a spring (response 0.42 s, damping 0.78); the label flips from muted white to black. Tiles that no longer match shrink out in place within 150 ms; 60 ms later the surviving tiles glide to their new grid slots, and incoming tiles appear directly in their slots, scaling up from 60% with opacity 100 ms in, each 45 ms after the previous — so nothing ever overlaps mid-flight. The count label rolls with a numeric content transition. A selection haptic marks each change. It feels fluid, organized and effortless.",
+            "暗色「轻松规划旅程」卡片上方是一排分段筛选标签（全部 · 步道 · 夜景 · 湖泊），底轨为 6% 白色，下面是三列照片卡片网格。点击标签后，唯一一枚青柠色胶囊（带淡淡的青柠辉光）通过共享几何以弹簧（响应 0.42 秒、阻尼 0.78）滑到新标签背后，文字由浅灰白变成黑色。不再符合条件的卡片在原位 150 毫秒内缩小消失；60 毫秒后保留的卡片平滑滑到新格位，新卡片直接在自己的格位上于 100 毫秒后从 60% 缩放加淡入出现，每张比上一张晚 45 毫秒——过程中卡片互不重叠。计数文字用数字滚动过渡更新。每次切换都有一下选择触感。整体流畅、有条理，操作毫不费力。"
         ),
         implementation: L(
-            "The pill is one Capsule with matchedGeometryEffect rendered behind whichever chip is selected; tiles are filtered inside a LazyVGrid and use an asymmetric AnyTransition with .animation(spring.delay(index × stagger)).",
-            "选中胶囊是一枚使用 matchedGeometryEffect 的 Capsule，只绘制在当前选中标签背后；卡片在 LazyVGrid 中过滤，并使用非对称 AnyTransition 搭配 .animation(spring.delay(序号 × 错峰))。"
+            "The pill is one Capsule with matchedGeometryEffect rendered behind whichever chip is selected. All tiles stay mounted in a ZStack at computed grid-slot offsets; comparing the previous and current filter, each tile gets its own animation for visibility (scale/opacity) and a separate one for position, so leavers vanish in place and newcomers never fly across the grid.",
+            "选中胶囊是一枚使用 matchedGeometryEffect 的 Capsule，只绘制在当前选中标签背后。所有卡片常驻在 ZStack 中，按计算出的格位偏移摆放；对比前后两次筛选，每张卡片分别拥有可见性（缩放/透明度）动画和位置动画，离开的卡片原地消失，新卡片不会横穿网格飞入。"
         ),
-        apis: ["matchedGeometryEffect", "LazyVGrid", "AnyTransition.animation", "contentTransition(.numericText)", "spring(response:dampingFraction:)"],
+        apis: ["matchedGeometryEffect", "offset", "animation(_:value:)", "contentTransition(.numericText)", "spring(response:dampingFraction:)"],
         tags: ["chips", "filter", "segmented", "stagger", "筛选", "标签", "分段控件", "错峰"],
         params: [
             .slider("stagger", L("Tile stagger", "卡片错峰"), 0...0.12, default: 0.045, decimals: 3, unit: "s"),
@@ -77,24 +77,37 @@ private struct TravelTripChipsDemo: View {
     let ctx: DemoContext
     @Namespace private var ns
     @State private var selected: TravelTripKind = .all
+    @State private var previous: TravelTripKind = .all
 
     private var zh: Bool { ctx.language == .zh }
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
-    private var visible: [TravelTripSpot] {
-        selected == .all ? TravelTripSpot.all : TravelTripSpot.all.filter { $0.kind == selected }
+    private var visible: [TravelTripSpot] { Self.spots(for: selected) }
+
+    private static func spots(for kind: TravelTripKind) -> [TravelTripSpot] {
+        kind == .all ? TravelTripSpot.all : TravelTripSpot.all.filter { $0.kind == kind }
     }
+
+    private static let gridWidth: CGFloat = 278
+    private static let gap: CGFloat = 8
+    private static let tileHeight: CGFloat = 92
+    private static var tileWidth: CGFloat { (gridWidth - gap * 2) / 3 }
 
     var body: some View {
         SignatureStage {
-            VStack(alignment: .leading, spacing: 14) {
-                header
-                chips
-                grid
+            VStack(spacing: 0) {
                 Spacer(minLength: 0)
+                VStack(alignment: .leading, spacing: 14) {
+                    header
+                    chips
+                    grid
+                }
+                .padding(16)
+                .frame(width: 310, alignment: .top)
+                .signatureCard()
+                Spacer(minLength: 0)
+                DemoHint(text: L("Tap a filter chip", "点击筛选标签"), ctx: ctx)
+                    .padding(.bottom, 14)
             }
-            .padding(16)
-            .frame(width: 310, height: 318, alignment: .top)
-            .signatureCard()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 1.7) {
@@ -135,29 +148,44 @@ private struct TravelTripChipsDemo: View {
         .background(Color.white.opacity(0.06), in: Capsule())
     }
 
+    /// Non-lazy, fixed-slot grid: every tile stays mounted, so enter/exit never fight the layout.
     private var grid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-            ForEach(Array(visible.enumerated()), id: \.element.id) { index, spot in
-                TravelTripTile(spot: spot, language: ctx.language)
-                    .transition(tileTransition(index))
+        let now = visible.map(\.id)
+        let before = Self.spots(for: previous).map(\.id)
+        return ZStack(alignment: .topLeading) {
+            ForEach(TravelTripSpot.all) { spot in
+                tile(spot, now: now, before: before)
             }
         }
+        .frame(width: Self.gridWidth, height: Self.tileHeight * 2 + Self.gap, alignment: .topLeading)
     }
 
-    private func tileTransition(_ index: Int) -> AnyTransition {
-        .asymmetric(
-            insertion: AnyTransition.scale(scale: 0.6)
-                .combined(with: .opacity)
-                .animation(spring.delay(Double(index) * ctx["stagger"])),
-            removal: AnyTransition.scale(scale: 0.8)
-                .combined(with: .opacity)
-                .animation(.easeOut(duration: 0.15))
-        )
+    private func tile(_ spot: TravelTripSpot, now: [String], before: [String]) -> some View {
+        let shown = now.contains(spot.id)
+        let wasShown = before.contains(spot.id)
+        // Leavers keep their old slot while they fade; everyone else takes their new slot.
+        let slot = now.firstIndex(of: spot.id) ?? before.firstIndex(of: spot.id) ?? 0
+        let x = CGFloat(slot % 3) * (Self.tileWidth + Self.gap)
+        let y = CGFloat(slot / 3) * (Self.tileHeight + Self.gap)
+        let entering = shown && !wasShown
+        let visibility: Animation = shown
+            ? (entering ? spring.delay(0.1 + Double(slot) * ctx["stagger"]) : spring)
+            : .easeOut(duration: 0.15)
+        let movement: Animation? = shown && wasShown ? spring.delay(0.06) : nil
+        return TravelTripTile(spot: spot, language: ctx.language)
+            .frame(width: Self.tileWidth)
+            .scaleEffect(shown ? 1 : 0.6)
+            .opacity(shown ? 1 : 0)
+            .animation(visibility, value: selected)
+            .offset(x: x, y: y)
+            .animation(movement, value: selected)
+            .allowsHitTesting(false)
     }
 
     private func select(_ kind: TravelTripKind) {
         guard kind != selected else { return }
         if !ctx.isPreview { Haptics.selection() }
+        previous = selected
         withAnimation(spring) { selected = kind }
     }
 }

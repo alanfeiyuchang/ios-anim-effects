@@ -11,12 +11,12 @@ extension Effect {
             "逐日行程时间轴依次展开：图标弹出、连接线生长、文字滑入。"
         ),
         prompt: L(
-            "A dark itinerary card for “Lago di Braies · 4 days” lists one stop per day on a vertical rail. On tap the timeline unfolds from top to bottom, one row every 80 ms. In each row the tinted icon badge pops from 20% to 100% scale on a spring (response 0.45 s, damping 0.78), the 2 pt gradient connector below it grows downward from a top anchor 100 ms later, and the day label, title and time slide in 14 pt from the left while unblurring from 4 pt. Tapping again folds the rows away in reverse order at a faster 60% stagger. The header chevron rotates 180° and a light haptic confirms each toggle. The cascade reads as a story unfolding: calm, orderly and anticipatory.",
-            "暗色行程卡片「布拉耶斯湖 · 4 天」在一条竖向时间轴上逐日列出站点。点击后时间轴自上而下展开，每行间隔 80 毫秒。每一行里，带色彩的图标徽章以弹簧（响应 0.45 秒、阻尼 0.78）从 20% 弹到 100%；100 毫秒后，下方 2pt 的渐变连接线以顶部为锚点向下生长；日期、标题与时间从左侧 14pt 滑入，同时从 4pt 模糊变清晰。再次点击，各行以 60% 的更快节奏倒序收起。标题栏的箭头旋转 180°，每次切换都有轻触感。这种层层递进的节奏像在讲一段展开的旅程：从容、有序，让人期待。"
+            "A dark itinerary card for “Lago di Braies · 4 days” lists one stop per day on a vertical rail. On tap the timeline unfolds from top to bottom, one row every 80 ms. In each row the tinted icon badge pops from 20% to 100% scale on a spring (response 0.45 s, damping 0.78), the 2 pt gradient connector below it grows downward from a top anchor 100 ms later, and the day label, title and time slide in 14 pt from the left while unblurring from 4 pt. Tapping again folds the rows away in reverse order at a faster 60% stagger. The card itself resizes: closed it is just the header plus a one-line summary (four tinted stop glyphs and “4 stops · Venice → Seceda”), and its height springs open with the cascade and shrinks only after the fold finishes. The header chevron rotates 180° and a light haptic confirms each toggle. The cascade reads as a story unfolding: calm, orderly and anticipatory.",
+            "暗色行程卡片「布拉耶斯湖 · 4 天」在一条竖向时间轴上逐日列出站点。点击后时间轴自上而下展开，每行间隔 80 毫秒。每一行里，带色彩的图标徽章以弹簧（响应 0.45 秒、阻尼 0.78）从 20% 弹到 100%；100 毫秒后，下方 2pt 的渐变连接线以顶部为锚点向下生长；日期、标题与时间从左侧 14pt 滑入，同时从 4pt 模糊变清晰。再次点击，各行以 60% 的更快节奏倒序收起。卡片本身也随之变高变矮：收起时只保留标题与一行摘要（四个带色站点图标和「4 站 · 威尼斯 → 塞切达」），展开时高度随级联一起弹开，收起时等折叠完成后才缩回。标题栏的箭头旋转 180°，每次切换都有轻触感。这种层层递进的节奏像在讲一段展开的旅程：从容、有序，让人期待。"
         ),
         implementation: L(
-            "All rows stay in the layout; each row animates scale, opacity, offset and blur with its own .animation(spring.delay(index × stagger), value: open), and the delay order flips when closing.",
-            "所有行常驻布局中；每行使用各自的 .animation(spring.delay(序号 × 错峰), value: open) 驱动缩放、透明度、偏移与模糊，收起时反转延迟顺序。"
+            "Each row animates scale, opacity, offset and blur with its own .animation(spring.delay(index × stagger), value: open), flipping the order when closing; the rows' natural height is measured with onGeometryChange and the clipped container animates between 0 and that height.",
+            "每行使用各自的 .animation(spring.delay(序号 × 错峰), value: open) 驱动缩放、透明度、偏移与模糊，收起时反转顺序；用 onGeometryChange 测得时间轴自然高度，裁剪容器在 0 与该高度之间做动画。"
         ),
         apis: ["animation(_:value:)", "Animation.delay", "scaleEffect(x:y:anchor:)", "blur(radius:)", "spring(response:dampingFraction:)"],
         tags: ["timeline", "itinerary", "stagger", "cascade", "时间轴", "行程", "错峰", "展开"],
@@ -52,21 +52,32 @@ private struct TravelItineraryStop {
 private struct TravelItineraryDemo: View {
     let ctx: DemoContext
     @State private var open = false
+    /// Natural height of the timeline, measured so the card can animate between summary and full size.
+    @State private var rowsHeight: CGFloat = 230
 
     private var zh: Bool { ctx.language == .zh }
 
     var body: some View {
         SignatureStage {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                rows
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 14) {
+                    header
+                    if !open {
+                        summary
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                    rows
+                }
+                .padding(18)
+                .frame(width: 290, alignment: .top)
+                .signatureCard()
+                .contentShape(Rectangle())
+                .onTapGesture(perform: toggle)
                 Spacer(minLength: 0)
+                DemoHint(text: L("Tap the card to fold or unfold", "点击卡片展开或收起"), ctx: ctx)
+                    .padding(.bottom, 14)
             }
-            .padding(18)
-            .frame(width: 290, height: 318, alignment: .top)
-            .signatureCard()
-            .contentShape(Rectangle())
-            .onTapGesture(perform: toggle)
+            .padding(.top, ctx.isPreview ? 6 : 26)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 2.6, delay: 0.3) { toggle() }
@@ -100,7 +111,45 @@ private struct TravelItineraryDemo: View {
         }
     }
 
+    /// Collapsed state: one line with the four stop glyphs, so the closed card is compact, not half-empty.
+    private var summary: some View {
+        HStack(spacing: 6) {
+            ForEach(Array(TravelItineraryStop.all.enumerated()), id: \.offset) { _, stop in
+                Image(systemName: stop.symbol)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(stop.tint)
+                    .frame(width: 24, height: 24)
+                    .background(stop.tint.opacity(0.16), in: Circle())
+            }
+            Text(zh ? "4 站 · 威尼斯 → 塞切达" : "4 stops · Venice → Seceda")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Signature.textSecondary)
+                .lineLimit(1)
+                .padding(.leading, 4)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var closeDuration: Double {
+        let count = Double(TravelItineraryStop.all.count - 1)
+        return count * ctx["stagger"] * 0.6 + 0.2
+    }
+
     private var rows: some View {
+        rowStack
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.height
+            } action: { height in
+                rowsHeight = height
+            }
+            .frame(height: open ? rowsHeight : 0, alignment: .top)
+            .clipped()
+            // Grow right away when opening; wait for the reverse fold before shrinking when closing.
+            .animation(.spring(response: 0.45, dampingFraction: 0.86).delay(open ? 0 : closeDuration), value: open)
+    }
+
+    private var rowStack: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(TravelItineraryStop.all.enumerated()), id: \.offset) { index, stop in
                 TravelItineraryRow(
@@ -123,7 +172,7 @@ private struct TravelItineraryDemo: View {
 
     private func toggle() {
         if !ctx.isPreview { Haptics.tap() }
-        open.toggle()
+        withAnimation(.easeInOut(duration: 0.25).delay(open ? closeDuration : 0)) { open.toggle() }
     }
 }
 

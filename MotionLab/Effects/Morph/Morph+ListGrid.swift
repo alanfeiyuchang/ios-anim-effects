@@ -7,7 +7,7 @@ extension Effect {
         interaction: .state,
         name: L("List ↔ Grid Morph", "列表 ↔ 网格形变"),
         summary: L(
-            "Rows reflow into tiles and back, every item travelling to its new slot.",
+            "Rows reflow into tiles and back, every item traveling to its new slot.",
             "列表行与网格瓦片互相重排，每个元素都飞向新的位置。"
         ),
         prompt: L(
@@ -64,7 +64,6 @@ private struct ListGridDemo: View {
             toggleButton
         }
         .padding(16)
-        .padding(.top, 32) // clear the stage's reset button
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) { toggle() }
     }

@@ -68,6 +68,8 @@ private struct RockerSwitchDemo: View {
 
     private var led: some View {
         let flicker = ctx.bool("flicker")
+        let low: Double = flicker ? 0 : 1
+        let dip: Double = flicker ? 0.4 : 1
         let lit = isOn
         return Circle()
             .fill(lit ? Palette.amber : Color.primary.opacity(0.15))
@@ -78,14 +80,10 @@ private struct RockerSwitchDemo: View {
                     .shadow(color: Palette.amber.opacity(lit ? 0.9 * level : 0), radius: 8)
             } keyframes: { _ in
                 KeyframeTrack(\.self) {
-                    if flicker {
-                        LinearKeyframe(0, duration: 0.04)
-                        LinearKeyframe(1, duration: 0.06)
-                        LinearKeyframe(0.4, duration: 0.06)
-                        LinearKeyframe(1, duration: 0.1)
-                    } else {
-                        LinearKeyframe(1, duration: 0.01)
-                    }
+                    LinearKeyframe(low, duration: 0.04)
+                    LinearKeyframe(1, duration: 0.06)
+                    LinearKeyframe(dip, duration: 0.06)
+                    LinearKeyframe(1, duration: 0.1)
                 }
             }
     }

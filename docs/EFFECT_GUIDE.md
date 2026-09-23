@@ -147,7 +147,8 @@ the Compare mode on the family page plays all variations side by side.
    or an AI code generator can reproduce the effect from. Write each language natively (don't translate word
    for word). Cover: the element & its resting look → trigger → the motion sequence (what moves, from/to values,
    order, stagger, timing in ms/s, curve/spring parameters, overshoot) → secondary details (blur, shadow, haptics,
-   color shifts) → the feeling it conveys. 2–5 sentences, 70–150 English words / 110–240 Chinese characters
+   color shifts) → the feeling it conveys. 2–5 sentences, 70–150 English words / 110–240 characters in Chinese
+   (every non-whitespace character counts: Han, punctuation, digits, Latin)
    (hard cap; cut filler and repetition before cutting timing values).
    The app appends the live parameter values automatically, so don't list the parameters again verbatim.
 7. **Implementation** text: 1–2 sentences on how it is built. `apis`: 2–6 key API names.

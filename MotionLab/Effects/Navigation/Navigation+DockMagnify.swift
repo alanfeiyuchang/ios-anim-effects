@@ -120,7 +120,7 @@ private struct DockRow: View {
     private var sizes: [CGFloat] {
         let maxScale = ctx.cg("scale")
         let range = ctx.cg("range")
-        return dockApps.indices.map { index in
+        return dockApps.indices.map { (index: Int) -> CGFloat in
             guard let fingerX else { return Self.base }
             let d = abs(Self.restCenter(index, canvasWidth: canvas.width) - fingerX)
             guard d < range else { return Self.base }

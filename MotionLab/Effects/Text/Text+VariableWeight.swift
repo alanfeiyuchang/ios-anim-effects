@@ -13,8 +13,8 @@ extension Effect {
             "一个大号展示单词用系统可变字体沿字重轴“呼吸”：正弦波从左向右穿过字母，每个字在 Thin（100）与 Black（900）之间连续过渡，相邻字母相位差 0.55 弧度，1.25 秒一个周期。字重是连续插值而非跳档，整个单词像一块有弹性的整体般膨胀收细，宽度随之起伏；字越粗，颜色越从靛蓝暖向珊瑚色。在单词上拖动时手指接管：字重在指尖处最高，按约两个字母宽的高斯曲线向两侧衰减，250 毫秒内接入，松手后 400 毫秒交还给波浪。下方等宽的“wght”读数实时显示平均字重，安静而令人着迷。"
         ),
         implementation: L(
-            "A TimelineView(.animation) computes a 0…1 weight per letter (sine wave, or a Gaussian around the drag location, cross-faded by time); each letter is its own Text whose Font wraps UIFont.systemFont(ofSize:weight:) with a continuous UIFont.Weight raw value, tinted with Color.mix(with:by:).",
-            "TimelineView(.animation) 为每个字母计算 0…1 的字重（正弦波，或以拖动位置为中心的高斯分布，二者按时间交叉过渡）；每个字母是独立的 Text，其 Font 由带连续 UIFont.Weight 原始值的 UIFont.systemFont(ofSize:weight:) 创建，并用 Color.mix(with:by:) 着色。"
+            "A TimelineView(.animation) computes a 0…1 weight per letter (sine wave, or a Gaussian around the drag location, cross-faded by time); each letter is its own Text whose Font wraps UIFont.systemFont(ofSize:weight:) with a UIFont.Weight raw value quantised to 64 cached steps, tinted with Color.mix(with:by:).",
+            "TimelineView(.animation) 为每个字母计算 0…1 的字重（正弦波，或以拖动位置为中心的高斯分布，二者按时间交叉过渡）；每个字母是独立的 Text，其 Font 由 UIFont.systemFont(ofSize:weight:) 创建，UIFont.Weight 原始值量化为 64 级并缓存，并用 Color.mix(with:by:) 着色。"
         ),
         apis: ["TimelineView(.animation)", "UIFont.Weight(rawValue:)", "Font(CTFont)", "Color.mix(with:by:)", "DragGesture"],
         tags: ["variable font", "font weight", "wave", "typography", "kinetic type", "可变字体", "字重", "波浪", "排版"],
@@ -44,6 +44,27 @@ private func textWeightRaw(css: Double) -> CGFloat {
         return CGFloat(a.raw + (b.raw - a.raw) * t)
     }
     return CGFloat(textWeightStops[textWeightStops.count - 1].raw)
+}
+
+/// Fonts quantised to 64 weight steps and built once: the wave would otherwise create
+/// six UIFonts every frame.
+@MainActor
+private enum TextWeightFontCache {
+    private static let steps = 63
+    private static let lower: CGFloat = -0.8
+    private static let span: CGFloat = 1.42
+    private static var fonts: [Int: Font] = [:]
+
+    static func font(raw: CGFloat, size: CGFloat) -> Font {
+        let unit: CGFloat = ((raw - lower) / span).clamped(to: 0...1)
+        let step = Int((unit * CGFloat(steps)).rounded())
+        if let cached = fonts[step] { return cached }
+        let quantised: CGFloat = lower + span * CGFloat(step) / CGFloat(steps)
+        let uiFont = UIFont.systemFont(ofSize: size, weight: UIFont.Weight(rawValue: quantised))
+        let font = Font(uiFont as CTFont)
+        fonts[step] = font
+        return font
+    }
 }
 
 private struct TextVariableWeightDemo: View {
@@ -110,9 +131,7 @@ private struct TextVariableWeightDemo: View {
     }
 
     private func font(for unit: Double) -> Font {
-        let raw = textWeightRaw(css: cssWeight(unit))
-        let uiFont = UIFont.systemFont(ofSize: fontSize, weight: UIFont.Weight(rawValue: raw))
-        return Font(uiFont as CTFont)
+        TextWeightFontCache.font(raw: textWeightRaw(css: cssWeight(unit)), size: fontSize)
     }
 
     private func color(for unit: Double) -> Color {

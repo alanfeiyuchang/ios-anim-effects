@@ -51,3 +51,14 @@ parallax card, synthwave grid, aurora, KPI count-up, Metal ripple.
 - Liquid Glass effects need iOS 26 to show real glass; older systems see the material fallback.
 - Motion is verified by code review + still frames; feel on a physical device (haptics, 120 Hz) is not yet validated.
 - Ideas: Reduce Motion variants, a prompt-vs-defaults lint, code export per effect.
+
+## Loop 2–3 (independent audits, ≥ 92% bar)
+
+- Independent audit (reviewers who did not build the code) scored the shell 72–87 and effect groups 85–91.
+- Fixes applied across all groups (≈150 issues): broken effects (kaleidoscope, blur-up, activity petals, flow field),
+  header chip overlap, idle detail stages (central one-shot intro play), stale insets, odometer/split-flap motion,
+  prompt accuracy, contrast tokens, system localization (zh-Hans display name), Reduce Motion (static thumbnails),
+  VoiceOver stage actions, ranked search, plus 53 new effects (249 total).
+- App shell now uses premium motion itself: launch intro, mesh-gradient hero, per-glyph title, cover-flow featured
+  carousel, sliding filter pills, staggered grids, scroll reveals, heart burst, copy morph, window crossfades.
+- Status: compiles on Xcode 26; re-audit pending.

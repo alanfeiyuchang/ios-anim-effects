@@ -8,8 +8,8 @@ extension Effect {
         name: L("Parallax Windows", "视差窗口卡片"),
         summary: L("Feed cards act as windows: the artwork inside drifts slower than the scroll.", "信息流卡片像一扇扇窗：内部画面比滚动更慢地漂移。"),
         prompt: L(
-            "A vertical feed of wide cards (150 pt tall, 22 pt corners) scrolls through the viewport. Each card is a window onto oversized artwork — a gradient with a large glyph and soft light blobs — that is taller than the card by twice the parallax amount. As a card travels from the bottom of the viewport to the top, its artwork translates in the opposite direction by up to ±36 pt relative to the frame, linearly with the card's distance from the viewport center, so the image appears to sit deeper than the glass. Cards near the edges also ease down to 92% scale. The motion is scrubbed directly by scroll position — subtle, dimensional and editorial.",
-            "一列宽幅卡片（高 150 pt，22 pt 圆角）在视口中纵向滚动。每张卡片都是一扇窗，窗内是比卡片高出两倍视差量的超大画面——渐变、大号图标与柔和光斑。卡片从视口底部移动到顶部的过程中，画面相对卡片框朝反方向平移，最多 ±36 pt，与卡片到视口中心的距离成线性关系，使画面看起来位于玻璃之后更深处。靠近边缘的卡片还会缓缓缩小到 92%。运动完全由滚动位置实时驱动——含蓄、立体，富有杂志编排感。"
+            "A vertical feed of wide cards (150 pt tall, 22 pt corners) scrolls through the viewport. Each card is a window onto oversized artwork — a gradient with a large glyph and soft light blobs — that is taller than the card by twice the parallax amount. As a card travels from the bottom of the viewport to the top, its artwork translates in the opposite direction by up to ±36 pt relative to the frame (never more than the overscan, so no edge ever shows), linearly with the card's distance from the viewport center, so the image appears to sit deeper than the glass. Cards near the edges also ease down to 92% scale. The motion is scrubbed directly by scroll position — subtle, dimensional and editorial.",
+            "一列宽幅卡片（高 150 pt，22 pt 圆角）在视口中纵向滚动。每张卡片都是一扇窗，窗内是比卡片高出两倍视差量的超大画面——渐变、大号图标与柔和光斑。卡片从视口底部移动到顶部的过程中，画面相对卡片框朝反方向平移，最多 ±36 pt（绝不超过画面多出的余量，因此不会露边），与卡片到视口中心的距离成线性关系，使画面看起来位于玻璃之后更深处。靠近边缘的卡片还会缓缓缩小到 92%。运动完全由滚动位置实时驱动——含蓄、立体，富有杂志编排感。"
         ),
         implementation: L(
             "The artwork is framed taller than its clipped container and a visualEffect offsets it by its normalised distance from the viewport center (measured via onGeometryChange); a scrollTransition adds the edge scale.",
@@ -45,7 +45,7 @@ private struct ScrollParallaxDemo: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, ctx.isPreview ? 20 : 52)
+            .padding(.top, 16)
             .padding(.bottom, 20)
         }
         .scrollIndicators(.hidden)
@@ -71,12 +71,15 @@ private struct ScrollParallaxWindow: View {
     var body: some View {
         let amount = self.amount
         let viewport = self.viewport
-        return ScrollKitArt(index: index * 2 + 1, language: language, showsTitle: false)
+        // The artwork is taller than the window by `amount` on each side and never
+        // travels further than that, so its edges can never show inside the frame.
+        return ScrollParallaxArt(index: index * 2 + 1)
             .frame(height: 150 + amount * 2)
             .visualEffect { content, proxy in
                 let mid = proxy.frame(in: .scrollView).midY
-                let t = ((mid - viewport / 2) / max(viewport, 1)).clamped(to: -1...1)
-                return content.offset(y: -t * amount * 2)
+                let half = max(viewport / 2, 1)
+                let t = ((mid - half) / half).clamped(to: -1...1)
+                return content.offset(y: -t * amount)
             }
             .frame(height: 150)
             .frame(maxWidth: .infinity)
@@ -96,5 +99,37 @@ private struct ScrollParallaxWindow: View {
         .foregroundStyle(.white)
         .shadow(color: .black.opacity(0.25), radius: 6, y: 2)
         .padding(14)
+    }
+}
+
+/// Oversized window artwork: a gradient with a large glyph and soft, low-contrast light blobs
+/// (kept subtle so pale gradients such as mint → sky never show a bright white patch).
+private struct ScrollParallaxArt: View {
+    let index: Int
+
+    var body: some View {
+        LinearGradient(colors: ScrollKit.colors(index), startPoint: .topLeading, endPoint: .bottomTrailing)
+            .overlay {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.12))
+                        .frame(width: 180, height: 180)
+                        .blur(radius: 30)
+                        .offset(x: 90, y: -40)
+                    Circle()
+                        .fill(Color.black.opacity(0.10))
+                        .frame(width: 160, height: 160)
+                        .blur(radius: 30)
+                        .offset(x: -100, y: 60)
+                    Image(systemName: ScrollKit.symbol(index))
+                        .font(.system(size: 64, weight: .semibold))
+                        .foregroundStyle(Color.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
+                        .offset(x: 70)
+                }
+            }
+            .overlay {
+                LinearGradient(colors: [.clear, .black.opacity(0.25)], startPoint: .center, endPoint: .bottom)
+            }
     }
 }

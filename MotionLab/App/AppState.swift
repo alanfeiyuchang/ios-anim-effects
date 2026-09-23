@@ -4,24 +4,34 @@ import SwiftUI
 /// so any screen (e.g. a tag on the detail page) can jump into a pre-filled search.
 @Observable
 final class AppNavigator {
-    var tab: Int
+    var tab: AppTab
     var query = ""
     var category: EffectCategory?
     var interaction: EffectInteraction?
     /// Bumped by `search(_:)` so the Search tab's stack pops back to the results.
     private(set) var searchRevision = 0
 
-    init(tab: Int = LaunchOptions.initialTab) {
+    init(tab: AppTab = LaunchOptions.initialTab) {
         self.tab = tab
     }
 
     /// Switches to the Search tab with `text` as the query and all filters cleared.
+    /// `search("")` shows the whole catalog.
     func search(_ text: String) {
-        query = text
-        category = nil
-        interaction = nil
+        showSearch(query: text, category: nil, interaction: nil)
+    }
+
+    /// Switches to the Search tab listing every effect driven by `interaction`.
+    func search(interaction: EffectInteraction) {
+        showSearch(query: "", category: nil, interaction: interaction)
+    }
+
+    private func showSearch(query: String, category: EffectCategory?, interaction: EffectInteraction?) {
+        self.query = query
+        self.category = category
+        self.interaction = interaction
         searchRevision += 1
-        tab = AppTab.search
+        tab = .search
     }
 
     var hasActiveFilters: Bool { category != nil || interaction != nil }
@@ -32,12 +42,12 @@ final class AppNavigator {
     }
 }
 
-/// Tab indices (also used by `-ML_tab` for automated screenshots).
-enum AppTab {
-    static let browse = 0
-    static let search = 1
-    static let favorites = 2
-    static let settings = 3
+/// The app's tabs. Raw values are the `-ML_tab` launch-argument indices used for screenshots.
+enum AppTab: Int, Hashable {
+    case browse = 0
+    case search = 1
+    case favorites = 2
+    case settings = 3
 }
 
 /// Most-recently opened effects, newest first, persisted across launches.

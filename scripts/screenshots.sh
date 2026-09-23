@@ -22,6 +22,11 @@ xcodebuild -project MotionLab.xcodeproj -scheme MotionLab -sdk iphonesimulator \
   || { grep -E "error:" build.log | sort -u; exit 1; }
 xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/MotionLab.app
 
+# Warm-up launch: let first-boot system banners (e.g. "Ready for Apple Intelligence") appear and expire
+# before any screenshot is taken.
+xcrun simctl launch "$UDID" "$BUNDLE_ID" >/dev/null || true
+sleep 45
+
 shoot() { # name, wait, args...
   local name="$1" wait="$2"; shift 2
   xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true

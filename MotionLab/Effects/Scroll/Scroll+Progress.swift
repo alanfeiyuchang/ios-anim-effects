@@ -26,6 +26,9 @@ extension Effect {
     }
 }
 
+/// Height of the frosted header (title row + progress track).
+private let scrollProgressHeaderHeight: CGFloat = 44
+
 private struct ScrollProgressDemo: View {
     let ctx: DemoContext
     @State private var progress: Double = 0
@@ -36,7 +39,8 @@ private struct ScrollProgressDemo: View {
         ScrollView {
             ScrollArticle(language: ctx.language)
                 .padding(.horizontal, 22)
-                .padding(.top, 58)
+                // Clears the frosted header overlay, then the usual 16 pt gutter.
+                .padding(.top, scrollProgressHeaderHeight + 16)
                 .padding(.bottom, 28)
         }
         .scrollIndicators(.hidden)
@@ -50,7 +54,7 @@ private struct ScrollProgressDemo: View {
             progress = newValue
         })
         .overlay(alignment: .top) {
-            ScrollProgressHeader(progress: progress, barHeight: ctx.cg("barHeight"), language: ctx.language, trailingInset: ctx.isPreview ? 18 : 56)
+            ScrollProgressHeader(progress: progress, barHeight: ctx.cg("barHeight"), language: ctx.language)
         }
         .overlay(alignment: .bottomTrailing) {
             if ctx.bool("ring") {
@@ -73,8 +77,6 @@ private struct ScrollProgressHeader: View {
     let progress: Double
     let barHeight: CGFloat
     let language: AppLanguage
-    /// Leaves room for the detail stage's reset button in the top-trailing corner.
-    var trailingInset: CGFloat = 18
 
     var body: some View {
         VStack(spacing: 0) {
@@ -86,9 +88,8 @@ private struct ScrollProgressHeader: View {
                     .font(.footnote.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            .padding(.leading, 18)
-            .padding(.trailing, trailingInset)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 18)
+            .frame(height: scrollProgressHeaderHeight - 4)
             Capsule()
                 .fill(LinearGradient(colors: [Palette.mint, Palette.sky, Palette.violet], startPoint: .leading, endPoint: .trailing))
                 .frame(height: barHeight)
@@ -147,8 +148,12 @@ private struct ScrollArticle: View {
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
             }
-            ForEach(0..<6, id: \.self) { i in
-                PlaceholderLines(count: 4)
+            ForEach(scrollProgressParagraphs.indices, id: \.self) { i in
+                Text(scrollProgressParagraphs[i], language)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.primary.opacity(0.82))
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
                 if i == 1 {
                     ScrollKitArt(index: 5, language: language, showsTitle: false)
                         .frame(height: 140)
@@ -173,3 +178,30 @@ private struct ScrollArticle: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 }
+
+private let scrollProgressParagraphs: [LocalizedText] = [
+    L(
+        "Motion is the grammar of an interface. Before a person reads a single word, they have already felt whether a screen is calm or restless, heavy or light.",
+        "动效是界面的语法。在读到第一个字之前，人们就已经感受到这个页面是沉静还是焦躁、厚重还是轻盈。"
+    ),
+    L(
+        "Good transitions answer three questions at once: where did this come from, where is it going, and what can I do with it now?",
+        "好的转场会同时回答三个问题：它从哪里来，要到哪里去，现在我能拿它做什么？"
+    ),
+    L(
+        "Springs feel natural because they carry momentum. A card that overshoots by a few points and settles tells the eye it has weight.",
+        "弹簧之所以自然，是因为它带着惯性。一张卡片多冲出几个点再回落，眼睛就知道它有分量。"
+    ),
+    L(
+        "Timing is a budget. Most feedback should land within 100 ms; larger choreography can take 300 to 500 ms before it starts to feel slow.",
+        "时长是一种预算。大多数反馈应在 100 毫秒内到达；更大的编排可以用 300 到 500 毫秒，再长就会显得拖沓。"
+    ),
+    L(
+        "Let the finger lead. When motion is scrubbed by a gesture instead of a timer, the interface stops performing and starts responding.",
+        "让手指来主导。当动效由手势驱动而不是由计时器播放，界面就从“表演”变成了“回应”。"
+    ),
+    L(
+        "Finally, restraint. The best motion is often the one nobody notices — it simply makes the product feel inevitable.",
+        "最后是克制。最好的动效往往无人察觉——它只是让产品显得理所当然。"
+    ),
+]

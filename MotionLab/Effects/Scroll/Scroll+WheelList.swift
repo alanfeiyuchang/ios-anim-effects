@@ -8,8 +8,8 @@ extension Effect {
         name: L("Wheel Picker List", "滚轮列表"),
         summary: L("A drum-style list: rows curve away in 3D around a snapping center selection.", "滚筒式列表：各行绕着吸附的中心选中项向后弯曲成三维滚轮。"),
         prompt: L(
-            "A vertical list of city names (44 pt rows, 22 pt rounded type) is shaped into a rotating drum. The row at the center sits flat, bold and fully opaque inside a subtle rounded selection band; rows further from the center tilt back around the horizontal axis up to ~60° in perspective, shrink by up to 12% and fade toward 25% opacity, so the list reads like the surface of a cylinder. Scrolling snaps one row precisely into the band, each change of selection ticks a selection haptic, and the label above updates to the chosen city. Tapping a row scrolls it into the band. Precise, mechanical and tactile, like the iOS time picker.",
-            "一列城市名称（行高 44 pt，22 pt 圆体字）被塑造成可转动的滚筒。位于中心的一行平正、加粗、完全不透明，落在一条含蓄的圆角选中带内；越远离中心的行绕水平轴以透视向后倾斜，最多约 60°，同时最多缩小 12% 并淡出到约 25% 透明度，整列看起来就像圆柱表面。滚动时总有一行精确吸附到选中带中，每次切换选中项都伴随选择触感，上方标签随之更新为所选城市。点击某行会将其滚入选中带。精准、机械、富有触感，就像 iOS 的时间选择器。"
+            "A vertical list of city names (44 pt rows, 22 pt rounded type) is shaped into a rotating drum. The row at the center sits flat, bold and fully opaque inside a subtle rounded selection band; rows further from the center tilt back around the horizontal axis up to ~60° in perspective, shrink by up to 12% and fade toward 25% opacity, so the list reads like the surface of a cylinder. Scrolling snaps one row precisely into the band, each change of selection ticks a selection haptic, and a time-zone chip above rolls its digits to the chosen city's UTC offset and its local time at noon UTC. The drum's top and bottom 22% dissolve through a gradient mask, so rows melt into the stage instead of being cut off. Tapping a row scrolls it into the band. Precise, mechanical and tactile, like the iOS time picker.",
+            "一列城市名称（行高 44 pt，22 pt 圆体字）被塑造成可转动的滚筒。位于中心的一行平正、加粗、完全不透明，落在一条含蓄的圆角选中带内；越远离中心的行绕水平轴以透视向后倾斜，最多约 60°，同时最多缩小 12% 并淡出到约 25% 透明度，整列看起来就像圆柱表面。滚动时总有一行精确吸附到选中带中，每次切换选中项都伴随选择触感，上方的时区胶囊以数字滚动切换为所选城市的 UTC 偏移及其在 UTC 正午时的当地时间。滚筒上下各 22% 通过渐变遮罩淡出，行项融入舞台而非被生硬裁切。点击某行会将其滚入选中带。精准、机械、富有触感，就像 iOS 的时间选择器。"
         ),
         implementation: L(
             "Each row's visualEffect maps its distance from the fixed viewport center to rotation3DEffect, scale and opacity; spacer padding centers the first and last rows, a custom ScrollTargetBehavior snaps the offset to whole rows, onScrollGeometryChange derives the selection and ScrollPosition drives programmatic scrolls, with sensoryFeedback(.selection).",
@@ -33,6 +33,9 @@ private let scrollWheelCities: [LocalizedText] = [
     L("Dubai", "迪拜"), L("Rome", "罗马"),
 ]
 
+/// Standard-time UTC offsets (hours) for `scrollWheelCities`, shown in the time-zone chip.
+private let scrollWheelOffsets: [Int] = [9, 1, -5, 0, 8, 10, 1, 9, 0, 0, 2, -5, 4, 1]
+
 /// Snaps the resting offset to a whole row, so one row always lands in the band.
 private struct ScrollWheelSnap: ScrollTargetBehavior {
     let rowHeight: CGFloat
@@ -55,14 +58,7 @@ private struct ScrollWheelDemo: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            HStack(spacing: 6) {
-                Image(systemName: "airplane.departure")
-                    .foregroundStyle(Palette.primary)
-                Text(scrollWheelCities[current], ctx.language)
-                    .contentTransition(.interpolate)
-                    .animation(.snappy, value: current)
-            }
-            .font(.subheadline.weight(.semibold))
+            ScrollWheelZoneChip(offset: scrollWheelOffsets[current])
             wheel
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,6 +110,18 @@ private struct ScrollWheelDemo: View {
         .onAppear { position.scrollTo(y: CGFloat(scrollWheelInitialIndex) * rowHeight) }
         .scrollIndicators(.hidden)
         .frame(height: viewport)
+        .mask {
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: .black, location: 0.22),
+                    .init(color: .black, location: 0.78),
+                    .init(color: .clear, location: 1),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.primary.opacity(0.06))
@@ -136,5 +144,32 @@ private struct ScrollWheelDemo: View {
         withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) {
             position.scrollTo(y: CGFloat(current + direction * stepSize) * rowHeight)
         }
+    }
+}
+
+/// "UTC+9 · 21:00": the selected city's offset and its local time at 12:00 UTC, rolling with a numeric transition.
+private struct ScrollWheelZoneChip: View {
+    let offset: Int
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "globe")
+                .foregroundStyle(Palette.primary)
+            Text(verbatim: offset == 0 ? "UTC±0" : (offset > 0 ? "UTC+\(offset)" : "UTC−\(-offset)"))
+                .monospacedDigit()
+                .contentTransition(.numericText(value: Double(offset)))
+            Text(verbatim: "·")
+                .foregroundStyle(.tertiary)
+            // Local time when it is 12:00 UTC.
+            Text(verbatim: String(format: "%02d:00", (12 + offset + 24) % 24))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .contentTransition(.numericText(value: Double(offset)))
+        }
+        .font(.subheadline.weight(.semibold))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.primary.opacity(0.06), in: Capsule())
+        .animation(.snappy, value: offset)
     }
 }

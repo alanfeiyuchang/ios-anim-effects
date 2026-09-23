@@ -214,14 +214,14 @@ extension Effect {
             "照片从带主色的柔和模糊中逐张清晰显现。"
         ),
         prompt: L(
-            "A small gallery — one wide 274 × 128 pt hero photo over two 132 pt squares, 10 pt apart with 18 pt continuous corners. Before its data arrives, each tile shows its own dominant colors as a heavily blurred placeholder (18 pt, opaque edges), zoomed to 112%, desaturated to 50%, with a soft white wash breathing 0 ↔ 16% every 0.9 s. Images land in a random order about 350 ms apart; each one resolves over 0.6 s on a smooth curve — blur to 0, saturation to 100%, scale settling to 100% — so detail seems to focus into place rather than pop. The last arrival fires a soft haptic. Calm, photographic, and it never shows an empty box.",
-            "一组小画廊——上方一张 274 × 128 pt 的横幅大图，下方两张 132 pt 方图，间距 10 pt、18 pt 连续圆角。数据到达前，每个图块用自身主色做占位：强模糊（18 pt、边缘不透明）、放大到 112%、饱和度降到 50%，并叠一层每 0.9 秒在 0 与 16% 之间呼吸的柔和白色。图片以随机顺序、约 350 毫秒间隔依次到达；每张在 0.6 秒平滑曲线内完成显影——模糊归零、饱和度回到 100%、缩放落回 100%——细节像被“对焦”出来，而不是突然弹出。最后一张到达时伴随轻柔触感。安静、有摄影质感，永远不会出现空白方框。"
+            "A small gallery — one wide 274 × 128 pt hero photo over two 132 pt squares, 10 pt apart with 18 pt continuous corners. Before its data arrives, each tile shows a pre-blurred (18 pt), 50%-desaturated copy of its own image over a gradient of its dominant colors, zoomed to 112%, with a soft white wash breathing 0 ↔ 16% every 0.9 s. Images land in a random order about 350 ms apart; each one resolves over 0.6 s on a smooth curve — the blurred copy cross-fades out to reveal the sharp, full-color image beneath while both layers settle from 112% to 100% — so detail seems to focus into place rather than pop. The last arrival fires a soft haptic. Calm, photographic, and it never shows an empty box.",
+            "一组小画廊——上方一张 274 × 128 pt 的横幅大图，下方两张 132 pt 方图，间距 10 pt、18 pt 连续圆角。数据到达前，每个图块以自身主色渐变为底，叠一张预先模糊（18 pt）、饱和度降到 50% 的同图副本作为占位，整体放大到 112%，并叠一层每 0.9 秒在 0 与 16% 之间呼吸的柔和白色。图片以随机顺序、约 350 毫秒间隔依次到达；每张在 0.6 秒平滑曲线内完成显影——模糊副本淡出，露出下方清晰、全彩的原图，两层同时从 112% 缩放落回 100%——细节像被“对焦”出来，而不是突然弹出。最后一张到达时伴随轻柔触感。安静、有摄影质感，永远不会出现空白方框。"
         ),
         implementation: L(
-            "Each tile renders its real content through blur(radius:opaque:), saturation and scaleEffect bound to whether its slot in a shuffled arrival order has loaded; a task(id:) advances the loaded count with smooth animations.",
-            "每个图块通过 blur(radius:opaque:)、saturation 与 scaleEffect 渲染真实内容，数值取决于其在随机到达顺序中是否已加载；task(id:) 以平滑动画逐步推进已加载数量。"
+            "Each tile stacks the sharp image under a pre-blurred, desaturated copy (compositingGroup + blur over a solid gradient, so edges stay filled); loading only animates the copy's opacity and both layers' scale. A task(id:) advances the loaded count in a shuffled order with smooth animations.",
+            "每个图块把清晰原图放在底层，上方叠一张预先模糊、降饱和的副本（compositingGroup + blur，并以纯色渐变垫底，边缘不会透明）；加载时只动画副本的透明度与两层的缩放。task(id:) 按随机顺序以平滑动画逐步推进已加载数量。"
         ),
-        apis: ["blur(radius:opaque:)", "saturation", "task(id:)", "phaseAnimator"],
+        apis: ["blur(radius:)", "compositingGroup", "saturation", "task(id:)", "phaseAnimator"],
         tags: ["image loading", "blur up", "progressive", "placeholder", "图片加载", "渐进", "模糊占位", "懒加载"],
         params: [
             .slider("stagger", L("Arrival spacing", "到达间隔"), 0.1...0.8, default: 0.35, unit: "s"),
@@ -303,6 +303,23 @@ private struct BlurUpTile: View {
 
     var body: some View {
         ZStack {
+            // Sharp image underneath; it only settles its scale.
+            BlurUpArt(photo: photo)
+                .scaleEffect(loaded ? 1 : 1.12)
+            // Pre-blurred, desaturated copy on top. Its blur radius never animates —
+            // the copy simply cross-fades away, so detail "focuses" into place.
+            BlurUpPlaceholder(photo: photo, blur: blur)
+                .scaleEffect(loaded ? 1 : 1.12)
+                .opacity(loaded ? 0 : 1)
+        }
+    }
+}
+
+private struct BlurUpArt: View {
+    let photo: BlurUpPhoto
+
+    var body: some View {
+        ZStack {
             LinearGradient(colors: photo.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
             RadialGradient(colors: [.white.opacity(0.4), .clear], center: UnitPoint(x: 0.3, y: 0.25), startRadius: 0, endRadius: 140)
             Image(systemName: photo.symbol)
@@ -310,17 +327,28 @@ private struct BlurUpTile: View {
                 .foregroundStyle(.white.opacity(0.92))
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
         }
-        .blur(radius: loaded ? 0 : blur, opaque: true)
-        .saturation(loaded ? 1 : 0.5)
-        .scaleEffect(loaded ? 1 : 1.12)
-        .overlay {
+    }
+}
+
+private struct BlurUpPlaceholder: View {
+    let photo: BlurUpPhoto
+    let blur: CGFloat
+
+    var body: some View {
+        ZStack {
+            // A solid gradient backs the blurred copy so its soft edges never turn transparent.
+            LinearGradient(colors: photo.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+            BlurUpArt(photo: photo)
+                .compositingGroup()
+                .blur(radius: blur)
             Color.white
                 .phaseAnimator([0.0, 0.16]) { content, level in
                     content.opacity(level)
                 } animation: { _ in
                     .easeInOut(duration: 0.9)
                 }
-                .opacity(loaded ? 0 : 1)
         }
+        .saturation(0.5)
+        .compositingGroup()
     }
 }

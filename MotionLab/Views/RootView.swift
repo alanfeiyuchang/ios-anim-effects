@@ -2,7 +2,13 @@ import SwiftUI
 
 enum Route: Hashable {
     case category(EffectCategory)
-    case effect(String)
+    /// `source` names the placement the link lives in (e.g. "featured", "recent", "grid") so the
+    /// zoom transition's source id is unique even when one effect is visible in two places at once.
+    /// An empty source (dice, launch arguments) pushes without a zoom source.
+    case effect(String, source: String = "")
+
+    /// Id shared by `matchedTransitionSource` and `.zoom(sourceID:)`.
+    static func zoomID(effect id: String, source: String) -> String { "\(source)/\(id)" }
 }
 
 private struct ZoomNamespaceKey: EnvironmentKey {
@@ -29,7 +35,7 @@ struct RootView: View {
             Tab(Strings.browse(language), systemImage: "square.grid.2x2.fill", value: AppTab.browse) {
                 RoutedStack(initialPath: LaunchOptions.initialPath) { BrowseView() }
             }
-            Tab(Strings.search(language), systemImage: "magnifyingglass", value: AppTab.search) {
+            Tab(Strings.search(language), systemImage: "magnifyingglass", value: AppTab.search, role: .search) {
                 RoutedStack(popsToRootOnSearch: true) { SearchView() }
             }
             Tab(Strings.favorites(language), systemImage: "heart.fill", value: AppTab.favorites) {
@@ -46,8 +52,9 @@ struct RootView: View {
 /// Launch arguments used for automated screenshots, e.g.
 /// `-ML_route effect:shader.ripple`, `-ML_route category:buttons`, `-ML_tab 3`, `-ML_anchor prompt`.
 /// (`-app.language en` / `-app.appearance 2` also work because @AppStorage reads the argument domain.)
+/// Intentionally available in every build configuration.
 enum LaunchOptions {
-    static var initialTab: Int { UserDefaults.standard.integer(forKey: "ML_tab") }
+    static var initialTab: AppTab { AppTab(rawValue: UserDefaults.standard.integer(forKey: "ML_tab")) ?? .browse }
 
     static var initialPath: [Route] {
         guard let raw = UserDefaults.standard.string(forKey: "ML_route") else { return [] }
@@ -85,10 +92,14 @@ struct RoutedStack<Content: View>: View {
                     switch route {
                     case .category(let category):
                         CategoryView(category: category)
-                    case .effect(let id):
+                    case .effect(let id, let source):
                         if let effect = EffectLibrary.effect(id: id) {
-                            EffectDetailView(effect: effect)
-                                .navigationTransition(.zoom(sourceID: id, in: namespace))
+                            if source.isEmpty {
+                                EffectDetailView(effect: effect)
+                            } else {
+                                EffectDetailView(effect: effect)
+                                    .navigationTransition(.zoom(sourceID: Route.zoomID(effect: id, source: source), in: namespace))
+                            }
                         }
                     }
                 }
@@ -103,15 +114,17 @@ struct RoutedStack<Content: View>: View {
 /// A navigation link to an effect's detail page, acting as the zoom transition's source.
 struct EffectLink<Label: View>: View {
     let effect: Effect
+    /// Placement name, unique per screen region (see `Route.effect`).
+    let source: String
     @ViewBuilder var label: () -> Label
     @Environment(\.zoomNamespace) private var namespace
     @Environment(\.appLanguage) private var language
     @Environment(FavoritesStore.self) private var favorites
 
     var body: some View {
-        NavigationLink(value: Route.effect(effect.id)) {
+        NavigationLink(value: Route.effect(effect.id, source: source)) {
             if let namespace {
-                label().matchedTransitionSource(id: effect.id, in: namespace)
+                label().matchedTransitionSource(id: Route.zoomID(effect: effect.id, source: source), in: namespace)
             } else {
                 label()
             }

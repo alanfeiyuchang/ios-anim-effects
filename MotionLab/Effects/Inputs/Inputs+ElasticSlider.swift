@@ -34,6 +34,9 @@ private struct InputElasticSliderDemo: View {
     @State private var pressing = false
     @State private var startValue: Double = 0
     @State private var atEdge = false
+    /// Which end was hit. Stored (not derived from the sign of `stretch`) so the underdamped
+    /// snap-back wobbles around the same fixed anchor instead of flipping to the opposite end.
+    @State private var anchoredAtLeading = true
     @State private var step = 0
 
     private let width: CGFloat = 280
@@ -83,6 +86,8 @@ private struct InputElasticSliderDemo: View {
     private var slider: some View {
         let fillWidth = width * CGFloat(value)
         let magnitude = abs(stretch)
+        // Signed along the stored edge: positive = stretched, negative = the spring's compression overshoot.
+        let amount = anchoredAtLeading ? stretch : -stretch
         let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
         return ZStack(alignment: .leading) {
             Color.primary.opacity(0.08)
@@ -98,9 +103,9 @@ private struct InputElasticSliderDemo: View {
         .clipShape(shape)
         .overlay(shape.strokeBorder(Palette.stroke))
         .scaleEffect(
-            x: 1 + magnitude / width,
-            y: 1 - magnitude / height * 0.25,
-            anchor: stretch >= 0 ? .leading : .trailing
+            x: 1 + amount / width,
+            y: 1 - amount / height * 0.25,
+            anchor: anchoredAtLeading ? .leading : .trailing
         )
         .scaleEffect(pressing ? 1.03 : 1)
         .shadow(color: Palette.blue.opacity(pressing ? 0.28 : 0.14), radius: pressing ? 16 : 10, y: 6)
@@ -119,8 +124,10 @@ private struct InputElasticSliderDemo: View {
                 value = raw.clamped(to: 0...1)
                 let limit = ctx.cg("limit")
                 if raw > 1 {
+                    anchoredAtLeading = true
                     stretch = rubberBand(CGFloat(raw - 1) * width, limit: limit)
                 } else if raw < 0 {
+                    anchoredAtLeading = false
                     stretch = rubberBand(CGFloat(raw) * width, limit: limit)
                 } else {
                     stretch = 0
@@ -161,6 +168,7 @@ private struct InputElasticSliderDemo: View {
             value = target
             pressing = true
         }
+        anchoredAtLeading = amount >= 0
         Task {
             try? await Task.sleep(for: .seconds(0.3))
             withAnimation(.easeOut(duration: 0.18)) { stretch = amount }

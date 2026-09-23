@@ -272,7 +272,7 @@ extension Effect {
             radius: ctx.cg("radius"),
             multicolor: ctx.bool("color")
         )
-        .scaleEffect(1.45)
+        .scaleEffect(1.8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -431,7 +431,9 @@ private struct PetalsView: View {
                     Capsule()
                         .fill(Color.primary)
                         .frame(width: 3.5, height: 11)
-                        .offset(y: -13)
+                        // Pin the petal to the top of a 37 pt square (center 13 pt above the hub),
+                        // so the rotation pivots around the hub, not the petal's own center.
+                        .frame(width: 37, height: 37, alignment: .top)
                         .rotationEffect(.degrees(Double(index) / Double(count) * 360))
                         .opacity(PetalsView.opacity(head: head, index: index, count: count))
                 }

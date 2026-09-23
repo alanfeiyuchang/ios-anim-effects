@@ -88,7 +88,7 @@ enum EffectLibrary {
         ranked.sort { lhs, rhs in
             lhs.score != rhs.score ? lhs.score > rhs.score : lhs.entry.order < rhs.entry.order
         }
-        return ranked.map(\.entry.effect)
+        return ranked.map { $0.entry.effect }
     }
 }
 

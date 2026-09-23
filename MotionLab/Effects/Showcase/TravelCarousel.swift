@@ -15,10 +15,10 @@ extension Effect {
             "横向轮播一排竖版目的地卡片（200×240pt，圆角 24pt），卡片上有渐变遮罩、国家小标题、粗体地名和「126 张照片」说明。居中卡片保持 100% 缩放。卡片往边缘移动时，会按滚动偏移直接映射，缩小到约 86%，朝滚动方向最多倾斜 5°，透明度降到 65%。每张卡片里的照片比卡框宽 72pt，随滚动反向最多平移 36pt，像透过窗户看风景一样产生视差。翻页按视图对齐逐张吸附。下方当前页码点以弹簧（响应 0.35 秒、阻尼 0.7）拉伸成 22pt 的橙色胶囊，其余收缩为 6pt 圆点，每翻一页有一下选择触感。整体有纵深、有手感，像翻阅一本旅行杂志。"
         ),
         implementation: L(
-            "ScrollView + LazyHStack with scrollTargetLayout, viewAligned target behavior and scrollPosition(id:); scrollTransition maps phase.value to scale, rotation and opacity on the card and to an x-offset on the oversized image inside it.",
-            "ScrollView + LazyHStack 配合 scrollTargetLayout、viewAligned 吸附与 scrollPosition(id:)；scrollTransition 把 phase.value 映射为卡片的缩放、旋转和透明度，并映射为卡内超宽图片的横向偏移。"
+            "ScrollView + LazyHStack with scrollTargetLayout, viewAligned target behavior, scrollPosition(id:) and contentMargins of (measured width − 200) / 2 so the snapped card is exactly centred; scrollTransition maps phase.value to scale, rotation and opacity on the card and to an x-offset on the oversized image inside it.",
+            "ScrollView + LazyHStack 配合 scrollTargetLayout、viewAligned 吸附与 scrollPosition(id:)，contentMargins 取（实测宽度 − 200）/ 2，保证吸附后的卡片精确居中；scrollTransition 把 phase.value 映射为卡片的缩放、旋转和透明度，并映射为卡内超宽图片的横向偏移。"
         ),
-        apis: ["scrollTransition", "scrollTargetBehavior(.viewAligned)", "scrollPosition(id:)", "contentMargins", "LazyHStack"],
+        apis: ["scrollTransition", "scrollTargetBehavior(.viewAligned)", "scrollPosition(id:)", "contentMargins", "onGeometryChange", "LazyHStack"],
         tags: ["carousel", "parallax", "paging", "cards", "轮播", "视差", "分页", "卡片"],
         params: [
             .slider("tilt", L("Edge tilt", "边缘倾斜"), 0...12, default: 5, decimals: 0, unit: "°"),
@@ -52,6 +52,8 @@ private struct TravelCarouselSpot {
 private struct TravelCarouselDemo: View {
     let ctx: DemoContext
     @State private var current: Int? = 0
+    /// Measured scroll-view width, so the side margins centre a 200 pt card on any stage size.
+    @State private var viewportWidth: CGFloat = 340
 
     private var count: Int { TravelCarouselSpot.all.count }
 
@@ -100,10 +102,15 @@ private struct TravelCarouselDemo: View {
             }
             .scrollTargetLayout()
         }
-        .contentMargins(.horizontal, 70, for: .scrollContent)
+        .contentMargins(.horizontal, max((viewportWidth - 200) / 2, 0), for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $current)
         .frame(height: 250)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            viewportWidth = width
+        }
     }
 
     private var dots: some View {

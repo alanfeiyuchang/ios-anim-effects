@@ -2,21 +2,27 @@ import SwiftUI
 
 @main
 struct MotionLabApp: App {
-    @AppStorage("app.language") private var language: AppLanguage = .zh
+    @AppStorage(AppLanguage.storageKey) private var language: AppLanguage = AppLanguage.systemDefault
     @AppStorage("app.appearance") private var appearance: Int = 0
     @State private var favorites = FavoritesStore()
     @State private var recents = RecentsStore()
     @State private var navigator = AppNavigator()
 
+    init() {
+        // First launch: follow the device language (zh* → 中文, otherwise English) and remember it.
+        AppLanguage.registerInitialChoice()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(\.appLanguage, language)
+                .environment(\.locale, language.locale)
                 .environment(favorites)
                 .environment(recents)
                 .environment(navigator)
                 .preferredColorScheme(colorScheme)
-                .tint(Palette.indigo)
+                .tint(Palette.accent)
         }
     }
 

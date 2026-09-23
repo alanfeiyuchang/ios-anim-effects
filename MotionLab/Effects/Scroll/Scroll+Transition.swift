@@ -52,7 +52,7 @@ private struct ScrollTransitionDemo: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, ctx.isPreview ? 16 : 52)
+            .padding(.top, 16)
             .padding(.bottom, 16)
         }
         .scrollIndicators(.hidden)

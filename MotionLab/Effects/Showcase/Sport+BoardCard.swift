@@ -55,7 +55,8 @@ private struct SportBoardDemo: View {
                 tiltY: Double(-tilt.height) * 0.25 * ctx["tilt"]
             )
             .frame(maxWidth: .infinity)
-            .frame(height: 118)
+            .frame(height: 124)
+            .padding(.vertical, 4)
             .contentShape(Rectangle())
             .onTapGesture { flip() }
             .gesture(tiltGesture)
@@ -118,9 +119,11 @@ private struct BoardFlipper: View, Animatable {
         }
         .frame(width: 228, height: 60)
         .overlay { BoardSheen(shift: CGFloat(tiltX * 3 + sin(angle * .pi / 180) * 90)) }
+        // 3D first, in the board's own frame, so the flip turns around its long axis;
+        // the −10° lie is applied afterwards. A gentle perspective keeps the near edge from ballooning.
+        .rotation3DEffect(.degrees(angle + tiltY), axis: (x: 1, y: 0, z: 0), perspective: 0.28)
+        .rotation3DEffect(.degrees(tiltX), axis: (x: 0, y: 1, z: 0), perspective: 0.28)
         .rotationEffect(.degrees(-10))
-        .rotation3DEffect(.degrees(angle + tiltY), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
-        .rotation3DEffect(.degrees(tiltX), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
         .shadow(color: .black.opacity(0.55), radius: 14, y: 12)
     }
 }
@@ -194,10 +197,21 @@ private struct BoardSheen: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [.clear, Color.white.opacity(0.38), .clear], startPoint: .leading, endPoint: .trailing)
-                .frame(width: 64)
-                .rotationEffect(.degrees(20))
-                .offset(x: shift)
+            // A wide, feathered band (~3× the board height) so no hard edge ever shows inside the capsule.
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: Color.white.opacity(0.07), location: 0.3),
+                    .init(color: Color.white.opacity(0.3), location: 0.5),
+                    .init(color: Color.white.opacity(0.07), location: 0.7),
+                    .init(color: .clear, location: 1),
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: 180, height: 180)
+            .rotationEffect(.degrees(20))
+            .offset(x: shift)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .blendMode(.plusLighter)

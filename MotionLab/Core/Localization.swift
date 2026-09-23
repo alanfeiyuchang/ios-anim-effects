@@ -13,6 +13,30 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         case .en: return "English"
         }
     }
+
+    /// `@AppStorage` key for the user's choice.
+    static let storageKey = "app.language"
+
+    /// Chinese when the device's first preferred language is Chinese, otherwise English.
+    static var systemDefault: AppLanguage {
+        (Locale.preferredLanguages.first ?? "").lowercased().hasPrefix("zh") ? .zh : .en
+    }
+
+    /// On first launch, stores the system-derived default. An existing choice
+    /// (or a `-app.language` launch argument) is left untouched.
+    static func registerInitialChoice(in defaults: UserDefaults = .standard) {
+        guard defaults.string(forKey: storageKey) == nil else { return }
+        defaults.set(systemDefault.rawValue, forKey: storageKey)
+    }
+
+    /// Locale injected into the SwiftUI environment so system formatting and
+    /// string-catalog lookups follow the in-app language.
+    var locale: Locale {
+        switch self {
+        case .zh: return Locale(identifier: "zh-Hans")
+        case .en: return Locale(identifier: "en")
+        }
+    }
 }
 
 /// A bilingual string. Every user-facing string in the catalog is one of these.
@@ -70,6 +94,14 @@ enum Strings {
     static let favorites = L("Favorites", "收藏")
     static let settings = L("Settings", "设置")
     static let categories = L("Categories", "分类")
+    /// Unit after a number: "15 categories" / "15 个分类".
+    static let categoriesUnit = L("categories", "个分类")
+    static let categoryFilter = L("Category", "分类")
+    static let interactionFilter = L("Interaction", "交互")
+    static let showAllEffects = L("Shows every effect in Search", "在搜索中查看全部动效")
+    static let jumpToCategories = L("Scrolls to the category list", "跳到分类列表")
+    static let showInteraction = L("Shows every effect with this interaction", "查看所有同类交互的动效")
+    static let startWithThese = L("Start with these", "从这些开始")
     static let allEffects = L("All Effects", "全部动效")
     static let effects = L("effects", "个动效")
     static let searchPrompt = L("Search effects, APIs, keywords…", "搜索动效、API、关键词…")
@@ -90,14 +122,13 @@ enum Strings {
     static let motion = L("Motion", "动态效果")
     static let animatePreviews = L("Animate previews", "列表预览动画")
     static let animatePreviewsFooter = L(
-        "Grid thumbnails act out their demos on their own. Turn this off for calmer lists and longer battery life.",
-        "列表缩略图会自动演示交互。关闭后列表更安静，也更省电。"
+        "When on, grid thumbnails act out their demos on their own. When off, each thumbnail shows a still frame, for calmer lists and longer battery life. Demos on an effect's page always play.",
+        "开启后，列表缩略图会自动演示交互；关闭后，缩略图显示为静止画面，列表更安静也更省电。动效详情页中的演示始终可以播放。"
     )
     static let reduceMotionActive = L(
-        "Reduce Motion is on in system settings, so previews stay still.",
-        "系统已开启「减弱动态效果」，列表预览将保持静止。"
+        "Reduce Motion is on in system settings, so grid thumbnails show a still frame. Demos on an effect's page still play when you interact with them.",
+        "系统已开启「减弱动态效果」，列表缩略图将显示为静止画面。动效详情页中的演示仍可通过交互播放。"
     )
-    static let library = L("Library", "动效库")
     static let version = L("Version", "版本")
     static let about = L("About", "关于")
     static let aboutBody = L(
@@ -129,6 +160,14 @@ enum Strings {
     static let searchTag = L("Search for this tag", "搜索此标签")
     static let openCategory = L("Opens the category", "打开该分类")
     static let resetDemo = L("Restarts the demo from its initial state", "让演示回到初始状态重新开始")
+
+    /// "15 categories" / "15 个分类".
+    static func categoryCount(_ count: Int, _ language: AppLanguage) -> String {
+        switch language {
+        case .en: return count == 1 ? "1 category" : "\(count) categories"
+        case .zh: return "\(count) 个分类"
+        }
+    }
 
     /// "1 effect" / "12 effects" / "12 个动效".
     static func effectCount(_ count: Int, _ language: AppLanguage) -> String {

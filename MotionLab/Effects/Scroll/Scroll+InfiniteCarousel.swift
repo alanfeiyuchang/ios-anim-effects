@@ -8,14 +8,14 @@ extension Effect {
         name: L("Infinite Carousel", "无限循环轮播"),
         summary: L("A seamless looping carousel that auto-advances and never hits an end.", "无缝循环、自动轮播、永远滑不到尽头的卡片轮播。"),
         prompt: L(
-            "A center-snapping carousel of gradient cards (180×220 pt, 26 pt corners) that loops seamlessly in both directions. Neighbouring cards peek in at ~86% scale and 60% opacity, scaling up as they reach the center. Every ~2.2 s, while the user isn't touching, it auto-advances one card with a smooth spring (response 0.55 s, damping 0.86). The illusion of infinity comes from several copies of the set laid end to end: whenever scrolling comes to rest, the position silently jumps to the identical card in the middle copy, invisible to the eye. A row of dots below tracks the real index with a stretching active capsule. Effortless, ambient and endlessly browsable.",
-            "一排居中吸附的渐变卡片（180×220 pt，26 pt 圆角），可向两个方向无缝循环。相邻卡片以约 86% 缩放、60% 透明度露出，滑到中心时逐渐放大。在用户未触摸时，每约 2.2 秒以平滑弹簧（响应 0.55 秒、阻尼 0.86）自动前进一张。无限的错觉来自首尾相接的多份相同内容：每当滚动停止，位置会静默跳到中间那份中完全相同的卡片，肉眼无法察觉。下方一排圆点追踪真实索引，当前点伸展为胶囊。轻松、氛围感十足，可无限浏览。"
+            "A center-snapping carousel of gradient cards (180×220 pt, 26 pt corners) that loops seamlessly in both directions. Neighbouring cards rest one pitch from the centre at 86% scale and 60% opacity, and interpolate linearly up to 100% as they slide into the center. Every ~2.2 s, while the user isn't touching, it auto-advances one card with a smooth spring (response 0.55 s, damping 0.86). The illusion of infinity comes from several copies of the set laid end to end: whenever scrolling comes to rest, the position silently jumps to the identical card in the middle copy, invisible to the eye. A row of dots below tracks the real index with a stretching active capsule. Effortless, ambient and endlessly browsable.",
+            "一排居中吸附的渐变卡片（180×220 pt，26 pt 圆角），可向两个方向无缝循环。相邻卡片静止于距中心一个卡位处，缩放 86%、不透明度 60%，滑向中心时线性放大并恢复至 100%。在用户未触摸时，每约 2.2 秒以平滑弹簧（响应 0.55 秒、阻尼 0.86）自动前进一张。无限的错觉来自首尾相接的多份相同内容：每当滚动停止，位置会静默跳到中间那份中完全相同的卡片，肉眼无法察觉。下方一排圆点追踪真实索引，当前点伸展为胶囊。轻松、氛围感十足，可无限浏览。"
         ),
         implementation: L(
-            "The set is repeated five times; scrollPosition(id:) tracks the centered card and onScrollPhaseChange recenters to the middle copy (without animation) whenever the phase returns to .idle. A task-based autoplay advances the id.",
-            "将内容重复五份；scrollPosition(id:) 追踪居中卡片，onScrollPhaseChange 在滚动阶段回到 .idle 时（无动画）重定位到中间那份。基于 task 的自动播放推进 id。"
+            "The set is repeated five times; scrollPosition(id:) tracks the centered card and onScrollPhaseChange recenters to the middle copy (without animation) whenever the phase returns to .idle. Each card's visualEffect scales and fades it by its distance from the centre measured in card pitches; a task-based autoplay advances the id.",
+            "将内容重复五份；scrollPosition(id:) 追踪居中卡片，onScrollPhaseChange 在滚动阶段回到 .idle 时（无动画）重定位到中间那份。每张卡片的 visualEffect 按其到中心的距离（以卡片间距为单位）缩放与淡出；基于 task 的自动播放推进 id。"
         ),
-        apis: ["onScrollPhaseChange", "scrollPosition(id:)", "scrollTargetBehavior(.viewAligned)", "scrollTransition"],
+        apis: ["onScrollPhaseChange", "scrollPosition(id:)", "scrollTargetBehavior(.viewAligned)", "visualEffect"],
         tags: ["infinite", "loop", "carousel", "autoplay", "无限", "循环", "轮播", "自动播放"],
         params: [
             .slider("scale", L("Side shrink", "两侧缩小"), 0...0.3, default: 0.14),
@@ -27,6 +27,8 @@ extension Effect {
     }
 }
 
+private let scrollInfiniteSpace = "scroll.infinite-carousel"
+
 private struct ScrollInfiniteDemo: View {
     let ctx: DemoContext
     @State private var current: Int? = 12
@@ -36,6 +38,7 @@ private struct ScrollInfiniteDemo: View {
     private let base = 6
     private let copies = 5
     private let cardWidth: CGFloat = 180
+    private let spacing: CGFloat = 14
 
     var body: some View {
         VStack(spacing: 18) {
@@ -47,18 +50,22 @@ private struct ScrollInfiniteDemo: View {
     }
 
     private var carousel: some View {
-        let shrink = ctx["scale"]
+        let shrink = CGFloat(ctx["scale"])
+        let viewport = width
+        let pitch = cardWidth + spacing
         return ScrollView(.horizontal) {
-            LazyHStack(spacing: 14) {
+            LazyHStack(spacing: spacing) {
                 ForEach(0..<(base * copies), id: \.self) { i in
                     ScrollKitArt(index: (i % base) * 2, language: ctx.language)
                         .frame(width: cardWidth, height: 220)
                         .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                            let v = abs(phase.value)
+                        .visualEffect { content, proxy in
+                            // 0 at the centre, 1 one full card-pitch away (the resting neighbour).
+                            let mid = proxy.frame(in: .named(scrollInfiniteSpace)).midX
+                            let t = min(abs(mid - viewport / 2) / pitch, 1)
                             return content
-                                .scaleEffect(1 - CGFloat(v * shrink))
-                                .opacity(1 - v * 0.4)
+                                .scaleEffect(1 - shrink * t)
+                                .opacity(1 - Double(t) * 0.4)
                         }
                         .id(i)
                 }
@@ -69,6 +76,7 @@ private struct ScrollInfiniteDemo: View {
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $current, anchor: .center)
         .scrollIndicators(.hidden)
+        .coordinateSpace(.named(scrollInfiniteSpace))
         .onScrollPhaseChange { _, newPhase in
             idle = newPhase == .idle
             if newPhase == .idle { recenter() }

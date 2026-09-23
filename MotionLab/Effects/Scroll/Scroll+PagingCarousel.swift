@@ -30,7 +30,7 @@ private let scrollPagingSpace = "scroll.paging-carousel"
 
 private struct ScrollPagingDemo: View {
     let ctx: DemoContext
-    @State private var current: Int? = 0
+    @State private var current: Int? = 1
     @State private var width: CGFloat = 340
     @State private var direction = 1
 

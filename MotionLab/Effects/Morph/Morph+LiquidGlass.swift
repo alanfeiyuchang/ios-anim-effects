@@ -11,14 +11,14 @@ extension Effect {
             "玻璃按钮像水滴一样从彼此中分裂而出，又融合回去。"
         ),
         prompt: L(
-            "A single tinted Liquid Glass button with a plus glyph floats over a vivid gradient. On tap, three secondary glass buttons bud out of it to the right, each first appearing as a bulge on the parent's edge, stretching into a liquid bridge and then pinching off into its own 56 pt circle as it springs into place (response ≈0.5 s, damping ≈0.75); the glass refracts and specular-highlights the backdrop continuously as shapes merge and separate. The plus rotates 45° into a close glyph. Collapsing reverses it: buttons are drawn back and melt into the parent like droplets merging. Glass responds to touch with the interactive glass bounce.",
+            "A single tinted Liquid Glass button with a plus glyph floats over a vivid gradient. On tap, three secondary glass buttons bud out of it to the right, each first appearing as a bulge on the parent's edge, stretching into a liquid bridge and then pinching off into its own 56 pt circle as it springs into place (response ≈0.5 s, damping ≈0.75); the glass refracts and specular-highlights the backdrop continuously as shapes merge and separate. The plus rotates 45° into a close glyph. Collapsing reverses it: buttons are drawn back and melt into the parent like droplets merging. Glass responds to touch with the interactive glass bounce. Before iOS 26 the same choreography is drawn as a frosted metaball: the circles are blurred and alpha-thresholded together, so drops stay joined by liquid bridges until they are farther apart than the merge distance, then pinch off.",
             "一枚带加号、着色的液态玻璃按钮悬浮在鲜艳的渐变背景上。点击后，三个次级玻璃按钮从它右侧「分裂」而出：先在母按钮边缘鼓起，再拉伸成液体般的连接桥，最后断开成各自 56pt 的圆形，并以弹簧（响应约 0.5 秒、阻尼约 0.75）落位；在形状融合与分离的全过程中，玻璃持续折射背景并带有高光。加号旋转 45° 变为关闭符号。收起时反向进行：按钮被吸回并像水滴汇合一样融进母按钮。玻璃在触摸时带有交互式回弹。"
         ),
         implementation: L(
-            "On iOS 26, buttons live in a GlassEffectContainer and carry glassEffect(.regular.interactive()) plus glassEffectID in a shared namespace so SwiftUI morphs the glass shapes; earlier systems fall back to material circles that scale out of the main button.",
+            "On iOS 26, buttons live in a GlassEffectContainer and carry glassEffect(.regular.interactive()) plus glassEffectID in a shared namespace so SwiftUI morphs the glass shapes; on iOS 18 a Canvas stacks alphaThreshold on blur (radius driven by the merge distance) to draw spring-interpolated circles as a metaball that masks a frosted material.",
             "iOS 26 上按钮位于 GlassEffectContainer 中，使用 glassEffect(.regular.interactive()) 与共享命名空间的 glassEffectID，由 SwiftUI 负责玻璃形状的融合形变；更早的系统回退为从主按钮缩放而出的材质圆形。"
         ),
-        apis: ["GlassEffectContainer", "glassEffect(_:in:)", "glassEffectID(_:in:)", "Glass.interactive()", "ultraThinMaterial"],
+        apis: ["GlassEffectContainer", "glassEffect(_:in:)", "glassEffectID(_:in:)", "Glass.interactive()", "Canvas", "GraphicsContext.Filter.alphaThreshold"],
         tags: ["liquid glass", "glass", "ios 26", "metaball", "液态玻璃", "玻璃", "融合", "水滴"],
         params: [
             .slider("spacing", L("Merge distance", "融合距离"), 0...60, default: 30, decimals: 0, unit: "pt"),
@@ -51,10 +51,10 @@ private struct LiquidGlassDemo: View {
         if #available(iOS 26.0, *) {
             GlassToolbar(expanded: expanded, spacing: ctx.cg("spacing"), gap: ctx.cg("gap"), onToggle: toggle)
         } else {
-            FallbackToolbar(expanded: expanded, gap: ctx.cg("gap"), onToggle: toggle)
+            FallbackToolbar(expanded: expanded, spacing: ctx.cg("spacing"), gap: ctx.cg("gap"), onToggle: toggle)
         }
         #else
-        FallbackToolbar(expanded: expanded, gap: ctx.cg("gap"), onToggle: toggle)
+        FallbackToolbar(expanded: expanded, spacing: ctx.cg("spacing"), gap: ctx.cg("gap"), onToggle: toggle)
         #endif
     }
 
@@ -105,43 +105,122 @@ private struct GlassToolbar: View {
 }
 #endif
 
+/// iOS 18 fallback: the same budding/merging choreography drawn as a metaball.
+/// A Canvas blurs and alpha-thresholds the circles together (the "gooey" trick), and the result
+/// masks a frosted material, so neighbors stay joined by liquid bridges while they are closer than
+/// the merge distance. Glyphs ride the same spring on top.
 private struct FallbackToolbar: View {
     let expanded: Bool
+    let spacing: CGFloat
     let gap: CGFloat
     let onToggle: () -> Void
 
+    private let main: CGFloat = 64
+    private let small: CGFloat = 56
+    private let inset: CGFloat = 12
+
     var body: some View {
-        HStack(spacing: gap) {
-            Image(systemName: "plus")
-                .font(.title2.weight(.semibold))
+        let width = inset * 2 + main + CGFloat(glassActions.count) * (small + gap)
+        ZStack(alignment: .leading) {
+            GooeyGlassLayer(
+                progress: expanded ? 1 : 0,
+                gap: gap,
+                goo: 2 + spacing * 0.22,
+                main: main,
+                small: small,
+                inset: inset
+            )
+            .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+            .allowsHitTesting(false)
+            secondaryGlyphs
+            mainGlyph
+        }
+        .frame(width: width, height: 100, alignment: .leading)
+    }
+
+    private var mainGlyph: some View {
+        Image(systemName: "plus")
+            .font(.title2.weight(.semibold))
+            .foregroundStyle(.white)
+            .rotationEffect(.degrees(expanded ? 45 : 0))
+            .frame(width: main, height: main)
+            .contentShape(Circle())
+            .onTapGesture(perform: onToggle)
+            .offset(x: inset)
+    }
+
+    private var secondaryGlyphs: some View {
+        ForEach(Array(glassActions.enumerated()), id: \.element) { index, symbol in
+            let travel = main / 2 + gap + small / 2 + CGFloat(index) * (small + gap)
+            Image(systemName: symbol)
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(.white)
-                .rotationEffect(.degrees(expanded ? 45 : 0))
-                .frame(width: 64, height: 64)
-                .background(Palette.indigo.opacity(0.55), in: Circle())
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+                .frame(width: small, height: small)
                 .contentShape(Circle())
                 .onTapGesture(perform: onToggle)
-                .zIndex(1)
-            if expanded {
-                ForEach(Array(glassActions.enumerated()), id: \.element) { index, symbol in
-                    Image(systemName: symbol)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
-                        .background(.ultraThinMaterial, in: Circle())
-                        .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
-                        .contentShape(Circle())
-                        .onTapGesture(perform: onToggle)
-                        .transition(
-                            .scale(scale: 0.2)
-                                .combined(with: .offset(x: -CGFloat(index + 1) * (56 + gap)))
-                                .combined(with: .opacity)
-                        )
+                .scaleEffect(expanded ? 1 : 0.4)
+                .opacity(expanded ? 1 : 0)
+                .offset(x: inset + main / 2 - small / 2 + (expanded ? travel : 0))
+                .allowsHitTesting(expanded)
+        }
+    }
+}
+
+/// The metaball layer. Animatable so the spring interpolates `progress` and the Canvas redraws every frame.
+private struct GooeyGlassLayer: View, Animatable {
+    var progress: CGFloat
+    let gap: CGFloat
+    let goo: CGFloat
+    let main: CGFloat
+    let small: CGFloat
+    let inset: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        ZStack {
+            Rectangle().fill(.ultraThinMaterial)
+            LinearGradient(
+                stops: [
+                    .init(color: Palette.indigo.opacity(0.6), location: 0),
+                    .init(color: Palette.indigo.opacity(0.5), location: 0.2),
+                    .init(color: .white.opacity(0.14), location: 0.34),
+                    .init(color: .white.opacity(0.14), location: 1),
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            // Soft specular sheen across the top of every drop.
+            LinearGradient(colors: [.white.opacity(0.35), .clear], startPoint: .top, endPoint: .center)
+        }
+        .mask {
+            Canvas { context, size in
+                context.addFilter(.alphaThreshold(min: 0.5, color: .white))
+                context.addFilter(.blur(radius: goo))
+                context.drawLayer { layer in
+                    for rect in circles(in: size) {
+                        layer.fill(Path(ellipseIn: rect), with: .color(.white))
+                    }
                 }
             }
         }
-        .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+    }
+
+    private func circles(in size: CGSize) -> [CGRect] {
+        let centerY = size.height / 2
+        let mainX = inset + main / 2
+        var rects = [CGRect(x: mainX - main / 2, y: centerY - main / 2, width: main, height: main)]
+        // Drops grow from a bud to full size while they travel (the spring may overshoot the travel).
+        let grow = min(max(progress, 0), 1)
+        let radius = small / 2 * (0.45 + 0.55 * grow)
+        for index in 0..<glassActions.count {
+            let travel = (main / 2 + gap + small / 2 + CGFloat(index) * (small + gap)) * progress
+            rects.append(CGRect(x: mainX + travel - radius, y: centerY - radius, width: radius * 2, height: radius * 2))
+        }
+        return rects
     }
 }
 

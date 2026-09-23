@@ -162,6 +162,8 @@ private struct PushListScreen: View {
             Text(item.title, language)
                 .font(.body)
                 .foregroundStyle(.primary)
+                .lineLimit(1)
+                .layoutPriority(1)
             Spacer(minLength: 4)
             Text(item.detail, language)
                 .font(.subheadline)

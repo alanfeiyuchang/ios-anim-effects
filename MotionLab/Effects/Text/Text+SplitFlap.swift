@@ -8,17 +8,17 @@ extension Effect {
         name: L("Split-Flap Board", "翻页信息牌"),
         summary: L("Airport-style flaps riffle through the alphabet to each new letter.", "机场式翻牌逐格翻过字母表，停在新字符上。"),
         prompt: L(
-            "A departures board built from dark split-flap cells, each showing one character with a hairline hinge across its middle. When the board updates, every cell riffles through the character wheel (space, A–Z, 0–9, punctuation) until it reaches its target: for each step the upper flap carrying the old glyph folds down around the hinge to 90° while the lower flap with the new glyph swings from −90° into place, about 50 ms per flip with a perspective tilt and a darkening shadow on the moving flap. Cells start with a ~35 ms left-to-right stagger, so the update clatters across the board — nostalgic, mechanical, full of anticipation.",
-            "由深色翻页单元组成的出发信息牌，每个单元显示一个字符，中间有一道细细的铰链缝。信息更新时，每个单元沿字符轮（空格、A–Z、0–9、标点）逐格翻动直到目标字符：每一步中，承载旧字符的上半翼绕铰链向下翻折到 90°，携带新字符的下半翼再从 −90° 翻落到位，每次约 50 毫秒，带透视倾斜，运动中的翼片逐渐变暗。各单元从左到右错开约 35 毫秒启动，更新时整块牌子哗啦作响般依次翻动——怀旧、机械、充满期待感。"
+            "A departures board built from dark split-flap cells, each showing one character with a hairline hinge across its middle. When the board updates, every cell starts from the glyph it is showing and riffles forward through the character wheel (space, 0–9, colon and punctuation first, then A–Z) to its target, taking at most 10 flips — a long jump only shows the last few letters before the target. For each flip the upper flap carrying the old glyph folds down around the hinge to 90°, then the lower flap with the new glyph swings from −90° into place, ~60 ms per flip with a perspective tilt and a darkening shadow on the moving flap. Cells start with a ~35 ms left-to-right stagger and each row trails the one above by 120 ms, so the whole board clatters to rest in about a second — nostalgic, mechanical, full of anticipation.",
+            "由深色翻页单元组成的出发信息牌，每个单元显示一个字符，中间有一道细细的铰链缝。信息更新时，每个单元从当前显示的字符出发，沿字符轮（空格、0–9、冒号与标点在前，A–Z 在后）向前翻到目标字符，最多翻 10 次——跨度较大时只翻过目标前的最后几个字符。每次翻动中，承载旧字符的上半翼先绕铰链向下翻折到 90°，携带新字符的下半翼再从 −90° 翻落到位，每次约 60 毫秒，带透视倾斜，运动中的翼片逐渐变暗。各单元从左到右错开约 35 毫秒启动，每行比上一行晚 120 毫秒，整块牌子约一秒内哗啦作响地依次停稳——怀旧、机械、充满期待感。"
         ),
         implementation: L(
-            "Each cell runs an async step loop; an Animatable view maps the animated step value to the rotation3DEffect of an upper and lower half-mask of the old and new glyphs.",
-            "每个单元运行一个异步步进循环；一个遵循 Animatable 的视图把动画中的步进值映射为新旧字符上下半遮罩的 rotation3DEffect。"
+            "On each update the board plans a short character path per cell (≤ 10 flips) and records a start date; a single TimelineView(.animation) clock derives every cell's current flip and its progress from elapsed time, which drives the rotation3DEffect of masked upper and lower glyph halves.",
+            "每次更新时，信息牌为每个单元规划一条不超过 10 次翻动的字符路径并记录起始时间；由单一的 TimelineView(.animation) 时钟根据经过的时间推算每个单元当前的翻动序号与进度，驱动新旧字符上下半遮罩的 rotation3DEffect。"
         ),
-        apis: ["rotation3DEffect", "Animatable", "mask(alignment:_:)", ".task(id:)"],
+        apis: ["TimelineView(.animation)", "rotation3DEffect", "mask(alignment:_:)", "Date"],
         tags: ["split flap", "flip", "board", "airport", "solari", "翻页", "翻牌", "机场", "信息牌"],
         params: [
-            .slider("step", L("Flip duration", "单次翻动"), 0.02...0.12, default: 0.05, unit: "s"),
+            .slider("step", L("Flip duration", "单次翻动"), 0.03...0.15, default: 0.06, unit: "s"),
             .slider("stagger", L("Cell stagger", "单元错开"), 0...0.12, default: 0.035, unit: "s"),
         ]
     ) { ctx in
@@ -27,23 +27,58 @@ extension Effect {
 }
 
 private enum FlapWheel {
-    static let characters: [Character] = Array(" ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.-")
+    /// Digits and the colon come first so time changes resolve in a few flips.
+    static let characters: [Character] = Array(" 0123456789:.-ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    static let maxFlips = 10
 
-    static func next(after character: Character) -> Character {
-        guard let index = characters.firstIndex(of: character) else { return characters[0] }
-        return characters[(index + 1) % characters.count]
+    /// The characters a cell shows on its way from `from` to `to`, including both ends.
+    /// Long jumps are shortened to the last `maxFlips` characters before the target.
+    static func path(from: Character, to: Character) -> [Character] {
+        let n = characters.count
+        let a = characters.firstIndex(of: from) ?? 0
+        let b = characters.firstIndex(of: to) ?? 0
+        let distance = (b - a + n) % n
+        guard distance > 0 else { return [from] }
+        if distance <= maxFlips {
+            return [from] + (1...distance).map { characters[(a + $0) % n] }
+        }
+        return [from] + (0..<maxFlips).map { characters[(b - maxFlips + 1 + $0 + n) % n] }
     }
 }
+
+/// The in-flight update: one character path per cell, all timed from `start`.
+private struct FlapPlan {
+    var paths: [[[Character]]]
+    var start: Date
+
+    static func still(_ rows: [String]) -> FlapPlan {
+        FlapPlan(paths: rows.map { row in row.map { [$0] } }, start: .distantPast)
+    }
+}
+
+/// What one cell shows at a moment: the outgoing glyph, the incoming glyph and the flip progress (1 = at rest).
+private struct FlapFrame {
+    let previous: Character
+    let current: Character
+    let progress: Double
+}
+
+private let flapRowDelay = 0.12
 
 private struct SplitFlapDemo: View {
     let ctx: DemoContext
     @State private var boardIndex = 0
+    @State private var plan = FlapPlan.still(SplitFlapDemo.boards[0])
+    @State private var running = false
 
-    private let boards: [[String]] = [
+    static let boards: [[String]] = [
         ["NRT 09:40", "SFO 11:15", "CDG 13:05"],
         ["PVG 10:20", "JFK 12:55", "LHR 16:30"],
         ["HND 07:50", "SIN 14:10", "DXB 22:35"],
     ]
+
+    private var step: Double { max(ctx["step"], 0.01) }
+    private var stagger: Double { ctx["stagger"] }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -53,13 +88,8 @@ private struct SplitFlapDemo: View {
             }
             .font(.subheadline.weight(.bold))
             .foregroundStyle(Palette.amber)
-            ForEach(0..<3, id: \.self) { row in
-                FlapRow(
-                    text: boards[boardIndex % boards.count][row],
-                    baseDelay: Double(row) * 0.12,
-                    step: ctx["step"],
-                    stagger: ctx["stagger"]
-                )
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !running)) { timeline in
+                board(at: timeline.date)
             }
             DemoHint(text: L("Tap to update the board", "点击更新信息牌"), ctx: ctx)
                 .padding(.top, 4)
@@ -70,60 +100,70 @@ private struct SplitFlapDemo: View {
         .shadow(color: .black.opacity(0.25), radius: 20, y: 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
-        .onTapGesture { boardIndex += 1 }
-        .autoplay(ctx.isPreview, every: 4.2, delay: 3) { boardIndex += 1 }
+        .onTapGesture { update() }
+        .task(id: boardIndex) {
+            // Pause the clock once the slowest cell has landed.
+            try? await Task.sleep(for: .seconds(totalDuration + 0.1))
+            guard !Task.isCancelled else { return }
+            running = false
+        }
+        .autoplay(ctx.isPreview, every: 3.0, delay: 1.0) { update() }
     }
-}
 
-private struct FlapRow: View {
-    let text: String
-    let baseDelay: Double
-    let step: Double
-    let stagger: Double
-
-    var body: some View {
-        let characters = Array(text)
-        HStack(spacing: 3) {
-            ForEach(0..<characters.count, id: \.self) { i in
-                FlapCell(
-                    target: characters[i],
-                    delay: baseDelay + Double(i) * stagger,
-                    step: step
-                )
+    private func board(at date: Date) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(0..<plan.paths.count, id: \.self) { row in
+                HStack(spacing: 3) {
+                    ForEach(0..<plan.paths[row].count, id: \.self) { column in
+                        let state = cellState(row: row, column: column, at: date)
+                        FlapFace(current: state.current, previous: state.previous, progress: state.progress)
+                            .frame(width: FlapMetrics.width, height: FlapMetrics.height)
+                    }
+                }
             }
         }
     }
-}
 
-private struct FlapCell: View {
-    let target: Character
-    let delay: Double
-    let step: Double
-    @State private var current: Character = " "
-    @State private var previous: Character = " "
-    @State private var flips = 0
-    @State private var animatedFlips: Double = 0
-
-    var body: some View {
-        FlapFace(current: current, previous: previous, target: flips, value: animatedFlips)
-            .frame(width: FlapMetrics.width, height: FlapMetrics.height)
-            .task(id: target) { await roll() }
+    private func delay(row: Int, column: Int) -> Double {
+        Double(row) * flapRowDelay + Double(column) * stagger
     }
 
-    private func roll() async {
-        try? await Task.sleep(for: .seconds(delay))
-        var guardCount = 0
-        let duration = max(step, 0.01)
-        while current != target && !Task.isCancelled && guardCount < 64 {
-            previous = current
-            current = FlapWheel.next(after: current)
-            flips += 1
-            withAnimation(.linear(duration: duration)) {
-                animatedFlips = Double(flips)
-            }
-            try? await Task.sleep(for: .seconds(duration))
-            guardCount += 1
+    private var totalDuration: Double {
+        let columns = plan.paths.map(\.count).max() ?? 0
+        return delay(row: max(plan.paths.count - 1, 0), column: max(columns - 1, 0)) + Double(FlapWheel.maxFlips) * step
+    }
+
+    private func cellState(row: Int, column: Int, at date: Date) -> FlapFrame {
+        let path = plan.paths[row][column]
+        guard let first = path.first, let last = path.last else {
+            return FlapFrame(previous: " ", current: " ", progress: 1)
         }
+        let elapsed = date.timeIntervalSince(plan.start) - delay(row: row, column: column)
+        guard elapsed > 0 else { return FlapFrame(previous: first, current: first, progress: 1) }
+        let flip = Int(elapsed / step)
+        guard flip < path.count - 1 else { return FlapFrame(previous: last, current: last, progress: 1) }
+        let progress = elapsed / step - Double(flip)
+        return FlapFrame(previous: path[flip], current: path[flip + 1], progress: progress)
+    }
+
+    /// The glyph a cell visibly shows right now (the old one until its flap passes the hinge).
+    private func visibleCharacter(row: Int, column: Int, at date: Date) -> Character {
+        guard row < plan.paths.count, column < plan.paths[row].count else { return " " }
+        let state = cellState(row: row, column: column, at: date)
+        return state.progress < 0.5 ? state.previous : state.current
+    }
+
+    private func update() {
+        let now = Date()
+        let next = Self.boards[(boardIndex + 1) % Self.boards.count]
+        let paths: [[[Character]]] = next.enumerated().map { row, text in
+            text.enumerated().map { column, target in
+                FlapWheel.path(from: visibleCharacter(row: row, column: column, at: now), to: target)
+            }
+        }
+        plan = FlapPlan(paths: paths, start: now)
+        running = true
+        boardIndex += 1
     }
 }
 
@@ -132,24 +172,14 @@ private enum FlapMetrics {
     static let height: CGFloat = 42
 }
 
-/// Renders one flap cell. `value` animates towards `target`; the fractional remainder is the flip progress.
-private struct FlapFace: View, Animatable {
+/// Renders one flap cell at a given flip progress (0 → 1).
+private struct FlapFace: View {
     let current: Character
     let previous: Character
-    let target: Int
-    var value: Double
-
-    var animatableData: Double {
-        get { value }
-        set { value = newValue }
-    }
-
-    private var progress: Double {
-        min(max(1 - (Double(target) - value), 0), 1)
-    }
+    let progress: Double
 
     var body: some View {
-        let p = progress
+        let p = min(max(progress, 0), 1)
         // Shade the moving flap only lightly: the tile is already ~0.2 white,
         // so heavier (additive) brightness crushed it to solid black bars.
         ZStack {

@@ -292,8 +292,8 @@ extension Effect {
         name: L("Indeterminate Bar", "不确定进度条"),
         summary: L("Two segments race across a track with offset easing.", "两段色条以错位缓动在轨道上追逐。"),
         prompt: L(
-            "A 240 × 5 pt capsule track in a floating card, under a 42 pt gradient Wi-Fi tile whose arcs light up one by one (iterative variable color), a 'Joining “Studio 5G”' title and a 'Connecting…' caption. Within each 1.8 s cycle a first segment sweeps from off-screen left to off-screen right over 65% of the cycle, its head and tail on staggered cubic ease-in-out curves so it stretches to about a third of the track mid-flight and compresses at the edges; at 45% a second segment launches with an ease-out head and ease-in tail, shooting out into a long streak that spans nearly the whole track before its tail whips after it. Both are filled with the brand gradient, clipped to the track, and cast a soft colored glow. The overlapping rhythm signals 'working' without implying a duration.",
-            "悬浮卡片里，一枚 42 pt 渐变 Wi-Fi 图块（信号弧逐格点亮的可变色符号动画）、“加入 “Studio 5G””标题与“正在连接…”说明的下方，是一条 240 × 5 pt 的胶囊轨道。每个 1.8 秒周期内，第一段色条用周期的 65% 从左侧画外扫到右侧画外，头尾分别走错开的三次缓入缓出曲线，行至中段拉长到约三分之一轨道、到两端又被压缩；周期进行到 45% 时第二段出发，头部缓出、尾部缓入，先猛地拉成几乎横贯整条轨道的长光带，尾部再“嗖”地追上。两段都填充品牌渐变、裁切在轨道内，并带有柔和的彩色辉光。交错的节奏传达“正在处理”，却不暗示具体时长。"
+            "A 240 × 5 pt capsule track in a floating card, under a 42 pt gradient Wi-Fi tile whose arcs light up one by one (iterative variable color), a 'Joining “Studio 5G”' title and a 'Connecting…' caption. Within each 1.8 s cycle a first segment sweeps from off-screen left to off-screen right over 80% of the cycle, its head and tail on staggered cubic ease-in-out curves so it stretches to about a third of the track mid-flight and compresses at the edges; half a cycle later a second segment launches, also lasting 80%, with an ease-out head and ease-in tail, shooting out into a long streak that spans nearly the whole track before its tail whips after it. The two windows overlap, so one segment is always entering while the other leaves — the track never sits empty. Both are filled with the brand gradient, clipped to the track, and cast a soft colored glow. The overlapping rhythm signals 'working' without implying a duration.",
+            "悬浮卡片里，一枚 42 pt 渐变 Wi-Fi 图块（信号弧逐格点亮的可变色符号动画）、“加入 “Studio 5G””标题与“正在连接…”说明的下方，是一条 240 × 5 pt 的胶囊轨道。每个 1.8 秒周期内，第一段色条用周期的 80% 从左侧画外扫到右侧画外，头尾分别走错开的三次缓入缓出曲线，行至中段拉长到约三分之一轨道、到两端又被压缩；半个周期后第二段出发，同样历时 80%，头部缓出、尾部缓入，先猛地拉成几乎横贯整条轨道的长光带，尾部再“嗖”地追上。两段的时间窗彼此重叠，总有一段正在进入、另一段正在离开，轨道从不空置。两段都填充品牌渐变、裁切在轨道内，并带有柔和的彩色辉光。交错的节奏传达“正在处理”，却不暗示具体时长。"
         ),
         implementation: L(
             "A TimelineView computes eased head/tail fractions for two segments and positions capsules inside a clipped track; the Wi-Fi glyph runs symbolEffect(.variableColor.iterative).",
@@ -371,8 +371,11 @@ private struct IndeterminateTrack: View {
             .offset(x: x)
     }
 
+    /// Both segments run for 80% of the cycle, half a cycle apart, so their windows overlap
+    /// and the track is never empty (the second segment of the previous cycle is still
+    /// leaving on the right while the next first segment enters on the left).
     static func first(_ u: Double) -> (tail: Double, head: Double) {
-        let v = u / 0.65
+        let v = u / 0.8
         guard v <= 1 else { return (1.2, 1.2) }
         let head = -0.1 + 1.3 * progEaseInOut(v)
         let tail = -0.1 + 1.3 * progEaseInOut((v - 0.2) / 0.8)
@@ -380,8 +383,9 @@ private struct IndeterminateTrack: View {
     }
 
     static func second(_ u: Double) -> (tail: Double, head: Double) {
-        let w = (u - 0.45) / 0.55
-        guard w >= 0 else { return (-0.2, -0.2) }
+        let shifted = u - 0.5
+        let w = (shifted - floor(shifted)) / 0.8
+        guard w <= 1 else { return (-0.2, -0.2) }
         let head = -0.1 + 1.3 * progEaseOut(w)
         let tail = -0.1 + 1.3 * progEaseIn(w)
         return (tail, head)

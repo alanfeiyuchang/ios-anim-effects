@@ -3,7 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.appLanguage) private var language
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("app.language") private var storedLanguage: AppLanguage = .zh
+    @AppStorage(AppLanguage.storageKey) private var storedLanguage: AppLanguage = AppLanguage.systemDefault
     @AppStorage("app.appearance") private var appearance: Int = 0
     @AppStorage("app.animatePreviews") private var animatePreviews = true
 
@@ -39,7 +39,7 @@ struct SettingsView: View {
                         Text(Strings.animatePreviews, language)
                     } icon: {
                         Image(systemName: "play.rectangle.on.rectangle.fill")
-                            .foregroundStyle(Palette.indigo)
+                            .foregroundStyle(Palette.accent)
                     }
                 }
                 .disabled(reduceMotion)
@@ -48,26 +48,13 @@ struct SettingsView: View {
             } footer: {
                 Text(reduceMotion ? Strings.reduceMotionActive : Strings.animatePreviewsFooter, language)
             }
-            Section(Strings.library(language)) {
-                ForEach(EffectCategory.allCases) { category in
-                    NavigationLink(value: Route.category(category)) {
-                        HStack(spacing: 12) {
-                            CategoryIcon(category: category, size: 28)
-                            Text(category.title, language)
-                            Spacer()
-                            Text("\(EffectLibrary.effects(in: category).count)")
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                        }
-                    }
-                }
-            }
             Section(Strings.about(language)) {
                 Text(Strings.aboutBody, language)
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                LabeledContent(Strings.allEffects(language), value: "\(EffectLibrary.all.count)")
-                LabeledContent(Strings.categories(language), value: "\(EffectCategory.allCases.count)")
+                // Browsing lives in the Browse tab; Settings only summarises the catalog.
+                LabeledContent(Strings.allEffects(language), value: Strings.effectCount(EffectLibrary.all.count, language))
+                LabeledContent(Strings.categories(language), value: Strings.categoryCount(EffectCategory.allCases.count, language))
                 LabeledContent(Strings.version(language), value: versionString)
             }
         }

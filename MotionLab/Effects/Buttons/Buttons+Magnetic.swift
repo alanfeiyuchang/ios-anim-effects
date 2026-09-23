@@ -8,18 +8,19 @@ extension Effect {
         name: L("Magnetic Button", "磁吸按钮"),
         summary: L("The button leans toward your finger, then snaps home.", "按钮被手指吸引靠近，离开后弹回原位。"),
         prompt: L(
-            "A gradient capsule button sits inside an invisible magnetic field about 120 pt in radius. When the finger enters the field, the button is pulled toward the touch point by roughly a third of the distance, grows to 106% and its tinted shadow deepens; the label drifts a little further than the body for a subtle parallax. Every move is chased by a soft spring (response 0.42 s, damping 0.55), so the button trails the finger with a slight lag. When the finger leaves the field or lifts, it springs back to center with a gentle overshoot, and a soft haptic marks entering and leaving. It feels alive, curious and physically attracted.",
-            "渐变胶囊按钮周围有一个半径约 120pt 的隐形磁场。手指进入磁场后，按钮被拉向触点，位移约为距离的三分之一，同时放大到 106%，彩色投影加深；按钮文字比按钮本体多移动一点，形成细微视差。每次位移都由柔和弹簧（响应 0.42 秒、阻尼 0.55）追随，让按钮略带滞后地跟着手指。手指离开磁场或抬起时，按钮带轻微过冲弹回中心；进入和离开磁场时各有一次柔和触觉反馈。整体像被磁力吸引一样灵动、有生命感。"
+            "A gradient capsule button sits inside a magnetic field about 120 pt in radius. The field has no hard edge: pull strength ramps in with a smoothstep falloff from the rim to ~55% of the radius, then holds, so the button is drawn toward the touch point by up to a third of the distance, grows to 106% and deepens its tinted shadow in proportion; the label drifts a little further than the body for a subtle parallax. Every move is chased by a soft spring (response 0.42 s, damping 0.55), trailing the finger with a slight lag. When the finger lifts or drifts out, the button eases back to center with a gentle overshoot, and a soft haptic marks entering and leaving. Alive, curious and physically attracted.",
+            "渐变胶囊按钮周围有一个半径约 120pt 的磁场，但没有生硬的边界：吸力从边缘到约 55% 半径处按 smoothstep 曲线渐强、之后保持，按钮被拉向触点，最多移动距离的三分之一，并按吸力比例放大到 106%、加深彩色投影；按钮文字比本体多移动一点，形成细微视差。每次位移都由柔和弹簧（响应 0.42 秒、阻尼 0.55）追随，略带滞后地跟手。手指抬起或移出磁场时，按钮带轻微过冲缓缓回到中心；进出磁场各有一次柔和触觉。像被磁力吸引一样灵动、有生命感。"
         ),
         implementation: L(
-            "A zero-distance DragGesture over the whole stage measures the finger's offset from the button center; inside the radius the offset is scaled by the strength and applied with a spring, outside it resets to zero.",
-            "覆盖整个舞台的零距离 DragGesture 计算手指相对按钮中心的偏移；在半径内按强度系数缩放后用弹簧应用到 offset，超出半径则归零。"
+            "A zero-distance DragGesture over the whole stage measures the finger's offset from the button center; a smoothstep falloff of that distance weights the pull, scale and shadow, all applied through a spring.",
+            "覆盖整个舞台的零距离 DragGesture 计算手指相对按钮中心的偏移；按距离做 smoothstep 衰减得到吸力权重，同时驱动位移、缩放与投影，并通过弹簧应用。"
         ),
         apis: ["DragGesture", "offset", "spring(response:dampingFraction:)", "onGeometryChange"],
         tags: ["magnetic", "attract", "hover", "磁吸", "吸附", "跟随", "cursor", "悬停"],
         params: [
             .slider("radius", L("Field radius", "磁场半径"), 60...160, default: 120, decimals: 0, unit: "pt"),
             .slider("strength", L("Pull strength", "吸引强度"), 0.1...0.6, default: 0.35),
+            .slider("response", L("Spring response", "弹簧响应"), 0.2...0.8, default: 0.42, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.3...1.0, default: 0.55),
         ]
     ) { ctx in
@@ -33,6 +34,8 @@ private struct ButtonMagneticDemo: View {
     @State private var pull: CGSize = .zero
     @State private var finger: CGPoint?
     @State private var captured = false
+    /// 0…1 field influence after the smoothstep falloff.
+    @State private var influence: CGFloat = 0
     @State private var step = 0
 
     private static let previewPath: [CGSize] = [
@@ -43,21 +46,27 @@ private struct ButtonMagneticDemo: View {
         CGSize(width: -150, height: 100),
     ]
 
-    private var radius: CGFloat { ctx.cg("radius") }
+    /// Thumbnails cap the field so the dashed ring never touches the preview edge.
+    private var radius: CGFloat { ctx.isPreview ? min(ctx.cg("radius"), 100) : ctx.cg("radius") }
     private var strength: CGFloat { ctx.cg("strength") }
-    private var spring: Animation { .spring(response: 0.42, dampingFraction: ctx["damping"]) }
+    private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
+
+    private static func smoothstep(_ edge0: CGFloat, _ edge1: CGFloat, _ x: CGFloat) -> CGFloat {
+        let t = ((x - edge0) / (edge1 - edge0)).clamped(to: 0...1)
+        return t * t * (3 - 2 * t)
+    }
 
     var body: some View {
         ZStack {
             Circle()
                 .strokeBorder(
-                    Color.primary.opacity(captured ? 0.2 : 0.08),
+                    Color.primary.opacity(0.08 + 0.14 * Double(influence)),
                     style: StrokeStyle(lineWidth: 1, dash: [4, 6])
                 )
                 .frame(width: radius * 2, height: radius * 2)
             ButtonMagneticFace(
                 pull: pull,
-                captured: captured,
+                influence: influence,
                 title: ctx.language == .zh ? "开始体验" : "Get started"
             )
             fingerDot
@@ -100,7 +109,10 @@ private struct ButtonMagneticDemo: View {
     private func track(_ point: CGPoint, animateFinger: Bool) {
         let dx = point.x - stageSize.width / 2
         let dy = point.y - stageSize.height / 2
-        let inside = hypot(dx, dy) < radius
+        let distance = hypot(dx, dy)
+        // Full strength inside ~55% of the radius, smoothly fading to zero at the rim — no boundary snap.
+        let weight = 1 - Self.smoothstep(radius * 0.55, radius, distance)
+        let inside = weight > 0.001
         if inside != captured && !ctx.isPreview { Haptics.tap(.soft) }
         if animateFinger {
             withAnimation(.smooth(duration: 0.8)) { finger = point }
@@ -109,13 +121,15 @@ private struct ButtonMagneticDemo: View {
         }
         withAnimation(spring) {
             captured = inside
-            pull = inside ? CGSize(width: dx * strength, height: dy * strength) : .zero
+            influence = weight
+            pull = CGSize(width: dx * strength * weight, height: dy * strength * weight)
         }
     }
 
     private func release() {
         withAnimation(spring) {
             captured = false
+            influence = 0
             pull = .zero
         }
         withAnimation(.easeOut(duration: 0.2)) { finger = nil }
@@ -132,7 +146,7 @@ private struct ButtonMagneticDemo: View {
 
 private struct ButtonMagneticFace: View {
     let pull: CGSize
-    let captured: Bool
+    let influence: CGFloat
     let title: String
 
     var body: some View {
@@ -147,11 +161,11 @@ private struct ButtonMagneticFace: View {
         .background(Palette.primary, in: Capsule())
         .overlay(Capsule().strokeBorder(Color.white.opacity(0.25), lineWidth: 1))
         .shadow(
-            color: Palette.indigo.opacity(captured ? 0.5 : 0.3),
-            radius: captured ? 22 : 14,
-            y: captured ? 14 : 8
+            color: Palette.indigo.opacity(0.3 + 0.2 * Double(influence)),
+            radius: 14 + 8 * influence,
+            y: 8 + 6 * influence
         )
-        .scaleEffect(captured ? 1.06 : 1)
+        .scaleEffect(1 + 0.06 * influence)
         .offset(pull)
     }
 }

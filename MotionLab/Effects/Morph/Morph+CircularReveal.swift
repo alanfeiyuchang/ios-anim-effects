@@ -11,7 +11,7 @@ extension Effect {
             "新主题从手指触碰的位置以圆形扩散铺满屏幕。"
         ),
         prompt: L(
-            "A settings screen in its day theme. Tapping anywhere — typically the sun/moon toggle — reveals the night theme through a circular mask centred on the touch point: the circle grows from 0 to the distance of the farthest screen corner in about 700 ms on an expo in-out curve (cubic-bezier 0.7, 0, 0.2, 1), so it starts slowly, sweeps fast and lands softly. The new theme is fully rendered underneath, so text and controls appear crisply inside the expanding edge rather than fading. The sun glyph becomes a moon the instant the edge sweeps over it, and a light haptic lands on touch. Once complete the layers swap invisibly so the next tap can reveal back from a new origin.",
+            "A settings screen in its day theme. Tapping anywhere — typically the sun/moon toggle — reveals the night theme through a circular mask centered on the touch point: the circle grows from 0 to the distance of the farthest screen corner in about 700 ms on an expo in-out curve (cubic-bezier 0.7, 0, 0.2, 1), so it starts slowly, sweeps fast and lands softly. The new theme is fully rendered underneath, so text and controls appear crisply inside the expanding edge rather than fading. The sun glyph becomes a moon the instant the edge sweeps over it, and a light haptic lands on touch. Once complete the layers swap invisibly so the next tap can reveal back from a new origin.",
             "一个日间主题的设置页面。点击任意位置（通常是太阳/月亮切换按钮），夜间主题会通过一个以触点为圆心的圆形遮罩展开：圆的半径在约 700 毫秒内从 0 增长到触点到最远屏幕角的距离，使用 expo 缓入缓出曲线（cubic-bezier 0.7, 0, 0.2, 1）——起步缓、中段快、落地柔。新主题在下方已完整渲染，因此文字与控件在扩散边缘内清晰出现，而不是淡入。扩散边缘扫过切换按钮的瞬间，太阳图标即变为月亮；触摸时伴随轻触觉。完成后两层无痕交换，下一次点击可以从新的触点反向揭示。"
         ),
         implementation: L(
@@ -68,7 +68,16 @@ private struct CircularRevealDemo: View {
             reveal(from: location)
         }
         .autoplay(ctx.isPreview, every: 1.8) {
-            reveal(from: CGPoint(x: size.width - 46, y: 76))
+            reveal(from: CGPoint(x: size.width - 46, y: 46))
+        }
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap anywhere to switch theme", "点击任意位置切换主题"), ctx: ctx)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.thinMaterial, in: Capsule())
+                .padding(.bottom, 14)
+                .opacity(ctx.isPreview ? 0 : 1)
+                .allowsHitTesting(false)
         }
     }
 
@@ -131,11 +140,15 @@ private struct ThemePanel: View {
                     .background(ink.opacity(0.08), in: Circle())
             }
             VStack(spacing: 0) {
-                row(symbol: "textformat.size", title: language == .zh ? "文字大小" : "Text size", on: true)
+                row(symbol: "bold", title: language == .zh ? "粗体文本" : "Bold Text", on: true)
                 Divider().overlay(ink.opacity(0.1))
                 row(symbol: "circle.lefthalf.filled", title: language == .zh ? "自动切换" : "Automatic", on: dark)
                 Divider().overlay(ink.opacity(0.1))
-                row(symbol: "sparkles", title: language == .zh ? "减弱动效" : "Reduce motion", on: false)
+                row(symbol: "moon.circle", title: language == .zh ? "夜览" : "Night Shift", on: dark)
+                Divider().overlay(ink.opacity(0.1))
+                row(symbol: "circle.righthalf.filled", title: language == .zh ? "增强对比度" : "Increase Contrast", on: false)
+                Divider().overlay(ink.opacity(0.1))
+                row(symbol: "sparkles", title: language == .zh ? "减弱动态效果" : "Reduce Motion", on: false)
             }
             .padding(.horizontal, 14)
             .background(ink.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -143,7 +156,7 @@ private struct ThemePanel: View {
         }
         .foregroundStyle(ink)
         .padding(.horizontal, 22)
-        .padding(.top, 52)
+        .padding(.top, 22)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(background)
     }
@@ -162,6 +175,6 @@ private struct ThemePanel: View {
                     Circle().fill(.white).padding(3).shadow(color: .black.opacity(0.15), radius: 2, y: 1)
                 }
         }
-        .frame(height: 50)
+        .frame(height: 46)
     }
 }

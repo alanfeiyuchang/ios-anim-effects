@@ -11,14 +11,14 @@ extension Effect {
             "圆形 → 超椭圆 → 液滴 → 花瓣，逐点插值的形状变形。"
         ),
         prompt: L(
-            "A 200 pt gradient shape floats at center with a soft coloured glow. Each tap morphs its outline to the next form in a loop — circle, squircle, organic blob, six-petal flower — by interpolating 180 radial sample points between the two silhouettes, so edges flow continuously instead of cross-fading. The morph rides a spring (≈0.8 s, bounce ≈0.25) that lets the outline slightly overshoot into the next form before settling; simultaneously the shape rotates 45° and its hue drifts 40°, and the glow breathes with it. A small caption naming the current shape swaps with a blur-replace transition. It should feel liquid, sculptural and alive.",
-            "画面中央悬浮一个约 200pt 的渐变图形，带柔和的彩色辉光。每次点击，轮廓会按「圆形 → 超椭圆 → 有机液滴 → 六瓣花」循环变形到下一个形态：在两种轮廓之间对 180 个径向采样点逐点插值，边缘连续流动而非交叉淡入。形变采用弹簧曲线（约 0.8 秒、回弹约 0.25），轮廓会略微冲过目标形态再回落；同时图形旋转 45°、色相偏移 40°，辉光随之呼吸。下方标注当前形状名称的小字以模糊替换方式切换。整体应当流动、有雕塑感、充满生命力。"
+            "A 200 pt gradient shape floats at center over a blurred glow of the same silhouette that breathes on its own slow loop (opacity 40% ↔ 70%, scale 92% ↔ 104%, 1.6 s ease-in-out each way). Each tap morphs its outline to the next form in a loop — circle, squircle, organic blob, six-petal flower — by interpolating 180 radial sample points between the two silhouettes, so edges flow continuously instead of cross-fading. The morph rides a spring (≈0.8 s, bounce ≈0.25) that lets the outline slightly overshoot into the next form before settling; simultaneously the shape rotates 45° and its hue drifts 40°, the glow following the outline. All four forms share the same mean radius so no step pops in size. A small caption naming the current shape swaps with a blur-replace transition. It should feel liquid, sculptural and alive.",
+            "画面中央悬浮一个约 200pt 的渐变图形，下方是同形状的模糊辉光，按自己的节奏缓慢呼吸（透明度 40% ↔ 70%、缩放 92% ↔ 104%，单程 1.6 秒缓入缓出）。每次点击，轮廓会按「圆形 → 超椭圆 → 有机液滴 → 六瓣花」循环变形到下一个形态：在两种轮廓之间对 180 个径向采样点逐点插值，边缘连续流动而非交叉淡入。形变采用弹簧曲线（约 0.8 秒、回弹约 0.25），轮廓会略微冲过目标形态再回落；同时图形旋转 45°、色相偏移 40°，辉光随轮廓一起变形。四种形态的平均半径一致，切换时不会忽大忽小。下方标注当前形状名称的小字以模糊替换方式切换。整体应当流动、有雕塑感、充满生命力。"
         ),
         implementation: L(
-            "A custom Shape exposes a continuous morph progress as animatableData and builds its path from a blend of polar radius functions; rotation and hueRotation are driven by the same value.",
-            "自定义 Shape 将连续的形变进度暴露为 animatableData，用多个极坐标半径函数的混合生成路径；旋转与色相偏移由同一数值驱动。"
+            "A custom Shape exposes a continuous morph progress as animatableData and builds its path from a blend of polar radius functions; rotation and hueRotation are driven by the same value, and a blurred copy breathes underneath with phaseAnimator.",
+            "自定义 Shape 将连续的形变进度暴露为 animatableData，用多个极坐标半径函数的混合生成路径；旋转与色相偏移由同一数值驱动，下层模糊副本用 phaseAnimator 呼吸。"
         ),
-        apis: ["Shape", "animatableData", "Path", "spring(duration:bounce:)", "hueRotation"],
+        apis: ["Shape", "animatableData", "Path", "spring(duration:bounce:)", "hueRotation", "phaseAnimator"],
         tags: ["shape", "morph", "blob", "path animation", "形状", "变形", "路径动画", "液态"],
         params: [
             .slider("duration", L("Duration", "时长"), 0.3...1.5, default: 0.8, unit: "s"),
@@ -46,8 +46,14 @@ private struct ShapeMorphDemo: View {
                 MorphingBlob(progress: progress)
                     .fill(Palette.primary)
                     .blur(radius: 28)
-                    .opacity(0.55)
-                    .scaleEffect(0.95)
+                    // The glow breathes on its own slow loop, independent of the morph spring.
+                    .phaseAnimator([false, true]) { content, inhale in
+                        content
+                            .opacity(inhale ? 0.7 : 0.4)
+                            .scaleEffect(inhale ? 1.04 : 0.92)
+                    } animation: { _ in
+                        .easeInOut(duration: 1.6)
+                    }
                 MorphingBlob(progress: progress)
                     .fill(
                         LinearGradient(colors: [Palette.pink, Palette.violet, Palette.indigo],
@@ -127,7 +133,8 @@ private struct MorphingBlob: Shape {
     private func radius(_ kind: Int, _ theta: Double) -> Double {
         switch kind {
         case 0:
-            return 0.9
+            // Same mean radius as the other silhouettes, so the circle doesn't pop larger.
+            return 0.84
         case 1:
             let n = 5.0
             let denom = pow(abs(cos(theta)), n) + pow(abs(sin(theta)), n)

@@ -67,19 +67,22 @@ half4 mlPixelate(float2 position, SwiftUI::Layer layer, float size) {
 }
 
 // MARK: - Glitch (layer effect)
+// `split` is the resting R/B offset in points, `sliceHeight` the band height, `rate` how often bands re-roll per second.
 
 [[ stitchable ]]
-half4 mlGlitch(float2 position, SwiftUI::Layer layer, float time, float intensity) {
-    float band = floor(position.y / 14.0);
-    float frame = floor(time * 12.0);
+half4 mlGlitch(float2 position, SwiftUI::Layer layer, float time, float intensity,
+               float split, float sliceHeight, float rate) {
+    float band = floor(position.y / max(sliceHeight, 2.0));
+    float r = max(rate, 0.5);
+    float frame = floor(time * r * 2.0);
     float jitter = (mlHash(float2(band, frame)) - 0.5) * 2.0;
-    float active = step(0.78, mlHash(float2(floor(time * 6.0), band * 0.37)));
+    float active = step(0.78, mlHash(float2(floor(time * r), band * 0.37)));
     float shift = jitter * intensity * 26.0 * active;
-    float split = intensity * 6.0;
+    float offset = split * (0.35 + intensity * 1.3);
     float2 p = position + float2(shift, 0.0);
     half4 base = layer.sample(p);
-    half4 red = layer.sample(p + float2(split, 0.0));
-    half4 blue = layer.sample(p - float2(split, 0.0));
+    half4 red = layer.sample(p + float2(offset, 0.0));
+    half4 blue = layer.sample(p - float2(offset, 0.0));
     half4 color = half4(red.r, base.g, blue.b, max(base.a, max(red.a, blue.a)));
     float scan = 0.93 + 0.07 * sin(position.y * 3.14159);
     color.rgb *= half(scan);
@@ -87,17 +90,29 @@ half4 mlGlitch(float2 position, SwiftUI::Layer layer, float time, float intensit
 }
 
 // MARK: - Noise dissolve (color effect)
+// The cut is anti-aliased over a tiny noise band; just inside it an ember ramp runs
+// white-hot core → edge colour → charred rim → untouched artwork.
 
 [[ stitchable ]]
 half4 mlDissolve(float2 position, half4 color, float progress, float scale, half4 edgeColor) {
-    float n = mlFbm(position / max(scale, 1.0));
-    float threshold = progress * 1.15 - 0.075;
-    if (n < threshold) {
-        return half4(0.0);
+    if (color.a < 0.001h) {
+        return color;
     }
-    float edge = smoothstep(threshold, threshold + 0.07, n);
-    half4 glow = half4(edgeColor.rgb, 1.0) * color.a;
-    return mix(glow, color, half(edge));
+    float n = mlFbm(position / max(scale, 1.0));
+    float threshold = progress * 1.2 - 0.1;
+    float d = n - threshold;
+    float alpha = smoothstep(-0.006, 0.006, d);
+    if (alpha <= 0.0) {
+        return half4(0.0h);
+    }
+    float3 rgb = float3(color.rgb) / float(color.a);
+    float3 edge = float3(edgeColor.rgb);
+    float t = clamp(d / 0.1, 0.0, 1.0);
+    float3 hot = mix(float3(1.0, 0.97, 0.84), edge, smoothstep(0.0, 0.3, t));
+    float3 burnt = mix(hot, edge * 0.28, smoothstep(0.3, 0.62, t));
+    float3 outColor = mix(burnt, rgb, smoothstep(0.55, 1.0, t));
+    float a = float(color.a) * alpha;
+    return half4(half3(outColor * a), half(a));
 }
 
 // MARK: - Bulge / magnifier (distortion effect)
@@ -131,6 +146,17 @@ float2 mlSwirl(float2 position, float2 center, float radius, float angle) {
 }
 
 // MARK: - Plasma (color effect, generative)
+// Four summed sine fields mapped onto a limited, cyclic cyan → violet → gold ramp over deep indigo troughs.
+
+static float3 mlPlasmaRamp(float t) {
+    float3 cyan = float3(0.16, 0.86, 1.0);
+    float3 violet = float3(0.56, 0.30, 1.0);
+    float3 gold = float3(1.0, 0.77, 0.30);
+    float x = fract(t) * 3.0;
+    float3 a = x < 1.0 ? cyan : (x < 2.0 ? violet : gold);
+    float3 b = x < 1.0 ? violet : (x < 2.0 ? gold : cyan);
+    return mix(a, b, smoothstep(0.0, 1.0, fract(x)));
+}
 
 [[ stitchable ]]
 half4 mlPlasma(float2 position, half4 color, float2 size, float time, float scale) {
@@ -140,14 +166,18 @@ half4 mlPlasma(float2 position, half4 color, float2 size, float time, float scal
             + sin((uv.x + uv.y) * 5.0 * scale + time * 0.7)
             + sin(length(uv - 0.5) * 12.0 * scale - time * 2.0);
     v *= 0.25;
-    float3 col = 0.55 + 0.45 * cos(6.28318 * (v + float3(0.0, 0.33, 0.67)) + time * 0.2);
-    return half4(half3(col), 1.0) * color.a;
+    float3 col = mlPlasmaRamp(v * 0.8 + time * 0.03);
+    float shade = 0.62 + 0.38 * cos(v * 6.28318);
+    col = mix(float3(0.05, 0.04, 0.17), col, shade);
+    return half4(half3(col), 1.0h) * color.a;
 }
 
 // MARK: - CRT (layer effect)
+// `scanlines` is the scanline depth (0 = none), `bleed` the phosphor R/B offset in points.
 
 [[ stitchable ]]
-half4 mlCRT(float2 position, SwiftUI::Layer layer, float2 size, float time, float curvature) {
+half4 mlCRT(float2 position, SwiftUI::Layer layer, float2 size, float time, float curvature,
+            float scanlines, float bleed) {
     float2 uv = position / max(size, float2(1.0)) * 2.0 - 1.0;
     float2 bend = uv.yx * uv.yx * curvature;
     uv = uv + uv * bend;
@@ -156,32 +186,54 @@ half4 mlCRT(float2 position, SwiftUI::Layer layer, float2 size, float time, floa
     }
     float2 p = (uv * 0.5 + 0.5) * size;
     half4 base = layer.sample(p);
-    half r = layer.sample(p + float2(1.2, 0.0)).r;
-    half b = layer.sample(p - float2(1.2, 0.0)).b;
-    half4 c = half4(r, base.g, b, base.a);
-    float scan = 0.82 + 0.18 * sin(p.y * 2.4 + time * 10.0);
+    half4 red = layer.sample(p + float2(bleed, 0.0));
+    half4 blue = layer.sample(p - float2(bleed, 0.0));
+    half4 smear = layer.sample(p - float2(bleed * 2.0, 0.0));
+    half4 c = half4(red.r, base.g, blue.b, base.a);
+    c.rgb = mix(c.rgb, max(c.rgb, smear.rgb), half(0.35 * clamp(bleed / 3.0, 0.0, 1.0)));
+    float scan = 1.0 - scanlines + scanlines * sin(p.y * 2.4 + time * 10.0);
     float roll = 0.96 + 0.04 * sin((p.y / size.y - time * 0.35) * 6.28318);
     float vignette = 1.0 - 0.28 * dot(uv, uv);
     c.rgb *= half(scan * roll * vignette);
     return c;
 }
 
-// MARK: - Halftone (layer effect)
+// MARK: - CMYK halftone (layer effect)
+// Four rotated dot screens (C 15°, M 75°, Y 0°, K 45°, plus `angle`), each sampled at its own cell centre.
+// Dot area follows the ink amount (× `gain`); inks multiply over paper like real process printing.
 
 [[ stitchable ]]
-half4 mlHalftone(float2 position, SwiftUI::Layer layer, float cell) {
-    float s = max(cell, 2.0);
-    float2 center = (floor(position / s) + 0.5) * s;
-    half4 c = layer.sample(center);
-    if (c.a < 0.01) {
-        return half4(0.0);
+half4 mlHalftoneCMYK(float2 position, SwiftUI::Layer layer, float cell, float angle, float gain) {
+    half4 here = layer.sample(position);
+    if (here.a < 0.01h) {
+        return half4(0.0h);
     }
-    float3 rgb = float3(c.rgb) / float(c.a);
-    float lum = dot(rgb, float3(0.299, 0.587, 0.114));
-    float radius = s * 0.5 * (1.05 - lum * 0.55);
-    float d = length(position - center);
-    float coverage = 1.0 - smoothstep(radius - 0.8, radius + 0.8, d);
-    return c * half(coverage);
+    float s = max(cell, 3.0);
+    float3 result = float3(0.99, 0.97, 0.93);
+    for (int k = 0; k < 4; k++) {
+        float theta = angle + (k == 0 ? 0.2618 : (k == 1 ? 1.3090 : (k == 2 ? 0.0 : 0.7854)));
+        float cs = cos(theta);
+        float sn = sin(theta);
+        float2 rp = float2(cs * position.x + sn * position.y, -sn * position.x + cs * position.y);
+        float2 rc = (floor(rp / s) + 0.5) * s;
+        float2 center = float2(cs * rc.x - sn * rc.y, sn * rc.x + cs * rc.y);
+        half4 c = layer.sample(center);
+        float3 rgb = c.a > 0.001h ? float3(c.rgb) / float(c.a) : float3(1.0);
+        float black = 1.0 - max(rgb.r, max(rgb.g, rgb.b));
+        float denom = max(1.0 - black, 0.001);
+        float amount = k == 0 ? (1.0 - rgb.r - black) / denom
+                     : (k == 1 ? (1.0 - rgb.g - black) / denom
+                     : (k == 2 ? (1.0 - rgb.b - black) / denom : black));
+        amount = clamp(amount * gain, 0.0, 1.0);
+        float radius = s * 0.7071 * sqrt(amount);
+        float d = length(rp - rc);
+        float coverage = 1.0 - smoothstep(radius - 0.6, radius + 0.6, d);
+        float3 ink = k == 0 ? float3(0.0, 0.66, 0.93)
+                   : (k == 1 ? float3(0.92, 0.05, 0.55)
+                   : (k == 2 ? float3(1.0, 0.92, 0.05) : float3(0.12, 0.12, 0.15)));
+        result *= mix(float3(1.0), ink, coverage * 0.94);
+    }
+    return half4(half3(result), 1.0h) * here.a;
 }
 
 // MARK: - Shaded flag wave (layer effect)
@@ -216,7 +268,10 @@ half4 mlChromatic(float2 position, SwiftUI::Layer layer, float2 size, float2 shi
 }
 
 // MARK: - Kaleidoscope (layer effect)
-// Folds the polar angle into mirrored wedges; `spin` turns the sampled wedge (the "tube"), `rotation` the output.
+// Folds the polar angle into n mirrored wedges: wrap into [0, 2π/n), then mirror about the wedge centre
+// so every output angle lands in [0, π/n] and neighbouring wedges meet seamlessly.
+// `rotation` turns the output rosette, `spin` turns the sampled slice of the source (the "tube").
+// Samples can land up to the full view size away, so the caller must pass a matching maxSampleOffset.
 
 [[ stitchable ]]
 half4 mlKaleidoscope(float2 position, SwiftUI::Layer layer, float2 size, float segments, float rotation, float spin, float zoom) {
@@ -269,11 +324,11 @@ half4 mlEdgeScan(float2 position, SwiftUI::Layer layer, float scanY, float band,
 }
 
 // MARK: - Grain gradient (color effect, generative)
-// Three soft colour fields drift over a base colour on domain-warped coordinates, finished with static film grain.
+// Three soft colour fields drift over a base colour on domain-warped coordinates, finished with static, per-pixel film grain.
 
 [[ stitchable ]]
 half4 mlGrainGradient(float2 position, half4 color, float2 size, float time, float grain,
-                      half4 c0, half4 c1, half4 c2, half4 c3, float2 focus) {
+                      half4 c0, half4 c1, half4 c2, half4 c3, float2 focus, float pixelScale) {
     float2 uv = position / max(size, float2(1.0));
     float2 aspect = float2(size.x / max(size.y, 1.0), 1.0);
     float2 warp = float2(mlFbm(uv * 2.2 + float2(time * 0.07, 0.0)),
@@ -294,8 +349,125 @@ half4 mlGrainGradient(float2 position, half4 color, float2 size, float time, flo
     col = mix(col, float3(c2.rgb), w2);
     col = mix(col, float3(c3.rgb), w3);
 
-    float n = mlHash(floor(position)) - 0.5;
+    // One grain value per device pixel (not per point), so the texture stays fine on 2× and 3× screens.
+    float n = mlHash(floor(position * max(pixelScale, 1.0))) - 0.5;
     col += n * grain * 0.16;
     col = clamp(col, float3(0.0), float3(1.0));
     return half4(half3(col), 1.0h) * color.a;
+}
+
+// MARK: - Glass lens (layer effect)
+// A spherical glass cap: the core magnifies, the steep rim bends rays inward, and red/blue refract by
+// different amounts toward the rim (dispersion), so edges pick up a thin chromatic fringe. A specular
+// highlight from the top-left sells the curvature.
+
+[[ stitchable ]]
+half4 mlGlassLens(float2 position, SwiftUI::Layer layer, float2 center, float radius, float magnify, float dispersion) {
+    half4 outside = layer.sample(position);
+    float2 d = position - center;
+    float dist = length(d);
+    float rad = max(radius, 1.0);
+    if (dist >= rad) {
+        return outside;
+    }
+    float t = dist / rad;
+    float z = sqrt(max(1.0 - t * t, 0.0));
+    float2 dir = dist > 0.001 ? d / dist : float2(0.0);
+    float core = dist * mix(1.0 - magnify, 1.0, t * t);
+    float rim = (1.0 - z) * rad * 0.28;
+    float spread = dispersion * (1.0 - z);
+    half4 g = layer.sample(center + dir * (core - rim));
+    half4 r = layer.sample(center + dir * (core - rim * (1.0 - spread)));
+    half4 b = layer.sample(center + dir * (core - rim * (1.0 + spread)));
+    half4 lens = half4(r.r, g.g, b.b, max(g.a, max(r.a, b.a)));
+    float3 normal = normalize(float3(d / rad, z));
+    float3 light = normalize(float3(-0.45, -0.6, 0.66));
+    float spec = pow(max(dot(normal, light), 0.0), 36.0);
+    float shade = 0.9 + 0.1 * z;
+    lens.rgb = lens.rgb * half(shade) + half(spec * 0.75) * lens.a;
+    lens = min(lens, half4(1.0h));
+    lens.rgb = min(lens.rgb, half3(lens.a));
+    float blend = smoothstep(rad - 1.2, rad, dist);
+    return mix(lens, outside, half(blend));
+}
+
+// MARK: - Progressive blur (layer effect)
+// A variable-radius disc blur: radius ramps from 0 to `maxRadius` along a vertical mask.
+// mode 0 (edge): full blur above `focusY - fade`, sharp below `focusY`.
+// mode 1 (tilt-shift): sharp within `band` of `focusY`, ramping to full blur `fade` beyond it.
+// 32 golden-angle taps with a per-pixel rotation keep the kernel smooth instead of ghosted.
+
+[[ stitchable ]]
+half4 mlProgressiveBlur(float2 position, SwiftUI::Layer layer, float maxRadius, float focusY,
+                        float band, float fade, float mode) {
+    float d = mode < 0.5 ? (focusY - position.y) : (abs(position.y - focusY) - band);
+    float amount = smoothstep(0.0, max(fade, 1.0), d);
+    float radius = maxRadius * amount;
+    if (radius < 0.5) {
+        return layer.sample(position);
+    }
+    float jitter = mlHash(floor(position * 3.0)) * 6.2831853;
+    half4 acc = half4(0.0h);
+    float total = 0.0;
+    for (int i = 0; i < 32; i++) {
+        float fi = float(i) + 0.5;
+        float rr = sqrt(fi / 32.0) * radius;
+        float th = fi * 2.3999632 + jitter;
+        float w = 1.0 - 0.45 * (rr / radius);
+        acc += layer.sample(position + float2(cos(th), sin(th)) * rr) * half(w);
+        total += w;
+    }
+    return acc / half(total);
+}
+
+// MARK: - Caustics (layer effect)
+// A pool floor seen through moving water. A sum-of-sines height field (plus an optional ripple ring from
+// the last tap) refracts the floor via its gradient, and a tileable iterative caustic network — sharpened
+// with pow(·, 8) — adds dancing light, shifted by the same refraction.
+
+static float mlWaterHeight(float2 p, float t, float2 origin, float age) {
+    float h = sin(p.x * 0.045 + t * 1.3) * 0.5
+            + sin(p.y * 0.052 - t * 1.1) * 0.5
+            + sin((p.x + p.y) * 0.031 + t * 0.9) * 0.6
+            + (mlNoise(p * 0.03 + float2(t * 0.35, -t * 0.2)) - 0.5) * 1.2;
+    if (age >= 0.0 && age < 3.0) {
+        float dist = length(p - origin);
+        float front = age * 240.0;
+        float envelope = exp(-abs(dist - front) / 34.0) * exp(-age * 1.6);
+        h += sin((dist - front) * 0.11) * 3.2 * envelope;
+    }
+    return h;
+}
+
+static float mlCausticNetwork(float2 uv, float time) {
+    // Not wrapped with fract: the stage is < 2 tiles wide, and skipping the wrap avoids a faint seam.
+    float2 p = uv * 6.2831853 - 250.0;
+    float2 i = p;
+    float c = 1.0;
+    float inten = 0.005;
+    for (int n = 0; n < 5; n++) {
+        float t = time * (1.0 - (3.5 / float(n + 1)));
+        i = p + float2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+        c += 1.0 / length(float2(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
+    }
+    c /= 5.0;
+    c = 1.17 - pow(c, 1.4);
+    return pow(abs(c), 8.0);
+}
+
+[[ stitchable ]]
+half4 mlCaustics(float2 position, SwiftUI::Layer layer, float time, float intensity, float refraction,
+                 float2 origin, float age) {
+    float e = 2.0;
+    float h = mlWaterHeight(position, time, origin, age);
+    float hx = mlWaterHeight(position + float2(e, 0.0), time, origin, age);
+    float hy = mlWaterHeight(position + float2(0.0, e), time, origin, age);
+    float2 grad = float2(hx - h, hy - h) / e;
+    float2 offset = grad * refraction * 6.0;
+    half4 floorColor = layer.sample(position + offset);
+    float light = mlCausticNetwork((position + offset * 2.0) / 240.0, time * 0.5);
+    float3 rgb = float3(floorColor.rgb) * float3(0.80, 0.93, 1.0);
+    rgb += float3(0.80, 0.96, 1.0) * light * intensity * float(floorColor.a);
+    rgb = min(rgb, float3(floorColor.a));
+    return half4(half3(rgb), floorColor.a);
 }

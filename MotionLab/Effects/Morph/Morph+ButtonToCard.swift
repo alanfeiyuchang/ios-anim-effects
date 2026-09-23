@@ -50,6 +50,9 @@ private struct ButtonToCardDemo: View {
                 ProCard(ns: ns, ctx: ctx, showContent: $showContent, onClose: toggle)
             } else {
                 ProPill(ns: ns, ctx: ctx, onTap: toggle)
+                DemoHint(text: L("Tap Go Pro", "点击“升级 Pro”"), ctx: ctx)
+                    .padding(.bottom, 68)
+                    .transition(.opacity)
             }
         }
         .padding(20)
@@ -212,7 +215,6 @@ private struct BackdropList: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.top, 32) // clear the stage's reset button
         .scaleEffect(receded ? 0.95 : 1, anchor: .top)
         .blur(radius: receded ? 6 : 0)
         .opacity(receded ? 0.5 : 1)

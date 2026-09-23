@@ -59,13 +59,14 @@ struct SearchView: View {
             .animation(.smooth(duration: 0.3), value: results.map(\.id))
         }
         .scrollDismissesKeyboard(.immediately)
-        .background(Color(uiColor: .systemGroupedBackground))
+        .background(Palette.pageBackground)
         .navigationTitle(Strings.search(language))
         .searchable(text: $navigator.query, placement: .navigationBarDrawer(displayMode: .always), prompt: Strings.searchPrompt(language))
     }
 
     private var filters: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
+            FilterRowLabel(text: Strings.categoryFilter(language))
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     Chip(title: Strings.all(language), isSelected: navigator.category == nil) { navigator.category = nil }
@@ -77,6 +78,8 @@ struct SearchView: View {
                 }
                 .padding(.horizontal)
             }
+            FilterRowLabel(text: Strings.interactionFilter(language))
+                .padding(.top, 4)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     Chip(title: Strings.all(language), isSelected: navigator.interaction == nil) { navigator.interaction = nil }
@@ -120,6 +123,19 @@ struct SearchView: View {
     }
 }
 
+/// Small caption naming a horizontal chip row ("Category", "Interaction").
+private struct FilterRowLabel: View {
+    let text: String
+
+    var body: some View {
+        Text(verbatim: text)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
 /// Tappable keyword that fills the search field.
 private struct SuggestionChip: View {
     let text: String
@@ -135,7 +151,7 @@ private struct SuggestionChip: View {
             HStack(spacing: 5) {
                 Image(systemName: symbol)
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(Palette.indigo)
+                    .foregroundStyle(Palette.accent)
                 Text(text)
                     .font(monospaced ? .footnote.monospaced() : .footnote.weight(.medium))
                     .foregroundStyle(.primary)
@@ -143,7 +159,7 @@ private struct SuggestionChip: View {
             }
             .padding(.horizontal, 11)
             .padding(.vertical, 7)
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
+            .background(Palette.chipOnPage, in: Capsule())
             .overlay(Capsule().strokeBorder(Palette.stroke))
             .contentShape(Capsule())
         }

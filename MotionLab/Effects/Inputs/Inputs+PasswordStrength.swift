@@ -8,17 +8,18 @@ extension Effect {
         name: L("Password Strength Meter", "密码强度指示"),
         summary: L("Segments fill and shift from red to green as rules tick off.", "随着规则逐项达成，分段条填充并由红转绿。"),
         prompt: L(
-            "A password field on a card, followed by a four-segment strength meter and a checklist of rules (8+ characters, uppercase, number, symbol). As the user types, each satisfied rule's empty circle morphs into a filled green checkmark with a symbol replace transition. The meter fills segment by segment from the left — each segment grows horizontally from its leading edge with a 40 ms stagger on a spring (response 0.4 s, damping 0.75) — and all filled segments share one color that shifts red → orange → amber → green as the score rises. The strength word (Weak / Fair / Good / Strong) crossfades with a subtle upward slide. Encouraging, informative and never scolding.",
-            "卡片上方是密码输入框，下方是四段式强度条和一份规则清单（8 位以上、大写字母、数字、符号）。用户输入时，每满足一条规则，其空心圆就以符号替换过渡变为实心绿色对勾。强度条从左往右逐段填充——每段从左边缘横向生长，以 40 毫秒错峰、弹簧（响应 0.4 秒、阻尼 0.75）驱动——所有已填充段共享同一颜色，随分数升高由红 → 橙 → 琥珀 → 绿过渡。强度文字（弱 / 一般 / 良好 / 很强）伴随轻微上移交叉淡入。积极、信息清晰，从不责备用户。"
+            "A password field on a card, followed by a four-segment strength meter and a checklist of rules (8+ characters, uppercase, number, symbol). As the user types, each satisfied rule's empty circle morphs into a filled green checkmark with a symbol replace transition. Newly earned segments grow from their leading edge left to right with a 40 ms stagger on a spring (response 0.4 s, damping 0.75); when the score drops they retract in reverse, rightmost first. All filled segments share one color that shifts red → orange → amber → green immediately, with no stagger. The strength word (Weak / Fair / Good / Strong) moves like a ticker: the old word fades out upward while the new one rises in from 6 pt below. Encouraging, informative and never scolding.",
+            "卡片上方是密码输入框，下方是四段式强度条和一份规则清单（8 位以上、大写字母、数字、符号）。用户输入时，每满足一条规则，其空心圆就以符号替换过渡变为实心绿色对勾。新获得的分段从左边缘横向生长，从左到右以 40 毫秒错峰、弹簧（响应 0.4 秒、阻尼 0.75）驱动；分数下降时则反向收回，最右侧先退。所有已填充段共享同一颜色，由红 → 橙 → 琥珀 → 绿即时切换、不参与错峰。强度文字（弱 / 一般 / 良好 / 很强）像滚动字幕：旧词向上淡出，新词从下方 6pt 升入。积极、信息清晰，从不责备用户。"
         ),
         implementation: L(
-            "A score derived from simple character-class checks drives per-segment scaleEffect(x:anchor: .leading) with staggered animation(_:value:), a shared color, and contentTransition(.symbolEffect(.replace)) on the rule icons.",
-            "由字符类别检查得出分数，驱动每段的 scaleEffect(x:anchor: .leading) 与错峰 animation(_:value:)、统一颜色，以及规则图标的 contentTransition(.symbolEffect(.replace))。"
+            "The score and the previous score are stored together on each edit, so every segment's scaleEffect(x:anchor: .leading) delay can be ordered by direction; the colour sits under its own undelayed animation, the label uses an asymmetric transition, and rule icons use contentTransition(.symbolEffect(.replace)).",
+            "每次输入同时记录新旧分数，据此按方向计算每段 scaleEffect(x:anchor: .leading) 的错峰延迟；颜色使用单独的无延迟动画，强度文字使用非对称转场，规则图标使用 contentTransition(.symbolEffect(.replace))。"
         ),
         apis: ["SecureField", "scaleEffect(x:anchor:)", "contentTransition(.symbolEffect(.replace))", "animation(_:value:)"],
         tags: ["password", "strength", "meter", "validation", "密码", "强度", "校验", "表单"],
         params: [
             .slider("stagger", L("Segment stagger", "分段错峰"), 0...0.15, default: 0.04, unit: "s"),
+            .slider("response", L("Segment spring response", "分段弹簧响应"), 0.2...0.8, default: 0.4, unit: "s"),
             .toggle("mask", L("Mask input", "隐藏输入"), default: false),
         ]
     ) { ctx in
@@ -30,10 +31,15 @@ private struct InputPasswordStrengthDemo: View {
     let ctx: DemoContext
     @State private var password = ""
     @State private var step = 0
+    /// Stored (with the previous value) so the meter knows which way to stagger.
+    @State private var score = 0
+    @State private var previousScore = 0
 
     private static let samples = ["", "moon", "moonlight", "Moonlight7", "Moonlight7!"]
 
-    private var rules: [(LocalizedText, Bool)] {
+    private var rules: [(LocalizedText, Bool)] { Self.rules(for: password) }
+
+    private static func rules(for password: String) -> [(LocalizedText, Bool)] {
         [
             (L("8+ characters", "至少 8 位"), password.count >= 8),
             (L("Uppercase letter", "包含大写字母"), password.contains(where: \.isUppercase)),
@@ -42,9 +48,9 @@ private struct InputPasswordStrengthDemo: View {
         ]
     }
 
-    private var score: Int {
+    private static func score(for password: String) -> Int {
         guard !password.isEmpty else { return 0 }
-        return max(1, rules.filter { $0.1 }.count)
+        return max(1, rules(for: password).filter { $0.1 }.count)
     }
 
     var body: some View {
@@ -52,7 +58,13 @@ private struct InputPasswordStrengthDemo: View {
             Spacer()
             VStack(alignment: .leading, spacing: 16) {
                 field
-                InputStrengthMeter(score: score, stagger: ctx["stagger"], language: ctx.language)
+                InputStrengthMeter(
+                    score: score,
+                    previousScore: previousScore,
+                    stagger: ctx["stagger"],
+                    response: ctx["response"],
+                    language: ctx.language
+                )
                 checklist
             }
             .padding(20)
@@ -61,6 +73,12 @@ private struct InputPasswordStrengthDemo: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: password) { _, newValue in
+            let next = Self.score(for: newValue)
+            guard next != score else { return }
+            previousScore = score
+            score = next
+        }
         .autoplay(ctx.isPreview, every: 1.1, delay: 0.4) { previewTick() }
     }
 
@@ -109,12 +127,14 @@ private struct InputPasswordStrengthDemo: View {
 
 private struct InputStrengthMeter: View {
     let score: Int
+    let previousScore: Int
     let stagger: Double
+    let response: Double
     let language: AppLanguage
 
     private var color: Color {
         switch score {
-        case 1: return Palette.red
+        case 0, 1: return Palette.red
         case 2: return Palette.coral
         case 3: return Palette.amber
         default: return Palette.green
@@ -144,10 +164,23 @@ private struct InputStrengthMeter: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(score == 0 ? Color.secondary : color)
                     .id(score)
-                    .transition(.opacity.combined(with: .offset(y: 6)))
+                    .transition(
+                        .asymmetric(
+                            insertion: .opacity.combined(with: .offset(y: 6)),
+                            removal: .opacity.combined(with: .offset(y: -6))
+                        )
+                    )
             }
             .animation(.easeOut(duration: 0.25), value: score)
         }
+    }
+
+    /// Rising: only newly earned segments stagger, left to right. Falling: retract right to left.
+    private func delay(for index: Int) -> Double {
+        if score >= previousScore {
+            return index >= previousScore ? Double(index - previousScore) * stagger : 0
+        }
+        return index < previousScore ? Double(previousScore - 1 - index) * stagger : 0
     }
 
     private func segment(_ index: Int) -> some View {
@@ -156,9 +189,11 @@ private struct InputStrengthMeter: View {
             Capsule().fill(Color.primary.opacity(0.08))
             Capsule()
                 .fill(color)
+                // Colour shifts together, immediately (inner animation wins for the fill).
+                .animation(.easeOut(duration: 0.2), value: score)
                 .scaleEffect(x: filled ? 1 : 0.001, anchor: .leading)
                 .opacity(filled ? 1 : 0)
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.75).delay(Double(index) * stagger), value: score)
+        .animation(.spring(response: response, dampingFraction: 0.75).delay(delay(for: index)), value: score)
     }
 }

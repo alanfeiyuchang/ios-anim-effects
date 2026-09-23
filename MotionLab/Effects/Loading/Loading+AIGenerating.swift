@@ -11,8 +11,8 @@ extension Effect {
             "光谱描边绕卡片旋转、流光占位行表示“正在撰写”，随后化为正文。"
         ),
         prompt: L(
-            "A 290 pt reply card with 24 pt continuous corners. While the model is thinking, a 2 pt angular-gradient border (sky → violet → pink → amber → mint) rotates around the card once every 3 s, and a blurred 5 pt copy of it glows softly outside the edge. Inside, a pulsing sparkle badge sits beside 'Writing a reply…', and four skeleton lines carry a violet-to-pink sheen that sweeps left to right every 1.6 s. When the text is ready, the border and glow fade out over 0.4 s as the card settles on a spring (response 0.55 s, damping 0.85): the lines dissolve, the paragraph rises 6 pt out of an 8 pt blur, the title cross-fades to 'Draft ready', a green check pops in and a success haptic fires. Magical but restrained.",
-            "一张 290 pt 宽、24 pt 连续圆角的回复卡片。模型思考时，一条 2 pt 的角向渐变描边（天蓝 → 紫罗兰 → 粉 → 琥珀 → 薄荷绿）每 3 秒绕卡片旋转一圈，其 5 pt 的模糊副本在边缘外晕出柔光。卡片内，脉动的星光徽标旁写着“正在撰写回复…”，四条骨架行上有一道紫到粉的流光每 1.6 秒自左向右扫过。文字就绪时，描边与辉光在 0.4 秒内淡去，卡片以弹簧（响应 0.55 秒、阻尼 0.85）落定：骨架行消散，正文从 8 pt 模糊中上浮 6 pt 显现，标题交叉淡变为“草稿已生成”，绿色对勾弹出，并伴随成功触感。神奇，却克制。"
+            "A 290 pt reply card with 24 pt continuous corners. While the model is thinking, a 2 pt angular-gradient border (sky → violet → pink → amber → mint) rotates around the card once every 3 s, and a blurred 5 pt copy of it glows softly outside the edge. Inside, a pulsing sparkle badge sits beside 'Writing a reply…', and four skeleton lines carry a violet-to-pink sheen that sweeps left to right every 1.6 s. When the text is ready, the border, glow and skeleton lines fade out on a 0.4 s ease-out while the content settles on a spring (response 0.55 s, damping 0.85): the paragraph rises 6 pt out of an 8 pt blur, the title cross-fades to 'Draft ready', a green check pops in and a success haptic fires. Magical but restrained.",
+            "一张 290 pt 宽、24 pt 连续圆角的回复卡片。模型思考时，一条 2 pt 的角向渐变描边（天蓝 → 紫罗兰 → 粉 → 琥珀 → 薄荷绿）每 3 秒绕卡片旋转一圈，其 5 pt 的模糊副本在边缘外晕出柔光。卡片内，脉动的星光徽标旁写着“正在撰写回复…”，四条骨架行上有一道紫到粉的流光每 1.6 秒自左向右扫过。文字就绪时，描边、辉光与骨架行以 0.4 秒缓出淡去，内容则以弹簧（响应 0.55 秒、阻尼 0.85）落定：正文从 8 pt 模糊中上浮 6 pt 显现，标题交叉淡变为“草稿已生成”，绿色对勾弹出，并伴随成功触感。神奇，却克制。"
         ),
         implementation: L(
             "A TimelineView rotates an AngularGradient used as strokeBorder (plus a blurred copy in the background for the glow); skeleton lines are masked by a moving LinearGradient; a task(id:) toggles between thinking and done.",
@@ -73,6 +73,7 @@ private struct AIWritingCard: View {
             ZStack(alignment: .topLeading) {
                 AIShimmerLines()
                     .opacity(done ? 0 : 1)
+                    .animation(.easeOut(duration: 0.4), value: done)
                 Text(language == .zh
                      ? "谢谢更新！周四上午十点可以。我会带上新的动效规范，我们一起过一遍转场细节。"
                      : "Thanks for the update — Thursday at 10 works. I'll bring the new motion specs so we can walk through the transitions together.")
@@ -92,11 +93,14 @@ private struct AIWritingCard: View {
         .overlay {
             AISpectralBorder(period: period, lineWidth: 2)
                 .opacity(done ? 0 : 1)
+                // The border and glow fade on their own 0.4 s ease-out, independent of the card's spring.
+                .animation(.easeOut(duration: 0.4), value: done)
         }
         .background {
             AISpectralBorder(period: period, lineWidth: 5)
                 .blur(radius: glow)
                 .opacity(done ? 0 : 0.85)
+                .animation(.easeOut(duration: 0.4), value: done)
         }
         .shadow(color: .black.opacity(0.08), radius: 16, y: 8)
     }

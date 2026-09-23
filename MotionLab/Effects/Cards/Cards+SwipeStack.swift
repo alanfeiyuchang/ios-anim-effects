@@ -8,8 +8,8 @@ extension Effect {
         name: L("Swipe Deck", "左右滑卡"),
         summary: L("A Tinder-style stack: fling cards left or right with rotation and stamps.", "探探式卡片堆：左右甩出卡片，带旋转与印章反馈。"),
         prompt: L(
-            "A deck of profile cards (200×250 pt, 26 pt corners) is stacked with the ones behind stepping down to 94% and 88% scale, each 14 pt lower. The top card follows the finger 1:1 and rotates around its bottom edge proportionally to horizontal travel (≈14° at full swing); a green LIKE or red NOPE stamp fades in on the leading corner as it crosses the threshold, while the round action buttons beneath swell up to 118%. Meanwhile the cards behind interpolate forward into the next slot. Releasing past ~110 pt — or flicking with enough velocity — throws the card off-screen along its trajectory with a quick spring (≈0.4 s) and a haptic; otherwise it snaps back with a bouncy spring (response 0.45 s, damping 0.62). Playful, decisive and physical.",
-            "一叠人物卡片（200×250 pt，26 pt 圆角）层叠摆放，后方卡片依次缩至 94%、88%，并各下移 14 pt。顶部卡片 1:1 跟手，同时以底边为轴按水平位移比例旋转（满幅约 14°）；越过阈值时左上角淡入绿色「喜欢」或右上角淡入红色「无感」印章，下方圆形操作按钮同步放大到 118%，后方卡片则平滑前移补位。松手时若位移超过约 110 pt 或甩动速度足够，卡片沿轨迹以快速弹簧（约 0.4 秒）飞出屏幕并伴随触感反馈；否则以弹性弹簧（响应 0.45 秒、阻尼 0.62）回弹归位。俏皮、果断且富有物理感。"
+            "A deck of profile cards (200×250 pt, 26 pt corners) is stacked with the ones behind stepping down to 94% and 88% scale, each 22 pt lower so their bottom edges clearly read as a deck. The top card follows the finger 1:1 and rotates around its bottom edge proportionally to horizontal travel (≈14° at full swing); a green LIKE or red NOPE stamp fades in on the leading corner between 60% and 100% of the threshold, so it is fully inked exactly when a release would commit, while the round action buttons beneath swell up to 118%. Meanwhile the cards behind interpolate forward into the next slot. Releasing past ~110 pt — or flicking with enough velocity — throws the card off-screen along its trajectory with a quick spring (≈0.4 s) and a haptic; otherwise it snaps back to centre with a bouncy spring (response 0.45 s, damping ≈0.62). Playful, decisive and physical.",
+            "一叠人物卡片（200×250 pt，26 pt 圆角）层叠摆放，后方卡片依次缩至 94%、88%，并各下移 22 pt，底边清晰错落，一眼可见是一叠卡片。顶部卡片 1:1 跟手，同时以底边为轴按水平位移比例旋转（满幅约 14°）；拖动到阈值的 60%–100% 之间时，左上角的绿色「喜欢」或右上角的红色「无感」印章逐渐淡入，恰好在松手即可甩出时完全显现，下方圆形操作按钮同步放大到 118%，后方卡片则平滑前移补位。松手时若位移超过约 110 pt 或甩动速度足够，卡片沿轨迹以快速弹簧（约 0.4 秒）飞出屏幕并伴随触感反馈；否则以弹性弹簧（响应 0.45 秒、阻尼约 0.62）回弹归位。俏皮、果断且富有物理感。"
         ),
         implementation: L(
             "The top card's drag offset drives offset + rotationEffect(anchor: .bottom) and the stamp opacities; the drag progress also interpolates the depth of the cards behind. A flung card is recycled to the back without animation.",
@@ -21,6 +21,7 @@ extension Effect {
             .slider("threshold", L("Swipe threshold", "甩出阈值"), 60...180, default: 110, step: 5, decimals: 0, unit: "pt"),
             .slider("rotation", L("Max rotation", "最大旋转"), 0...30, default: 14, step: 1, decimals: 0, unit: "°"),
             .slider("response", L("Throw response", "甩出响应"), 0.2...0.8, default: 0.4, unit: "s"),
+            .slider("snap", L("Snap-back damping", "回弹阻尼"), 0.4...1.0, default: 0.62),
         ]
     ) { ctx in
         CardsSwipeDemo(ctx: ctx)
@@ -57,7 +58,7 @@ private struct CardsSwipeDemo: View {
                     card(id: id, progress: progress, threshold: threshold)
                 }
             }
-            .frame(height: 262)
+            .frame(height: 300, alignment: .top)
             HStack(spacing: 36) {
                 actionButton("xmark", color: Palette.red, amount: offset.width < 0 ? progress : 0) { fling(direction: -1) }
                 actionButton("heart.fill", color: Palette.green, amount: offset.width > 0 ? progress : 0) { fling(direction: 1) }
@@ -80,7 +81,7 @@ private struct CardsSwipeDemo: View {
             language: ctx.language
         )
         .scaleEffect(isTop ? 1 : 1 - slot * 0.06)
-        .offset(y: isTop ? 0 : slot * 14)
+        .offset(y: isTop ? 0 : slot * 22)
         .rotationEffect(.degrees(rotation), anchor: .bottom)
         .offset(isTop ? offset : .zero)
         .opacity(appear)
@@ -114,7 +115,7 @@ private struct CardsSwipeDemo: View {
                 if abs(value.translation.width) > threshold || abs(predicted) > threshold * 2 {
                     fling(direction: predicted >= 0 ? 1 : -1)
                 } else {
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.62)) {
+                    withAnimation(.spring(response: 0.45, dampingFraction: ctx["snap"])) {
                         offset = .zero
                     }
                 }
@@ -172,16 +173,21 @@ private struct CardsSwipeCard: View {
         .frame(width: 200, height: 250)
         .overlay(alignment: .topLeading) {
             stamp(L("LIKE", "喜欢"), color: Palette.green, angle: -14)
-                .opacity(Double(min(max(like, 0) * 1.3, 1)))
+                .opacity(stampOpacity(like))
                 .padding(18)
         }
         .overlay(alignment: .topTrailing) {
             stamp(L("NOPE", "无感"), color: Palette.red, angle: 14)
-                .opacity(Double(min(max(-like, 0) * 1.3, 1)))
+                .opacity(stampOpacity(-like))
                 .padding(18)
         }
         .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         .shadow(color: .black.opacity(0.16), radius: 14, y: 8)
+    }
+
+    /// Fades the stamp in between 60% and 100% of the swipe threshold.
+    private func stampOpacity(_ amount: CGFloat) -> Double {
+        Double(((amount - 0.6) / 0.4).clamped(to: 0...1))
     }
 
     private var info: some View {

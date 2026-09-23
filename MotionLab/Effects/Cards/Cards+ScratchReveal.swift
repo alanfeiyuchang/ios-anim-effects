@@ -8,14 +8,14 @@ extension Effect {
         name: L("Scratch Card", "刮刮卡"),
         summary: L("Scratch a metallic foil off a reward card; past a threshold it clears itself.", "用手指刮开奖励卡上的金属涂层，超过阈值后自动揭晓。"),
         prompt: L(
-            "A 280×170 pt reward card hides its prize under a brushed-metal foil with a fine diagonal pinstripe and an embossed “Scratch here” label. The finger erases the foil along its path with a round brush (~30 pt), leaving soft-edged strokes and a light selection tick every few new cells. Coverage is sampled on a coarse grid; once ~55% is gone, the remaining foil dissolves in 350 ms while scaling up 4%, and the prize beneath — a bold gradient amount with sparkles — springs from 92% to 100% (response 0.45 s, damping 0.6) with a success haptic. Tactile, suspenseful and rewarding.",
-            "一张 280×170 pt 的奖励卡，奖品藏在带细斜纹拉丝质感、压印「刮开此处」字样的金属涂层下。手指沿轨迹以约 30 pt 的圆形笔刷擦除涂层，边缘柔和，每刮开若干新区域便有一次轻微的选择触感。系统在粗网格上统计刮开比例；超过约 55% 后，剩余涂层在 350 毫秒内放大 4% 并消散，下方的奖品——渐变大字金额与闪光——以弹簧（响应 0.45 秒、阻尼 0.6）从 92% 弹到 100%，伴随成功触感。有手感、有悬念、有回报。"
+            "A 280×170 pt reward card hides its prize under a brushed-metal foil with a fine diagonal pinstripe and an embossed “Scratch here” label. The finger erases the foil along its path with a round brush (~30 pt) whose edge is feathered by a ~6 pt blur, leaving soft, powdery strokes and a light selection tick every few new cells. Coverage is sampled on a coarse grid; once ~55% is gone, the remaining foil dissolves in 350 ms while scaling up 4%, and the prize beneath — a bold gradient amount with sparkles — springs from 92% to 100% (response 0.45 s, damping 0.6) with a success haptic. Tactile, suspenseful and rewarding.",
+            "一张 280×170 pt 的奖励卡，奖品藏在带细斜纹拉丝质感、压印「刮开此处」字样的金属涂层下。手指沿轨迹以约 30 pt 的圆形笔刷擦除涂层，笔刷边缘经约 6 pt 模糊羽化，留下柔和如粉末般的刮痕，每刮开若干新区域便有一次轻微的选择触感。系统在粗网格上统计刮开比例；超过约 55% 后，剩余涂层在 350 毫秒内放大 4% 并消散，下方的奖品——渐变大字金额与闪光——以弹簧（响应 0.45 秒、阻尼 0.6）从 92% 弹到 100%，伴随成功触感。有手感、有悬念、有回报。"
         ),
         implementation: L(
-            "The foil is masked by a Canvas that fills its rect and then strokes the recorded drag paths with blendMode .destinationOut; a Set of touched grid cells estimates coverage and triggers the reveal animation.",
-            "涂层以 Canvas 作为遮罩：先填满矩形，再以 .destinationOut 混合模式描绘记录下的拖动路径；用被触及网格单元的 Set 估算刮开比例并触发揭晓动画。"
+            "The foil is masked by a Canvas that fills its rect, then adds a blur filter (≈20% of the brush) and strokes the recorded drag paths with blendMode .destinationOut for feathered edges; a Set of touched grid cells estimates coverage and triggers the reveal animation.",
+            "涂层以 Canvas 作为遮罩：先填满矩形，再添加约为笔刷 20% 的模糊滤镜，以 .destinationOut 混合模式描绘记录下的拖动路径，使边缘羽化；用被触及网格单元的 Set 估算刮开比例并触发揭晓动画。"
         ),
-        apis: ["Canvas", "GraphicsContext.blendMode", "mask(alignment:_:)", "DragGesture", "sensoryFeedback"],
+        apis: ["Canvas", "GraphicsContext.blendMode", "GraphicsContext.addFilter(.blur)", "mask(alignment:_:)", "DragGesture"],
         tags: ["scratch", "reveal", "reward", "lottery", "mask", "刮刮卡", "刮开", "奖励", "遮罩"],
         params: [
             .slider("brush", L("Brush size", "笔刷大小"), 14...56, default: 30, step: 1, decimals: 0, unit: "pt"),
@@ -63,6 +63,9 @@ private struct CardsScratchDemo: View {
                 .mask {
                     Canvas { context, size in
                         context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
+                        // Feather the brush: everything drawn after this is blurred, so strokes
+                        // erase with soft, powdery edges instead of hard vector outlines.
+                        context.addFilter(.blur(radius: ctx.cg("brush") * 0.2))
                         context.blendMode = .destinationOut
                         let style = StrokeStyle(lineWidth: ctx.cg("brush"), lineCap: .round, lineJoin: .round)
                         for stroke in strokes {

@@ -30,22 +30,27 @@ struct EffectDetailView: View {
     }
 
     var body: some View {
+        // Built once per body pass and shared by the share button, the prompt card and the copy action.
+        let fullPrompt = effect.fullPrompt(language, params: params)
         ScrollViewReader { reader in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     header
                     VStack(spacing: 10) {
-                        stage
+                        stage(fullPrompt: fullPrompt)
                         stageControls
                     }
                     if !effect.params.isEmpty { parameters }
-                    promptCard.id("prompt")
+                    promptCard(fullPrompt).id("prompt")
                     implementationCard
                     if !effect.tags.isEmpty { tagsCard }
                     relatedCard
                 }
                 .padding()
                 .padding(.bottom, 24)
+                // Comfortable reading width on iPad; centred.
+                .frame(maxWidth: 700)
+                .frame(maxWidth: .infinity)
             }
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y + geometry.contentInsets.top > 72
@@ -58,7 +63,7 @@ struct EffectDetailView: View {
                 }
             }
         }
-        .background(Color(uiColor: .systemGroupedBackground))
+        .background(Palette.pageBackground)
         .navigationTitle(effect.name(language))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -70,7 +75,7 @@ struct EffectDetailView: View {
                     .accessibilityHidden(!showsNavTitle)
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
-                ShareLink(item: effect.fullPrompt(language, params: params)) {
+                ShareLink(item: fullPrompt) {
                     Image(systemName: "square.and.arrow.up")
                 }
                 .accessibilityLabel(Text(Strings.sharePrompt, language))
@@ -79,7 +84,7 @@ struct EffectDetailView: View {
                     Haptics.tap(.medium)
                 } label: {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
-                        .foregroundStyle(isFavorite ? Palette.pink : Color.accentColor)
+                        .foregroundStyle(isFavorite ? Palette.pink : Palette.accent)
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .accessibilityLabel(Text(isFavorite ? Strings.removeFavorite : Strings.addFavorite, language))
@@ -98,23 +103,39 @@ struct EffectDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             FlowLayout(spacing: 8) {
                 NavigationLink(value: Route.category(effect.category)) {
-                    Label(effect.category.title(language), systemImage: effect.category.symbol)
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .foregroundStyle(.white)
-                        .background(LinearGradient(colors: effect.category.gradient, startPoint: .leading, endPoint: .trailing), in: Capsule())
-                }
-                .buttonStyle(PressableCardStyle())
-                .accessibilityHint(Text(Strings.openCategory, language))
-                Label(effect.interaction.title(language), systemImage: effect.interaction.symbol)
+                    Label {
+                        Text(effect.category.title, language)
+                            .foregroundStyle(.primary)
+                    } icon: {
+                        Image(systemName: effect.category.symbol)
+                            .foregroundStyle(LinearGradient(colors: effect.category.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                    }
                     .font(.caption.weight(.semibold))
                     .lineLimit(1)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
-                    .foregroundStyle(.secondary)
+                    .background((effect.category.gradient.first ?? Palette.indigo).opacity(0.16), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Palette.stroke))
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(PressableCardStyle())
+                .accessibilityHint(Text(Strings.openCategory, language))
+                Button {
+                    Haptics.selection()
+                    navigator.search(interaction: effect.interaction)
+                } label: {
+                    Label(effect.interaction.title(language), systemImage: effect.interaction.symbol)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .foregroundStyle(.secondary)
+                        .background(Palette.chipOnPage, in: Capsule())
+                        .overlay(Capsule().strokeBorder(Palette.stroke))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(PressableCardStyle())
+                .accessibilityHint(Text(Strings.showInteraction, language))
                 if let requirement = effect.requirement {
                     Text(verbatim: "\(Strings.requires(language)) \(requirement)")
                         .font(.caption.weight(.semibold))
@@ -122,7 +143,7 @@ struct EffectDetailView: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .background(Palette.violet.opacity(0.15), in: Capsule())
-                        .foregroundStyle(Palette.violet)
+                        .foregroundStyle(Palette.violetText)
                 }
             }
             Text(effect.name, language)
@@ -134,42 +155,39 @@ struct EffectDetailView: View {
         }
     }
 
-    private var stage: some View {
+    /// The live demo. Each demo draws its own specific instruction (`DemoHint`) inside the stage.
+    private func stage(fullPrompt: String) -> some View {
         effect.makeDemo(DemoContext(params: params, isPreview: false, language: language))
+            // Tap-driven demos play once on arrival (and again after Reset, which rebuilds the view).
+            .environment(\.demoIntroPlay, true)
             .id(resetToken)
             .frame(maxWidth: .infinity)
             .frame(height: StageMetrics.detailHeight)
             .background(StageBackground())
-            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous).strokeBorder(Palette.stroke))
-            .accessibilityElement(children: .contain)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.stage, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: CornerRadius.stage, style: .continuous).strokeBorder(Palette.stroke))
+            .shadow(color: .black.opacity(0.05), radius: 14, y: 6)
+            // One VoiceOver stop: "<name>, <summary>", the interaction type as the hint, and
+            // Reset / Copy Prompt as custom actions. Double-tap still reaches the demo's own control.
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(verbatim: "\(effect.name(language)), \(effect.summary(language))"))
+            .accessibilityHint(Text(verbatim: "\(Strings.interactionFilter(language)): \(effect.interaction.title(language))"))
+            .accessibilityAction(named: Text(Strings.reset, language)) { resetDemo() }
+            .accessibilityAction(named: Text(Strings.copyPrompt, language)) { copyPrompt(fullPrompt) }
     }
 
     /// Sits under the stage so it never collides with demo content.
     private var stageControls: some View {
-        HStack(spacing: 10) {
-            Label {
-                Text(effect.interaction.hint, language)
-            } icon: {
-                Image(systemName: effect.interaction.symbol)
-                    .foregroundStyle(Palette.indigo)
-            }
-            .font(.footnote.weight(.medium))
-            .foregroundStyle(.secondary)
-            .lineLimit(2)
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Button {
-                resetToken += 1
-                Haptics.tap()
-            } label: {
+        HStack {
+            Spacer(minLength: 0)
+            Button(action: resetDemo) {
                 Label(Strings.reset(language), systemImage: "arrow.counterclockwise")
                     .font(.footnote.weight(.semibold))
                     .lineLimit(1)
                     .symbolEffect(.bounce, value: resetToken)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
-                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
+                    .background(Palette.chipOnPage, in: Capsule())
                     .overlay(Capsule().strokeBorder(Palette.stroke))
                     .contentShape(Capsule())
             }
@@ -200,13 +218,13 @@ struct EffectDetailView: View {
         }
     }
 
-    private var promptCard: some View {
+    private func promptCard(_ fullPrompt: String) -> some View {
         DetailSection(title: Strings.prompt(language), symbol: "text.quote") {
             VStack(alignment: .leading, spacing: 12) {
                 Text(Strings.promptHint, language)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(effect.fullPrompt(language, params: params))
+                Text(verbatim: fullPrompt)
                     .font(.callout)
                     .lineSpacing(3)
                     .textSelection(.enabled)
@@ -217,7 +235,9 @@ struct EffectDetailView: View {
                     .overlay(alignment: .leading) {
                         Capsule().fill(Palette.primary).frame(width: 3).padding(.vertical, 10)
                     }
-                Button(action: copyPrompt) {
+                Button {
+                    copyPrompt(fullPrompt)
+                } label: {
                     Label(copied ? Strings.copied(language) : Strings.copyPrompt(language),
                           systemImage: copied ? "checkmark" : "doc.on.doc")
                         .contentTransition(.symbolEffect(.replace))
@@ -225,8 +245,8 @@ struct EffectDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .foregroundStyle(.white)
-                        .background(copied ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Palette.primary),
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(copied ? AnyShapeStyle(Palette.successStrong) : AnyShapeStyle(Palette.primaryStrong),
+                                    in: RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
                 }
                 .buttonStyle(PressableCardStyle())
             }
@@ -277,7 +297,7 @@ struct EffectDetailView: View {
             DetailSection(title: Strings.moreInCategory(language), symbol: effect.category.symbol) {
                 VStack(spacing: 8) {
                     ForEach(items) { item in
-                        EffectLink(effect: item) {
+                        EffectLink(effect: item, source: "related") {
                             RelatedEffectRow(effect: item)
                         }
                     }
@@ -299,8 +319,13 @@ struct EffectDetailView: View {
 
     // MARK: Actions
 
-    private func copyPrompt() {
-        UIPasteboard.general.string = effect.fullPrompt(language, params: params)
+    private func resetDemo() {
+        resetToken += 1
+        Haptics.tap()
+    }
+
+    private func copyPrompt(_ fullPrompt: String) {
+        UIPasteboard.general.string = fullPrompt
         Haptics.success()
         UIAccessibility.post(notification: .announcement, argument: Strings.promptCopied(language))
         withAnimation(.snappy) { copied = true }
@@ -351,7 +376,7 @@ private struct RelatedEffectRow: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(uiColor: .tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Palette.chipOnCard, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
@@ -366,7 +391,7 @@ private struct DetailSection<Content: View>: View {
             HStack(spacing: 10) {
                 Image(systemName: symbol)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Palette.indigo)
+                    .foregroundStyle(Palette.accent)
                     .frame(width: 30, height: 30)
                     .background(Palette.indigo.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                     .accessibilityHidden(true)
@@ -379,7 +404,7 @@ private struct DetailSection<Content: View>: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.section, style: .continuous))
     }
 }
 

@@ -11,8 +11,8 @@ extension Effect {
             "可拖拽的底部面板，在收起、半屏与全屏间吸附，两端带橡皮筋阻尼。"
         ),
         prompt: L(
-            "A Maps-style bottom sheet over a map canvas, with a grabber and three detents: peek (~22% of the screen), half (~52%) and full (~92%). The sheet follows the finger 1:1; on release it projects the gesture's momentum and snaps to the nearest detent on a spring (response ≈0.42 s, damping ≈0.82), so a quick flick can skip a detent. Dragging past the top or bottom detent rubber-bands with increasing resistance (UIScrollView-style, ~40 pt limit). As the sheet rises past half, the map behind dims up to 30% and recedes to 94% scale while the sheet's top corners tighten from 28 to 18 pt. Each detent landing triggers a light haptic.",
-            "类似「地图」的底部面板覆盖在地图画布之上，顶部有抓手，并有三个档位：收起（约 22% 屏高）、半屏（约 52%）与全屏（约 92%）。面板 1:1 跟随手指；松手时根据手势动量预测落点，并以弹簧（响应约 0.42 秒、阻尼约 0.82）吸附到最近的档位，快速甩动可以跳过一个档位。超出最高或最低档位继续拖拽时，会像 UIScrollView 一样出现逐渐增强的橡皮筋阻尼（上限约 40pt）。面板升过半屏后，背后的地图最多变暗 30% 并缩小到 94%，面板顶部圆角从 28pt 收紧到 18pt。每次落到档位都伴随轻触觉。"
+            "A Maps-style bottom sheet over a map canvas, with a grabber and three detents: peek (~30% of the screen, tall enough to show the title and a full first row), half (~55%) and full (~92%). The sheet follows the finger 1:1; on release it projects the gesture's momentum and snaps to the nearest detent on a spring (response ≈0.42 s, damping ≈0.82), so a quick flick can skip a detent. Dragging past the top or bottom detent rubber-bands with increasing resistance (UIScrollView-style, ~40 pt limit). As the sheet rises past half, the map behind dims up to 30% and recedes to 94% scale while the sheet's top corners tighten from 28 to 18 pt. Landing on a new detent triggers a light haptic; springing back to the same detent stays silent.",
+            "类似「地图」的底部面板覆盖在地图画布之上，顶部有抓手，并有三个档位：收起（约 30% 屏高，足以露出标题与完整的第一行）、半屏（约 55%）与全屏（约 92%）。面板 1:1 跟随手指；松手时根据手势动量预测落点，并以弹簧（响应约 0.42 秒、阻尼约 0.82）吸附到最近的档位，快速甩动可以跳过一个档位。超出最高或最低档位继续拖拽时，会像 UIScrollView 一样出现逐渐增强的橡皮筋阻尼（上限约 40pt）。面板升过半屏后，背后的地图最多变暗 30% 并缩小到 94%，面板顶部圆角从 28pt 收紧到 18pt。落到新的档位时伴随轻触觉；回弹到原档位则保持安静。"
         ),
         implementation: L(
             "Detent heights derive from the measured stage height; a DragGesture offsets the sheet with rubberBand() beyond the extremes and uses predictedEndTranslation to choose the target detent. An UnevenRoundedRectangle shapes the sheet.",
@@ -30,7 +30,7 @@ extension Effect {
     }
 }
 
-private let sheetDetents: [CGFloat] = [0.22, 0.52, 0.92]
+private let sheetDetents: [CGFloat] = [0.30, 0.55, 0.92]
 
 private struct BottomSheetDemo: View {
     let ctx: DemoContext
@@ -74,8 +74,16 @@ private struct BottomSheetDemo: View {
                 sheet
                     .offset(y: stageHeight - currentHeight)
             }
+            .overlay(alignment: .top) {
+                DemoHint(text: L("Drag or flick the sheet", "拖动或轻甩面板"), ctx: ctx)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.thinMaterial, in: Capsule())
+                    .padding(.top, 14)
+                    .opacity(ctx.isPreview ? 0 : 1 - Double(lift))
+            }
             .clipped()
-        .autoplay(ctx.isPreview, every: 1.5) {
+            .autoplay(ctx.isPreview, every: 1.5) {
             let order = [1, 2, 1, 0]
             snap(to: order[autoStep % order.count])
             autoStep += 1
@@ -130,7 +138,8 @@ private struct BottomSheetDemo: View {
     }
 
     private func snap(to index: Int) {
-        if !ctx.isPreview { Haptics.tap(.light) }
+        // Only a new detent clicks; springing back to where it was stays silent.
+        if index != detent && !ctx.isPreview { Haptics.tap(.light) }
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             detent = index
             drag = 0

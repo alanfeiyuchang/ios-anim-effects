@@ -109,13 +109,15 @@ struct EffectSearchEntry {
     init(effect: Effect, order: Int) {
         self.effect = effect
         self.order = order
-        names = [effect.name.en.lowercased(), effect.name.zh.lowercased()]
-        nameWords = names.flatMap(Self.words)
+        let names = [effect.name.en.lowercased(), effect.name.zh.lowercased()]
+        self.names = names
+        nameWords = names.flatMap { Self.words($0) }
         tags = effect.tags.map { $0.lowercased() }
         // ".symbolEffect" / "@Observable" should match "symbol…" / "observ…" as a prefix too.
         apis = effect.apis.map { $0.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".@#")) }
         facets = [effect.id, effect.category.title.all, effect.interaction.title.all].joined(separator: " ").lowercased()
-        summary = effect.summary.all.lowercased()
+        let summary = effect.summary.all.lowercased()
+        self.summary = summary
         summaryWords = Self.words(summary)
         implementation = effect.implementation.all.lowercased()
     }

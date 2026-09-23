@@ -8,12 +8,12 @@ extension Effect {
         name: L("Holographic Foil", "镭射全息卡"),
         summary: L("A collectible card whose rainbow foil shifts and sparkles as you tilt it.", "收藏卡片的彩虹镭射箔随倾斜流动、闪烁。"),
         prompt: L(
-            "A dark collectible trading card (190×264 pt, 16 pt corners) with a glowing emblem is covered by a holographic foil layer: a rainbow angular gradient visible through diagonal bands, composited in screen blend. Dragging tilts the card up to ~12° in perspective, and the foil responds continuously — the gradient's center slides with the finger and its hue angle turns up to ±120° with horizontal travel (±60° vertically), while the bands drift sideways — so colors sweep across the surface like real prismatic foil. A narrow white specular sheen travels diagonally in plus-lighter blend, scattered sparkle glyphs twinkle out of phase, and a violet under-glow shifts opposite the tilt. Release eases everything back on a soft spring (≈0.6 s). Rich, luminous, collectible.",
-            "一张深色收藏卡（190×264 pt，16 pt 圆角）中央有发光徽记，表面覆盖一层镭射箔：彩虹角向渐变透过斜向条纹显现，以滤色模式叠加。拖动时卡片以透视方式最多倾斜约 12°，镭射层实时响应——渐变中心随手指滑动，色相角随水平拖动最多旋转 ±120°（垂直方向 ±60°），条纹也横向漂移，使色彩像真实棱镜箔一样在卡面流转。一道窄白色镜面光带以加亮模式沿对角线扫过，散落的星芒错相闪烁，紫色底光朝倾斜反方向偏移。松手后所有元素以柔和弹簧（约 0.6 秒）回到原位。华丽、通透，极具收藏感。"
+            "A dark collectible trading card (190×264 pt, 16 pt corners) with a glowing emblem is covered by a holographic foil layer: a rainbow angular gradient visible through diagonal bands, composited in screen blend. Dragging tilts the card up to ~12° in perspective, and the foil responds continuously — the gradient's center slides with the finger and its hue angle turns up to ±120° with horizontal travel (±60° vertically), while the bands drift sideways — so colors sweep across the surface like real prismatic foil. A narrow white specular sheen travels diagonally in plus-lighter blend, scattered sparkle glyphs twinkle out of phase, and a violet under-glow shifts opposite the tilt. Release eases everything back on a soft spring (≈0.6 s). At rest the sparkles keep twinkling on their own clock, and until the first touch the card sways gently in a slow figure-of-eight so the foil is already alive on arrival. Rich, luminous, collectible.",
+            "一张深色收藏卡（190×264 pt，16 pt 圆角）中央有发光徽记，表面覆盖一层镭射箔：彩虹角向渐变透过斜向条纹显现，以滤色模式叠加。拖动时卡片以透视方式最多倾斜约 12°，镭射层实时响应——渐变中心随手指滑动，色相角随水平拖动最多旋转 ±120°（垂直方向 ±60°），条纹也横向漂移，使色彩像真实棱镜箔一样在卡面流转。一道窄白色镜面光带以加亮模式沿对角线扫过，散落的星芒错相闪烁，紫色底光朝倾斜反方向偏移。松手后所有元素以柔和弹簧（约 0.6 秒）回到原位。静止时星芒依旧按自身节奏闪烁；在首次触摸之前，卡片会以缓慢的 8 字轨迹轻轻摇摆，一进入页面镭射就已流动起来。华丽、通透，极具收藏感。"
         ),
         implementation: L(
-            "An AngularGradient masked by striped LinearGradient bands is blended with .screen over the card; its center/angle, a .plusLighter sheen and the rotation3DEffect tilt are all driven by the normalised drag position.",
-            "用条纹 LinearGradient 作为遮罩的 AngularGradient 以 .screen 混合在卡面上；其中心与角度、.plusLighter 光带及 rotation3DEffect 倾斜均由归一化拖动位置驱动。"
+            "An AngularGradient masked by striped LinearGradient bands is blended with .screen over the card; its center/angle, a .plusLighter sheen and the rotation3DEffect tilt are all driven by the normalised drag position; a TimelineView supplies the sparkle clock and an idle sway until the first touch.",
+            "用条纹 LinearGradient 作为遮罩的 AngularGradient 以 .screen 混合在卡面上；其中心与角度、.plusLighter 光带及 rotation3DEffect 倾斜均由归一化拖动位置驱动；TimelineView 提供星芒时钟，并在首次触摸前驱动待机摇摆。"
         ),
         apis: ["AngularGradient", "blendMode(.screen)", "mask", "rotation3DEffect", "DragGesture"],
         tags: ["holographic", "foil", "rainbow", "iridescent", "镭射", "全息", "彩虹", "闪卡"],
@@ -21,6 +21,7 @@ extension Effect {
             .slider("intensity", L("Foil intensity", "镭射强度"), 0...1, default: 0.8),
             .slider("angle", L("Max tilt", "最大倾角"), 0...25, default: 12, step: 1, decimals: 0, unit: "°"),
             .toggle("sparkle", L("Sparkles", "星芒"), default: true),
+            .slider("release", L("Release spring", "松手回弹"), 0.3...1.2, default: 0.6, unit: "s"),
         ]
     ) { ctx in
         CardsHoloDemo(ctx: ctx)
@@ -30,31 +31,43 @@ extension Effect {
 private struct CardsHoloDemo: View {
     let ctx: DemoContext
     @State private var point: CGSize = .zero
+    /// Until the first touch the card sways on its own so the foil is alive on arrival.
+    @State private var touched = false
 
     var body: some View {
         VStack(spacing: 22) {
-            if ctx.isPreview {
-                TimelineView(.animation) { timeline in
-                    let t = timeline.date.timeIntervalSinceReferenceDate
-                    CardsHoloCard(
-                        point: CGSize(width: sin(t * 0.9) * 0.9, height: sin(t * 1.4) * 0.6),
-                        intensity: ctx["intensity"],
-                        maxAngle: ctx["angle"],
-                        sparkle: ctx.bool("sparkle")
-                    )
-                }
-            } else {
-                CardsHoloCard(point: point, intensity: ctx["intensity"], maxAngle: ctx["angle"], sparkle: ctx.bool("sparkle"))
-                    .gesture(drag)
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                CardsHoloCard(
+                    point: touched ? point : sway(at: t),
+                    intensity: ctx["intensity"],
+                    maxAngle: ctx["angle"],
+                    sparkle: ctx.bool("sparkle"),
+                    // Sparkles twinkle on their own clock and speed up with the tilt.
+                    sparklePhase: t.truncatingRemainder(dividingBy: 1_000) * 0.7,
+                    language: ctx.language
+                )
             }
+            .gesture(drag)
             DemoHint(text: L("Drag to tilt the foil", "拖动让镭射流动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// Idle figure-of-eight sway (full swing in previews, gentler on the detail stage).
+    private func sway(at t: Double) -> CGSize {
+        let amount = ctx.isPreview ? 1.0 : 0.55
+        return CGSize(width: sin(t * 0.9) * 0.9 * amount, height: sin(t * 1.4) * 0.6 * amount)
+    }
+
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                if !touched {
+                    // Continue from wherever the idle sway left the card.
+                    point = sway(at: Date().timeIntervalSinceReferenceDate)
+                    touched = true
+                }
                 let size = CardsHoloCard.size
                 let x = (value.location.x / size.width - 0.5) * 2
                 let y = (value.location.y / size.height - 0.5) * 2
@@ -63,7 +76,7 @@ private struct CardsHoloDemo: View {
                 }
             }
             .onEnded { _ in
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                withAnimation(.spring(response: ctx["release"], dampingFraction: 0.7)) {
                     point = .zero
                 }
             }
@@ -84,14 +97,16 @@ private struct CardsHoloCard: View {
     let intensity: Double
     let maxAngle: Double
     let sparkle: Bool
+    let sparklePhase: Double
+    var language: AppLanguage = .en
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 16, style: .continuous) }
 
     var body: some View {
-        CardsHoloFace()
+        CardsHoloFace(language: language)
             .overlay { foil }
             .overlay { sheen }
-            .overlay { if sparkle { CardsHoloSparkles(phase: Double(point.width + point.height)) } }
+            .overlay { if sparkle { CardsHoloSparkles(phase: sparklePhase + Double(point.width + point.height)) } }
             .clipShape(shape)
             .overlay { shape.strokeBorder(Color.white.opacity(0.35), lineWidth: 1) }
             .rotation3DEffect(.degrees(-Double(point.height) * maxAngle), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
@@ -133,6 +148,8 @@ private struct CardsHoloCard: View {
 }
 
 private struct CardsHoloFace: View {
+    let language: AppLanguage
+
     var body: some View {
         VStack(spacing: 10) {
             HStack {
@@ -146,11 +163,22 @@ private struct CardsHoloFace: View {
             }
             emblem
                 .frame(maxHeight: .infinity)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(verbatim: "Voltage Sprite")
-                    .font(.system(size: 13, weight: .bold))
-                PlaceholderLines(count: 2, color: .white.opacity(0.22))
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(L("Voltage Sprite", "电光精灵"), language)
+                        .font(.system(size: 13, weight: .bold))
+                    Spacer(minLength: 0)
+                    Text(verbatim: "HP 120")
+                        .font(.system(size: 9, weight: .heavy, design: .rounded))
+                        .opacity(0.75)
+                }
+                Text(L("Surge — when fully charged, doubles its speed for one turn.", "涌动——充能完毕时，下一回合速度翻倍。"), language)
+                    .font(.system(size: 9, weight: .medium))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(0.7)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .foregroundStyle(.white)
         .padding(16)

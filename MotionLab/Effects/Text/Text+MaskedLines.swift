@@ -88,7 +88,10 @@ private struct TextMaskedLinesDemo: View {
 
     private func ruleAnimation(count: Int) -> Animation {
         if phase == .shown {
-            return .spring(response: 0.6, dampingFraction: 0.9).delay(0.28 + Double(count) * ctx["stagger"])
+            // Last line starts at 0.08 + (count − 1) × stagger and has visibly landed after
+            // ~0.8 × its spring response; the rule follows 200 ms after that.
+            let lastLineLands = 0.08 + Double(max(count - 1, 0)) * ctx["stagger"] + ctx["response"] * 0.8
+            return .spring(response: 0.6, dampingFraction: 0.9).delay(lastLineLands + 0.2)
         }
         return .easeIn(duration: 0.25)
     }

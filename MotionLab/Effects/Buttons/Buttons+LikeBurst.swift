@@ -8,12 +8,12 @@ extension Effect {
         name: L("Like Burst", "点赞爆发"),
         summary: L("The heart pops while a ring and confetti dots burst out.", "爱心弹跳的同时，冲击环与彩色粒子向外迸发。"),
         prompt: L(
-            "An outlined heart inside a soft circular chip, with a like counter below. On tap the outline swaps to a filled pink-to-coral heart with a symbol replace transition while the heart squashes to 60% in 100 ms, overshoots to 125% and settles at 100% on a bouncy spring. Simultaneously a pink shock ring expands from 40 to 150 pt while its stroke thins and fades (~450 ms), and 10 multicolored dots shoot radially to about 70 pt beyond the chip’s edge over 600 ms, shrinking to 40% as they fly and fading out after 300 ms. The counter rolls up one digit and a success haptic fires. Un-liking simply swaps back without the burst. It feels celebratory, joyful and rewarding.",
-            "柔和圆形底座中放置一个空心爱心，下方显示点赞数。点击后，空心图标以符号替换过渡变为粉到珊瑚色的实心爱心，同时爱心在 100 毫秒内压缩到 60%，再以弹性弹簧过冲到 125% 后回落至 100%。与此同时，一圈粉色冲击环从 40pt 扩散到 150pt，描边逐渐变细并淡出（约 450 毫秒）；10 颗彩色小圆点在 600 毫秒内沿径向飞到底座边缘外约 70pt，飞行中缩小到 40%，300 毫秒后开始淡出。计数向上滚动一位，并触发成功触觉。取消点赞仅切回空心、不播放爆发。整体欢快、有庆祝感，令人愉悦。"
+            "A social post card (avatar, caption, photo) whose action row holds an outlined heart in a soft 60 pt chip next to its like count. On tap the outline swaps to a filled pink-to-coral heart with a symbol replace transition while it squashes to 60% in 100 ms, overshoots to 125% and settles on a bouncy spring. At the same time a pink shock ring expands from 40 to 150 pt as its stroke thins and fades (~450 ms), and two rings of confetti burst out over 600 ms: 10 outer dots flying ~70 pt past the chip and 10 smaller inner dots at half the distance, each with a little random jitter in angle (±12°), distance (75–115%) and size, shrinking to 40% and fading after 300 ms. The count rolls up one digit with a success haptic; un-liking swaps back without the burst. Celebratory and joyful.",
+            "一张社交动态卡片（头像、配文、照片），底部操作栏里是 60pt 柔和圆形底座中的空心爱心和点赞数。点击后，空心图标以符号替换过渡变为粉到珊瑚色的实心爱心，同时在 100 毫秒内压缩到 60%，再以弹性弹簧过冲到 125% 后回落。与此同时，一圈粉色冲击环从 40pt 扩散到 150pt，描边变细并淡出（约 450 毫秒）；两圈彩色粒子在 600 毫秒内迸发：外圈 10 颗飞到底座外约 70pt，内圈 10 颗更小的粒子飞出一半距离，每颗的角度（±12°）、距离（75–115%）和大小都带少量随机抖动，飞行中缩小到 40%，300 毫秒后淡出。计数上滚一位并触发成功触觉；取消点赞仅切回空心。欢快、有庆祝感。"
         ),
         implementation: L(
-            "keyframeAnimator scales the heart on a trigger counter; a KeyframeAnimator view drives a shared progress/opacity value that positions the ring and particles; numericText animates the counter.",
-            "keyframeAnimator 以触发计数驱动爱心缩放；KeyframeAnimator 视图驱动共享的进度与透明度，用于冲击环与粒子的位置；计数使用 numericText 滚动。"
+            "keyframeAnimator scales the heart on a trigger counter; a KeyframeAnimator view drives a shared progress/opacity value that positions the ring and two particle rings, jittered by a hash of (burst, index) so every burst differs; numericText animates the counter.",
+            "keyframeAnimator 以触发计数驱动爱心缩放；KeyframeAnimator 视图驱动共享的进度与透明度，定位冲击环和内外两圈粒子，并用（爆发次数、序号）的哈希值做抖动，让每次爆发都不同；计数使用 numericText 滚动。"
         ),
         apis: ["keyframeAnimator", "KeyframeAnimator", "contentTransition(.symbolEffect(.replace))", "numericText"],
         tags: ["like", "heart", "burst", "particles", "点赞", "爱心", "粒子", "庆祝"],
@@ -40,46 +40,101 @@ private struct ButtonLikeBurstDemo: View {
     @State private var bursts = 0
 
     var body: some View {
-        let particles = ctx.int("particles")
-        let radius = ctx.cg("radius")
-        VStack(spacing: 18) {
-            Spacer()
-            ZStack {
-                KeyframeAnimator(initialValue: ButtonBurstFrame(), trigger: bursts) { frame in
-                    ButtonBurstLayer(frame: frame, count: particles, radius: radius)
-                } keyframes: { _ in
-                    KeyframeTrack(\.progress) {
-                        MoveKeyframe(0)
-                        CubicKeyframe(1, duration: 0.6)
-                    }
-                    KeyframeTrack(\.ring) {
-                        MoveKeyframe(0)
-                        CubicKeyframe(1, duration: 0.45)
-                    }
-                    KeyframeTrack(\.opacity) {
-                        MoveKeyframe(1)
-                        LinearKeyframe(1, duration: 0.3)
-                        LinearKeyframe(0, duration: 0.3)
-                    }
-                }
-                heartButton
-            }
-            .frame(width: 240, height: 240)
-            Text("\(count)")
-                .font(.title3.weight(.semibold).monospacedDigit())
-                .foregroundStyle(liked ? Palette.pink : Color.secondary)
-                .contentTransition(.numericText(value: Double(count)))
-            Spacer()
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            post
+            Spacer(minLength: 0)
+            DemoHint(text: L("Tap the heart to like the post", "点击爱心为动态点赞"), ctx: ctx)
+                .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.4, delay: 0.4) { toggle() }
+    }
+
+    private var post: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Text(verbatim: "MC")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(Palette.sunset, in: Circle())
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(verbatim: "Mia Chen")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(L("2 h · Nordkette", "2 小时前 · Nordkette"), ctx.language)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            Text(L("First powder day of the season. Who's in tomorrow?", "今季第一场粉雪，明天谁一起？"), ctx.language)
+                .font(.footnote)
+                .foregroundStyle(.primary)
+            LandscapeArt(seed: 2)
+                .frame(height: 92)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            actionRow
+        }
+        .padding(16)
+        .frame(width: 300)
+        .demoCard()
+    }
+
+    private var actionRow: some View {
+        HStack(spacing: 10) {
+            heartChip
+                .zIndex(1)
+            Text("\(count)")
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .foregroundStyle(liked ? Palette.pink : Color.secondary)
+                .contentTransition(.numericText(value: Double(count)))
+            Spacer(minLength: 0)
+            Label {
+                Text(verbatim: "24")
+            } icon: {
+                Image(systemName: "bubble.right")
+            }
+            .font(.footnote.weight(.medium).monospacedDigit())
+            .foregroundStyle(.secondary)
+            Image(systemName: "paperplane")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var heartChip: some View {
+        let particles = ctx.int("particles")
+        let radius = ctx.cg("radius")
+        return ZStack {
+            KeyframeAnimator(initialValue: ButtonBurstFrame(), trigger: bursts) { frame in
+                ButtonBurstLayer(frame: frame, count: particles, radius: radius, seed: bursts)
+            } keyframes: { _ in
+                KeyframeTrack(\.progress) {
+                    MoveKeyframe(0)
+                    CubicKeyframe(1, duration: 0.6)
+                }
+                KeyframeTrack(\.ring) {
+                    MoveKeyframe(0)
+                    CubicKeyframe(1, duration: 0.45)
+                }
+                KeyframeTrack(\.opacity) {
+                    MoveKeyframe(1)
+                    LinearKeyframe(1, duration: 0.3)
+                    LinearKeyframe(0, duration: 0.3)
+                }
+            }
+            heartButton
+        }
+        .frame(width: 60, height: 60)
     }
 
     private var heartButton: some View {
         let overshoot = ctx["overshoot"]
         return Button(action: toggle) {
             Image(systemName: liked ? "heart.fill" : "heart")
-                .font(.system(size: 42, weight: .semibold))
+                .font(.system(size: 26, weight: .semibold))
                 .foregroundStyle(heartStyle)
                 .contentTransition(.symbolEffect(.replace))
                 .keyframeAnimator(initialValue: 1.0, trigger: bursts) { content, scale in
@@ -91,12 +146,12 @@ private struct ButtonLikeBurstDemo: View {
                         SpringKeyframe(1, duration: 0.5, spring: .bouncy)
                     }
                 }
-                .frame(width: 96, height: 96)
-                .background(Palette.elevated, in: Circle())
-                .overlay(Circle().strokeBorder(Palette.stroke))
-                .shadow(color: .black.opacity(0.1), radius: 14, y: 8)
+                .frame(width: 60, height: 60)
+                .background(liked ? Palette.pink.opacity(0.12) : Color.primary.opacity(0.05), in: Circle())
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(liked ? L("Unlike", "取消点赞") : L("Like", "点赞"), ctx.language))
     }
 
     private var heartStyle: AnyShapeStyle {
@@ -123,6 +178,8 @@ private struct ButtonBurstLayer: View {
     let frame: ButtonBurstFrame
     let count: Int
     let radius: CGFloat
+    /// Changes every burst so the jitter pattern is never the same twice.
+    let seed: Int
 
     var body: some View {
         ZStack {
@@ -131,7 +188,8 @@ private struct ButtonBurstLayer: View {
                 .frame(width: ringSize, height: ringSize)
                 .opacity(1 - frame.ring)
             ForEach(0..<max(count, 1), id: \.self) { index in
-                particle(index)
+                particle(index, inner: false)
+                particle(index, inner: true)
             }
         }
         .opacity(frame.opacity)
@@ -142,13 +200,27 @@ private struct ButtonBurstLayer: View {
         CGFloat(40 + 110 * frame.ring)
     }
 
-    private func particle(_ index: Int) -> some View {
-        let angle = Double(index) / Double(max(count, 1)) * 2 * .pi - .pi / 2
-        let distance = (48 + radius) * CGFloat(frame.progress)
+    /// Deterministic 0..<1 noise.
+    private func noise(_ index: Int, _ channel: Int) -> Double {
+        let n = sin(Double(seed) * 91.7 + Double(index) * 12.9898 + Double(channel) * 78.233) * 43758.5453
+        return n - n.rounded(.down)
+    }
+
+    private func particle(_ index: Int, inner: Bool) -> some View {
+        let total = Double(max(count, 1))
+        let step = 2 * Double.pi / total
+        let channel = inner ? 3 : 0
+        let jitterAngle = (noise(index, channel) - 0.5) * (24 * .pi / 180)
+        // The inner ring sits half a step round so the two rings interleave.
+        let angle = Double(index) * step - .pi / 2 + (inner ? step / 2 : 0) + jitterAngle
+        let reach = 0.75 + 0.4 * noise(index, channel + 1)
+        let base = inner ? (24 + radius * 0.5) : (30 + radius)
+        let distance = base * CGFloat(reach * frame.progress)
+        let size: CGFloat = (inner ? 5 : 7) + CGFloat(noise(index, channel + 2)) * (inner ? 3 : 4)
         let colors = Palette.spectrum
         return Circle()
-            .fill(colors[index % colors.count])
-            .frame(width: 9, height: 9)
+            .fill(colors[(index + (inner ? 3 : 0)) % colors.count])
+            .frame(width: size, height: size)
             .scaleEffect(CGFloat(1 - 0.6 * frame.progress))
             .offset(x: CGFloat(cos(angle)) * distance, y: CGFloat(sin(angle)) * distance)
     }

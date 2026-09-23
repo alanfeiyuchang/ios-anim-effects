@@ -34,7 +34,7 @@ struct PreviewStage: View {
         GeometryReader { proxy in
             let side = StageMetrics.previewCanvas
             let scale = proxy.size.width / side
-            let key = snapshotKey(pixelsPerPoint: scale * displayScale)
+            let key = makeSnapshotKey(pixelsPerPoint: scale * displayScale)
             Group {
                 if motionEnabled {
                     if isOnScreen {
@@ -84,7 +84,7 @@ struct PreviewStage: View {
             .environment(\.demoAutoplayEnabled, autoplay)
     }
 
-    private func snapshotKey(pixelsPerPoint: CGFloat) -> String {
+    private func makeSnapshotKey(pixelsPerPoint: CGFloat) -> String {
         // Bucketed so sub-point layout differences reuse the same image.
         let bucket = (pixelsPerPoint * 4).rounded() / 4
         return "\(effect.id)|\(language.rawValue)|\(colorScheme == .dark ? "dark" : "light")|\(bucket)"

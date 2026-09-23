@@ -5,21 +5,24 @@ struct BrowseView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(RecentsStore.self) private var recents
+    @Environment(AppNavigator.self) private var navigator
     /// Rolled once per appearance so the dice target is stable while the page is visible.
     @State private var randomID = EffectLibrary.all.randomElement()?.id
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                header
-                featured
-                if !recents.ids.isEmpty { recent }
-                categories
+        ScrollViewReader { reader in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    header(reader)
+                    featured
+                    if !recents.ids.isEmpty { recent }
+                    categories.id(Self.categoriesAnchor)
+                }
+                .padding(.bottom, 32)
+                .animation(.smooth, value: recents.ids)
             }
-            .padding(.bottom, 32)
-            .animation(.smooth, value: recents.ids)
         }
-        .background(Color(uiColor: .systemGroupedBackground))
+        .background(Palette.pageBackground)
         .navigationTitle(Strings.appTitle(language))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -34,14 +37,30 @@ struct BrowseView: View {
         .onAppear { randomID = EffectLibrary.all.randomElement()?.id }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private static let categoriesAnchor = "categories"
+
+    private func header(_ reader: ScrollViewProxy) -> some View {
+        let effectCount = EffectLibrary.all.count
+        let categoryCount = EffectCategory.allCases.count
+        return VStack(alignment: .leading, spacing: 10) {
             Text(Strings.appSubtitle, language)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            HStack(spacing: 10) {
-                StatPill(value: "\(EffectLibrary.all.count)", label: Strings.effects(language))
-                StatPill(value: "\(EffectCategory.allCases.count)", label: Strings.categories(language))
+            // Wraps to a second row at large text sizes instead of truncating.
+            FlowLayout(spacing: 10) {
+                StatPill(value: "\(effectCount)", unit: Strings.effects(language)) {
+                    // "235 effects" → the whole catalog in Search.
+                    navigator.search("")
+                }
+                .accessibilityLabel(Text(verbatim: Strings.effectCount(effectCount, language)))
+                .accessibilityHint(Text(Strings.showAllEffects, language))
+                StatPill(value: "\(categoryCount)", unit: Strings.categoriesUnit(language)) {
+                    withAnimation(reduceMotion ? nil : Animation.smooth) {
+                        reader.scrollTo(Self.categoriesAnchor, anchor: .top)
+                    }
+                }
+                .accessibilityLabel(Text(verbatim: Strings.categoryCount(categoryCount, language)))
+                .accessibilityHint(Text(Strings.jumpToCategories, language))
             }
         }
         .padding(.horizontal)
@@ -51,9 +70,9 @@ struct BrowseView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: Strings.featured(language))
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 16) {
+                LazyHStack(alignment: .top, spacing: 16) {
                     ForEach(EffectLibrary.featured) { effect in
-                        EffectLink(effect: effect) {
+                        EffectLink(effect: effect, source: "featured") {
                             FeaturedCard(effect: effect)
                         }
                         .scrollTransition(axis: .horizontal) { [reduceMotion] content, phase in
@@ -79,9 +98,9 @@ struct BrowseView: View {
                 }
             }
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
+                LazyHStack(alignment: .top, spacing: 12) {
                     ForEach(recents.effects) { effect in
-                        EffectLink(effect: effect) {
+                        EffectLink(effect: effect, source: "recent") {
                             CompactEffectCard(effect: effect)
                         }
                     }
@@ -117,24 +136,37 @@ struct BrowseView: View {
     }
 }
 
+/// Tappable "235 effects" style pill on the Browse header.
 private struct StatPill: View {
     let value: String
-    let label: String
+    let unit: String
+    let action: () -> Void
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text(value)
-                .font(.title3.weight(.bold).monospacedDigit())
-                .foregroundStyle(Palette.primary)
-            Text(label)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+        Button {
+            Haptics.selection()
+            action()
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(verbatim: value)
+                    .font(.title3.weight(.bold).monospacedDigit())
+                    .foregroundStyle(Palette.primaryStrong)
+                Text(verbatim: unit)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .lineLimit(1)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Palette.chipOnPage, in: Capsule())
+            .overlay(Capsule().strokeBorder(Palette.stroke))
+            .contentShape(Capsule())
         }
-        .lineLimit(1)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
-        .accessibilityElement(children: .combine)
+        .buttonStyle(PressableCardStyle())
     }
 }
 
@@ -160,27 +192,35 @@ struct CategoryIcon: View {
 private struct FeaturedCard: View {
     let effect: Effect
     @Environment(\.appLanguage) private var language
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
+        let isLarge = dynamicTypeSize.isAccessibilitySize
         VStack(alignment: .leading, spacing: 10) {
-            PreviewStage(effect: effect, cornerRadius: 22)
+            PreviewStage(effect: effect, cornerRadius: CornerRadius.featuredThumbnail)
                 .frame(width: 240, height: 240)
             VStack(alignment: .leading, spacing: 3) {
-                Text(effect.category.title, language)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(LinearGradient(colors: effect.category.gradient, startPoint: .leading, endPoint: .trailing))
-                    .lineLimit(1)
+                Label {
+                    Text(effect.category.title, language)
+                } icon: {
+                    Image(systemName: effect.category.symbol)
+                        .foregroundStyle(LinearGradient(colors: effect.category.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(isLarge ? 2 : 1)
                 Text(effect.name, language)
                     .font(.headline)
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(isLarge ? 3 : 1)
                     .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 6)
         }
         .padding(10)
-        .frame(width: 260)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .frame(width: 260, alignment: .leading)
+        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.featuredCard, style: .continuous))
     }
 }
 
@@ -188,21 +228,23 @@ private struct FeaturedCard: View {
 private struct CompactEffectCard: View {
     let effect: Effect
     @Environment(\.appLanguage) private var language
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            PreviewStage(effect: effect, cornerRadius: 16)
+            PreviewStage(effect: effect, cornerRadius: CornerRadius.compactThumbnail)
                 .frame(width: 128, height: 128)
             Text(effect.name, language)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                 .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(width: 128, alignment: .leading)
                 .padding(.horizontal, 2)
         }
         .padding(8)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.section, style: .continuous))
     }
 }
 
@@ -239,7 +281,7 @@ private struct CategoryTile: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             ZStack {
-                Color(uiColor: .secondarySystemGroupedBackground)
+                Palette.cardBackground
                 RadialGradient(
                     colors: [(category.gradient.first ?? Palette.indigo).opacity(0.16), .clear],
                     center: .topTrailing,
@@ -248,8 +290,8 @@ private struct CategoryTile: View {
                 )
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.section, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: CornerRadius.section, style: .continuous))
     }
 }
 
@@ -271,6 +313,7 @@ struct CategoryView: View {
 
     var body: some View {
         let all = allEffects
+        let interactions = availableInteractions
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .center, spacing: 14) {
@@ -278,7 +321,7 @@ struct CategoryView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(Strings.effectCount(all.count, language))
                             .font(.footnote.weight(.semibold))
-                            .foregroundStyle(LinearGradient(colors: category.gradient, startPoint: .leading, endPoint: .trailing))
+                            .foregroundStyle(.primary)
                         Text(category.subtitle, language)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -287,19 +330,9 @@ struct CategoryView: View {
                 }
                 .padding(.horizontal)
                 .accessibilityElement(children: .combine)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        Chip(title: Strings.all(language), count: all.count, isSelected: interaction == nil) { interaction = nil }
-                        ForEach(availableInteractions) { item in
-                            Chip(title: item.title(language),
-                                 symbol: item.symbol,
-                                 count: all.filter { $0.interaction == item }.count,
-                                 isSelected: interaction == item) {
-                                interaction = interaction == item ? nil : item
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
+                // A filter with a single option would only ever show everything.
+                if interactions.count > 1 {
+                    interactionFilter(all: all, interactions: interactions)
                 }
                 EffectGrid(effects: effects)
                     .padding(.horizontal)
@@ -307,7 +340,24 @@ struct CategoryView: View {
             }
             .padding(.vertical)
         }
-        .background(Color(uiColor: .systemGroupedBackground))
+        .background(Palette.pageBackground)
         .navigationTitle(category.title(language))
+    }
+
+    private func interactionFilter(all: [Effect], interactions: [EffectInteraction]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                Chip(title: Strings.all(language), count: all.count, isSelected: interaction == nil) { interaction = nil }
+                ForEach(interactions) { item in
+                    Chip(title: item.title(language),
+                         symbol: item.symbol,
+                         count: all.filter { $0.interaction == item }.count,
+                         isSelected: interaction == item) {
+                        interaction = interaction == item ? nil : item
+                    }
+                }
+            }
+            .padding(.horizontal)
+        }
     }
 }

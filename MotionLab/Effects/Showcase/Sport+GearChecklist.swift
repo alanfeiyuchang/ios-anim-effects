@@ -8,12 +8,12 @@ extension Effect {
         name: L("Gear Checklist", "装备清单"),
         summary: L("Tick off your kit: checks draw themselves, packed items sink and the ring fills to lime.", "逐项勾选装备：对勾自行描绘，已打包项下沉，进度环最终变为青柠色。"),
         prompt: L(
-            "A dark SUMMIT KIT checklist card: a title, a progress ring with a rolling \"2/5\" count, and five gear rows (glyph tile, name, detail, round check). Tapping a row presses it to 97%; its check circle fills with the orange gradient from 20% on a bouncy spring (response 0.35 s, damping 0.6) while a dark checkmark draws itself 80 ms later, the name dims to 45% and gains a strike-through, and the row slides to the bottom of the list as the others close the gap (spring, response 0.5 s). The ring's orange arc sweeps to the new fraction with a soft glow. When the last item is packed, the ring turns lime, its count swaps for a checkmark, it swells 8%, the title changes to \"All packed\" and a success haptic fires. Orderly, satisfying and motivating.",
-            "深色“登顶装备”清单卡片：标题、带滚动计数（“2/5”）的进度环，以及五行装备（图标小方块、名称、说明、圆形勾选框）。点击某一行，整行轻压到 97%；勾选圆以弹性弹簧（响应 0.35 秒、阻尼 0.6）从 20% 放大并填满橙色渐变，深色对勾在 80 毫秒后自行描绘出来，名称降到 45% 透明度并加上删除线，随后这一行滑到列表底部，其余行顺势补位（弹簧，响应 0.5 秒）。进度环的橙色弧线带着柔光扫到新的比例。最后一项打包完成时，进度环变为青柠色，计数替换为对勾并放大 8%，标题变为“装备齐全”，同时触发成功触觉。井然有序、满足感十足，也很激励人。"
+            "A dark SUMMIT KIT checklist card: a title, a progress ring with a rolling \"2/5\" count, and five gear rows (glyph tile, name, detail, round check). Tapping a row presses it to 97%; its check circle fills with the orange gradient from 20% on a bouncy spring (response 0.35 s, damping 0.6) while a dark checkmark draws itself 80 ms later, the name dims to 45% and gains a strike-through, and ~300 ms later — once the check has landed — the row slides to the bottom of the list as the others close the gap (spring, response 0.5 s). The ring's orange arc sweeps to the new fraction with a soft glow. When the last item is packed, the ring turns lime, its count swaps for a checkmark, it swells 8%, the title changes to \"All packed\" and a success haptic fires. Orderly, satisfying and motivating.",
+            "深色“登顶装备”清单卡片：标题、带滚动计数（“2/5”）的进度环，以及五行装备（图标小方块、名称、说明、圆形勾选框）。点击某一行，整行轻压到 97%；勾选圆以弹性弹簧（响应 0.35 秒、阻尼 0.6）从 20% 放大并填满橙色渐变，深色对勾在 80 毫秒后自行描绘出来，名称降到 45% 透明度并加上删除线，约 300 毫秒后（对勾落定之后）这一行才滑到列表底部，其余行顺势补位（弹簧，响应 0.5 秒）。进度环的橙色弧线带着柔光扫到新的比例。最后一项打包完成时，进度环变为青柠色，计数替换为对勾并放大 8%，标题变为“装备齐全”，同时触发成功触觉。井然有序、满足感十足，也很激励人。"
         ),
         implementation: L(
-            "A Set of checked ids drives everything inside one spring withAnimation; rows are a ForEach keyed by id over a list re-sorted so packed items sink, the check is a trimmed custom Shape with its own delayed animation, and the ring is a trimmed Circle.",
-            "一个已勾选 id 的 Set 在同一个弹簧 withAnimation 中驱动全部变化；各行是以 id 为标识的 ForEach，列表重新排序让已打包项下沉；对勾是带独立延迟动画的 trim 自定义 Shape，进度环是 trim 后的 Circle。"
+            "A Set of checked ids drives the check, ring and title at once; a second Set, copied from it ~300 ms later in its own spring withAnimation, decides the order of the id-keyed ForEach so packed items sink only after the check lands; the check is a trimmed custom Shape with its own delayed animation, and the ring is a trimmed Circle.",
+            "已勾选 id 的 Set 立即驱动对勾、进度环与标题；约 300 毫秒后再把它复制到第二个 Set，并在独立的弹簧 withAnimation 中决定以 id 为标识的 ForEach 排序，让已打包项在对勾落定后才下沉；对勾是带独立延迟动画的 trim 自定义 Shape，进度环是 trim 后的 Circle。"
         ),
         apis: ["ForEach(id:)", "Shape.trim(from:to:)", "strikethrough(_:color:)", "contentTransition(.numericText(value:))", "spring(response:dampingFraction:)"],
         tags: ["checklist", "todo", "progress ring", "packing", "清单", "待办", "进度环", "打包"],
@@ -37,6 +37,9 @@ private struct GearItem: Identifiable {
 private struct SportGearDemo: View {
     let ctx: DemoContext
     @State private var checked: Set<Int> = [1]
+    /// Lags `checked` by ~300 ms so a row is ticked first and reordered afterwards.
+    @State private var sunk: Set<Int> = [1]
+    @State private var reorderTask: Task<Void, Never>?
 
     private static let items: [GearItem] = [
         GearItem(id: 0, symbol: "shield.lefthalf.filled", name: L("Helmet", "头盔"), detail: L("Size M · MIPS", "M 码 · MIPS")),
@@ -48,7 +51,7 @@ private struct SportGearDemo: View {
 
     private var orderedItems: [GearItem] {
         guard ctx.bool("sort") else { return Self.items }
-        return Self.items.filter { !checked.contains($0.id) } + Self.items.filter { checked.contains($0.id) }
+        return Self.items.filter { !sunk.contains($0.id) } + Self.items.filter { sunk.contains($0.id) }
     }
 
     private var allPacked: Bool { checked.count == Self.items.count }
@@ -135,9 +138,10 @@ private struct SportGearDemo: View {
         } else {
             next.insert(id)
         }
-        withAnimation(.spring(response: ctx["response"], dampingFraction: 0.8)) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
             checked = next
         }
+        scheduleReorder()
         guard !ctx.isPreview else { return }
         if allPacked && !wasPacked {
             Haptics.success()
@@ -146,11 +150,26 @@ private struct SportGearDemo: View {
         }
     }
 
+    private func scheduleReorder() {
+        reorderTask?.cancel()
+        reorderTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: ctx["response"], dampingFraction: 0.8)) {
+                sunk = checked
+            }
+        }
+    }
+
     private func previewTick() {
         if let next = Self.items.first(where: { !checked.contains($0.id) }) {
             toggle(next.id)
         } else {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { checked = [] }
+            reorderTask?.cancel()
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                checked = []
+                sunk = []
+            }
         }
     }
 }

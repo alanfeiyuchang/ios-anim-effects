@@ -8,12 +8,12 @@ extension Effect {
         name: L("Run Summary Bento", "滑行总结便当格"),
         summary: L("Stat tiles fly in from blur one after another and their numbers count up as they land.", "数据方块依次从模糊中飞入落位，数字随落地同步递增。"),
         prompt: L(
-            "A day-summary bento of dark glossy tiles: a wide DISTANCE tile with a mini bar sparkline, a RUNS tile, and a row of VERTICAL, TOP (km/h) and MINUTES tiles, one number highlighted in orange. On appear (or tap) the tiles assemble in reading order with a ~70 ms stagger: each rises 26 pt from 82% scale, 8 pt blur and zero opacity into place on a spring (≈0.55 s response, damping 0.72, a touch of overshoot), and its numeral rolls up from zero with a digit-by-digit transition as it lands; the sparkline bars grow in their own quick 25 ms stagger. On replay everything collapses at once in 200 ms, then rebuilds. Rewarding, orderly and celebratory.",
-            "一组深色光泽便当格总结当日滑行：宽幅“距离”格内含迷你柱状趋势，右侧“趟数”格，下方一排“落差”“最高速”“分钟”格，其中一个数字以橙色高亮。出现（或点击）时，方块按阅读顺序以约 70 毫秒错峰组装：每块从 82% 缩放、8pt 模糊、零透明度的状态上移 26pt 落位，采用弹簧（响应约 0.55 秒、阻尼 0.72，略带过冲），数字在落地时从零逐位滚动递增；迷你柱状图再以 25 毫秒的快速错峰各自长高。重播时所有方块在 200 毫秒内同时收起，再重新拼装。有奖励感、秩序感和庆祝感。"
+            "A day-summary bento of dark glossy tiles: a wide DISTANCE tile with a mini bar sparkline, a RUNS tile, and a row of VERTICAL, TOP (km/h) and MINUTES tiles, one number highlighted in orange. On appear (or tap) the tiles assemble in reading order with a ~70 ms stagger: each rises 26 pt from 82% scale, 8 pt blur and zero opacity into place on a spring (≈0.55 s response, damping 0.72, a touch of overshoot), and as it lands its numeral genuinely counts up from zero — 12 ease-out steps about 40 ms apart, each digit change rolling with a numeric text transition; the sparkline bars grow in their own quick 25 ms stagger. On replay everything collapses at once in 200 ms, then rebuilds. Rewarding, orderly and celebratory.",
+            "一组深色光泽便当格总结当日滑行：宽幅“距离”格内含迷你柱状趋势，右侧“趟数”格，下方一排“落差”“最高速”“分钟”格，其中一个数字以橙色高亮。出现（或点击）时，方块按阅读顺序以约 70 毫秒错峰组装：每块从 82% 缩放、8pt 模糊、零透明度的状态上移 26pt 落位，采用弹簧（响应约 0.55 秒、阻尼 0.72，略带过冲），落地时数字真正从零开始计数递增——约 12 个缓出步进、每步间隔约 40 毫秒，每次变化都以数字滚动过渡呈现；迷你柱状图再以 25 毫秒的快速错峰各自长高。重播时所有方块在 200 毫秒内同时收起，再重新拼装。有奖励感、秩序感和庆祝感。"
         ),
         implementation: L(
-            "Each tile reads one `assembled` flag and carries its own .animation(value:) with a spring delayed by its index, so a single state flip produces the whole staggered choreography including numericText roll-ups.",
-            "每个方块读取同一个 assembled 状态，并各自带有按序号延迟的弹簧 .animation(value:)，一次状态切换即可产生包括 numericText 数字滚动在内的整套错峰编排。"
+            "Each tile reads one `assembled` flag and carries its own .animation(value:) with a spring delayed by its index; each numeral is a small view whose task(id:) waits for that same delay, then steps its value to the target with eased increments under numericText.",
+            "每个方块读取同一个 assembled 状态，并各自带有按序号延迟的弹簧 .animation(value:)；每个数字是一个小视图，其 task(id:) 等待相同延迟后，以缓出步进把数值递增到目标值，并配合 numericText 滚动。"
         ),
         apis: ["animation(_:value:)", "spring(response:dampingFraction:).delay", "blur(radius:)", "contentTransition(.numericText(value:))", "task(id:)"],
         tags: ["bento", "stagger", "dashboard", "summary", "便当格", "错峰", "仪表盘", "数据总结"],
@@ -39,6 +39,42 @@ private struct BentoMotion {
             return .spring(response: response, dampingFraction: damping).delay(Double(index) * stagger)
         }
         return .easeIn(duration: 0.2)
+    }
+
+    /// When a tile's spring has mostly settled, so its number starts counting as it lands.
+    func landingDelay(_ index: Int) -> Double {
+        Double(index) * stagger + response * 0.35
+    }
+}
+
+/// A numeral that really counts: after `delay` it steps from 0 to `target` in eased increments,
+/// each rolled with numericText. Dropping the target to 0 clears it at once.
+private struct BentoCountUp: View {
+    let target: Double
+    let decimals: Int
+    let delay: Double
+    @State private var shown: Double = 0
+
+    var body: some View {
+        Text(verbatim: decimals == 0 ? "\(Int(shown.rounded()))" : String(format: "%.\(decimals)f", shown))
+            .contentTransition(.numericText(value: shown))
+            .task(id: target) { await count() }
+    }
+
+    private func count() async {
+        guard target > 0 else {
+            withAnimation(.easeIn(duration: 0.2)) { shown = 0 }
+            return
+        }
+        try? await Task.sleep(for: .seconds(delay))
+        let steps = 12
+        for step in 1...steps {
+            guard !Task.isCancelled else { return }
+            let t = Double(step) / Double(steps)
+            let eased = 1 - pow(1 - t, 3)
+            withAnimation(.snappy(duration: 0.16)) { shown = target * eased }
+            try? await Task.sleep(for: .milliseconds(40))
+        }
     }
 }
 
@@ -142,10 +178,9 @@ private struct BentoStatTile: View {
                 .lineLimit(1)
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("\(value)")
+                BentoCountUp(target: Double(value), decimals: 0, delay: motion.landingDelay(index))
                     .font(Signature.number(22))
                     .foregroundStyle(accent ? Signature.accent : Color.white)
-                    .contentTransition(.numericText(value: Double(value)))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 if !unit.isEmpty {
@@ -177,10 +212,9 @@ private struct BentoDistanceTile: View {
                     .signatureEyebrow()
                 Spacer(minLength: 0)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text(verbatim: assembled ? "24.6" : "0.0")
+                    BentoCountUp(target: assembled ? 24.6 : 0, decimals: 1, delay: motion.landingDelay(1))
                         .font(Signature.number(30))
                         .foregroundStyle(Color.white)
-                        .contentTransition(.numericText(value: assembled ? 24.6 : 0))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                     Text(verbatim: "km")

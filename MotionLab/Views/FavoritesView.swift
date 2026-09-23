@@ -9,27 +9,14 @@ struct FavoritesView: View {
         let saved = favorites.effects
         ScrollView {
             if saved.isEmpty {
-                ContentUnavailableView {
-                    Label {
-                        Text(Strings.noFavorites, language)
-                    } icon: {
-                        Image(systemName: "heart.fill")
-                            .foregroundStyle(LinearGradient(colors: [Palette.pink, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    }
-                } description: {
-                    Text(Strings.noFavoritesHint, language)
-                } actions: {
-                    Button {
-                        navigator.tab = AppTab.browse
-                    } label: {
-                        Text(Strings.browseEffects, language)
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 6)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
+                VStack(alignment: .leading, spacing: 12) {
+                    emptyState
+                    // Give the empty tab something to do: a few featured effects to start from.
+                    SectionTitle(text: Strings.startWithThese(language))
+                    EffectGrid(effects: Array(EffectLibrary.featured.prefix(4)), source: "suggested")
+                        .padding(.horizontal)
                 }
-                .padding(.top, 80)
+                .padding(.bottom, 24)
                 .transition(.opacity)
             } else {
                 VStack(alignment: .leading, spacing: 12) {
@@ -42,7 +29,31 @@ struct FavoritesView: View {
             }
         }
         .animation(.smooth, value: favorites.ids)
-        .background(Color(uiColor: .systemGroupedBackground))
+        .background(Palette.pageBackground)
         .navigationTitle(Strings.favorites(language))
+    }
+
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label {
+                Text(Strings.noFavorites, language)
+            } icon: {
+                Image(systemName: "heart.fill")
+                    .foregroundStyle(LinearGradient(colors: [Palette.pink, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing))
+            }
+        } description: {
+            Text(Strings.noFavoritesHint, language)
+        } actions: {
+            Button {
+                navigator.tab = AppTab.browse
+            } label: {
+                Text(Strings.browseEffects, language)
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 6)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+        }
+        .padding(.top, 24)
     }
 }

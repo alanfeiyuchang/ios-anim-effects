@@ -128,7 +128,7 @@ File: `MotionLab/Families/NavigationFamilies.swift` · list: `NavigationEffects`
 | `navigation.tab-bar` | Tab Bars & Docks · 标签栏与程序坞 | 2 | `navigation.collapsing-tab-bar`, `navigation.dock-magnify` |
 | `navigation.page-indicator` | Page & Step Indicators · 页码与步骤指示 | 2 | `navigation.page-dots`, `navigation.step-progress` |
 | `navigation.drawer` | Drawers & Sidebars · 抽屉与侧栏 | 2 | `navigation.side-drawer-3d`, `navigation.sidebar-rail` |
-| `navigation.sheet` | Sheets & Pushes · 面板与推入 | 2 | `navigation.push-parallax`, `navigation.bottom-sheet` |
+| `navigation.sheet` | Pages & Sheets · 页面与面板 | 2 | `navigation.push-parallax`, `navigation.bottom-sheet` |
 | `navigation.menu` | Menus · 菜单 | 3 | `navigation.radial-menu`, `navigation.context-popover`, `navigation.context-menu-lift` |
 
 ### Cards · 卡片

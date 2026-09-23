@@ -9,7 +9,7 @@ import UIKit
 /// `UIHostingController` (a separate SwiftUI hierarchy with an independent stack), and they are
 /// never rasterised with `ImageRenderer` (which cannot draw a navigation controller).
 enum DemoIsolation {
-    static let hostedIDs: Set<String> = ["morph.native-zoom"]
+    static let hostedIDs: Set<String> = []  // Add an effect id here if its demo ever owns a NavigationStack.
 
     static func needsHost(_ effect: Effect) -> Bool { hostedIDs.contains(effect.id) }
 }

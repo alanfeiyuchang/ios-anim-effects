@@ -218,7 +218,13 @@ private struct MorphToastDemo: View {
         .padding(.horizontal, isDot ? 0 : 16)
         .frame(minWidth: 12, minHeight: 12)
         .frame(height: isDot ? 12 : 44)
-        .background(isDot ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Color.black.opacity(0.82)), in: Capsule())
+        .background {
+            // Two stacked fills so dot ↔ pill cross-fades its colour as it reshapes.
+            ZStack {
+                Capsule().fill(Color.black.opacity(0.82))
+                Capsule().fill(Palette.green).opacity(isDot ? 1 : 0)
+            }
+        }
         .shadow(color: .black.opacity(0.25), radius: 14, y: 8)
         .offset(y: visible ? 0 : 60)
         .opacity(visible ? 1 : 0)

@@ -68,6 +68,7 @@ private struct PushParallaxDemo: View {
                     .shadow(color: .black.opacity(0.2 * Double(progress)), radius: 14, x: -3)
                     .offset(x: size.width * (1 - progress))
                     .gesture(backSwipe)
+                    .allowsHitTesting(progress > 0.01)
             }
             .frame(width: size.width, height: size.height)
             .background(Palette.surface)

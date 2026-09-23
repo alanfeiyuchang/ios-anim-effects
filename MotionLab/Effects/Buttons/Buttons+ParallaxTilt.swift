@@ -33,6 +33,8 @@ private struct ButtonParallaxTiltDemo: View {
     @State private var tilt: CGSize = .zero
     @State private var active = false
     @State private var step = 0
+    /// The detail intro's scripted sweep; cancelled by the first real touch and on disappear.
+    @State private var introTask: Task<Void, Never>?
 
     private let size = CGSize(width: 260, height: 120)
 
@@ -54,6 +56,7 @@ private struct ButtonParallaxTiltDemo: View {
             // The detail intro walks the whole path once, which ends on a release, so the tile never stays tilted.
             if ctx.isPreview { previewStep() } else { introSweep() }
         }
+        .onDisappear { stopIntro() }
     }
 
     private var tile: some View {
@@ -84,7 +87,10 @@ private struct ButtonParallaxTiltDemo: View {
         .contentShape(shape)
         .gesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { value in track(value.location) }
+                .onChanged { value in
+                    stopIntro()
+                    track(value.location)
+                }
                 .onEnded { _ in release() }
         )
         .accessibilityAddTraits(.isButton)
@@ -140,12 +146,20 @@ private struct ButtonParallaxTiltDemo: View {
     }
 
     private func introSweep() {
-        Task { @MainActor in
+        stopIntro()
+        introTask = Task { @MainActor in
             for _ in Self.previewPath.indices {
                 previewStep()
                 try? await Task.sleep(for: .seconds(0.9))
+                guard !Task.isCancelled else { return }
             }
+            introTask = nil
         }
+    }
+
+    private func stopIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func previewStep() {

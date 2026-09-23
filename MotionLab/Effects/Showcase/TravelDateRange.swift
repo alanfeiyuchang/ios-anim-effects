@@ -11,8 +11,8 @@ extension Effect {
             "选择入住与退房：端点圆点滑动、区间色带伸缩，总价数字滚动更新。"
         ),
         prompt: L(
-            "A dark booking card shows two weeks of July as a 7-column grid of rounded digits, with a nightly rate and total below. The first tap sets check-in, the second sets check-out. The two endpoint circles (orange gradient, black digits) glide between cells via shared geometry, and a translucent orange band stretches or shrinks behind the days in between, split across week rows with its ends squared off where it continues into the next or previous week, all on one spring (response 0.4 s, damping 0.78). The nights label (e.g. \"3 nights · $186/night\") and the large total price roll to their new values with a numeric content transition. The Reserve pill brightens once a valid range exists. Each tap gives a selection haptic. It feels decisive, informative and smooth.",
-            "暗色预订卡片以 7 列网格展示七月的两周，数字为圆体，下方是每晚价格与总价。第一次点击设入住日，第二次设退房日。两个端点圆（橙色渐变、黑字）借共享几何在格子间滑动，一条半透明橙色色带在中间日期背后伸缩，跨周时分行，延续到相邻周的一端改为方角，全部由同一弹簧（响应 0.4 秒、阻尼 0.78）驱动。晚数（如“3 晚 · ¥1,280/晚”）与醒目的总价以数字滚动更新，中文界面以人民币计价。区间有效后“预订”按钮点亮，每次点击一次选择触感。果断、顺滑。"
+            "A dark booking card shows two weeks of July as a 7-column grid, with a nightly rate and total below. The first tap sets check-in, the second sets check-out. The two endpoint circles (orange gradient, black digits) glide between cells via shared geometry, and a translucent orange band stretches or shrinks behind the days in between, split across week rows with its ends squared off where it continues into the next or previous week; everything rides one spring (response 0.4 s, damping 0.78), the band trailing the circles by ~50 ms and a week row that newly joins the range fades its band in place. The nights label and large total roll to new values with a numeric transition. The Reserve pill brightens once a valid range exists. Each tap gives a selection haptic. Decisive and smooth.",
+            "暗色预订卡片以 7 列网格展示七月的两周，下方是每晚价格与总价。第一次点击设入住日，第二次设退房日。两个端点圆（橙色渐变、黑字）借共享几何在格子间滑动，一条半透明橙色色带在中间日期背后伸缩，跨周时分行，延续到相邻周的一端改为方角，同一弹簧（响应 0.4 秒、阻尼 0.78）驱动，色带比圆点晚约 50 毫秒跟随，新纳入的周行原地淡入色带。晚数与醒目的总价以数字滚动更新，区间有效后“预订”按钮点亮，每次点击一次选择触感。果断、顺滑。"
         ),
         implementation: L(
             "Endpoint circles are matchedGeometryEffect backgrounds inside the start and end DayCells; each week row draws one UnevenRoundedRectangle (squared where the range crosses a week break) whose width and x-offset come from the range's intersection with that row, all animated with one spring. Prices use contentTransition(.numericText(value:)).",
@@ -21,9 +21,9 @@ extension Effect {
         apis: ["matchedGeometryEffect", "contentTransition(.numericText)", "Text(_:format:)", "spring(response:dampingFraction:)"],
         tags: ["calendar", "date range", "booking", "price", "日历", "日期区间", "预订", "价格"],
         params: [
-            .slider("rate", L("Nightly rate (USD)", "每晚价格（美元基准）"), 80...400, default: 186, step: 1, decimals: 0),
             .slider("response", L("Spring response", "弹簧响应"), 0.2...0.8, default: 0.4, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.5...1, default: 0.78),
+            .slider("lag", L("Band follow delay", "色带跟随延迟"), 0...0.2, default: 0.05, unit: "s"),
         ]
     ) { ctx in
         TravelDateRangeDemo(ctx: ctx)
@@ -56,9 +56,9 @@ private struct TravelDateRangeDemo: View {
     private var zh: Bool { ctx.language == .zh }
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
     private var nights: Int { max(end - start, 0) }
-    /// The slider is in US dollars; Chinese shows a rounded yuan rate (≈ ×6.88, e.g. $186 → ¥1,280).
+    /// $186 a night; Chinese shows a rounded yuan rate (≈ ×6.88 → ¥1,280).
     private var rate: Int {
-        zh ? Int((ctx["rate"] * 6.88 / 10).rounded()) * 10 : Int(ctx["rate"].rounded())
+        zh ? 1280 : 186
     }
     private var total: Int { nights * rate }
 
@@ -78,6 +78,7 @@ private struct TravelDateRangeDemo: View {
                                 cell: Self.cell,
                                 firstDay: Self.firstDay,
                                 ns: ns,
+                                bandAnimation: spring.delay(ctx["lag"]),
                                 onTap: tap
                             )
                         }
@@ -188,6 +189,8 @@ private struct TravelWeekRow: View {
     let cell: CGFloat
     let firstDay: Int
     let ns: Namespace.ID
+    /// The band's own spring, delayed so it trails the endpoint circles.
+    let bandAnimation: Animation
     let onTap: (Int) -> Void
 
     /// Columns (inclusive) of this row covered by the range, if any.
@@ -200,6 +203,8 @@ private struct TravelWeekRow: View {
     var body: some View {
         ZStack(alignment: .leading) {
             band
+                .animation(bandAnimation, value: start)
+                .animation(bandAnimation, value: end)
             HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { column in
                     let index = week * 7 + column
@@ -211,8 +216,16 @@ private struct TravelWeekRow: View {
     }
 
     /// Ends that continue into the previous/next week are squared off, so the band reads as one run.
+    /// A row that newly joins the range fades its band in place instead of sweeping in from column 0.
+    @ViewBuilder
     private var band: some View {
-        let range = span ?? (lo: 0, hi: 0)
+        if let range = span {
+            bandShape(range)
+                .transition(.opacity)
+        }
+    }
+
+    private func bandShape(_ range: (lo: Int, hi: Int)) -> some View {
         let full = (cell - 4) / 2
         let continuesIn = start < week * 7
         let continuesOut = end > week * 7 + 6
@@ -227,7 +240,6 @@ private struct TravelWeekRow: View {
             .fill(Signature.accent.opacity(0.2))
             .frame(width: CGFloat(range.hi - range.lo + 1) * cell, height: cell - 4)
             .offset(x: CGFloat(range.lo) * cell)
-            .opacity(span == nil ? 0 : 1)
     }
 
     private func role(for index: Int) -> TravelDayRole {

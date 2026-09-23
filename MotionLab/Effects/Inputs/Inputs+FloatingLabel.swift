@@ -40,6 +40,8 @@ private struct InputFloatingLabelDemo: View {
     @State private var email = ""
     @State private var previewFocus: InputFloatingFieldID?
     @State private var previewStep = 0
+    /// The detail intro's scripted fill; cancelled when a real field takes focus and on disappear.
+    @State private var introTask: Task<Void, Never>?
 
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
 
@@ -84,15 +86,29 @@ private struct InputFloatingLabelDemo: View {
             // The detail intro types through both fields and ends unfocused, so no field keeps a fake focus ring.
             if ctx.isPreview { previewTick() } else { introFill() }
         }
+        .onChange(of: focus) { _, newValue in
+            guard newValue != nil, introTask != nil else { return }
+            stopIntro()
+            withAnimation(spring) { previewFocus = nil }
+        }
+        .onDisappear { stopIntro() }
     }
 
     private func introFill() {
-        Task { @MainActor in
+        stopIntro()
+        introTask = Task { @MainActor in
             for _ in 0..<3 {
+                guard !Task.isCancelled else { return }
                 previewTick()
                 try? await Task.sleep(for: .seconds(1.2))
             }
+            introTask = nil
         }
+    }
+
+    private func stopIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func previewTick() {

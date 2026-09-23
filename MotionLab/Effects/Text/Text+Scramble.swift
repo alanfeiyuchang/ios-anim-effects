@@ -58,7 +58,8 @@ private struct ScrambleDemo: View {
             VStack(spacing: 16) {
                 lockBadge
                 statusRow
-                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+                // Paused once the line has resolved, so a static line isn't redrawn at full frame rate.
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: done)) { timeline in
                     let elapsed = timeline.date.timeIntervalSince(start)
                     let duration = max(ctx["duration"], 0.1)
                     VStack(spacing: 14) {
@@ -122,6 +123,7 @@ private struct ScrambleDemo: View {
     private func replay() {
         index += 1
         start = Date()
+        done = false
     }
 }
 

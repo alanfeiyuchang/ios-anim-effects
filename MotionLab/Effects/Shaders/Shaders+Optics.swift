@@ -213,11 +213,13 @@ private struct ChromaticCard: View {
         let tilt = Double(velocity.width / 90).clamped(to: -8...8)
         // The lens fringe blooms with motion too, so a card at rest is perfectly clean.
         let radial = fringe * Double(min(length / 6, 1))
+        // Shift is capped at 18 pt; the radial fringe adds up to radial × ~0.8 at the corners.
+        let reach = CGFloat(18 + radial * 0.8 + 2)
         ShaderArtwork(variant: 5)
             .visualEffect { content, proxy in
                 content.layerEffect(
                     ShaderLibrary.mlChromatic(.float2(proxy.size), .float2(shift), .float(radial)),
-                    maxSampleOffset: CGSize(width: 32, height: 32)
+                    maxSampleOffset: CGSize(width: reach, height: reach)
                 )
             }
             .rotationEffect(.degrees(tilt))

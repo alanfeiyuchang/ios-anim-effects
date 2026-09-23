@@ -97,7 +97,8 @@ private struct ScrollElasticListDemo: View {
         let screen: CGFloat = (rowY / viewport).clamped(to: 0...1)
         // Rows far from the leading edge of the motion lag the most.
         let far: CGFloat = delta >= 0 ? screen : 1 - screen
-        let lag: CGFloat = delta * far * ctx.cg("elasticity")
+        let raw: CGFloat = delta * far * ctx.cg("elasticity")
+        let lag: CGFloat = raw.clamped(to: -40...40)
         let response: Double = 0.2 + 0.25 * Double(far)
         return ScrollElasticBubble(text: scrollElasticMessages[i], outgoing: i % 2 == 1, language: ctx.language)
             .frame(height: rowHeight)

@@ -55,21 +55,21 @@ extension Effect {
         category: .shaders,
         interaction: .loop,
         name: L("RGB Glitch", "RGB 故障"),
-        summary: L("Chromatic split and slice jitter, with a tap-triggered burst.", "色差分离与切片抖动，点击触发强烈故障。"),
+        summary: L("Digital macro-block corruption with an RGB split, and a tap-triggered datamosh burst.", "数字宏块损坏叠加 RGB 分离，点击触发一次数据错乱爆发。"),
         prompt: L(
-            "A cyberpunk glitch: the red and blue channels drift a few points apart horizontally for a permanent chromatic-aberration fringe, faint scanlines modulate brightness, and several times per second the horizontal slices are re-rolled so that roughly one in five tears sideways, jittering at twice the re-roll rate by up to ±26 pt × intensity. A tap spikes the intensity to maximum for 400 ms and then snaps back, like a corrupted signal momentarily losing sync. Motion is deliberately steppy and unsmoothed, yet sparse enough to stay legible.",
-            "赛博朋克风格的故障效果：红、蓝通道在水平方向错开数个点，形成常驻的色差边缘；细微的扫描线调制亮度；水平切片每秒重新随机数次，约五分之一被横向撕裂，并以两倍于重随机的频率抖动，最大位移为 ±26pt × 强度。点击会让强度瞬间拉满 400 毫秒后骤然恢复，如同信号短暂失步。运动刻意呈阶跃、不做平滑，但足够稀疏以保持可读。"
+            "A digital, codec-style glitch rather than an analog tape fault: the red and blue channels sit a few points apart for a permanent chromatic fringe, and the image is cut into 12 pt macro-blocks. Six times per second a fresh set of 4 × 2-block clusters is corrupted: each hit block either jumps to a neighbouring block in 2D (offsets quantized to half a block) or freezes into vertical streaks of its own top row, and some swap their color channels, like a broken P-frame. About 12% of clusters are hit at rest. A tap spikes the intensity to maximum for 400 ms: more blocks break, the split widens and the palette posterizes to four levels, then it snaps back. Motion is deliberately steppy and unsmoothed, yet sparse enough to stay legible.",
+            "偏数字编解码而非模拟磁带的故障效果：红、蓝通道错开数个点，形成常驻的色差边缘；画面被切成 12pt 的宏块。每秒六次重新挑选若干 4 × 2 宏块的簇进行“损坏”：命中的宏块要么在二维方向跳到相邻宏块（位移按半个宏块量化），要么冻结成自身顶行拉出的竖向条纹，部分还会交换颜色通道，如同丢失的 P 帧。静止时约 12% 的簇受损。点击会让强度拉满 400 毫秒：更多宏块破碎、色差加宽、色阶压成四级，随后骤然恢复。运动刻意呈阶跃、不做平滑，但足够稀疏以保持可读。"
         ),
         implementation: L(
-            "A Metal layer shader samples R/G/B at offset positions and shifts hashed horizontal bands per time step; TimelineView supplies time.",
-            "Metal layerEffect 在不同偏移位置分别采样 R/G/B，并按时间步用哈希随机平移水平切片；时间由 TimelineView 提供。"
+            "A Metal layer shader hashes macro-block clusters per time step, remaps hit blocks by a quantized 2D jump or a frozen top-row smear, samples R/G/B at split offsets and posterizes near full intensity; TimelineView supplies time.",
+            "Metal layerEffect 按时间步对宏块簇做哈希，命中的宏块按量化的二维跳跃或冻结顶行拖影重映射采样，再以分离偏移分别采样 R/G/B，并在强度接近满值时做色阶压缩；时间由 TimelineView 提供。"
         ),
         apis: ["layerEffect", "TimelineView", "hash noise", "Metal"],
-        tags: ["glitch", "chromatic aberration", "cyberpunk", "故障", "色差", "赛博朋克", "RGB"],
+        tags: ["glitch", "datamosh", "chromatic aberration", "cyberpunk", "故障", "数据错乱", "色差", "赛博朋克"],
         params: [
             .slider("intensity", L("Intensity", "强度"), 0...1, default: 0.35),
             .slider("split", L("RGB split", "RGB 分离"), 0...12, default: 4, decimals: 1, unit: "pt"),
-            .slider("slice", L("Slice height", "切片高度"), 6...30, default: 14, decimals: 0, unit: "pt"),
+            .slider("slice", L("Block size", "宏块尺寸"), 6...24, default: 12, decimals: 0, unit: "pt"),
             .slider("rate", L("Re-roll rate", "重随机频率"), 2...12, default: 6, decimals: 0, unit: "/s"),
         ]
     ) { ctx in
@@ -303,6 +303,8 @@ private struct GlitchDemo: View {
             ShaderClock(preview: ctx.isPreview) { time in
                 let bursting = Date() < burstUntil
                 let intensity = bursting ? 1.0 : ctx["intensity"]
+                // A hit block moves at most one block, plus the R/B split (≤ 1.65 × split).
+                let glitchReach = CGFloat(ctx["slice"] + ctx["split"] * 1.7 + 2)
                 GlitchCard()
                     .layerEffect(
                         ShaderLibrary.mlGlitch(
@@ -312,7 +314,7 @@ private struct GlitchDemo: View {
                             .float(ctx["slice"]),
                             .float(ctx["rate"])
                         ),
-                        maxSampleOffset: CGSize(width: 48, height: 0)
+                        maxSampleOffset: CGSize(width: glitchReach, height: glitchReach)
                     )
             }
             .onTapGesture { triggerBurst() }
@@ -363,11 +365,14 @@ private struct CRTDemo: View {
             let wobble = CRTDemo.degauss(since: degaussAt)
             let curvature = ctx["curvature"] + 0.16 * wobble.bend
             let bleed = ctx["bleed"] + 5 * wobble.fringe
+            // Barrel reach ≈ |curvature| × half the screen (≤ 160 pt), plus the 2× bleed smear horizontally.
+            let barrel: Double = 165 * (abs(curvature) + 0.02) + 4
+            let crtReach = CGSize(width: CGFloat(barrel + bleed * 2), height: CGFloat(barrel))
             CRTScreen(time: time, language: ctx.language)
                 .visualEffect { content, proxy in
                     content.layerEffect(
                         ShaderLibrary.mlCRT(.float2(proxy.size), .float(time), .float(curvature), .float(scanlines), .float(bleed)),
-                        maxSampleOffset: CGSize(width: 60, height: 60)
+                        maxSampleOffset: crtReach
                     )
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))

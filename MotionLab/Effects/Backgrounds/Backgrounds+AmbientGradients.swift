@@ -43,8 +43,8 @@ extension Effect {
             "温暖的胶片漏光斜扫过画面，伴随轻微曝光闪烁；点击制造一次烧光。"
         ),
         prompt: L(
-            "A dark, moody photo-like frame is crossed by four large, heavily blurred light leaks (36 pt blur) in amber, coral, magenta and cream. Each leak is a tilted ellipse that makes a long linear pass across the frame every 7–11 s, alternating left-to-right and right-to-left and entering at a new height each pass; its intensity follows sin²(π·progress), so it swells in and dies away without edges, and a white-hot inner core rides along. Leaks add with a plus-lighter blend so overlaps bloom. The whole layer flickers like a projector at 12 steps per second (up to ±8% exposure). Tapping burns the film: a warm full-frame wash flashes in and fades exponentially (time constant ≈ 0.45 s). Nostalgic, analog and cinematic.",
-            "一张深色、带情绪的“照片”画面上，四道大面积、重度模糊（36pt）的漏光斜扫而过，颜色分别是琥珀、珊瑚、洋红与奶油白。每道漏光是一个倾斜的椭圆，每 7–11 秒完成一次横穿画面的线性扫过，左右方向交替，每次从新的高度进入；亮度遵循 sin²(π·进度)，因此无边界地渐起渐灭，内部还跟着一团白热光芯。漏光以 plus-lighter 叠加，重叠处自然溢光。整层像放映机一样以每秒 12 步闪烁（曝光最多 ±8%）。点击会“烧片”：暖色全屏光晕瞬间亮起，并以约 0.45 秒的时间常数指数衰减。怀旧、模拟、电影感十足。"
+            "A dark, moody photo-like frame is crossed by four large, heavily blurred light leaks (36 pt blur) in amber, coral, magenta and cream. Each leak is a tilted ellipse that makes a long linear pass across the frame every 7–11 s, alternating left-to-right and right-to-left and entering at a new height each pass; its intensity follows sin²(π·progress), so it swells in and dies away without edges, and a white-hot inner core rides along. Leaks add with a plus-lighter blend so overlaps bloom. The whole layer flickers like a projector at 12 steps per second (up to ±8% around a 90% exposure). Tapping burns the film: a warm full-frame wash flashes in and fades exponentially (time constant ≈ 0.45 s). Nostalgic, analog and cinematic.",
+            "一张深色、带情绪的“照片”画面上，四道大面积、重度模糊（36pt）的漏光斜扫而过，颜色分别是琥珀、珊瑚、洋红与奶油白。每道漏光是一个倾斜的椭圆，每 7–11 秒完成一次横穿画面的线性扫过，左右方向交替，每次从新的高度进入；亮度遵循 sin²(π·进度)，因此无边界地渐起渐灭，内部还跟着一团白热光芯。漏光以 plus-lighter 叠加，重叠处自然溢光。整层像放映机一样以每秒 12 步闪烁（以 90% 曝光为中心最多 ±8%）。点击会“烧片”：暖色全屏光晕瞬间亮起，并以约 0.45 秒的时间常数指数衰减。怀旧、模拟、电影感十足。"
         ),
         implementation: L(
             "A Canvas with a blur filter and plus-lighter blend mode fills rotated ellipse Paths whose position and envelope come from accumulated time; exposure is a stepped hash of time, and the burn envelope is exp(−Δt·2.2) since the last tap.",
@@ -267,7 +267,8 @@ private struct LeakCanvas: View {
         Canvas { context, size in
             let step = Int((t * 12).rounded(.down))
             let jitter = (BackgroundMath.rand(step, 45) - 0.5) * 2
-            let exposure = (0.92 + flicker * 0.08 * jitter).clamped(to: 0...1)
+            // Centred on 90% so the flicker swings both ways (±8% at full flicker) instead of only dimming.
+            let exposure = (0.9 + flicker * 0.08 * jitter).clamped(to: 0...1)
             context.opacity = exposure
             context.blendMode = .plusLighter
             context.addFilter(.blur(radius: 36))

@@ -109,7 +109,11 @@ private struct CardsSpinCard: View, Animatable {
         let remainder = angle.truncatingRemainder(dividingBy: 360)
         let normalized = remainder < 0 ? remainder + 360 : remainder
         let showBack = normalized > 90 && normalized < 270
-        let edge = abs(sin(angle * .pi / 180))
+        let edge: CGFloat = CGFloat(abs(sin(angle * .pi / 180)))
+        let lifted: CGFloat = 1 + 0.06 * edge
+        let shadowOpacity: Double = 0.18 + 0.12 * Double(edge)
+        let shadowRadius: CGFloat = 16 + 12 * edge
+        let shadowY: CGFloat = 12 + 12 * edge
         ZStack {
             CardsCreditCard(theme: 4, last4: "8812")
                 .opacity(showBack ? 0 : 1)
@@ -119,8 +123,8 @@ private struct CardsSpinCard: View, Animatable {
         }
         .rotation3DEffect(.degrees(pitch), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
         .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-        .scaleEffect(1 + 0.06 * edge)
-        .shadow(color: .black.opacity(0.18 + 0.12 * edge), radius: 16 + 12 * edge, y: 12 + 12 * edge)
+        .scaleEffect(lifted)
+        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, y: shadowY)
     }
 }
 

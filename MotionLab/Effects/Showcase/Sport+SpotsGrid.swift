@@ -50,6 +50,8 @@ private struct SportSpotsDemo: View {
     @State private var selected: Int?
     @State private var shown = 0
     @State private var nextAuto = 0
+    /// Detail intro: opens a spot, then closes it so the grid isn't left dimmed.
+    @State private var introTask: Task<Void, Never>?
 
     private var isOpen: Bool { selected != nil }
 
@@ -70,7 +72,10 @@ private struct SportSpotsDemo: View {
                     .allowsHitTesting(false)
             }
         }
-        .autoplay(ctx.isPreview, every: 1.9, delay: 0.8) { autoStep() }
+        .autoplay(ctx.isPreview, every: 1.9, delay: 0.8) {
+            if ctx.isPreview { autoStep() } else { playIntro() }
+        }
+        .onDisappear { cancelIntro() }
     }
 
     private var grid: some View {
@@ -108,7 +113,10 @@ private struct SportSpotsDemo: View {
         }
         .frame(width: 84, height: 84)
         .contentShape(Rectangle())
-        .onTapGesture { select(index) }
+        .onTapGesture {
+            cancelIntro()
+            select(index)
+        }
     }
 
     private var detail: some View {
@@ -135,14 +143,34 @@ private struct SportSpotsDemo: View {
                 .scaleEffect(isOpen ? 1 : 0.94)
         }
         .contentShape(Rectangle())
-        .onTapGesture { select(nil) }
+        .onTapGesture {
+            cancelIntro()
+            select(nil)
+        }
         .allowsHitTesting(isOpen)
     }
 
-    private func select(_ index: Int?) {
+    private func select(_ index: Int?, silent: Bool = false) {
         if let index { shown = index }
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { selected = index }
-        if !ctx.isPreview { Haptics.tap(index == nil ? .soft : .light) }
+        if !silent && !ctx.isPreview { Haptics.tap(index == nil ? .soft : .light) }
+    }
+
+    /// Detail intro: open one spot, hold so the details can be read, then fly it back into the grid.
+    private func playIntro() {
+        cancelIntro()
+        select(1, silent: true)
+        introTask = Task {
+            try? await Task.sleep(for: .seconds(2.0))
+            guard !Task.isCancelled else { return }
+            if selected != nil { select(nil, silent: true) }
+            introTask = nil
+        }
+    }
+
+    private func cancelIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func autoStep() {

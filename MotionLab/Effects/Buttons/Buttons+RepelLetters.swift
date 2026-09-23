@@ -31,6 +31,8 @@ private struct ButtonRepelLettersDemo: View {
     let ctx: DemoContext
     @State private var finger: CGPoint?
     @State private var step = 0
+    /// The detail intro's scripted sweep; cancelled by the first real touch and on disappear.
+    @State private var introTask: Task<Void, Never>?
 
     private let size = CGSize(width: 290, height: 68)
 
@@ -63,6 +65,7 @@ private struct ButtonRepelLettersDemo: View {
             // The detail intro slides across once and lifts off, so the letters always regroup.
             if ctx.isPreview { previewStep() } else { introSweep() }
         }
+        .onDisappear { stopIntro() }
     }
 
     private var button: some View {
@@ -84,6 +87,7 @@ private struct ButtonRepelLettersDemo: View {
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
+                    stopIntro()
                     if finger == nil { Haptics.tap() }
                     finger = value.location
                 }
@@ -139,13 +143,21 @@ private struct ButtonRepelLettersDemo: View {
     }
 
     private func introSweep() {
-        Task { @MainActor in
+        stopIntro()
+        introTask = Task { @MainActor in
             for point in Self.previewPath {
                 finger = point
                 try? await Task.sleep(for: .seconds(0.45))
+                guard !Task.isCancelled else { return }
             }
             finger = nil
+            introTask = nil
         }
+    }
+
+    private func stopIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func previewStep() {

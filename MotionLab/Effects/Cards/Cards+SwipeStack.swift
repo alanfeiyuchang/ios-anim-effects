@@ -48,6 +48,8 @@ private struct CardsSwipeDemo: View {
     @State private var order: [Int] = Array(0..<5)
     @State private var offset: CGSize = .zero
     @State private var autoDirection: CGFloat = -1
+    /// True while a card is flying off, so a quick second tap can't skip an unseen card.
+    @State private var flinging = false
 
     var body: some View {
         let threshold = ctx.cg("threshold")
@@ -124,6 +126,8 @@ private struct CardsSwipeDemo: View {
     }
 
     private func fling(direction: CGFloat, haptic: Bool = true) {
+        guard !flinging else { return }
+        flinging = true
         if haptic && !ctx.isPreview {
             if direction > 0 { Haptics.success() } else { Haptics.tap(.medium) }
         }
@@ -138,6 +142,7 @@ private struct CardsSwipeDemo: View {
                 order.append(first)
                 offset = .zero
             }
+            flinging = false
         }
     }
 

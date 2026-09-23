@@ -6,21 +6,21 @@ extension Effect {
         category: .text,
         interaction: .loop,
         name: L("Live Headline Ticker", "实时头条轮播"),
-        summary: L("Headlines rise out of blur on a timer, with a live dot and a countdown hairline.", "头条按计时从模糊中升起，配合直播红点与倒计时细线。"),
+        summary: L("Headlines are pushed aside by a red wipe edge on a timer, with a live dot and a countdown hairline.", "头条按计时被一道红色擦除线推走换新，配合直播红点与倒计时细线。"),
         prompt: L(
-            "A compact news card: a red LIVE pill with a pulsing dot, a category label and a timestamp above one headline slot, and a 2 pt countdown hairline along the bottom. Every 2.6 s the hairline completes and the headline changes: the old one lifts 22 pt, shrinks to 96%, blurs 6 pt and fades in 250 ms, while the new one rises from 22 pt below out of the same blur on a spring (response 0.5 s, damping 0.82); the category and time cross-fade with it. The hairline resets to zero and fills linearly again. Tapping skips ahead with a selection haptic. It feels calm but urgent — a newsroom that never stops.",
-            "一张紧凑的新闻卡片：顶部是带脉冲红点的 LIVE 胶囊、分类标签与时间，下面是单条头条槽位，底部一条 2 pt 的倒计时细线。每 2.6 秒细线走满，头条随之更换：旧标题上移 22 pt、缩小到 96%、模糊 6 pt 并在 250 毫秒内淡出；新标题从下方 22 pt 处穿过同样的模糊，以弹簧（响应 0.5 秒、阻尼 0.82）升起就位，分类与时间同步交叉淡变。细线归零后再次匀速走满。点击可跳到下一条，并伴随选择触感。平静中带着紧迫——一间永不停歇的新闻编辑室。"
+            "A compact news card: a red LIVE pill with a pulsing dot, a category label and a timestamp above one headline slot, and a 2 pt countdown hairline along the bottom. Every 2.6 s the hairline completes and a 2 pt red wipe edge sweeps the slot left to right in 0.5 s on an ease-in-out cubic: behind the edge the new headline is revealed, sliding in from 24 pt right, while the old one is cropped away ahead of it and pushed 24 pt left, like a page shoved off a desk. The category and time cross-fade with it and the hairline refills linearly. Tapping skips ahead with a selection haptic. Editorial, crisp and urgent: a newsroom that never stops.",
+            "一张紧凑的新闻卡片：顶部是带脉冲红点的 LIVE 胶囊、分类与时间，下方为单条头条槽位，底部一条 2pt 倒计时细线。每 2.6 秒细线走满，一道 2pt 红色擦除线以三次缓入缓出曲线在 0.5 秒内从左扫到右：线后露出新标题，从右侧 24pt 滑入；线前的旧标题被逐步裁掉，同时向左推开 24pt，像被推下桌面的一页纸。分类与时间同步淡变，细线归零后匀速重走。点击跳到下一条并伴随选择触感。利落、克制又紧迫。"
         ),
         implementation: L(
-            "A TimelineView(.animation) derives the current index and the hairline fraction from elapsed time; the headline is keyed with .id(index) and swapped with a custom blur-rise Transition animated by .animation(_:value: index).",
-            "TimelineView(.animation) 根据经过时间推算当前序号与细线进度；头条以 .id(序号) 标识，通过自定义的模糊上升 Transition 替换，由 .animation(_:value: 序号) 驱动动画。"
+            "A TimelineView(.animation) derives the current index, the hairline fraction and an eased wipe progress from elapsed time; the old and new headlines are offset in opposite directions and cropped by complementary leading/trailing masks, with a red capsule riding the seam.",
+            "TimelineView(.animation) 根据经过时间推算当前序号、细线进度与缓动后的擦除进度；新旧标题向相反方向位移，并由互补的左右对齐遮罩裁切，接缝处跟随一枚红色胶囊。"
         ),
-        apis: ["TimelineView(.animation)", "Transition", "id(_:)", "animation(_:value:)", "symbolEffect(.pulse)"],
-        tags: ["ticker", "headline", "news", "rotating", "轮播", "头条", "新闻", "计时"],
+        apis: ["TimelineView(.animation)", "mask(alignment:_:)", "offset(x:y:)", "symbolEffect(.pulse)", "AnyTransition.animation(_:)"],
+        tags: ["ticker", "headline", "news", "wipe", "push", "轮播", "头条", "新闻", "擦除"],
         params: [
             .slider("interval", L("Interval", "间隔"), 1.2...6.0, default: 2.6, unit: "s"),
-            .slider("distance", L("Travel", "位移"), 6...40, default: 22, decimals: 0, unit: "pt"),
-            .slider("blur", L("Blur", "模糊"), 0...14, default: 6, decimals: 0, unit: "pt"),
+            .slider("wipe", L("Wipe time", "擦除时长"), 0.2...1.0, default: 0.5, unit: "s"),
+            .slider("push", L("Push", "推移"), 0...60, default: 24, decimals: 0, unit: "pt"),
         ]
     ) { ctx in
         NewsTickerDemo(ctx: ctx)
@@ -40,27 +40,6 @@ private let headlines: [Headline] = [
     Headline(category: L("Science", "科学"), title: L("Probe sends back its closest photos yet", "探测器传回迄今最近距离照片"), time: L("18 min ago", "18 分钟前")),
 ]
 
-private struct TickerRiseTransition: Transition {
-    var distance: CGFloat
-    var blur: CGFloat
-
-    func body(content: Content, phase: TransitionPhase) -> some View {
-        content
-            .offset(y: offset(for: phase))
-            .scaleEffect(phase == .didDisappear ? 0.96 : 1, anchor: .leading)
-            .blur(radius: phase.isIdentity ? 0 : blur)
-            .opacity(phase.isIdentity ? 1 : 0)
-    }
-
-    private func offset(for phase: TransitionPhase) -> CGFloat {
-        switch phase {
-        case .willAppear: return distance
-        case .didDisappear: return -distance
-        default: return 0
-        }
-    }
-}
-
 private struct NewsTickerDemo: View {
     let ctx: DemoContext
     @State private var start = Date()
@@ -72,8 +51,12 @@ private struct NewsTickerDemo: View {
                 let elapsed: Double = timeline.date.timeIntervalSince(start)
                 let interval: Double = max(ctx["interval"], 0.5)
                 let ticks = Int(elapsed / interval)
-                let fraction = CGFloat((elapsed / interval) - Double(ticks))
-                card(index: (ticks + skipped) % headlines.count, fraction: fraction)
+                let inTick: Double = elapsed - Double(ticks) * interval
+                let fraction = CGFloat(inTick / interval)
+                let step = ticks + skipped
+                // The very first headline is already in place; every later one arrives with the wipe.
+                let wipe: CGFloat = step == 0 ? 1 : Self.eased(inTick / max(ctx["wipe"], 0.05))
+                card(index: step % headlines.count, fraction: fraction, wipe: wipe)
             }
             DemoHint(text: L("Tap to skip", "点击跳过"), ctx: ctx)
         }
@@ -90,35 +73,60 @@ private struct NewsTickerDemo: View {
         }
     }
 
-    private func card(index: Int, fraction: CGFloat) -> some View {
+    /// Ease-in-out cubic on 0...1.
+    private static func eased(_ raw: Double) -> CGFloat {
+        let x = raw.clamped(to: 0...1)
+        let y = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2
+        return CGFloat(y)
+    }
+
+    private func card(index: Int, fraction: CGFloat, wipe: CGFloat) -> some View {
         let item = headlines[index]
-        let rise = TickerRiseTransition(distance: ctx.cg("distance"), blur: ctx.cg("blur"))
+        let old = headlines[(index + headlines.count - 1) % headlines.count]
         return VStack(alignment: .leading, spacing: 12) {
             header(item)
                 .id(index)
-                .transition(.opacity)
-            ZStack(alignment: .topLeading) {
-                Text(item.title, ctx.language)
-                    .font(.system(size: 21, weight: .bold))
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .id(index)
-                    .transition(
-                        .asymmetric(
-                            insertion: AnyTransition(rise).animation(.spring(response: 0.5, dampingFraction: 0.82)),
-                            removal: AnyTransition(rise).animation(.easeIn(duration: 0.25))
-                        )
-                    )
-            }
-            .frame(height: 58, alignment: .topLeading)
-            .clipped()
+                .transition(AnyTransition.opacity.animation(.easeInOut(duration: 0.3)))
+            headlineSlot(new: item, old: old, wipe: wipe)
             hairline(fraction)
         }
         .padding(18)
         .frame(width: 300)
         .demoCard()
-        .animation(.spring(response: 0.5, dampingFraction: 0.82), value: index)
+    }
+
+    private func headlineSlot(new: Headline, old: Headline, wipe: CGFloat) -> some View {
+        let width: CGFloat = 264
+        let push = ctx.cg("push")
+        let shown: CGFloat = width * wipe
+        let hidden: CGFloat = width - shown
+        let oldShift: CGFloat = -push * wipe
+        let newShift: CGFloat = push * (1 - wipe)
+        let edgeOpacity: Double = wipe > 0.001 && wipe < 0.999 ? 1 : 0
+        return ZStack(alignment: .topLeading) {
+            title(old)
+                .offset(x: oldShift)
+                .mask(alignment: .trailing) { Rectangle().frame(width: hidden) }
+            title(new)
+                .offset(x: newShift)
+                .mask(alignment: .leading) { Rectangle().frame(width: shown) }
+            Capsule()
+                .fill(Palette.red)
+                .frame(width: 2, height: 54)
+                .shadow(color: Palette.red.opacity(0.5), radius: 4)
+                .offset(x: shown - 1)
+                .opacity(edgeOpacity)
+        }
+        .frame(width: width, height: 58, alignment: .topLeading)
+        .clipped()
+    }
+
+    private func title(_ item: Headline) -> some View {
+        Text(item.title, ctx.language)
+            .font(.system(size: 21, weight: .bold))
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(width: 264, height: 58, alignment: .topLeading)
     }
 
     private func header(_ item: Headline) -> some View {

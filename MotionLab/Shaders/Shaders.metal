@@ -57,25 +57,46 @@ half4 mlPixelate(float2 position, SwiftUI::Layer layer, float size) {
 }
 
 // MARK: - Glitch (layer effect)
-// `split` is the resting R/B offset in points, `sliceHeight` the band height, `rate` how often bands re-roll per second.
+// Digital codec corruption, not analog tape: the image is cut into `block`-sized macro-blocks and, per step
+// of `rate` Hz, clusters of 4×2 blocks are hit. A hit block either jumps to a neighbouring block (2D offset
+// quantized to half-blocks) or freezes into vertical streaks of its own top row; R/B split by `split` and
+// hit blocks also swap channels. Near full intensity (the tap burst) the palette posterizes to 4 levels.
+// Samples move at most one block plus the split, so the caller's maxSampleOffset is block + split × 1.7.
 
 [[ stitchable ]]
 half4 mlGlitch(float2 position, SwiftUI::Layer layer, float time, float intensity,
-               float split, float sliceHeight, float rate) {
-    float band = floor(position.y / max(sliceHeight, 2.0));
-    float r = max(rate, 0.5);
-    float frame = floor(time * r * 2.0);
-    float jitter = (mlHash(float2(band, frame)) - 0.5) * 2.0;
-    float active = step(0.78, mlHash(float2(floor(time * r), band * 0.37)));
-    float shift = jitter * intensity * 26.0 * active;
+               float split, float block, float rate) {
+    float s = max(block, 4.0);
+    float2 cell = floor(position / s);
+    float frame = floor(time * max(rate, 0.5));
+    float2 region = floor(cell / float2(4.0, 2.0));
+    float hit = step(1.0 - (0.04 + 0.22 * intensity), mlHash(region + float2(frame * 0.713, frame * 0.291)));
+    float h1 = mlHash(cell + float2(frame * 1.37, 3.1));
+    float h2 = mlHash(cell * 1.91 + float2(7.7, frame * 0.53));
+    float2 p = position;
+    if (hit > 0.5) {
+        if (h1 < 0.55) {
+            float2 jump = floor(float2(h1 / 0.55, h2) * 5.0) - 2.0;
+            p += jump * s * 0.5;
+        } else {
+            p.y = cell.y * s + 0.5;
+        }
+    }
     float offset = split * (0.35 + intensity * 1.3);
-    float2 p = position + float2(shift, 0.0);
+    float2 chroma = float2(offset, offset * 0.5 * hit);
     half4 base = layer.sample(p);
-    half4 red = layer.sample(p + float2(offset, 0.0));
-    half4 blue = layer.sample(p - float2(offset, 0.0));
+    half4 red = layer.sample(p + chroma);
+    half4 blue = layer.sample(p - chroma);
     half4 color = half4(red.r, base.g, blue.b, max(base.a, max(red.a, blue.a)));
-    float scan = 0.93 + 0.07 * sin(position.y * 3.14159);
-    color.rgb *= half(scan);
+    if (hit > 0.5 && h2 > 0.7) {
+        color.rgb = color.gbr;
+    }
+    float posterize = smoothstep(0.75, 1.0, intensity);
+    if (posterize > 0.0 && color.a > 0.001h) {
+        float3 rgb = float3(color.rgb) / float(color.a);
+        float3 stepped = floor(rgb * 3.0 + 0.5) / 3.0;
+        color.rgb = half3(mix(rgb, stepped, posterize) * float(color.a));
+    }
     return color;
 }
 
@@ -117,6 +138,35 @@ float2 mlBulge(float2 position, float2 center, float radius, float strength) {
     float t = dist / radius;
     float factor = mix(1.0 - strength, 1.0, t * t);
     return center + d * factor;
+}
+
+// MARK: - Liquid lens droplet (distortion effect)
+// iOS 18 fallback for the Liquid Glass lens: a bulge whose footprint is an ellipse stretched by `stretch`
+// along `heading` (radians, y-down), matching the droplet's rotate(−θ) → scale → rotate(θ) transform.
+// `ripple` in (0, 1) runs a water-bead ring outward through the lens and fades; 0 (or 1) turns it off.
+
+[[ stitchable ]]
+float2 mlLensDrop(float2 position, float2 center, float radius, float strength, float heading,
+                  float stretch, float ripple) {
+    float2 d = position - center;
+    float c = cos(heading);
+    float s = sin(heading);
+    float2 local = float2(c * d.x + s * d.y, -s * d.x + c * d.y);
+    float2 axes = max(radius * float2(1.0 + stretch, 1.0 - stretch * 0.6), float2(1.0));
+    float t = length(local / axes);
+    float2 source = local;
+    if (t < 1.0) {
+        source = local * mix(1.0 - strength, 1.0, t * t);
+    }
+    if (ripple > 0.001 && ripple < 0.999 && t < 1.4) {
+        float band = t - ripple * 1.35;
+        float wave = exp(-band * band * 40.0) * sin(band * 18.0) * (1.0 - ripple);
+        float len = length(local);
+        if (len > 0.001) {
+            source += (local / len) * wave * 6.0;
+        }
+    }
+    return center + float2(c * source.x - s * source.y, s * source.x + c * source.y);
 }
 
 // MARK: - Swirl (distortion effect)

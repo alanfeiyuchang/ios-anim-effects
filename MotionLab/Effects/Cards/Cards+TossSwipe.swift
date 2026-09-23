@@ -15,7 +15,7 @@ extension Effect {
             "The drag's startLocation becomes the rotationEffect anchor; on release separate x, y and spin states are animated with different curves (easeOut for x, easeOut then easeIn for y) so their sum draws a parabola.",
             "拖动的 startLocation 作为 rotationEffect 的锚点；松手后 x、y 与旋转分别用不同的曲线动画（x 为缓出，y 先缓出后缓入），叠加起来便形成抛物线。"
         ),
-        apis: ["DragGesture.startLocation", "rotationEffect(_:anchor:)", "easeOut / easeIn", "DispatchQueue.asyncAfter"],
+        apis: ["DragGesture.startLocation", "rotationEffect(_:anchor:)", "easeOut / easeIn", "Task.sleep(for:)"],
         tags: ["toss", "throw", "gravity", "parabola", "抛掷", "重力", "抛物线", "卡片"],
         params: [
             .slider("lift", L("Toss height", "抛起高度"), 20...140, default: 70, step: 5, decimals: 0, unit: "pt"),
@@ -41,6 +41,8 @@ private struct CardsTossDemo: View {
     /// Briefly true when a new card becomes the top one, so it lifts out of the pile.
     @State private var rise = false
     @State private var autoDirection: CGFloat = 1
+    /// The running toss sequence, cancelled if the demo leaves the screen.
+    @State private var sequence: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -54,6 +56,10 @@ private struct CardsTossDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.9) { autoToss() }
+        .onDisappear {
+            sequence?.cancel()
+            sequence = nil
+        }
     }
 
     private func card(_ id: Int) -> some View {
@@ -109,30 +115,36 @@ private struct CardsTossDemo: View {
         withAnimation(.easeOut(duration: 0.2)) {
             tossY = -lift
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        sequence = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.2))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeIn(duration: 0.55)) {
                 tossY = 460
             }
+            try? await Task.sleep(for: .seconds(0.58))
+            guard !Task.isCancelled else { return }
+            land()
+            try? await Task.sleep(for: .seconds(0.22))
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { rise = false }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.78) {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                let first = order.removeFirst()
-                order.append(first)
-                drag = .zero
-                tossX = 0
-                tossY = 0
-                tossSpin = 0
-                grab = .center
-            }
-            tossing = false
-            // The next card lifts out of the pile.
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { rise = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { rise = false }
-            }
+    }
+
+    /// Recycles the tossed card to the bottom and lifts the next one out of the pile.
+    private func land() {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            let first = order.removeFirst()
+            order.append(first)
+            drag = .zero
+            tossX = 0
+            tossY = 0
+            tossSpin = 0
+            grab = .center
         }
+        tossing = false
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { rise = true }
     }
 
     private func autoToss() {
@@ -144,7 +156,9 @@ private struct CardsTossDemo: View {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
             drag = CGSize(width: direction * 50, height: -20)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        sequence = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             toss(direction: direction, haptic: !muted)
         }
     }

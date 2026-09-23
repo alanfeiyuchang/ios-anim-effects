@@ -42,8 +42,10 @@ private struct ReededGlassDemo: View {
     @State private var panelX: CGFloat = 130
     /// Finger-to-panel-center offset captured when a drag starts.
     @State private var grab: CGFloat?
-    /// nil until a touch picks a direction; only horizontal-first drags move the panel.
-    @State private var engaged: Bool?
+    /// True once the current touch has moved mostly sideways; vertical swipes are left to the page.
+    @State private var engaged = false
+    /// Resets itself when the touch ends or the system cancels it, so the panel always lands on a detent.
+    @GestureState private var touching = false
     @State private var detentIndex = 1
 
     var body: some View {
@@ -73,16 +75,20 @@ private struct ReededGlassDemo: View {
             .position(x: panelX, y: ReededLayout.size.height / 2)
             .gesture(
                 DragGesture(minimumDistance: 10, coordinateSpace: .named(ReededLayout.space))
+                    .updating($touching) { _, state, _ in state = true }
                     .onChanged { value in drag(value) }
                     .onEnded { value in end(value) }
             )
+            .onChange(of: touching) { _, isTouching in
+                if !isTouching && engaged { cancelDrag() }
+            }
     }
 
     private func drag(_ value: DragGesture.Value) {
-        if engaged == nil {
-            engaged = abs(value.translation.width) > abs(value.translation.height)
+        if !engaged {
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+            engaged = true
         }
-        guard engaged == true else { return }
         if grab == nil {
             grab = panelX - value.startLocation.x
             Haptics.tap(.soft)
@@ -93,10 +99,18 @@ private struct ReededGlassDemo: View {
     }
 
     private func end(_ value: DragGesture.Value) {
-        let didEngage = engaged == true
-        engaged = nil
-        guard didEngage else { return }
+        guard engaged else { return }
+        engaged = false
         settle(value)
+    }
+
+    /// The system took the touch (e.g. the page scrolled): land on the nearest detent without a throw.
+    private func cancelDrag() {
+        engaged = false
+        grab = nil
+        let best = ReededLayout.detents.indices.min { abs(ReededLayout.detents[$0] - panelX) < abs(ReededLayout.detents[$1] - panelX) } ?? 1
+        detentIndex = best
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { panelX = ReededLayout.detents[best] }
     }
 
     private func settle(_ value: DragGesture.Value) {

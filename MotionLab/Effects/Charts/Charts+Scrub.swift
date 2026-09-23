@@ -41,9 +41,12 @@ private let scrubData: [HourPoint] = (0..<24).map { hour in
 private struct ScrubDemo: View {
     let ctx: DemoContext
     @State private var selected: Int?
-    /// nil until the current touch decides its direction; true once it scrubs horizontally.
-    @State private var engaged: Bool?
+    /// True once the current touch has moved mostly sideways; until then the page keeps scrolling.
+    @State private var engaged = false
+    /// Resets itself when the touch ends or the system cancels it, so a scrub never gets stuck.
+    @GestureState private var touching = false
     @State private var sweep: Task<Void, Never>?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var interpolation: InterpolationMethod {
         switch ctx.int("curve") {
@@ -74,7 +77,10 @@ private struct ScrubDemo: View {
         }
         .onChange(of: selected) { _, newValue in
             // Only a real finger ticks: the arrival sweep and previews stay silent.
-            if newValue != nil && engaged == true { Haptics.selection() }
+            if newValue != nil && engaged { Haptics.selection() }
+        }
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endScrub() }
         }
         .onAppear { startSweep() }
         .onDisappear { sweep?.cancel() }
@@ -135,8 +141,8 @@ private struct ScrubDemo: View {
         .chartXSelection(value: $selected)
         .chartGesture { proxy in
             DragGesture(minimumDistance: 8)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { value in scrub(value, proxy: proxy) }
-                .onEnded { _ in endScrub() }
         }
         .chartYScale(domain: 0...95)
         .chartYAxis(.hidden)
@@ -158,22 +164,23 @@ private struct ScrubDemo: View {
 
     /// Horizontal-first: a mostly vertical swipe is left to the page's scroll view.
     private func scrub(_ value: DragGesture.Value, proxy: ChartProxy) {
-        if engaged == nil {
-            engaged = abs(value.translation.width) > abs(value.translation.height)
-            if engaged == true { sweep?.cancel() }
+        if !engaged {
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+            engaged = true
+            sweep?.cancel()
         }
-        guard engaged == true else { return }
         proxy.selectXValue(at: value.location.x)
     }
 
     private func endScrub() {
-        if engaged == true { selected = nil }
-        engaged = nil
+        guard engaged else { return }
+        engaged = false
+        withAnimation(.snappy(duration: 0.25)) { selected = nil }
     }
 
     /// Detail arrival: glide the cursor once across the day, then clear it.
     private func startSweep() {
-        guard !ctx.isPreview, !ctx.isStill else { return }
+        guard !ctx.isPreview, !ctx.isStill, !reduceMotion else { return }
         sweep?.cancel()
         sweep = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))

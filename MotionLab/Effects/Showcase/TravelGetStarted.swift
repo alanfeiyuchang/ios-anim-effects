@@ -39,6 +39,8 @@ private struct TravelGetStartedDemo: View {
     @State private var squeezed = false
     @State private var expanded = false
     @State private var showBody = false
+    /// Detail intro: morphs open, then closes the sheet again so the stage doesn't stay covered.
+    @State private var introTask: Task<Void, Never>?
 
     private var zh: Bool { ctx.language == .zh }
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
@@ -51,14 +53,17 @@ private struct TravelGetStartedDemo: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .autoplay(ctx.isPreview, every: 2.4) { toggle() }
+        .autoplay(ctx.isPreview, every: 2.4) {
+            if ctx.isPreview { toggle() } else { playIntro() }
+        }
+        .onDisappear { cancelIntro() }
     }
 
     private var stageCard: some View {
         ZStack(alignment: .bottom) {
             TravelOnboardingBackdrop(zh: zh, dimmed: expanded)
             if expanded {
-                TravelStartSheet(ns: ns, zh: zh, showBody: showBody, onClose: toggle)
+                TravelStartSheet(ns: ns, zh: zh, showBody: showBody, onClose: userToggle)
                     .padding(12)
             } else {
                 TravelStartPill(
@@ -68,7 +73,7 @@ private struct TravelGetStartedDemo: View {
                     squeezed: squeezed,
                     shimmer: ctx.bool("shimmer"),
                     preview: ctx.isPreview,
-                    onTap: expand
+                    onTap: userExpand
                 )
                 .padding(.bottom, 24)
             }
@@ -83,12 +88,8 @@ private struct TravelGetStartedDemo: View {
         // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
         let muted = Haptics.isMuted
         if expanded {
-            if !ctx.isPreview { Haptics.tap() }
-            withAnimation(.easeOut(duration: 0.12)) {
-                showBody = false
-            } completion: {
-                withAnimation(spring) { expanded = false }
-            }
+            if !ctx.isPreview && !muted { Haptics.tap() }
+            collapse()
         } else {
             withAnimation(.spring(response: 0.16, dampingFraction: 0.7)) {
                 squeezed = true
@@ -96,6 +97,41 @@ private struct TravelGetStartedDemo: View {
                 morph(silent: muted)
             }
         }
+    }
+
+    private func collapse() {
+        withAnimation(.easeOut(duration: 0.12)) {
+            showBody = false
+        } completion: {
+            withAnimation(spring) { expanded = false }
+        }
+    }
+
+    private func userToggle() {
+        cancelIntro()
+        toggle()
+    }
+
+    private func userExpand() {
+        cancelIntro()
+        expand()
+    }
+
+    /// Detail intro: the full squash → morph → sheet run, then a silent close.
+    private func playIntro() {
+        cancelIntro()
+        if !expanded { toggle() }
+        introTask = Task {
+            try? await Task.sleep(for: .seconds(2.6))
+            guard !Task.isCancelled else { return }
+            if expanded { collapse() }
+            introTask = nil
+        }
+    }
+
+    private func cancelIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     /// Release: the ButtonStyle already squashed on touch-down, so morph straight away.

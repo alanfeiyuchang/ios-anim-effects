@@ -33,6 +33,8 @@ private struct ButtonSpotlightDemo: View {
     @State private var active = false
     @State private var pressed = false
     @State private var step = 0
+    /// The detail intro's scripted sweep; cancelled by the first real touch and on disappear.
+    @State private var introTask: Task<Void, Never>?
 
     private let size = CGSize(width: 290, height: 96)
     private static let previewPoints: [CGPoint] = [
@@ -54,6 +56,7 @@ private struct ButtonSpotlightDemo: View {
             // Previews keep the light roaming; the detail intro sweeps once and switches it off again.
             if ctx.isPreview { previewMove() } else { introSweep() }
         }
+        .onDisappear { stopIntro() }
     }
 
     private var shape: RoundedRectangle {
@@ -79,6 +82,7 @@ private struct ButtonSpotlightDemo: View {
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
+                    stopIntro()
                     if !pressed { pressed = true }
                     move(to: value.location)
                 }
@@ -125,13 +129,21 @@ private struct ButtonSpotlightDemo: View {
     }
 
     private func introSweep() {
-        Task { @MainActor in
+        stopIntro()
+        introTask = Task { @MainActor in
             for _ in 0..<3 {
                 previewMove()
                 try? await Task.sleep(for: .seconds(0.9))
+                guard !Task.isCancelled else { return }
             }
             withAnimation(.easeOut(duration: 0.3)) { active = false }
+            introTask = nil
         }
+    }
+
+    private func stopIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func previewMove() {

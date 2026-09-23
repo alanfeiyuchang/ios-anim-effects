@@ -38,6 +38,8 @@ private struct ButtonPillToolbarDemo: View {
     @State private var selected: Int?
     @State private var bounces: [Int] = [0, 0, 0, 0]
     @State private var step = 0
+    /// Detail intro: opens, picks a tool, then tucks the toolbar away again.
+    @State private var introTask: Task<Void, Never>?
 
     private static let tools: [ButtonToolbarTool] = [
         ButtonToolbarTool(symbol: "crop.rotate", name: L("Crop", "裁剪")),
@@ -55,7 +57,10 @@ private struct ButtonPillToolbarDemo: View {
                 .padding(.bottom, 14)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.1, delay: 0.4) { previewStep() }
+        .autoplay(ctx.isPreview, every: 1.1, delay: 0.4) {
+            if ctx.isPreview { previewStep() } else { playIntro() }
+        }
+        .onDisappear { cancelIntro() }
     }
 
     private var card: some View {
@@ -120,7 +125,10 @@ private struct ButtonPillToolbarDemo: View {
         let order = open ? count - 1 - index : index
         let delay = Double(order) * stagger + (open ? 0.06 : 0)
         let isSelected = selected == index
-        return Button { pick(index) } label: {
+        return Button {
+            cancelIntro()
+            pick(index, silent: false)
+        } label: {
             Image(systemName: Self.tools[index].symbol)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(isSelected ? Palette.amber : Color.white.opacity(0.85))
@@ -138,7 +146,10 @@ private struct ButtonPillToolbarDemo: View {
     }
 
     private var plusButton: some View {
-        Button(action: toggle) {
+        Button {
+            cancelIntro()
+            toggle(silent: false)
+        } label: {
             Image(systemName: "plus")
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(.white)
@@ -151,25 +162,45 @@ private struct ButtonPillToolbarDemo: View {
         .accessibilityLabel(Text(open ? L("Close tools", "收起工具") : L("Show tools", "展开工具"), ctx.language))
     }
 
-    private func toggle() {
+    private func toggle(silent: Bool) {
         open.toggle()
         if !open { selected = nil }
-        Haptics.tap()
+        if !silent && !ctx.isPreview { Haptics.tap() }
     }
 
-    private func pick(_ index: Int) {
+    private func pick(_ index: Int, silent: Bool) {
         guard open else { return }
         withAnimation(.smooth(duration: 0.25)) { selected = index }
         bounces[index] += 1
-        Haptics.tap()
+        if !silent && !ctx.isPreview { Haptics.tap() }
+    }
+
+    /// Detail intro: the whole choreography once, ending closed.
+    private func playIntro() {
+        cancelIntro()
+        if !open { toggle(silent: true) }
+        introTask = Task {
+            try? await Task.sleep(for: .seconds(0.8))
+            guard !Task.isCancelled else { return }
+            pick(1, silent: true)
+            try? await Task.sleep(for: .seconds(1.1))
+            guard !Task.isCancelled else { return }
+            if open { toggle(silent: true) }
+            introTask = nil
+        }
+    }
+
+    private func cancelIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func previewStep() {
         switch step % 4 {
-        case 0: toggle()
-        case 1: pick(1)
-        case 2: pick(3)
-        default: toggle()
+        case 0: toggle(silent: true)
+        case 1: pick(1, silent: true)
+        case 2: pick(3, silent: true)
+        default: toggle(silent: true)
         }
         step += 1
     }

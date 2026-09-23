@@ -85,10 +85,10 @@ private struct ButtonLiquidGlassDemo: View {
         if #available(iOS 26.0, *) {
             ButtonGlassActions(saved: saved, spacing: ctx.cg("spacing"), language: ctx.language, onToggle: toggle)
         } else {
-            ButtonFallbackGlassActions(saved: saved, language: ctx.language, onToggle: toggle)
+            ButtonFallbackGlassActions(saved: saved, spacing: ctx.cg("spacing"), language: ctx.language, onToggle: toggle)
         }
         #else
-        ButtonFallbackGlassActions(saved: saved, language: ctx.language, onToggle: toggle)
+        ButtonFallbackGlassActions(saved: saved, spacing: ctx.cg("spacing"), language: ctx.language, onToggle: toggle)
         #endif
     }
 
@@ -227,12 +227,16 @@ private struct ButtonFallbackGlass<S: Shape>: View {
 
 private struct ButtonFallbackGlassActions: View {
     let saved: Bool
+    /// "Merge distance": on iOS 18 it sets how far the Undo pill travels out of the check before settling.
+    let spacing: CGFloat
     let language: AppLanguage
     let onToggle: () -> Void
     @Namespace private var ns
 
+    private var gap: CGFloat { 4 + spacing * 0.5 }
+
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: gap) {
             if saved {
                 Button(action: onToggle) {
                     Image(systemName: "checkmark")

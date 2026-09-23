@@ -129,6 +129,12 @@ private struct CardsPeekDemo: View {
             // Simulated presses stay silent, including the detail stage's intro play.
             let muted = Haptics.isMuted || ctx.isPreview
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { peek(index, haptic: !muted) }
+            if !ctx.isPreview {
+                // Detail intro: close the peek again so the stage is left at rest.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) {
+                    if peeked == index { dismiss() }
+                }
+            }
             autoIndex += 1
         } else {
             dismiss()

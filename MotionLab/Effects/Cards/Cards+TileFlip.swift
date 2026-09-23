@@ -12,8 +12,8 @@ extension Effect {
             "一张 252×176 pt 的卡片被切成 4×3 的马赛克，每块 60×56 pt，间隙 4 pt，圆角 8 pt，拼在一起是一幅夜景。点击后，每块瓷砖都绕竖直轴以透视翻转 180°，各自使用弹簧（响应 0.55 秒、阻尼 0.72），但按波浪依次启动：从左上角沿对角线每一步延迟 50 毫秒（也可从中心向外扩散，或随机错落）。翻到一半时瓷砖缩小到约 88%，间隙随之变宽；背面是白昼画面中对应的那一块，于是新画面随着波浪逐渐拼合。再次点击，同样的波浪再扫一遍，把画面翻回来。清脆、有节奏、令人满足，就像翻牌显示屏。"
         ),
         implementation: L(
-            "Each tile is an Animatable view that clips its slice of a full-size artwork by offsetting it inside a fixed frame; the flip angle comes from a shared turn counter and each tile gets its own .animation(spring.delay(order × stagger), value:).",
-            "每块瓷砖是一个 Animatable 视图，通过在固定 frame 内偏移整幅画面来裁出自己的那一块；翻转角度来自共享的翻转计数，每块瓷砖各自带 .animation(spring.delay(次序 × 间隔), value:)。"
+            "Each tile is an Animatable view that clips its slice of a full-size artwork by offsetting it inside a fixed frame; the flip angle comes from a shared turn counter and each tile gets its own .animation(spring.delay(order × stagger), value:). The grid is flattened with drawingGroup so the wave renders as one Metal layer.",
+            "每块瓷砖是一个 Animatable 视图，通过在固定 frame 内偏移整幅画面来裁出自己的那一块；翻转角度来自共享的翻转计数，每块瓷砖各自带 .animation(spring.delay(次序 × 间隔), value:)；整个网格用 drawingGroup 压平为一个 Metal 图层渲染。"
         ),
         apis: ["Animatable", "rotation3DEffect", "animation(_:value:)", "Animation.delay", "clipped()"],
         tags: ["flip", "tiles", "mosaic", "cascade", "翻转", "瓷砖", "马赛克", "级联"],
@@ -62,6 +62,11 @@ private struct CardsTileFlipDemo: View {
                 }
             }
         }
+        // Twelve tiles × two full artworks: flatten the mosaic into one Metal-rendered layer per frame.
+        // Padding keeps the mid-flip perspective overhang inside the offscreen buffer.
+        .padding(12)
+        .drawingGroup()
+        .padding(-12)
     }
 
     private func tile(column: Int, row: Int) -> some View {

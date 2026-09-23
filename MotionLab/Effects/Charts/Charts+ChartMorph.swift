@@ -142,6 +142,9 @@ private struct DonutBarsDemo: View {
         return ZStack(alignment: .topLeading) {
             ForEach(morphData.indices, id: \.self) { index in
                 let top = MorphSegment.barTop(height: morphData[index].value / maxValue, in: plot.height)
+                let labelDelay: Double = isBars ? 0.3 + Double(index) * ctx["stagger"] : 0
+                let labelX: CGFloat = slotWidth * CGFloat(index)
+                let labelY: CGFloat = top - 30
                 VStack(spacing: 1) {
                     Text(String(format: "%.1fk", morphData[index].value))
                         .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -151,10 +154,10 @@ private struct DonutBarsDemo: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(width: slotWidth)
-                .offset(x: slotWidth * CGFloat(index), y: top - 30)
+                .offset(x: labelX, y: labelY)
                 .opacity(isBars ? 1 : 0)
                 .offset(y: isBars ? 0 : 8)
-                .animation(.spring(response: 0.45, dampingFraction: 0.8).delay(isBars ? 0.3 + Double(index) * ctx["stagger"] : 0), value: isBars)
+                .animation(.spring(response: 0.45, dampingFraction: 0.8).delay(labelDelay), value: isBars)
             }
         }
         .frame(width: plot.width, height: plot.height, alignment: .topLeading)

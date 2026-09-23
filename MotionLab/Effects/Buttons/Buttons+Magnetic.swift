@@ -37,6 +37,8 @@ private struct ButtonMagneticDemo: View {
     /// 0…1 field influence after the smoothstep falloff.
     @State private var influence: CGFloat = 0
     @State private var step = 0
+    /// The detail intro's scripted sweep; cancelled by the first real touch and on disappear.
+    @State private var introTask: Task<Void, Never>?
     /// Bumped when the finger lifts on the button itself: plays the press pulse.
     @State private var presses = 0
 
@@ -98,6 +100,7 @@ private struct ButtonMagneticDemo: View {
             // Previews keep roaming; the detail intro drifts past the button once and then lets go.
             if ctx.isPreview { stepPreview() } else { introSweep() }
         }
+        .onDisappear { stopIntro() }
     }
 
     @ViewBuilder
@@ -115,7 +118,10 @@ private struct ButtonMagneticDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
-            .onChanged { value in track(value.location, animateFinger: false) }
+            .onChanged { value in
+                stopIntro()
+                track(value.location, animateFinger: false)
+            }
             .onEnded { value in
                 if liftedOnButton(value.location) {
                     Haptics.tap(.medium)
@@ -163,13 +169,21 @@ private struct ButtonMagneticDemo: View {
     }
 
     private func introSweep() {
-        Task { @MainActor in
+        stopIntro()
+        introTask = Task { @MainActor in
             for _ in 0..<3 {
                 stepPreview()
                 try? await Task.sleep(for: .seconds(1.0))
+                guard !Task.isCancelled else { return }
             }
             release()
+            introTask = nil
         }
+    }
+
+    private func stopIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func stepPreview() {

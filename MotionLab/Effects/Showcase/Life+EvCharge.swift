@@ -11,8 +11,8 @@ extension Effect {
             "实时充电卡片：电量百分比逐格上涨，功率微微跳动，箭头光带在电池里流动。"
         ),
         prompt: L(
-            "A dark glossy \"Charging · Bay 4\" widget. A 46 pt rounded percentage ticks up one point every 0.8 s, while three smaller stats — power in kW, minutes left and energy added — refresh on the same beat, the power jittering between 148 and 156 kW. Beneath them a 240 × 34 pt battery fills to the current level with an orange gradient on a smooth 0.6 s ease-out, and a row of faint chevrons streams rightward through the fill at 60 pt/s, masked to the charged part, so energy visibly flows in. Tapping pauses the session: the chevrons freeze, the fill dims and the eyebrow reads \"Paused\". At 100% the bar flashes lime, reads \"Charged\" and after 2 s restarts at 62%. Calm and alive.",
-            "暗色光泽“充电中 · 4 号桩”小组件。46pt 圆体百分比每 0.8 秒滚动加 1，功率、剩余分钟与已充电量同拍刷新，功率在 148–156 kW 间轻跳。下方 240 × 34pt 电池条以 0.6 秒 ease-out 填到当前电量，橙色渐变；一排淡箭头以每秒 60pt 在已充部分内向右流动，能量“流进去”清晰可见。点击暂停：箭头静止、填充变暗、眉标显示“已暂停”。到 100% 时电池条闪成青柠色并显示“已充满”，2 秒后从 62% 重来。冷静而鲜活。"
+            "A dark glossy \"Charging · Bay 4\" widget. A 46 pt rounded percentage ticks up one point every 0.8 s, while three smaller stats — power in kW, minutes left and energy added — refresh on the same beat, the power jittering between 148 and 156 kW. Beneath them a 240 × 34 pt battery fills to the current level with an orange gradient on a smooth 0.6 s ease-out, and a row of faint chevrons streams rightward through the fill at 60 pt/s, masked to the charged part, so energy visibly flows in. Tapping pauses the session: the chevrons freeze, the fill dims and the eyebrow reads \"Paused\". At 100% the bar turns lime with a quick double brightness flash, reads \"Charged\" and after 2 s restarts at 62%. Calm and alive.",
+            "暗色光泽“充电中 · 4 号桩”小组件。46pt 圆体百分比每 0.8 秒滚动加 1，功率、剩余分钟与已充电量同拍刷新，功率在 148–156 kW 间轻跳。下方 240 × 34pt 电池条以 0.6 秒 ease-out 填到当前电量，橙色渐变；一排淡箭头以每秒 60pt 在已充部分内向右流动，能量“流进去”清晰可见。点击暂停：箭头静止、填充变暗、眉标显示“已暂停”。到 100% 时电池条变为青柠色并亮闪两下，显示“已充满”，2 秒后从 62% 重来。冷静而鲜活。"
         ),
         implementation: L(
             "A task(id:) loop advances the percentage and power every beat inside withAnimation, feeding numericText transitions and the bar width; a TimelineView offsets a repeating chevron row that is masked to the filled width, and pausing cancels the loop via the task id.",
@@ -36,6 +36,8 @@ private struct LifeEvChargeDemo: View {
     @State private var power = 152
     @State private var paused = false
     @State private var charged = false
+    /// Bumped when the session completes, driving the lime flash.
+    @State private var flashes = 0
 
     private var zh: Bool { ctx.language == .zh }
     private let barSize = CGSize(width: 240, height: 34)
@@ -151,6 +153,16 @@ private struct LifeEvChargeDemo: View {
                     shape.frame(width: fillWidth)
                 }
                 .opacity(paused ? 0.45 : 1)
+                .keyframeAnimator(initialValue: 0.0, trigger: flashes) { content, glow in
+                    content.brightness(glow)
+                } keyframes: { _ in
+                    KeyframeTrack(\.self) {
+                        LinearKeyframe(0.5, duration: 0.08)
+                        CubicKeyframe(0.05, duration: 0.22)
+                        LinearKeyframe(0.4, duration: 0.08)
+                        CubicKeyframe(0, duration: 0.35)
+                    }
+                }
                 .shadow(color: (charged ? Signature.lime : Signature.accent).opacity(0.45), radius: 8)
             }
             .frame(width: barSize.width, height: barSize.height)
@@ -176,6 +188,7 @@ private struct LifeEvChargeDemo: View {
             guard !Task.isCancelled else { return }
             if percent >= 100 {
                 withAnimation(.smooth(duration: 0.3)) { charged = true }
+                flashes += 1
                 try? await Task.sleep(for: .seconds(2))
                 guard !Task.isCancelled else { return }
                 withAnimation(.smooth(duration: 0.5)) {
@@ -199,10 +212,14 @@ private struct LifeChargeChevrons: View {
     let paused: Bool
     let preview: Bool
     let size: CGSize
+    /// Total time spent paused, subtracted from the clock so the flow resumes where it froze.
+    @State private var pausedTotal: Double = 0
+    @State private var pausedAt: Double?
 
     var body: some View {
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: paused)) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
+            let now: Double = paused ? (pausedAt ?? timeline.date.timeIntervalSinceReferenceDate) : timeline.date.timeIntervalSinceReferenceDate
+            let t: Double = now - pausedTotal
             let spacing: CGFloat = 22
             let shift = CGFloat((t * speed).truncatingRemainder(dividingBy: Double(spacing)))
             HStack(spacing: 0) {
@@ -219,5 +236,14 @@ private struct LifeChargeChevrons: View {
             .clipped()
         }
         .allowsHitTesting(false)
+        .onChange(of: paused) { _, isPaused in
+            let clock = Date().timeIntervalSinceReferenceDate
+            if isPaused {
+                pausedAt = clock
+            } else if let start = pausedAt {
+                pausedTotal += clock - start
+                pausedAt = nil
+            }
+        }
     }
 }

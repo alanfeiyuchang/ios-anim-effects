@@ -141,10 +141,10 @@ private struct PullCordToggleDemo: View {
                     withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) { armed = false }
                 }
             }
-            .onEnded { _ in release() }
+            .onEnded { _ in release(silent: false) }
     }
 
-    private func release() {
+    private func release(silent: Bool) {
         let fire = armed
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             pull = 0
@@ -152,12 +152,14 @@ private struct PullCordToggleDemo: View {
             armed = false
         }
         if fire {
-            if !ctx.isPreview { Haptics.tap() }
+            if !ctx.isPreview && !silent { Haptics.tap() }
             isOn.toggle()
         }
     }
 
     private func simulatePull() {
+        // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
+        let muted = Haptics.isMuted
         let target: CGFloat = ctx.cg("threshold") + 10
         withAnimation(.easeOut(duration: 0.35)) {
             pull = target
@@ -166,7 +168,7 @@ private struct PullCordToggleDemo: View {
         }
         Task {
             try? await Task.sleep(for: .seconds(0.45))
-            release()
+            release(silent: muted)
         }
     }
 }

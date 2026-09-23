@@ -124,11 +124,24 @@ private struct ScrollStickyHeader: View {
                 }
                 .opacity(pinned && material ? 1 : 0)
         }
-        .onGeometryChange(for: Bool.self, of: { proxy in
-            proxy.frame(in: .scrollView).minY <= 0.5
-        }, action: { isPinned in
-            withAnimation(.snappy(duration: 0.3)) { pinned = isPinned }
-            if isPinned { onPin() }
+        .onGeometryChange(for: Int.self, of: { proxy in
+            Self.band(minY: proxy.frame(in: .scrollView).minY)
+        }, action: { band in
+            // Bands 1 and 2 are both on screen at the top edge; only band 1 (at least half the bar showing)
+            // is the section being read, so the tick also fires when a header re-pins while scrolling up.
+            let isPinned = band == 1 || band == 2
+            if isPinned != pinned {
+                withAnimation(.snappy(duration: 0.3)) { pinned = isPinned }
+            }
+            if band == 1 { onPin() }
         })
+    }
+
+    /// 0: below the top edge · 1: pinned (or less than half pushed off) · 2: mostly pushed off · 3: gone.
+    private static func band(minY: CGFloat) -> Int {
+        if minY > 0.5 { return 0 }
+        if minY > -24 { return 1 }
+        if minY > -48 { return 2 }
+        return 3
     }
 }

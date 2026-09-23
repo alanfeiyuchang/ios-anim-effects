@@ -49,10 +49,13 @@ private struct PinchOpenDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            if !expanded {
-                DemoHint(text: L("Spread two fingers on the card, or double-tap", "在卡片上双指张开，或双击"), ctx: ctx)
-                    .padding(.bottom, 12)
-            }
+            DemoHint(
+                text: expanded
+                    ? L("Pinch in or double-tap to close", "双指捏合或双击收起")
+                    : L("Spread two fingers on the card, or double-tap", "在卡片上双指张开，或双击"),
+                ctx: ctx
+            )
+            .padding(.bottom, 12)
         }
         .autoplay(ctx.isPreview, every: 2.4, delay: 0.6) { simulate() }
     }

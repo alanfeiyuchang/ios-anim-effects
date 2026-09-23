@@ -6,20 +6,21 @@ extension Effect {
         category: .showcase,
         interaction: .tap,
         name: L("Best Line Trail", "最佳路线轨迹"),
-        summary: L("A glowing gradient trail carves down the mountain with a marker and live elevation readout.", "发光渐变轨迹沿山坡滑下，标记点与实时海拔读数随之移动。"),
+        summary: L("A glowing trail carves down the mountain, racing a ghost of your best run; scrub to replay any point.", "发光轨迹沿山坡滑下，与个人最佳的幽灵同线竞速；拖动可回看任意位置。"),
         prompt: L(
-            "A dark BEST LINE card shows a faint ridge silhouette and a dotted ghost of the descent route. On appear, an orange-to-red gradient trail carves along the S-shaped curve from summit to valley over ~2.4 s (ease-in-out), glowing with an 8 pt orange shadow; a white marker with a translucent halo sits exactly on the trail's leading tip and carries a small capsule tag whose elevation counts down from 2,256 m to 860 m as it descends. The footer distance ticks up from 0.0 to 1.4 km in sync. Tap replays the run; dragging horizontally scrubs the marker to the point of the line directly under the finger. Smooth, cinematic and satisfying, like replaying your best run.",
-            "深色“最佳路线”卡片上有一道若隐若现的山脊剪影和虚线描出的下滑路线。出现时，橙到红的渐变轨迹沿 S 形曲线从山顶滑向谷底，用时约 2.4 秒（ease-in-out），并带 8pt 橙色辉光；白色标记点连同半透明光晕精确贴在轨迹最前端，头顶的小胶囊标签显示海拔，从 2,256 米随下降递减到 860 米；底部距离同步从 0.0 增长到 1.4 公里。点击重播，横向拖动时，标记点会落在手指正下方的路线位置上。顺滑、有电影感，就像回放自己最漂亮的一趟滑行。"
+            "A dark BEST LINE card shows a faint ridge, a dotted ghost of the descent route and a slim elevation profile beneath. On appear an orange-to-red gradient trail carves the S-curve from summit to valley over ~2.4 s (ease-in-out), glowing with an 8 pt orange shadow; a white haloed marker rides its tip, its tag counting elevation down from 2,256 m to 860 m, while a hollow “PB” ghost marker races the same line 15% slower. The profile fills orange up to a cursor in step and the distance ticks to 1.4 km. Dragging scrubs: the marker chases the finger along the route on a spring (response 0.3 s, damping 0.75) and the ghost trails on a looser one (0.6 s). Tapping replays, with a success haptic at the finish. Cinematic and competitive.",
+            "深色“最佳路线”卡片：淡淡的山脊、虚线下滑路线，下方是细长海拔剖面。出现时，橙到红的渐变轨迹约 2.4 秒（缓入缓出）沿 S 形曲线从山顶滑到谷底，带 8pt 橙色辉光；白色光晕标记贴在前端，标签海拔从 2,256 米递减到 860 米；空心“PB”幽灵标记慢 15% 同线竞速。剖面随游标填橙，距离增至 1.4 公里。拖动时标记点以弹簧（响应 0.3 秒、阻尼 0.75）沿路线追随手指，幽灵以更松的弹簧（0.6 秒）落后跟随。点击重播，到终点时成功触觉。"
         ),
         implementation: L(
-            "An Animatable view gets the interpolated progress each frame, trims the route path with trimmedPath(from:to:) and reads its currentPoint to place the marker and derive elevation and distance; scrubbing looks up the sampled path fraction whose x is nearest the finger.",
-            "自定义 Animatable 视图逐帧获得插值后的进度，用 trimmedPath(from:to:) 截取路线，并读取其 currentPoint 来放置标记点、换算海拔与距离；拖动时在预采样表中查找 x 最接近手指的路径比例。"
+            "An Animatable view gets the interpolated (run, ghost) progress pair each frame, trims the route with trimmedPath(from:to:) and reads currentPoint to place both markers and derive elevation and distance; the profile is a pre-sampled area Path masked to the progress. Scrubbing springs both values toward the sampled fraction nearest the finger.",
+            "自定义 Animatable 视图逐帧获得插值后的（本次、幽灵）进度对，用 trimmedPath(from:to:) 截取路线，读取 currentPoint 放置两个标记点并换算海拔与距离；海拔剖面是预采样的面积 Path，按进度遮罩。拖动时两个进度以弹簧奔向手指下方最近的采样比例。"
         ),
-        apis: ["Animatable", "Path.trimmedPath(from:to:)", "Path.currentPoint", "StrokeStyle", "task(id:)"],
-        tags: ["path animation", "route", "trail", "elevation", "路径动画", "路线", "轨迹", "海拔"],
+        apis: ["Animatable", "AnimatablePair", "Path.trimmedPath(from:to:)", "Path.currentPoint", "spring(response:dampingFraction:)"],
+        tags: ["path animation", "route", "ghost", "elevation", "路径动画", "路线", "幽灵对比", "海拔"],
         params: [
             .slider("duration", L("Run duration", "滑行时长"), 1.0...5.0, default: 2.4, unit: "s"),
             .slider("width", L("Trail width", "轨迹粗细"), 2...8, default: 4, decimals: 1, unit: "pt"),
+            .slider("ghost", L("Ghost pace", "幽灵节奏"), 1.0...1.5, default: 1.15, unit: "×"),
             .toggle("elevation", L("Elevation tag", "海拔标签"), default: true),
         ]
     ) { ctx in
@@ -64,17 +65,32 @@ private enum BestLineRoute {
         }
         return best.fraction
     }
+
+    /// Normalised drop (0 = summit, 1 = valley) at evenly spaced path fractions, for the profile strip.
+    static let profile: [CGFloat] = {
+        let full = BestLineRoute.path(in: BestLineRoute.size)
+        let count = 60
+        return (0...count).map { i in
+            let f = CGFloat(i) / CGFloat(count)
+            let y = full.trimmedPath(from: 0, to: max(f, 0.001)).currentPoint?.y ?? 0
+            let fall = (y / BestLineRoute.size.height - 0.1) / 0.82
+            return fall.clamped(to: 0...1)
+        }
+    }()
 }
 
 private struct SportBestLineDemo: View {
     let ctx: DemoContext
     @State private var progress: CGFloat = 0
+    /// Last season's best run, racing the same line a little slower.
+    @State private var ghost: CGFloat = 0
     @State private var runID = 0
 
     init(ctx: DemoContext) {
         self.ctx = ctx
         // Still snapshots never run `task`, so they show the finished trail.
         _progress = State(initialValue: ctx.isStill ? 1 : 0)
+        _ghost = State(initialValue: ctx.isStill ? 1 : 0)
     }
 
     var body: some View {
@@ -83,6 +99,7 @@ private struct SportBestLineDemo: View {
                 Spacer()
                 BestLineCard(
                     progress: progress,
+                    ghost: ghost,
                     lineWidth: ctx.cg("width"),
                     showElevation: ctx.bool("elevation"),
                     language: ctx.language
@@ -109,9 +126,10 @@ private struct SportBestLineDemo: View {
             .onChanged { value in
                 // Card content is inset 20 pt; map the finger's x to the route point directly beneath it.
                 let x = (value.location.x - 20).clamped(to: 0...BestLineRoute.size.width)
-                var immediate = Transaction()
-                immediate.disablesAnimations = true
-                withTransaction(immediate) { progress = BestLineRoute.fraction(nearestX: x) }
+                let target = BestLineRoute.fraction(nearestX: x)
+                // Spring-loaded: the marker chases the finger along the route, the ghost trails on a looser spring.
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { progress = target }
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) { ghost = target }
             }
     }
 
@@ -119,10 +137,16 @@ private struct SportBestLineDemo: View {
         let silent = ctx.isPreview || runID == 0
         var reset = Transaction()
         reset.disablesAnimations = true
-        withTransaction(reset) { progress = 0 }
+        withTransaction(reset) {
+            progress = 0
+            ghost = 0
+        }
         try? await Task.sleep(for: .milliseconds(200))
         guard !Task.isCancelled else { return }
-        withAnimation(.easeInOut(duration: ctx["duration"])) { progress = 1 }
+        let duration = ctx["duration"]
+        let ghostDuration = duration * max(ctx["ghost"], 1)
+        withAnimation(.easeInOut(duration: duration)) { progress = 1 }
+        withAnimation(.easeInOut(duration: ghostDuration)) { ghost = 1 }
         try? await Task.sleep(for: .seconds(ctx["duration"]))
         guard !Task.isCancelled else { return }
         if !silent { Haptics.success() }
@@ -132,20 +156,32 @@ private struct SportBestLineDemo: View {
 /// Animatable so that every intermediate progress re-evaluates the trimmed path, marker and readouts.
 private struct BestLineCard: View, Animatable {
     var progress: CGFloat
+    var ghost: CGFloat
     let lineWidth: CGFloat
     let showElevation: Bool
     let language: AppLanguage
 
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(progress, ghost) }
+        set {
+            progress = newValue.first
+            ghost = newValue.second
+        }
+    }
+
+    private static let origin = CGPoint(x: BestLineRoute.size.width * 0.04, y: BestLineRoute.size.height * 0.1)
+
+    private static func point(on path: Path, at fraction: CGFloat) -> CGPoint {
+        let f = fraction.clamped(to: 0.001...1)
+        return path.trimmedPath(from: 0, to: f).currentPoint ?? origin
     }
 
     var body: some View {
         let clamped = progress.clamped(to: 0...1)
         let size = BestLineRoute.size
         let full = BestLineRoute.path(in: size)
-        let head = full.trimmedPath(from: 0, to: max(clamped, 0.001)).currentPoint ?? CGPoint(x: size.width * 0.04, y: size.height * 0.1)
+        let head = Self.point(on: full, at: clamped)
+        let ghostHead = Self.point(on: full, at: ghost)
         let fall = ((Double(head.y / size.height) - 0.1) / 0.82).clamped(to: 0...1)
         let elevation = Int(BestLineRoute.top - (BestLineRoute.top - BestLineRoute.bottom) * fall)
         VStack(alignment: .leading, spacing: 12) {
@@ -160,6 +196,8 @@ private struct BestLineCard: View, Animatable {
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
                     )
                     .shadow(color: Signature.accent.opacity(0.7), radius: 8)
+                BestLineGhost()
+                    .position(ghostHead)
                 BestLineMarker()
                     .position(head)
                 if showElevation {
@@ -168,6 +206,7 @@ private struct BestLineCard: View, Animatable {
                 }
             }
             .frame(width: size.width, height: size.height)
+            BestLineProfile(progress: clamped)
             BestLineFooter(progress: clamped, elevation: elevation, language: language)
         }
     }
@@ -184,6 +223,64 @@ private struct BestLineMarker: View {
                 .frame(width: 10, height: 10)
                 .shadow(color: Signature.accent, radius: 6)
         }
+    }
+}
+
+/// Hollow "PB" marker for the ghost of the best run.
+private struct BestLineGhost: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(Color.white.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [2, 2]))
+                .frame(width: 14, height: 14)
+            Text(verbatim: "PB")
+                .font(.system(size: 7, weight: .heavy, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.7))
+                .offset(y: 12)
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// Slim elevation profile: grey area for the whole run, orange up to the cursor.
+private struct BestLineProfile: View {
+    let progress: CGFloat
+
+    private static let size = CGSize(width: BestLineRoute.size.width, height: 26)
+
+    private static let area: Path = {
+        let w = size.width
+        let h = size.height
+        let values = BestLineRoute.profile
+        var p = Path()
+        p.move(to: CGPoint(x: 0, y: h))
+        for index in values.indices {
+            let x = w * CGFloat(index) / CGFloat(max(values.count - 1, 1))
+            let y = h * (0.1 + 0.85 * values[index])
+            p.addLine(to: CGPoint(x: x, y: y))
+        }
+        p.addLine(to: CGPoint(x: w, y: h))
+        p.closeSubpath()
+        return p
+    }()
+
+    var body: some View {
+        let size = Self.size
+        let cursorX: CGFloat = size.width * progress
+        return ZStack(alignment: .topLeading) {
+            Self.area.fill(Color.white.opacity(0.07))
+            Self.area
+                .fill(LinearGradient(colors: [Signature.accent.opacity(0.55), Signature.accent.opacity(0.08)], startPoint: .top, endPoint: .bottom))
+                .mask(alignment: .leading) {
+                    Rectangle().frame(width: cursorX)
+                }
+            Rectangle()
+                .fill(Color.white.opacity(0.8))
+                .frame(width: 1, height: size.height)
+                .offset(x: cursorX)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .allowsHitTesting(false)
     }
 }
 

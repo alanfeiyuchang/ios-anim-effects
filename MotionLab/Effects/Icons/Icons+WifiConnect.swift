@@ -49,8 +49,14 @@ private struct WifiArc: Shape {
 
 private struct WifiConnectDemo: View {
     let ctx: DemoContext
-    @State private var state: WifiState = .connected
+    @State private var state: WifiState
     @State private var token = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // On the detail stage start disconnected, so the intro tap plays search → connect → badge pop.
+        _state = State(initialValue: ctx.isPreview || ctx.isStill ? .connected : .off)
+    }
 
     var body: some View {
         VStack(spacing: 18) {

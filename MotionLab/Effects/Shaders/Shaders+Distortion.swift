@@ -62,8 +62,8 @@ extension Effect {
         name: L("Refracting Sphere", "球面折射透镜"),
         summary: L("Drag a glass sphere that magnifies, bends light at its rim and splits it into color.", "拖动一颗玻璃球：中心放大、边缘折光，并把光分解出彩色色边。"),
         prompt: L(
-            "A glass sphere with a 70 pt radius floats over dense typography on a dark grid. A Metal layer shader treats it as a spherical cap: the core magnifies up to 2× with a quadratic falloff, the steep rim bends rays inward so the grid lines curve hard at the edge, and red and blue refract by different amounts near the rim, leaving a thin cyan/orange dispersion fringe. A specular highlight from the top-left and slight rim shading give it volume. Grabbing anywhere on the lens keeps the finger's offset; on release it springs home (response 0.45 s, damping 0.7). Optical, precise and tangible.",
-            "一颗半径约 70pt 的玻璃球悬浮在深色网格与密集文字之上。Metal layerEffect 着色器把它当作球冠计算：中心按二次方衰减最多放大 2 倍；陡峭的边缘把光线向内折弯，网格线在边缘处强烈弯曲；红、蓝通道在边缘折射程度不同，留下一圈细细的青橙色散色边。左上方的镜面高光与轻微的边缘暗化带来体积感。在透镜任意位置按住拖动都会保持手指与球心的相对偏移；松手后以弹簧（响应 0.45 秒、阻尼 0.7）回到中心。光学、精准、可触可感。"
+            "A glass sphere with a 70 pt radius floats over dense typography on a dark grid. A Metal layer shader treats it as a spherical cap: the core magnifies up to 2× with a quadratic falloff, the steep rim bends rays inward so the grid lines curve hard at the edge, and red and blue refract by different amounts near the rim, leaving a thin cyan/orange dispersion fringe. A specular highlight from the top-left and slight rim shading give it volume. A brief 100 ms press arms it, so page swipes pass through; grabbing anywhere on the lens keeps the finger's offset, and on release it springs home (response 0.45 s, damping 0.7). Optical, precise and tangible.",
+            "一颗半径约 70pt 的玻璃球悬浮在深色网格与密集文字之上。Metal layerEffect 着色器把它当作球冠计算：中心按二次方衰减最多放大 2 倍；陡峭的边缘把光线向内折弯，网格线在边缘处强烈弯曲；红、蓝通道在边缘折射程度不同，留下一圈细细的青橙色散色边。左上方的镜面高光与轻微的边缘暗化带来体积感。按住约 100ms 即可拿起透镜（快速滑动仍会滚动页面），在任意位置拖动都会保持手指与球心的相对偏移；松手后以弹簧（响应 0.45 秒、阻尼 0.7）回到中心。光学、精准、可触可感。"
         ),
         implementation: L(
             "A [[stitchable]] layer shader computes a spherical-cap height per pixel, remaps samples for magnification plus rim refraction, samples R/G/B with different refraction for dispersion and adds a Blinn-style highlight; an Animatable modifier springs the center.",
@@ -267,6 +267,8 @@ private struct MagnifierDemo: View {
     /// Offset from the finger to the lens center, captured when a drag starts on the lens.
     @State private var grab: CGSize?
     @State private var size: CGSize = CGSize(width: 340, height: 340)
+    /// True while the lens is held; resets itself if the system cancels the gesture, so the lens always springs home.
+    @GestureState private var holding = false
 
     var body: some View {
         let radius = ctx["radius"]
@@ -278,25 +280,21 @@ private struct MagnifierDemo: View {
                 magnify: ctx["strength"],
                 dispersion: ctx["dispersion"]
             ))
-            // Only the lens itself is draggable, so swipes elsewhere still scroll the page.
+            // Only the lens is draggable, and only after a short press, so swipes (even across it) still scroll the page.
             .overlay {
                 Color.clear
                     .frame(width: radius * 2, height: radius * 2)
                     .contentShape(Circle())
                     .position(center ?? home)
-                    .gesture(
-                        DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
-                            .onChanged { value in drag(value, home: home, radius: CGFloat(radius)) }
-                            .onEnded { _ in
-                                grab = nil
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { center = nil }
-                            }
-                    )
+                    .gesture(lensGesture(home: home, radius: CGFloat(radius)))
+                    .onChange(of: holding) { _, isHolding in
+                        if !isHolding { release() }
+                    }
             }
             .coordinateSpace(.named(Self.space))
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
             .overlay(alignment: .bottom) {
-                DemoHint(text: L("Drag the lens", "拖动透镜"), ctx: ctx)
+                DemoHint(text: L("Press the lens, then drag", "按住透镜片刻再拖动"), ctx: ctx)
                     .padding(.bottom, 14)
                     .environment(\.colorScheme, .dark)
                     .allowsHitTesting(false)
@@ -305,6 +303,22 @@ private struct MagnifierDemo: View {
     }
 
     private static let space = "glassLensStage"
+
+    private func lensGesture(home: CGPoint, radius: CGFloat) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.1)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space)))
+            .updating($holding) { _, state, _ in state = true }
+            .onChanged { value in
+                guard case .second(true, let pending) = value, let move = pending else { return }
+                drag(move, home: home, radius: radius)
+            }
+    }
+
+    private func release() {
+        guard grab != nil else { return }
+        grab = nil
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { center = nil }
+    }
 
     private func drag(_ value: DragGesture.Value, home: CGPoint, radius: CGFloat) {
         let current = center ?? home

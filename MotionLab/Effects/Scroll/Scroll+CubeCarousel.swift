@@ -8,8 +8,8 @@ extension Effect {
         name: L("Cube Carousel", "立方体轮播"),
         summary: L("Full-width pages sit on the faces of a cube and turn around its edge as you page.", "整页卡片贴在立方体的各个面上，翻页时绕着棱边转动。"),
         prompt: L(
-            "A paging carousel of full-width story pages, each a rounded gradient card inset 20 pt inside its page. Instead of sliding flat, each page rotates like a face of a cube: the outgoing page hinges on its trailing edge and turns away up to 90°, while the incoming page hinges on its leading edge and turns in from −90°, both in perspective, so the pair always reads as two sides of one rotating block. Faces darken by up to 40% as they turn away from the viewer. Paging snaps to whole pages with the system paging curve, and a capsule page indicator below springs to the active page (response 0.4 s, damping 0.7). Bold, spatial and playful, like Instagram Stories.",
-            "整页宽度的故事页分页轮播，每页是一张在页面内缩进 20 pt 的圆角渐变卡片。页面不是平移，而是像立方体的一个面那样旋转：离开的页面以右侧棱边为轴向后转动至多 90°，进入的页面以左侧棱边为轴从 −90° 转入，两者都带透视，因此看起来总是同一个旋转方块的两个面。转离观者的面最多变暗 40%。翻页以系统分页曲线吸附到整页，下方的胶囊页码指示器以弹簧（响应 0.4 秒、阻尼 0.7）移动到当前页。大胆、有空间感、俏皮，就像 Instagram 的快拍。"
+            "A paging carousel of story pages, each a rounded gradient card filling its page, in a pager inset 20 pt from the stage edges. Instead of sliding flat, each page rotates like a face of a cube: the outgoing page hinges on its trailing edge and turns away up to 90°, while the incoming page hinges on its leading edge and turns in from −90°, both in perspective, so the pair shares one hinge and always reads as two sides of one rotating block. Faces darken by up to 40% as they turn away from the viewer. Paging snaps to whole pages with the system paging curve, and a capsule page indicator below springs to the active page (response 0.4 s, damping 0.7). Bold, spatial and playful, like Instagram Stories.",
+            "故事页分页轮播，每页是一张铺满页面的圆角渐变卡片，整个分页器距舞台两侧各 20 pt。页面不是平移，而是像立方体的一个面那样旋转：离开的页面以右侧棱边为轴向后转动至多 90°，进入的页面以左侧棱边为轴从 −90° 转入，两者都带透视，因此看起来总是同一个旋转方块的两个面。转离观者的面最多变暗 40%。翻页以系统分页曲线吸附到整页，下方的胶囊页码指示器以弹簧（响应 0.4 秒、阻尼 0.7）移动到当前页。大胆、有空间感、俏皮，就像 Instagram 的快拍。"
         ),
         implementation: L(
             "Pages use containerRelativeFrame with scrollTargetBehavior(.paging); each page's visualEffect converts its minX into a page progress and applies rotation3DEffect anchored at the trailing edge when leaving and the leading edge when arriving.",
@@ -50,8 +50,8 @@ private struct ScrollCubeDemo: View {
         return ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
                 ForEach(0..<count, id: \.self) { i in
+                    // The face fills its page, so neighbouring faces share the page boundary as their hinge.
                     ScrollCubeFace(index: i, language: ctx.language, shade: shade)
-                        .padding(.horizontal, 20)
                         .containerRelativeFrame(.horizontal)
                         .visualEffect { content, proxy in
                             let width: CGFloat = max(proxy.size.width, 1)
@@ -70,6 +70,8 @@ private struct ScrollCubeDemo: View {
         .scrollPosition(id: $page)
         .scrollIndicators(.hidden)
         .frame(height: 260)
+        // The inset sits outside the pager, not inside each face, so the cube's edges meet.
+        .padding(.horizontal, 20)
     }
 
     private func advance() {
@@ -92,8 +94,8 @@ private struct ScrollCubeFace: View {
             .overlay {
                 Color.black
                     .visualEffect { content, proxy in
-                        let width: CGFloat = max(proxy.size.width + 40, 1)
-                        let t: Double = Double(abs(proxy.frame(in: .scrollView).minX - 20) / width)
+                        let width: CGFloat = max(proxy.size.width, 1)
+                        let t: Double = Double(abs(proxy.frame(in: .scrollView).minX) / width)
                         return content.opacity(min(t, 1) * shade)
                     }
                     .allowsHitTesting(false)

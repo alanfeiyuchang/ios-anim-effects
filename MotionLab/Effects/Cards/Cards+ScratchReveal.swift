@@ -45,6 +45,8 @@ private struct CardsScratchDemo: View {
     @State private var autoStep = 0
     @State private var dragging = false
     @State private var startedRevealed = false
+    /// The intro swoosh, cancelled if the demo leaves the screen.
+    @State private var introTask: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 22) {
@@ -54,6 +56,10 @@ private struct CardsScratchDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sensoryFeedback(.selection, trigger: ticks)
         .autoplay(ctx.isPreview, every: 0.05, delay: 0.3) { autoScratch() }
+        .onDisappear {
+            introTask?.cancel()
+            introTask = nil
+        }
     }
 
     private var card: some View {
@@ -182,8 +188,9 @@ extension CardsScratchDemo {
     fileprivate func introStroke() {
         guard strokes.isEmpty, !revealed else { return }
         strokes.append([])
-        Task { @MainActor in
+        introTask = Task { @MainActor in
             for step in 0..<18 {
+                guard !Task.isCancelled else { return }
                 let t = CGFloat(step) / 17
                 let point = CGPoint(x: 70 + 140 * t, y: 96 - 34 * sin(t * .pi))
                 guard !strokes.isEmpty, !revealed else { return }

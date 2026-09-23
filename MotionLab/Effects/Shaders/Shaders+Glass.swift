@@ -8,12 +8,12 @@ extension Effect {
         name: L("Frosted Glass Material", "磨砂玻璃材质"),
         summary: L("A SwiftUI material card over drifting color, with a tilt-reactive sheen — no Metal needed.", "漂浮色块上的 SwiftUI 材质卡片，倾斜时高光随之流动——无需 Metal。"),
         prompt: L(
-            "A frosted-glass card floats on a deep, saturated indigo-to-magenta plate where heavily blurred color orbs (pink, sky, amber) orbit on 7–12 s loops, so the glass always has vivid color to diffuse — even on a light page. The card is a system material (background blur plus vibrancy), not a custom shader, with a 1 pt white hairline rim fading diagonally from 60% to 10% opacity and a soft drop shadow. Dragging tilts it up to ±12° in 3D; a diagonal specular sheen slides across the glass opposite the tilt and the orbs parallax behind it, then everything springs back (response 0.5 s, damping 0.7). Calm, luminous and physical.",
-            "一张磨砂玻璃卡片悬浮在一块深靛蓝到洋红的高饱和底板上，高度模糊的彩色光球（粉、天蓝、琥珀）以 7～12 秒周期环绕，玻璃背后始终有鲜艳色彩可供柔化——即使在浅色页面上也不发灰。卡片使用系统材质（背景模糊 + 鲜明度）而非自定义着色器，边缘为 1pt 白色细描边、不透明度沿对角由 60% 渐变到 10%，并带柔和投影。拖动时卡片在 3D 空间中倾斜最多 ±12°，一道斜向高光沿与倾斜相反的方向滑过玻璃，背后的光球产生视差；松手后一切以弹簧（响应 0.5 秒、阻尼 0.7）回正。宁静、通透、富有实体感。"
+            "A frosted-glass card floats on a deep, saturated indigo-to-magenta plate where heavily blurred color orbs (pink, sky, amber) orbit on 7–12 s loops, so the glass always has vivid color to diffuse — even on a light page. The card is a system material (background blur plus vibrancy), not a custom shader, with a 1 pt white hairline rim fading diagonally from 60% to 10% opacity and a soft drop shadow. A brief press (120 ms) arms it, then dragging tilts it up to ±12° in 3D; a diagonal specular sheen slides across the glass opposite the tilt and the orbs parallax behind it, then everything springs back (response 0.5 s, damping 0.7). Calm, luminous and physical.",
+            "一张磨砂玻璃卡片悬浮在一块深靛蓝到洋红的高饱和底板上，高度模糊的彩色光球（粉、天蓝、琥珀）以 7～12 秒周期环绕，玻璃背后始终有鲜艳色彩可供柔化——即使在浅色页面上也不发灰。卡片使用系统材质（背景模糊 + 鲜明度）而非自定义着色器，边缘为 1pt 白色细描边、不透明度沿对角由 60% 渐变到 10%，并带柔和投影。按住约 120ms 后拖动，卡片在 3D 空间中倾斜最多 ±12°，一道斜向高光沿与倾斜相反的方向滑过玻璃，背后的光球产生视差；松手后一切以弹簧（响应 0.5 秒、阻尼 0.7）回正。宁静、通透、富有实体感。"
         ),
         implementation: L(
-            "Pure SwiftUI materials, no Metal: blurred circles animated by TimelineView sit on a saturated gradient plate beneath a RoundedRectangle filled with .ultraThinMaterial; DragGesture drives rotation3DEffect and the offset of a gradient sheen overlay.",
-            "纯 SwiftUI 材质实现，无需 Metal：TimelineView 驱动的模糊圆形铺在高饱和渐变底板上，位于 .ultraThinMaterial 圆角矩形之下；DragGesture 驱动 rotation3DEffect 与渐变高光层的位移。"
+            "Pure SwiftUI materials, no Metal: blurred circles animated by TimelineView sit on a saturated gradient plate beneath a RoundedRectangle filled with .ultraThinMaterial; a press-armed DragGesture (LongPressGesture sequenced before it) drives rotation3DEffect and the offset of a gradient sheen overlay.",
+            "纯 SwiftUI 材质实现，无需 Metal：TimelineView 驱动的模糊圆形铺在高饱和渐变底板上，位于 .ultraThinMaterial 圆角矩形之下；长按后接续的 DragGesture（LongPressGesture 串联）驱动 rotation3DEffect 与渐变高光层的位移。"
         ),
         apis: ["ultraThinMaterial", "rotation3DEffect", "TimelineView", "DragGesture", "blur"],
         tags: ["glassmorphism", "frosted", "material", "blur", "玻璃拟态", "毛玻璃", "材质", "磨砂"],
@@ -32,12 +32,12 @@ extension Effect {
         name: L("Liquid Glass Lens", "液态玻璃透镜"),
         summary: L("Drag a Liquid Glass droplet that refracts the content beneath.", "拖动一滴液态玻璃，实时折射下方内容。"),
         prompt: L(
-            "A Liquid Glass droplet (iOS 26 material) rests over a colorful grid of content. Grabbing it keeps the finger's offset and the droplet trails the finger on a tight spring (response ≈ 0.18 s); the glass refracts whatever is beneath in real time, its rim catching specular light. It stretches up to 12% along the exact direction of travel — diagonals included — while narrowing across it, springing round again (response 0.35 s, damping 0.6) on release. A tap makes it pulse like a water bead. On iOS 18 a material droplet sits over a Metal bulge that magnifies the content beneath, so the lensing survives. A physical, optical layer floating over the UI.",
-            "一滴液态玻璃（iOS 26 材质）停在一片色彩丰富的内容网格之上。按住拖动时保持手指与水滴的相对偏移，水滴以紧致弹簧（响应约 0.18 秒）跟随手指；玻璃实时折射下方内容，边缘捕捉镜面高光。它沿真实运动方向（包括斜向）拉长最多 12%、垂直方向相应收窄，松手后以弹簧（响应 0.35 秒、阻尼 0.6）回弹成正圆。点击时它会像水珠一样脉动。在 iOS 18 上，材质水滴下方叠加 Metal 凸透镜放大，透镜感依然保留。整体是一层悬浮于界面之上的真实光学材质。"
+            "A Liquid Glass droplet (iOS 26 material) rests over a colorful grid of content. Grabbing it keeps the finger's offset and the droplet trails the finger on a tight spring (response ≈ 0.18 s); the glass refracts whatever is beneath in real time, its rim catching specular light. It stretches up to 12% along the exact direction of travel — diagonals included — while narrowing across it, springing round again (response 0.35 s, damping 0.6) on release. A tap makes it pulse like a water bead. On iOS 18 a material droplet sits over a Metal lens that stretches along the same heading and sends a ripple ring out on each tap, so the lensing and its liquid motion survive. A physical, optical layer floating over the UI.",
+            "一滴液态玻璃（iOS 26 材质）停在一片色彩丰富的内容网格之上。按住拖动时保持手指与水滴的相对偏移，水滴以紧致弹簧（响应约 0.18 秒）跟随手指；玻璃实时折射下方内容，边缘捕捉镜面高光。它沿真实运动方向（包括斜向）拉长最多 12%、垂直方向相应收窄，松手后以弹簧（响应 0.35 秒、阻尼 0.6）回弹成正圆。点击时它会像水珠一样脉动。在 iOS 18 上，材质水滴下方的 Metal 透镜随之沿同一方向拉伸，点击时荡开一圈水波，透镜感与液态动感依然保留。整体是一层悬浮于界面之上的真实光学材质。"
         ),
         implementation: L(
-            "On iOS 26 the droplet uses .glassEffect(.regular.interactive(), in: Circle()); earlier systems fall back to .ultraThinMaterial with a gradient rim over an mlBulge distortion of the backdrop. Drag velocity sets a stretch applied as rotate(−θ) → scale → rotate(θ), so it follows any direction.",
-            "iOS 26 上使用 .glassEffect(.regular.interactive(), in: Circle())；更早系统回退为 .ultraThinMaterial 加渐变描边，并对背景施加 mlBulge 扭曲。拖动速度决定拉伸量，按 旋转(−θ) → 缩放 → 旋转(θ) 施加，可沿任意方向拉伸。"
+            "On iOS 26 the droplet uses .glassEffect(.regular.interactive(), in: Circle()); earlier systems fall back to .ultraThinMaterial with a gradient rim over an mlLensDrop distortion whose elliptical footprint follows the stretch and whose ripple ring plays on tap. Drag velocity sets a stretch applied as rotate(−θ) → scale → rotate(θ), so it follows any direction.",
+            "iOS 26 上使用 .glassEffect(.regular.interactive(), in: Circle())；更早系统回退为 .ultraThinMaterial 加渐变描边，并对背景施加 mlLensDrop 扭曲：椭圆作用区随拉伸变形，点击时播放水波环。拖动速度决定拉伸量，按 旋转(−θ) → 缩放 → 旋转(θ) 施加，可沿任意方向拉伸。"
         ),
         apis: ["glassEffect", "Glass.interactive()", "DragGesture", "scaleEffect", "distortionEffect"],
         tags: ["liquid glass", "ios 26", "refraction", "lens", "液态玻璃", "折射", "透镜", "玻璃"],
@@ -56,6 +56,8 @@ extension Effect {
 private struct GlassmorphismDemo: View {
     let ctx: DemoContext
     @State private var drag: CGSize = .zero
+    /// True while a tilt is armed; resets itself if the system cancels the gesture, so the card always settles.
+    @GestureState private var tilting = false
 
     private var material: Material {
         switch ctx.int("material") {
@@ -69,9 +71,10 @@ private struct GlassmorphismDemo: View {
         let maxTilt = ctx["maxTilt"]
         let nx = Double(drag.width / 140).clamped(to: -1...1)
         let ny = Double(drag.height / 140).clamped(to: -1...1)
+        let parallax = CGSize(width: CGFloat(-nx * 18), height: CGFloat(-ny * 18))
         ZStack {
             ShaderClock(preview: ctx.isPreview) { time in
-                GlassOrbs(time: time, parallax: CGSize(width: -nx * 18, height: -ny * 18))
+                GlassOrbs(time: time, parallax: parallax)
             }
             .background(
                 LinearGradient(colors: [Color(hex: 0x1B1464), Color(hex: 0x4A1D96), Color(hex: 0xA3165F)], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -83,28 +86,42 @@ private struct GlassmorphismDemo: View {
                 .rotation3DEffect(.degrees(-ny * maxTilt), axis: (x: 1, y: 0, z: 0), perspective: 0.6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Only the card tilts, so swipes on the backdrop still scroll the page.
+        // Only the card tilts, and only after a short press, so swipes (even on the card) still scroll the page.
         .overlay {
             Color.clear
                 .frame(width: 250, height: 160)
                 .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.8)) { drag = value.translation }
-                        }
-                        .onEnded { _ in
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { drag = .zero }
-                        }
-                )
+                .gesture(tiltGesture)
+                .onChange(of: tilting) { _, isTilting in
+                    if !isTilting { settle() }
+                }
         }
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Drag the card to tilt it", "拖动卡片使其倾斜"), ctx: ctx)
+            DemoHint(text: L("Press the card, then drag to tilt", "按住卡片片刻再拖动使其倾斜"), ctx: ctx)
                 .padding(.bottom, 22)
                 .environment(\.colorScheme, .dark)
                 .allowsHitTesting(false)
         }
         .autoplay(ctx.isPreview, every: 1.8, delay: 0.2) { tiltAndSettle() }
+    }
+
+    private var tiltGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.12)
+            .sequenced(before: DragGesture(minimumDistance: 0))
+            .updating($tilting) { _, state, _ in state = true }
+            .onChanged { value in
+                guard case .second(true, let pending) = value else { return }
+                guard let move = pending else {
+                    Haptics.tap(.soft)
+                    return
+                }
+                withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.8)) { drag = move.translation }
+            }
+    }
+
+    private func settle() {
+        guard drag != .zero else { return }
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { drag = .zero }
     }
 
     /// Simulated drag: tilt toward a random corner, then spring back flat.
@@ -119,7 +136,12 @@ private struct GlassmorphismDemo: View {
     }
 
     private func glassCard(nx: Double, ny: Double) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+        // Typed up front so the modifier chain below stays cheap for the type checker.
+        let sheenStart = UnitPoint(x: CGFloat(0.2 - nx * 0.5), y: CGFloat(-ny * 0.5))
+        let sheenEnd = UnitPoint(x: CGFloat(0.8 - nx * 0.5), y: CGFloat(1 - ny * 0.5))
+        let shadowX = CGFloat(-nx * 10)
+        let shadowY = CGFloat(16 - ny * 6)
+        return VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Image(systemName: "wave.3.right.circle.fill")
                     .font(.title)
@@ -142,8 +164,8 @@ private struct GlassmorphismDemo: View {
         .overlay {
             LinearGradient(
                 colors: [.clear, .white.opacity(0.35), .clear],
-                startPoint: UnitPoint(x: 0.2 - nx * 0.5, y: 0 - ny * 0.5),
-                endPoint: UnitPoint(x: 0.8 - nx * 0.5, y: 1 - ny * 0.5)
+                startPoint: sheenStart,
+                endPoint: sheenEnd
             )
             .blendMode(.plusLighter)
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -153,7 +175,7 @@ private struct GlassmorphismDemo: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .strokeBorder(LinearGradient(colors: [.white.opacity(0.6), .white.opacity(0.1)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.25), radius: 24, x: -nx * 10, y: 16 - ny * 6)
+        .shadow(color: .black.opacity(0.25), radius: 24, x: shadowX, y: shadowY)
         .environment(\.colorScheme, .dark)
     }
 }
@@ -203,6 +225,8 @@ private struct LiquidLensDemo: View {
     @State private var stretch: CGFloat = 0
     @State private var heading: Double = 0
     @State private var pulse = false
+    /// Counts taps; the fractional part while it animates n → n + 1 drives the fallback lens's ripple ring.
+    @State private var ripples: Double = 0
     @State private var size: CGSize = CGSize(width: 340, height: 340)
 
     var body: some View {
@@ -210,7 +234,14 @@ private struct LiquidLensDemo: View {
         let point = position ?? CGPoint(x: size.width / 2, y: size.height / 2)
         ZStack {
             LensBackdrop()
-                .modifier(LensRefraction(center: point, radius: Double(diameter) / 2, enabled: !liquidGlassAvailable))
+                .modifier(LensRefraction(
+                    center: point,
+                    radius: Double(diameter) / 2,
+                    heading: heading,
+                    stretch: stretch,
+                    ripples: ripples,
+                    enabled: !liquidGlassAvailable
+                ))
             LensDroplet(diameter: diameter, tinted: ctx.bool("tint"))
                 // Stretch along the travel direction: rotate into it, scale, rotate back.
                 .rotationEffect(.radians(-heading))
@@ -291,6 +322,7 @@ private struct LiquidLensDemo: View {
     private func flex() {
         Haptics.tap(.soft)
         withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) { pulse = true }
+        withAnimation(.easeOut(duration: 0.75)) { ripples = ripples.rounded(.down) + 1 }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.18))
             withAnimation(.spring(response: 0.4, dampingFraction: 0.45)) { pulse = false }
@@ -298,22 +330,39 @@ private struct LiquidLensDemo: View {
     }
 }
 
-/// iOS 18 fallback: a Metal bulge under the droplet so the material still reads as a lens.
-/// Animatable so the bulge rides the same spring as the droplet.
+/// iOS 18 fallback: a Metal lens under the droplet that stretches along the drag heading with it and
+/// rings with a water-bead ripple on tap, so the fallback keeps the droplet's own motion, not just a bulge.
+/// Animatable so the lens rides the same springs as the droplet.
 private struct LensRefraction: ViewModifier, Animatable {
     var center: CGPoint
     var radius: Double
+    var heading: Double
+    var stretch: CGFloat
+    var ripples: Double
     var enabled: Bool
 
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(center.x, center.y) }
-        set { center = CGPoint(x: newValue.first, y: newValue.second) }
+    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, AnimatablePair<CGFloat, Double>> {
+        get { AnimatablePair(AnimatablePair(center.x, center.y), AnimatablePair(stretch, ripples)) }
+        set {
+            center = CGPoint(x: newValue.first.first, y: newValue.first.second)
+            stretch = newValue.second.first
+            ripples = newValue.second.second
+        }
     }
 
     func body(content: Content) -> some View {
-        content.distortionEffect(
-            ShaderLibrary.mlBulge(.float2(center), .float(radius), .float(0.32)),
-            maxSampleOffset: CGSize(width: radius, height: radius),
+        let ripple = ripples - ripples.rounded(.down)
+        let reach = CGFloat(radius) * (1 + stretch) + 8
+        return content.distortionEffect(
+            ShaderLibrary.mlLensDrop(
+                .float2(center),
+                .float(radius),
+                .float(0.32),
+                .float(heading),
+                .float(stretch),
+                .float(ripple)
+            ),
+            maxSampleOffset: CGSize(width: reach, height: reach),
             isEnabled: enabled
         )
     }

@@ -34,6 +34,8 @@ private struct MagneticTickSliderDemo: View {
     @State private var lastStop = 2
     @State private var previewStep = 0
     @State private var previewDirection: CGFloat = 1
+    /// The detail intro's scripted nudge; cancelled by the first real touch and on disappear.
+    @State private var introTask: Task<Void, Never>?
 
     private let width: CGFloat = 260
 
@@ -71,6 +73,7 @@ private struct MagneticTickSliderDemo: View {
             // The detail intro plays one full nudge-and-settle cycle so the thumb never stays grabbed.
             if ctx.isPreview { previewTick() } else { introNudge() }
         }
+        .onDisappear { stopIntro() }
     }
 
     private var card: some View {
@@ -142,6 +145,7 @@ private struct MagneticTickSliderDemo: View {
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                stopIntro()
                 let x: CGFloat = value.location.x.clamped(to: 0...width)
                 withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.7)) {
                     fingerX = x
@@ -166,12 +170,20 @@ private struct MagneticTickSliderDemo: View {
 
     /// Preview: creep toward the midpoint (the thumb clings), then cross it (the thumb leaps).
     private func introNudge() {
-        Task { @MainActor in
+        stopIntro()
+        introTask = Task { @MainActor in
             for _ in 0..<3 {
+                guard !Task.isCancelled else { return }
                 previewTick()
                 try? await Task.sleep(for: .seconds(0.55))
             }
+            introTask = nil
         }
+    }
+
+    private func stopIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func previewTick() {

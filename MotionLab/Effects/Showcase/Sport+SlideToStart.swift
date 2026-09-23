@@ -34,6 +34,8 @@ private struct SportSlideDemo: View {
     @State private var expanded = false
     @State private var startDate = Date()
     @State private var lastTick = 0
+    /// Scripted drag (preview loop / detail intro); cancelled by the first real touch.
+    @State private var simTask: Task<Void, Never>?
     @GestureState private var dragging = false
 
     private let trackWidth: CGFloat = 272
@@ -63,6 +65,7 @@ private struct SportSlideDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 6.5, delay: 0.5) { simulate() }
+        .onDisappear { cancelSimulation() }
     }
 
     private var track: some View {
@@ -111,6 +114,8 @@ private struct SportSlideDemo: View {
         DragGesture(minimumDistance: 0)
             .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
+                // A real finger takes over from the scripted intro immediately.
+                cancelSimulation()
                 guard !completed else { return }
                 let raw = value.translation.width
                 if raw < 0 {
@@ -173,17 +178,29 @@ private struct SportSlideDemo: View {
     private func simulate() {
         // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
         let muted = Haptics.isMuted
-        Task {
+        simTask?.cancel()
+        simTask = Task {
             reset(silent: muted)
             try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeInOut(duration: 0.55)) { dragX = maxX * 0.45 }
             try? await Task.sleep(for: .seconds(0.65))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: ctx["damping"])) { dragX = 0 }
             try? await Task.sleep(for: .seconds(0.9))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeIn(duration: 0.7)) { dragX = maxX }
             try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { return }
             complete(silent: muted)
+            simTask = nil
         }
+    }
+
+    private func cancelSimulation() {
+        guard let task = simTask else { return }
+        task.cancel()
+        simTask = nil
     }
 }
 

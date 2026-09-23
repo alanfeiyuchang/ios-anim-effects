@@ -143,8 +143,9 @@ private struct CardsRewindDemo: View {
     }
 
     private func autoStep() {
-        // Fling, fling, rewind, fling, rewind, rewind … then restore.
-        let pattern: [Int] = [1, -1, 0, 1, 0, 0, -1, 1, -1]
+        // Fling, fling, rewind, then fling until the deck is empty so `fling` restores all five.
+        // Seven flings against one rewind per cycle, so every cycle reaches the "all fly back" beat.
+        let pattern: [Int] = [1, -1, 0, 1, -1, 1, -1, 1]
         let move = pattern[step % pattern.count]
         step += 1
         if deck.isEmpty {

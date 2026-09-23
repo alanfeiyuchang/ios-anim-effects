@@ -98,10 +98,10 @@ private struct FillRatingDemo: View {
                     let x: CGFloat = value.location.x.clamped(to: 0...rowWidth)
                     withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.8)) {
                         fingerX = x
-                        setRating(ratingAt(x))
+                        setRating(ratingAt(x), silent: false)
                     }
                 }
-                .onEnded { _ in release() }
+                .onEnded { _ in release(silent: false) }
         )
     }
 
@@ -146,7 +146,7 @@ private struct FillRatingDemo: View {
         }
     }
 
-    private func setRating(_ newValue: Double) {
+    private func setRating(_ newValue: Double, silent: Bool) {
         let oldFull = Int(rating.rounded(.down))
         rating = newValue
         let newFull = Int(newValue.rounded(.down))
@@ -154,15 +154,15 @@ private struct FillRatingDemo: View {
             for index in oldFull..<newFull where index < 5 {
                 beats[index] += 1
             }
-            if !ctx.isPreview { Haptics.selection() }
+            if !ctx.isPreview && !silent { Haptics.selection() }
         }
     }
 
-    private func release() {
+    private func release(silent: Bool) {
         let snapped = ((rating / snapStep).rounded() * snapStep).clamped(to: 0...5)
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.7)) {
             fingerX = nil
-            setRating(snapped)
+            setRating(snapped, silent: silent)
         }
     }
 
@@ -172,11 +172,12 @@ private struct FillRatingDemo: View {
         let x: CGFloat = CGFloat(target) * (heart + spacing) - spacing / 2
         withAnimation(.smooth(duration: 0.6)) {
             fingerX = x
-            setRating(target - 0.2)
+            setRating(target - 0.2, silent: true)
         }
+        // Simulated (preview / detail intro): the delayed release must never buzz.
         Task {
             try? await Task.sleep(for: .seconds(0.75))
-            release()
+            release(silent: true)
         }
     }
 }

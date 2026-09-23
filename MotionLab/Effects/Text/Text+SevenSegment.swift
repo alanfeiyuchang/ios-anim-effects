@@ -56,8 +56,9 @@ private struct SevenSegmentDemo: View {
     var body: some View {
         VStack(spacing: 16) {
             TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
-                let elapsed: Double = timeline.date.timeIntervalSince(start) * ctx["speed"]
-                panel(elapsed: elapsed)
+                let real: Double = timeline.date.timeIntervalSince(start)
+                let elapsed: Double = real * ctx["speed"]
+                panel(elapsed: elapsed, real: real)
             }
             DemoHint(text: L("Tap to reset", "点击重置"), ctx: ctx)
         }
@@ -69,13 +70,14 @@ private struct SevenSegmentDemo: View {
         }
     }
 
-    private func panel(elapsed: Double) -> some View {
+    /// `elapsed` is scaled by the time-scale slider; `real` is wall-clock time, so the colon always blinks at 1 Hz.
+    private func panel(elapsed: Double, real: Double) -> some View {
         let total = 600
         let remaining: Int = total - Int(elapsed) % (total + 1)
         let minutes = remaining / 60
         let seconds = remaining % 60
         let digits: [Int] = [minutes / 10, minutes % 10, seconds / 10, seconds % 10]
-        let colonOn: Bool = elapsed.truncatingRemainder(dividingBy: 1) < 0.5
+        let colonOn: Bool = real.truncatingRemainder(dividingBy: 1) < 0.5
         return VStack(spacing: 12) {
             HStack(spacing: 10) {
                 SegmentDigit(digit: digits[0], tint: tint, decay: ctx["decay"])

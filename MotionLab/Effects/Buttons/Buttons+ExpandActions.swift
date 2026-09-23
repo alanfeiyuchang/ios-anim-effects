@@ -6,21 +6,21 @@ extension Effect {
         category: .buttons,
         interaction: .tap,
         name: L("Expanding Action Button", "展开式操作按钮"),
-        summary: L("A floating plus rotates into a close and fans out quick actions.", "悬浮加号旋转成关闭按钮，并扇形展开快捷操作。"),
+        summary: L("A floating plus rotates into a close and stacks labelled quick actions above it.", "悬浮加号旋转成关闭按钮，上方依次升起带标签的快捷操作。"),
         prompt: L(
-            "A notes screen card with a 60 pt indigo-violet floating action button pinned to its bottom-trailing corner. On tap the plus rotates 135° into a close mark while the button dips to 92% and rebounds, and three 48 pt action circles (scan, photo, note), each tinted differently, burst out of its center and fan up and to the left along a quarter arc of 100 pt radius. Each scales from 30% to 100%, fades in and travels on a spring (response 0.4 s, damping 0.7) with a 40 ms stagger; closing reverses the order. Meanwhile the list recedes — 95% scale, 6 pt blur, 50% opacity over 350 ms — and tapping it closes the menu. Choosing an action tucks the fan away and slides a new, briefly highlighted note in at the top of the list with a success haptic. Playful yet orderly.",
-            "笔记卡片右下角固定一枚 60pt 靛紫悬浮按钮。点击后加号旋转 135° 成关闭符号，按钮下沉到 92% 再回弹；扫描、照片、笔记三个 48pt 彩色圆从中心迸出，沿半径 100pt 的四分之一弧向左上展开，各自从 30% 缩放淡入，弹簧（响应 0.4 秒、阻尼 0.7）驱动，间隔 40 毫秒，收起时倒序。列表同时在 350 毫秒内缩到 95%、模糊 6pt、半透明，点它即可收起。选中操作后扇面收回，一条带高亮的新笔记从顶部滑入，并触发成功触觉。俏皮而有序。"
+            "A notes card with a 60 pt indigo-violet floating action button pinned bottom-trailing, iOS speed-dial style. On tap the plus rotates 135° into a close mark as the button dips to 92% and rebounds, and three 48 pt tinted action circles (scan, photo, note) rise out of it into a vertical stack 62 pt apart, nearest first: each scales from 30% to 100% and fades in on a spring (response 0.4 s, damping 0.72), 50 ms apart. A frosted label pill then slides 16 pt in from the right and fades up beside each circle, 80 ms behind it. Closing reverses the order, top row first. The list recedes (95%, 6 pt blur, 50% opacity over 350 ms); tapping it closes. Picking an action tucks the stack away and slides a highlighted note in at the top with a success haptic. Orderly and legible.",
+            "笔记卡片右下角是一枚 60pt 靛紫悬浮按钮，iOS 快速拨号式。点击后加号旋转 135° 成关闭符号，按钮下沉到 92% 再回弹；扫描、照片、笔记三个 48pt 彩色圆由近及远从按钮升起，纵向间距 62pt，从 30% 缩放淡入，弹簧（响应 0.4 秒、阻尼 0.72），间隔 50 毫秒；各圆左侧的磨砂标签晚 80 毫秒从右滑入 16pt。收起时自顶部倒序。列表缩到 95%、模糊 6pt、半透明，点它即收起。选中操作后堆叠收回，高亮新笔记从顶部滑入，伴随成功触觉。"
         ),
         implementation: L(
-            "The FAB lives in a bottomTrailing overlay of the card; each action reads one open flag and applies its own delayed spring via animation(_:value:), reversed on close, at polar positions between 90° and 180° (or a vertical stack). Picking an action inserts a note with a move-from-top transition.",
-            "悬浮按钮位于卡片的 bottomTrailing 叠层中；每个操作读取同一个展开状态，并通过 animation(_:value:) 应用各自带延迟的弹簧，收起时顺序反转，位置取 90° 到 180° 之间的极坐标（或纵向堆叠）。选择操作后以自顶部移入的转场插入新笔记。"
+            "The FAB lives in a bottomTrailing overlay of the card; each row reads one open flag and applies its own delayed spring via animation(_:value:) to its offset, scale and opacity, with the label pill on a second, later spring; delays reverse on close. Picking an action inserts a note with a move-from-top transition.",
+            "悬浮按钮位于卡片的 bottomTrailing 叠层中；每一行读取同一个展开状态，通过 animation(_:value:) 为偏移、缩放与透明度应用各自带延迟的弹簧，标签胶囊再用一段更晚的弹簧；收起时延迟顺序反转。选择操作后以自顶部移入的转场插入新笔记。"
         ),
-        apis: ["animation(_:value:)", "spring(response:dampingFraction:)", "rotationEffect", "delay"],
-        tags: ["fab", "speed dial", "expand", "menu", "悬浮按钮", "展开", "快捷操作", "扇形"],
+        apis: ["animation(_:value:)", "spring(response:dampingFraction:)", "rotationEffect", "keyframeAnimator"],
+        tags: ["fab", "speed dial", "expand", "menu", "悬浮按钮", "快速拨号", "快捷操作", "展开"],
         params: [
-            .slider("radius", L("Spread radius", "展开半径"), 70...130, default: 100, decimals: 0, unit: "pt"),
-            .slider("stagger", L("Stagger", "错峰间隔"), 0...0.15, default: 0.04, unit: "s"),
-            .choice("layout", L("Layout", "布局"), [L("Quarter arc", "四分之一弧"), L("Vertical", "纵向")], default: 0),
+            .slider("spacing", L("Row spacing", "行间距"), 52...72, default: 62, decimals: 0, unit: "pt"),
+            .slider("stagger", L("Stagger", "错峰间隔"), 0...0.15, default: 0.05, unit: "s"),
+            .slider("response", L("Spring response", "弹簧响应"), 0.25...0.8, default: 0.4, unit: "s"),
         ]
     ) { ctx in
         ButtonExpandActionsDemo(ctx: ctx)
@@ -51,6 +51,8 @@ private struct ButtonExpandActionsDemo: View {
     @State private var nextID = 100
     @State private var step = 0
     @State private var total = 24
+    /// Detail intro: opens, then picks an action so the stage never stays dimmed.
+    @State private var introTask: Task<Void, Never>?
 
     private let items: [ButtonActionItem] = [
         ButtonActionItem(symbol: "doc.viewfinder.fill", color: Palette.coral, name: L("Scan", "扫描"), newTitle: L("New scan", "新扫描件")),
@@ -73,7 +75,10 @@ private struct ButtonExpandActionsDemo: View {
                 .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.5, delay: 0.4) { previewTick() }
+        .autoplay(ctx.isPreview, every: 1.5, delay: 0.4) {
+            if ctx.isPreview { previewTick() } else { playIntro() }
+        }
+        .onDisappear { cancelIntro() }
     }
 
     private var card: some View {
@@ -84,10 +89,13 @@ private struct ButtonExpandActionsDemo: View {
                 .opacity(open ? 0.5 : 1)
                 .animation(.smooth(duration: 0.35), value: open)
                 .contentShape(Rectangle())
-                .onTapGesture { if open { toggle() } }
-            ZStack {
+                .onTapGesture {
+                    cancelIntro()
+                    if open { toggle() }
+                }
+            ZStack(alignment: .bottomTrailing) {
                 ForEach(items.indices, id: \.self) { index in
-                    actionButton(index)
+                    actionRow(index)
                 }
                 mainButton
             }
@@ -149,7 +157,10 @@ private struct ButtonExpandActionsDemo: View {
     }
 
     private var mainButton: some View {
-        Button(action: toggle) {
+        Button {
+            cancelIntro()
+            toggle()
+        } label: {
             Image(systemName: "plus")
                 .font(.system(size: 24, weight: .semibold))
                 .foregroundStyle(.white)
@@ -171,37 +182,56 @@ private struct ButtonExpandActionsDemo: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.65), value: open)
     }
 
-    private func actionButton(_ index: Int) -> some View {
+    private func actionRow(_ index: Int) -> some View {
         let item = items[index]
-        let target = position(for: index)
         let stagger = ctx["stagger"]
-        let delay = open ? Double(index) * stagger : Double(items.count - 1 - index) * stagger
-        return Button { perform(index) } label: {
-            Image(systemName: item.symbol)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 48, height: 48)
-                .background(item.color.gradient, in: Circle())
-                .shadow(color: item.color.opacity(0.35), radius: 10, y: 6)
+        let order = open ? Double(index) : Double(items.count - 1 - index)
+        let delay = order * stagger
+        let lift = CGFloat(index + 1) * ctx.cg("spacing")
+        let spring = Animation.spring(response: ctx["response"], dampingFraction: 0.72)
+        return Button {
+            cancelIntro()
+            perform(index, silent: false)
+        } label: {
+            HStack(spacing: 10) {
+                actionLabel(item)
+                    .offset(x: open ? 0 : 16)
+                    .opacity(open ? 1 : 0)
+                    .animation(spring.delay(open ? delay + 0.08 : delay), value: open)
+                actionCircle(item)
+                    .scaleEffect(open ? 1 : 0.3)
+                    .opacity(open ? 1 : 0)
+                    .animation(spring.delay(delay), value: open)
+            }
         }
-        .buttonStyle(SportPressStyle(scale: 0.88, dim: 0.06))
+        .buttonStyle(SportPressStyle(scale: 0.94, dim: 0.06))
         .accessibilityLabel(Text(item.name, ctx.language))
-        .scaleEffect(open ? 1 : 0.3)
-        .opacity(open ? 1 : 0)
-        .offset(x: open ? target.x : 0, y: open ? target.y : 0)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7).delay(delay), value: open)
+        .frame(width: 200, height: 48, alignment: .trailing)
+        .padding(.trailing, 6)
+        .padding(.bottom, 6)
+        .offset(y: open ? -lift : 0)
+        .animation(spring.delay(delay), value: open)
         .allowsHitTesting(open)
     }
 
-    /// Up and to the left of a bottom-trailing FAB: a quarter arc from 12 o'clock to 9 o'clock.
-    private func position(for index: Int) -> CGPoint {
-        let radius = ctx.cg("radius")
-        if ctx.int("layout") == 1 {
-            return CGPoint(x: 0, y: -CGFloat(index + 1) * (radius * 0.62))
-        }
-        let degrees = -90 - Double(index) * 45
-        let radians = degrees * .pi / 180
-        return CGPoint(x: CGFloat(cos(radians)) * radius, y: CGFloat(sin(radians)) * radius)
+    private func actionLabel(_ item: ButtonActionItem) -> some View {
+        Text(item.name, ctx.language)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 12)
+            .frame(height: 32)
+            .background(.regularMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(Palette.stroke))
+            .shadow(color: .black.opacity(0.1), radius: 6, y: 3)
+    }
+
+    private func actionCircle(_ item: ButtonActionItem) -> some View {
+        Image(systemName: item.symbol)
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 48, height: 48)
+            .background(item.color.gradient, in: Circle())
+            .shadow(color: item.color.opacity(0.35), radius: 10, y: 6)
     }
 
     private func toggle() {
@@ -210,14 +240,14 @@ private struct ButtonExpandActionsDemo: View {
         if !ctx.isPreview { Haptics.tap() }
     }
 
-    private func perform(_ index: Int) {
+    private func perform(_ index: Int, silent: Bool) {
         guard open else { return }
         let item = items[index]
         let note = ButtonNote(id: nextID, symbol: item.symbol, color: item.color, title: item.newTitle, detail: L("Just now", "刚刚"))
         nextID += 1
         open = false
         presses += 1
-        Haptics.success()
+        if !silent && !ctx.isPreview { Haptics.success() }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.8).delay(0.12)) {
             notes.insert(note, at: 0)
             if notes.count > 3 { notes.removeLast() }
@@ -230,9 +260,26 @@ private struct ButtonExpandActionsDemo: View {
         }
     }
 
+    /// Detail intro: the full choreography once — open, then pick an action, which closes the stack.
+    private func playIntro() {
+        cancelIntro()
+        if !open { toggle() }
+        introTask = Task {
+            try? await Task.sleep(for: .seconds(1.4))
+            guard !Task.isCancelled else { return }
+            perform(2, silent: true)
+            introTask = nil
+        }
+    }
+
+    private func cancelIntro() {
+        introTask?.cancel()
+        introTask = nil
+    }
+
     private func previewTick() {
         if open {
-            perform(step % items.count)
+            perform(step % items.count, silent: true)
             step += 1
         } else {
             toggle()

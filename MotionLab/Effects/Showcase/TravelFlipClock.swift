@@ -24,7 +24,7 @@ extension Effect {
             .slider("duration", L("Flip duration", "翻转时长"), 0.3...1.2, default: 0.6, unit: "s"),
             .slider("stagger", L("Digit stagger", "数字错峰"), 0...0.2, default: 0.06, decimals: 2, unit: "s"),
             .slider("bounce", L("Landing bounce", "落下回弹"), 0...1, default: 0.6),
-            .toggle("h24", L("24-hour", "24 小时制"), default: true),
+            .slider("perspective", L("Flap perspective", "翻片透视"), 0.1...0.9, default: 0.45),
         ]
     ) { ctx in
         TravelFlipClockDemo(ctx: ctx)
@@ -103,22 +103,17 @@ private struct TravelFlipClockDemo: View {
         let duration = ctx["duration"]
         let stagger = ctx["stagger"]
         let bounce = ctx["bounce"]
+        let depth = ctx.cg("perspective")
         return HStack(spacing: 5) {
-            TravelFlipDigit(value: reading.digits[0], duration: duration, delay: 0, bounce: bounce)
-            TravelFlipDigit(value: reading.digits[1], duration: duration, delay: stagger, bounce: bounce)
+            TravelFlipDigit(value: reading.digits[0], duration: duration, delay: 0, bounce: bounce, depth: depth)
+            TravelFlipDigit(value: reading.digits[1], duration: duration, delay: stagger, bounce: bounce, depth: depth)
             VStack(spacing: 14) {
                 Circle().frame(width: 5, height: 5)
                 Circle().frame(width: 5, height: 5)
             }
             .foregroundStyle(Signature.textSecondary)
-            TravelFlipDigit(value: reading.digits[2], duration: duration, delay: stagger * 2, bounce: bounce)
-            TravelFlipDigit(value: reading.digits[3], duration: duration, delay: stagger * 3, bounce: bounce)
-            if !reading.suffix.isEmpty {
-                Text(reading.suffix)
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(Signature.accent)
-                    .frame(width: 20, alignment: .leading)
-            }
+            TravelFlipDigit(value: reading.digits[2], duration: duration, delay: stagger * 2, bounce: bounce, depth: depth)
+            TravelFlipDigit(value: reading.digits[3], duration: duration, delay: stagger * 3, bounce: bounce, depth: depth)
         }
         .frame(maxWidth: .infinity)
     }
@@ -156,18 +151,14 @@ private struct TravelFlipClockDemo: View {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { city = index }
     }
 
-    /// Four single-character digits (HHMM) plus an optional AM/PM suffix.
+    /// Four single-character digits (HHMM, 24-hour).
     private func time(for date: Date) -> (digits: [String], suffix: String) {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: TravelClockCity.all[city].zone) ?? .current
         let parts = calendar.dateComponents([.hour, .minute], from: date)
-        var hour = parts.hour ?? 0
+        let hour = parts.hour ?? 0
         let minute = parts.minute ?? 0
-        var suffix = ""
-        if !ctx.bool("h24") {
-            suffix = hour < 12 ? "AM" : "PM"
-            hour = hour % 12 == 0 ? 12 : hour % 12
-        }
+        let suffix = ""
         let text = String(format: "%02d%02d", hour, minute)
         var digits = text.map { String($0) }
         while digits.count < 4 { digits.insert("0", at: 0) }
@@ -183,23 +174,25 @@ private struct TravelFlipDigit: View {
     let duration: Double
     let delay: Double
     let bounce: Double
+    let depth: CGFloat
 
     @State private var current: String
     @State private var previous: String
     @State private var phase: Double = 0
     @State private var target: Double = 0
 
-    init(value: String, duration: Double, delay: Double, bounce: Double) {
+    init(value: String, duration: Double, delay: Double, bounce: Double, depth: CGFloat) {
         self.value = value
         self.duration = duration
         self.delay = delay
         self.bounce = bounce
+        self.depth = depth
         _current = State(initialValue: value)
         _previous = State(initialValue: value)
     }
 
     var body: some View {
-        TravelFlipCard(phase: phase, target: target, current: current, previous: previous, bounce: bounce)
+        TravelFlipCard(phase: phase, target: target, current: current, previous: previous, bounce: bounce, depth: depth)
             .onChange(of: value) { _, newValue in
                 Task { @MainActor in
                     if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
@@ -220,6 +213,7 @@ private struct TravelFlipCard: View, Animatable {
     let current: String
     let previous: String
     let bounce: Double
+    let depth: CGFloat
 
     var animatableData: Double {
         get { phase }
@@ -259,10 +253,10 @@ private struct TravelFlipCard: View, Animatable {
             VStack(spacing: 1.5) {
                 TravelFlipHalf(text: previous, top: true)
                     .brightness(topAngle * 0.003)
-                    .rotation3DEffect(.degrees(topAngle), axis: (x: 1, y: 0, z: 0), anchor: .bottom, perspective: 0.45)
+                    .rotation3DEffect(.degrees(topAngle), axis: (x: 1, y: 0, z: 0), anchor: .bottom, perspective: depth)
                 TravelFlipHalf(text: current, top: false)
                     .brightness(-bottomAngle * 0.002)
-                    .rotation3DEffect(.degrees(bottomAngle), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: 0.45)
+                    .rotation3DEffect(.degrees(bottomAngle), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: depth)
             }
         }
         .shadow(color: Color.black.opacity(0.4), radius: 8, y: 5)

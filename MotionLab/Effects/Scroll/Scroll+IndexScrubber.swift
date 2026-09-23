@@ -74,6 +74,8 @@ private struct ScrollIndexDemo: View {
     @State private var autoStep = 0
     /// True while the detail stage's one-shot intro scrub runs, so it stays silent.
     @State private var demoing = false
+    /// The running intro scrub, cancelled if the demo leaves the screen.
+    @State private var introTask: Task<Void, Never>?
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -107,6 +109,10 @@ private struct ScrollIndexDemo: View {
                 !ctx.isPreview && !demoing && newValue != nil
             }
             .autoplay(ctx.isPreview, every: 0.32, delay: 0.5) { autoScrub(proxy) }
+            .onDisappear {
+                introTask?.cancel()
+                introTask = nil
+            }
         }
     }
 
@@ -167,15 +173,17 @@ private struct ScrollIndexDemo: View {
     private func introScrub(_ proxy: ScrollViewProxy) {
         guard !demoing, active == nil else { return }
         demoing = true
-        Task { @MainActor in
+        introTask = Task { @MainActor in
+            defer { demoing = false }
             for index in [1, 4, 7, 10, 12, 9, 5] {
+                guard !Task.isCancelled else { return }
                 select(index, proxy)
                 try? await Task.sleep(for: .milliseconds(170))
             }
             try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { active = nil }
             withAnimation(.smooth(duration: 0.5)) { proxy.scrollTo(scrollIndexSections[0].letter, anchor: .top) }
-            demoing = false
         }
     }
 }

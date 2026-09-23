@@ -48,6 +48,8 @@ private struct ButtonGooeySplitDemo: View {
     @State private var open = false
     @State private var confirmation: LocalizedText?
     @State private var confirmTask: Task<Void, Never>?
+    /// Detail intro: splits open, then merges back so the stage doesn't stay open.
+    @State private var introTask: Task<Void, Never>?
 
     private let actions: [ButtonGooeyAction] = [
         ButtonGooeyAction(symbol: "message.fill", side: -1, done: L("Sent to Messages", "已发送到信息")),
@@ -68,7 +70,10 @@ private struct ButtonGooeySplitDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.8, delay: 0.5) { toggle() }
+        .autoplay(ctx.isPreview, every: 1.8, delay: 0.5) {
+            if ctx.isPreview { toggle() } else { playIntro() }
+        }
+        .onDisappear { cancelIntro() }
     }
 
     private var postCard: some View {
@@ -109,7 +114,10 @@ private struct ButtonGooeySplitDemo: View {
             .animation(.easeOut(duration: open ? 0.12 : 0.25).delay(open ? 0 : 0.2), value: open)
             ForEach(actions.indices, id: \.self) { index in
                 let action = actions[index]
-                Button { perform(action) } label: {
+                Button {
+                    cancelIntro()
+                    perform(action)
+                } label: {
                     Image(systemName: action.symbol)
                         .font(.system(size: 19, weight: .semibold))
                         .foregroundStyle(.white)
@@ -128,7 +136,10 @@ private struct ButtonGooeySplitDemo: View {
         .frame(width: 320, height: 110)
         .animation(spring, value: open)
         .contentShape(Rectangle())
-        .onTapGesture { toggle() }
+        .onTapGesture {
+            cancelIntro()
+            toggle()
+        }
         .overlay(alignment: .bottom) { confirmationChip.offset(y: 30) }
     }
 
@@ -155,6 +166,22 @@ private struct ButtonGooeySplitDemo: View {
     private func toggle() {
         if !ctx.isPreview { Haptics.tap(open ? .soft : .light) }
         open.toggle()
+    }
+
+    private func playIntro() {
+        cancelIntro()
+        if !open { toggle() }
+        introTask = Task {
+            try? await Task.sleep(for: .seconds(1.4))
+            guard !Task.isCancelled else { return }
+            open = false
+            introTask = nil
+        }
+    }
+
+    private func cancelIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func perform(_ action: ButtonGooeyAction) {

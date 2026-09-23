@@ -44,6 +44,7 @@ private struct ButtonInkRippleDemo: View {
     ]
 
     var body: some View {
+        let dip = ctx.bool("bounce") ? 0.96 : 1.0
         VStack(spacing: 0) {
             Spacer()
             face
@@ -51,7 +52,7 @@ private struct ButtonInkRippleDemo: View {
                     content.scaleEffect(scale)
                 } keyframes: { _ in
                     KeyframeTrack(\.self) {
-                        CubicKeyframe(ctx.bool("bounce") ? 0.96 : 1, duration: 0.09)
+                        CubicKeyframe(dip, duration: 0.09)
                         SpringKeyframe(1, duration: 0.45, spring: .bouncy)
                     }
                 }

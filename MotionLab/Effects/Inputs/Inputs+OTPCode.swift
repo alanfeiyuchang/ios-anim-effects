@@ -167,6 +167,7 @@ private struct InputOTPBox: View {
     }
 
     var body: some View {
+        let lead = 0.001 + Double(index) * 0.05
         ZStack {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Palette.elevated)
@@ -190,7 +191,7 @@ private struct InputOTPBox: View {
             content.offset(y: lift)
         } keyframes: { _ in
             KeyframeTrack(\.self) {
-                LinearKeyframe(0, duration: 0.001 + Double(index) * 0.05)
+                LinearKeyframe(0, duration: lead)
                 SpringKeyframe(-10, duration: 0.16, spring: .snappy)
                 SpringKeyframe(0, duration: 0.45, spring: .bouncy)
             }

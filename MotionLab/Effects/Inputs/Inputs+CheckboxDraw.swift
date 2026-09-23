@@ -115,6 +115,7 @@ private struct InputCheckBox: View {
     }
 
     var body: some View {
+        let dip = squash
         ZStack {
             shape.strokeBorder(Color.primary.opacity(0.25), lineWidth: 2)
             shape
@@ -133,7 +134,7 @@ private struct InputCheckBox: View {
             content.scaleEffect(scale)
         } keyframes: { _ in
             KeyframeTrack(\.self) {
-                CubicKeyframe(squash, duration: 0.08)
+                CubicKeyframe(dip, duration: 0.08)
                 SpringKeyframe(1, duration: 0.4, spring: .bouncy)
             }
         }

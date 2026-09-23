@@ -103,7 +103,9 @@ private struct ButtonAddToCartDemo: View {
     }
 
     private var flyingDot: some View {
-        KeyframeAnimator(initialValue: ButtonFlyFrame(), trigger: flights) { frame in
+        let start = buttonCenter
+        let end = bagCenter
+        return KeyframeAnimator(initialValue: ButtonFlyFrame(), trigger: flights) { frame in
             Circle()
                 .fill(Palette.primary)
                 .frame(width: 22, height: 22)
@@ -113,13 +115,13 @@ private struct ButtonAddToCartDemo: View {
                 .allowsHitTesting(false)
         } keyframes: { _ in
             KeyframeTrack(\.x) {
-                MoveKeyframe(Double(buttonCenter.x))
-                CubicKeyframe(Double(bagCenter.x), duration: 0.55)
+                MoveKeyframe(Double(start.x))
+                CubicKeyframe(Double(end.x), duration: 0.55)
             }
             KeyframeTrack(\.y) {
-                MoveKeyframe(Double(buttonCenter.y))
-                CubicKeyframe(Double(bagCenter.y) - 40, duration: 0.3)
-                CubicKeyframe(Double(bagCenter.y), duration: 0.25)
+                MoveKeyframe(Double(start.y))
+                CubicKeyframe(Double(end.y) - 40, duration: 0.3)
+                CubicKeyframe(Double(end.y), duration: 0.25)
             }
             KeyframeTrack(\.scale) {
                 MoveKeyframe(1)

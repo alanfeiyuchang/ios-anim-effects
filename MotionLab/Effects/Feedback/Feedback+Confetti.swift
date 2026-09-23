@@ -39,6 +39,10 @@ private struct ConfettiPiece {
     let kind: Int
 }
 
+private struct ConfettiPop {
+    var scale: CGFloat = 1
+}
+
 private struct ConfettiBurst: Identifiable {
     let id: Int
     let start: Date
@@ -70,6 +74,32 @@ private enum ConfettiPhysics {
             )
         }
     }
+
+    static func draw(_ burst: ConfettiBurst, in context: inout GraphicsContext, origin: CGPoint, now: Date) {
+        let age = now.timeIntervalSince(burst.start)
+        guard age >= 0, age < ConfettiPhysics.life else { return }
+        let k = ConfettiPhysics.drag
+        let g = burst.gravity
+        let decay = 1 - exp(-k * age)
+        let fade = min(1, (ConfettiPhysics.life - age) / 0.6)
+        for piece in burst.pieces {
+            let x = Double(origin.x) + piece.vx / k * decay
+            let y = Double(origin.y) + g / k * age + (piece.vy - g / k) / k * decay
+            var layer = context
+            layer.opacity = fade
+            layer.translateBy(x: x, y: y)
+            layer.rotate(by: .radians(piece.spin * age + piece.phase))
+            layer.scaleBy(x: cos(piece.flutter * age + piece.phase), y: 1)
+            let rect = CGRect(x: -piece.width / 2, y: -piece.height / 2, width: piece.width, height: piece.height)
+            let path: Path
+            switch piece.kind {
+            case 1: path = Path(ellipseIn: rect)
+            case 2: path = Path(roundedRect: rect, cornerRadius: 2)
+            default: path = Path(rect)
+            }
+            layer.fill(path, with: .color(piece.color))
+        }
+    }
 }
 
 private struct ConfettiDemo: View {
@@ -81,10 +111,12 @@ private struct ConfettiDemo: View {
     var body: some View {
         ZStack {
             TimelineView(.animation(minimumInterval: nil, paused: bursts.isEmpty)) { timeline in
+                let now = timeline.date
+                let live = bursts
                 Canvas { context, size in
                     let origin = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
-                    for burst in bursts {
-                        ConfettiDemo.draw(burst, in: &context, origin: origin, now: timeline.date)
+                    for burst in live {
+                        ConfettiPhysics.draw(burst, in: &context, origin: origin, now: now)
                     }
                 }
             }
@@ -111,10 +143,10 @@ private struct ConfettiDemo: View {
                 .shadow(color: Palette.coral.opacity(0.4), radius: 14, y: 7)
         }
         .buttonStyle(.plain)
-        .keyframeAnimator(initialValue: CGFloat(1), trigger: pops) { content, scale in
-            content.scaleEffect(scale)
+        .keyframeAnimator(initialValue: ConfettiPop(), trigger: pops) { content, pop in
+            content.scaleEffect(pop.scale)
         } keyframes: { _ in
-            KeyframeTrack {
+            KeyframeTrack(\.scale) {
                 CubicKeyframe(0.9, duration: 0.08)
                 CubicKeyframe(1.08, duration: 0.14)
                 SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
@@ -138,32 +170,6 @@ private struct ConfettiDemo: View {
         Task {
             try? await Task.sleep(for: .seconds(ConfettiPhysics.life + 0.1))
             bursts.removeAll { $0.id == id }
-        }
-    }
-
-    static func draw(_ burst: ConfettiBurst, in context: inout GraphicsContext, origin: CGPoint, now: Date) {
-        let age = now.timeIntervalSince(burst.start)
-        guard age >= 0, age < ConfettiPhysics.life else { return }
-        let k = ConfettiPhysics.drag
-        let g = burst.gravity
-        let decay = 1 - exp(-k * age)
-        let fade = min(1, (ConfettiPhysics.life - age) / 0.6)
-        for piece in burst.pieces {
-            let x = origin.x + piece.vx / k * decay
-            let y = origin.y + g / k * age + (piece.vy - g / k) / k * decay
-            var layer = context
-            layer.opacity = fade
-            layer.translateBy(x: x, y: y)
-            layer.rotate(by: .radians(piece.spin * age + piece.phase))
-            layer.scaleBy(x: cos(piece.flutter * age + piece.phase), y: 1)
-            let rect = CGRect(x: -piece.width / 2, y: -piece.height / 2, width: piece.width, height: piece.height)
-            let path: Path
-            switch piece.kind {
-            case 1: path = Path(ellipseIn: rect)
-            case 2: path = Path(roundedRect: rect, cornerRadius: 2)
-            default: path = Path(rect)
-            }
-            layer.fill(path, with: .color(piece.color))
         }
     }
 }

@@ -125,6 +125,8 @@ private struct InputStar: View {
     let trigger: Int
 
     var body: some View {
+        let lead = 0.001 + delay
+        let peak = changed ? (filled ? pop : 0.85) : 1.0
         ZStack {
             Image(systemName: "star.fill")
                 .foregroundStyle(Color.primary.opacity(0.14))
@@ -141,8 +143,8 @@ private struct InputStar: View {
             content.scaleEffect(scale)
         } keyframes: { _ in
             KeyframeTrack(\.self) {
-                LinearKeyframe(1, duration: 0.001 + delay)
-                CubicKeyframe(changed ? (filled ? pop : 0.85) : 1, duration: 0.12)
+                LinearKeyframe(1, duration: lead)
+                CubicKeyframe(peak, duration: 0.12)
                 SpringKeyframe(1, duration: 0.45, spring: .bouncy)
             }
         }

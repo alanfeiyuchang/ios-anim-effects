@@ -40,11 +40,13 @@ private struct ButtonLikeBurstDemo: View {
     @State private var bursts = 0
 
     var body: some View {
+        let particles = ctx.int("particles")
+        let radius = ctx.cg("radius")
         VStack(spacing: 18) {
             Spacer()
             ZStack {
                 KeyframeAnimator(initialValue: ButtonBurstFrame(), trigger: bursts) { frame in
-                    ButtonBurstLayer(frame: frame, count: ctx.int("particles"), radius: ctx.cg("radius"))
+                    ButtonBurstLayer(frame: frame, count: particles, radius: radius)
                 } keyframes: { _ in
                     KeyframeTrack(\.progress) {
                         MoveKeyframe(0)
@@ -74,7 +76,8 @@ private struct ButtonLikeBurstDemo: View {
     }
 
     private var heartButton: some View {
-        Button(action: toggle) {
+        let overshoot = ctx["overshoot"]
+        return Button(action: toggle) {
             Image(systemName: liked ? "heart.fill" : "heart")
                 .font(.system(size: 42, weight: .semibold))
                 .foregroundStyle(heartStyle)
@@ -84,7 +87,7 @@ private struct ButtonLikeBurstDemo: View {
                 } keyframes: { _ in
                     KeyframeTrack(\.self) {
                         CubicKeyframe(0.6, duration: 0.1)
-                        SpringKeyframe(ctx["overshoot"], duration: 0.18, spring: .snappy)
+                        SpringKeyframe(overshoot, duration: 0.18, spring: .snappy)
                         SpringKeyframe(1, duration: 0.5, spring: .bouncy)
                     }
                 }

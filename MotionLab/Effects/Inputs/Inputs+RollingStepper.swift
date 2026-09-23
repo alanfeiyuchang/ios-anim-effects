@@ -66,14 +66,15 @@ private struct InputRollingStepperDemo: View {
     }
 
     private var number: some View {
-        Text("\(value)")
+        let side = limitSide
+        return Text("\(value)")
             .font(.system(size: 44, weight: .bold, design: .rounded).monospacedDigit())
             .foregroundStyle(flash ? Palette.red : Color.primary)
             .contentTransition(.numericText(value: Double(value)))
             .frame(width: 84)
             .offset(x: nudge)
             .keyframeAnimator(initialValue: 0.0, trigger: limitHits) { content, shift in
-                content.offset(x: shift * limitSide)
+                content.offset(x: shift * side)
             } keyframes: { _ in
                 KeyframeTrack(\.self) {
                     CubicKeyframe(8, duration: 0.08)

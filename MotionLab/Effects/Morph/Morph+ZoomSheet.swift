@@ -36,6 +36,8 @@ private struct ZoomSheetDemo: View {
     @State private var open = false
     @State private var showContent = false
     @State private var dragY: CGFloat = 0
+    /// Resets on system cancellation too, so a cancelled pull-down never leaves the sheet hanging offset.
+    @GestureState private var dragging = false
     @Environment(\.colorScheme) private var colorScheme
 
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }

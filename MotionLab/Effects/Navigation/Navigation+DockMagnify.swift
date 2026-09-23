@@ -52,6 +52,9 @@ private struct DockMagnifyDemo: View {
     /// Set while the detail-page intro sweeps a simulated finger across the dock.
     @State private var sweepStart: Date?
     @State private var sweepTask: Task<Void, Never>?
+    /// Bumped by every finger update, so a tap's delayed lift-off never cuts into a newer touch.
+    @State private var pokeToken = 0
+    @State private var sliding = false
 
     private let sweepDuration: Double = 1.2
 
@@ -73,7 +76,19 @@ private struct DockMagnifyDemo: View {
                     }
                     .frame(width: canvas.width, height: canvas.height)
                     .contentShape(Rectangle())
-                    .gesture(drag)
+                    // Horizontal slides only (vertical swipes keep scrolling the page); a cancelled slide
+                    // still reports its end, so the row never stays magnified. A tap magnifies briefly.
+                    .pageSafeHorizontalDrag(minimumDistance: 6, onChanged: { value in
+                        sliding = true
+                        track(value.location.x)
+                    }, onEnded: { _ in
+                        sliding = false
+                        lift()
+                    })
+                    .simultaneousGesture(
+                        SpatialTapGesture()
+                            .onEnded { value in poke(at: value.location.x) }
+                    )
                 }
             }
             .frame(width: canvas.width, height: 250)
@@ -113,25 +128,34 @@ private struct DockMagnifyDemo: View {
         }
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { value in
-                if sweepStart != nil {
-                    sweepTask?.cancel()
-                    sweepStart = nil
-                }
-                let x = value.location.x
-                withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.8)) { fingerX = x }
-                let nearest = DockRow.nearestIndex(to: x, canvasWidth: canvas.width)
-                if nearest != hovered {
-                    hovered = nearest
-                    Haptics.selection()
-                }
-            }
-            .onEnded { _ in
-                hovered = nil
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { fingerX = nil }
-            }
+    private func track(_ x: CGFloat) {
+        pokeToken += 1
+        if sweepStart != nil {
+            sweepTask?.cancel()
+            sweepStart = nil
+        }
+        withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.8)) { fingerX = x }
+        let nearest = DockRow.nearestIndex(to: x, canvasWidth: canvas.width)
+        if nearest != hovered {
+            hovered = nearest
+            Haptics.selection()
+        }
+    }
+
+    /// Normal release or system cancellation: settle the row and hide the tooltip.
+    private func lift() {
+        hovered = nil
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { fingerX = nil }
+    }
+
+    /// A tap swells the icons under the finger for a moment, then lets go.
+    private func poke(at x: CGFloat) {
+        track(x)
+        let token = pokeToken
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            if token == pokeToken && !sliding { lift() }
+        }
     }
 }
 

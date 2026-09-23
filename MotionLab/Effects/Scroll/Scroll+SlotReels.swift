@@ -8,8 +8,8 @@ extension Effect {
         name: L("Slot Machine Reels", "老虎机滚轮"),
         summary: L("Three curved scroll reels spin and stop one after another with a bounce, lining up on a payline.", "三条弧形滚动卷轴旋转后依次回弹停下，在中线上对齐。"),
         prompt: L(
-            "Three vertical reels of 64 pt symbol cells sit side by side inside a rounded cabinet, each curved like a drum: cells tilt back up to 50° and fade toward the top and bottom edges, which dissolve through a gradient mask. Tapping Spin sends every reel 16–27 cells down with a bouncy spring whose duration grows per reel (1.1 s, 1.55 s, 2.0 s, bounce 0.18), so they stop left to right with a small overshoot each, with a haptic on every stop. When all three symbols match on the gold payline, the payline glows and a success haptic fires. Each reel can also be flicked by hand and snaps to whole cells. Suspenseful, rhythmic and fun.",
-            "三条竖向卷轴并排放在圆角机箱中，每格符号64 pt，每条卷轴都弯成滚筒：越靠上下边缘的格子向后倾斜越多（最多50°）并逐渐变淡，边缘通过渐变遮罩融化。点击「旋转」后，每条卷轴向下滚动16–27格，弹簧时长逐条递增（1.1秒、1.55秒、2.0秒，回弹0.18），因此从左到右依次停下，每次都带轻微过冲，并伴随触感。三个符号在金色中线上一致时，中线发光并触发成功触感。每条卷轴也可以用手拨动，并吸附到整格。悬念十足、富有节奏、好玩。"
+            "Three vertical reels of 64 pt symbol cells sit side by side inside a rounded cabinet, each curved like a drum: cells tilt back up to 50° and fade toward the top and bottom edges, which dissolve through a gradient mask. Tapping Spin sends every reel 16–30 cells down with a bouncy spring whose duration grows per reel (1.1 s, 1.55 s, 2.0 s, bounce 0.18), so they stop left to right with a small overshoot each, with a haptic on every stop. When all three symbols match on the gold payline, the payline glows and a success haptic fires. Each reel can also be flicked by hand and snaps to whole cells. Suspenseful, rhythmic and fun.",
+            "三条竖向卷轴并排放在圆角机箱中，每格符号64 pt，每条卷轴都弯成滚筒：越靠上下边缘的格子向后倾斜越多（最多50°）并逐渐变淡，边缘通过渐变遮罩融化。点击「旋转」后，每条卷轴向下滚动16–30格，弹簧时长逐条递增（1.1秒、1.55秒、2.0秒，回弹0.18），因此从左到右依次停下，每次都带轻微过冲，并伴随触感。三个符号在金色中线上一致时，中线发光并触发成功触感。每条卷轴也可以用手拨动，并吸附到整格。悬念十足、富有节奏、好玩。"
         ),
         implementation: L(
             "Each reel is a ScrollView with its own ScrollPosition in an array; a spin calls scrollTo(y:) inside withAnimation(.spring(duration:bounce:)) with a per-reel duration. visualEffect curves the cells like a drum, and reels jump back by whole symbol cycles without animation before each spin so they never run out.",
@@ -34,12 +34,22 @@ private let scrollSlotCell: CGFloat = 64
 private struct ScrollSlotDemo: View {
     let ctx: DemoContext
     @State private var positions: [ScrollPosition] = Array(repeating: ScrollPosition(edge: .top), count: 3)
-    @State private var targets: [Int] = [10, 13, 18]
+    @State private var targets: [Int]
     /// The cell each reel actually rests on, including hand flicks (spins start from here).
-    @State private var resting: [Int] = [10, 13, 18]
+    @State private var resting: [Int]
     @State private var spins = 0
     @State private var spinning = false
-    @State private var win = false
+    @State private var win: Bool
+
+    /// Still thumbnails never run `onAppear`, so every reel stays on cell 0 (three stars on the payline):
+    /// seed that row and its win glow, so the frame shows the jackpot it actually draws.
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        let start: [Int] = ctx.isStill ? [0, 0, 0] : [10, 13, 18]
+        _targets = State(initialValue: start)
+        _resting = State(initialValue: start)
+        _win = State(initialValue: ctx.isStill)
+    }
 
     var body: some View {
         VStack(spacing: 18) {

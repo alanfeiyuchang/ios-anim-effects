@@ -32,7 +32,7 @@ private let scrollCoverInitialIndex = 3
 
 private struct ScrollCoverFlowDemo: View {
     let ctx: DemoContext
-    @State private var current = scrollCoverInitialIndex
+    @State private var current: Int
     @State private var position = ScrollPosition(edge: .leading)
     @State private var width: CGFloat = 340
     @State private var direction = 1
@@ -42,6 +42,13 @@ private struct ScrollCoverFlowDemo: View {
 
     /// Distance between neighbouring cover centers.
     private var pitch: CGFloat { max(side + ctx.cg("spacing"), 1) }
+
+    /// Still thumbnails never run `onAppear`, so the initial scroll never happens and item 0 sits in the
+    /// selection band: seed the index to match, so title, chip and highlight describe what is drawn.
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        _current = State(initialValue: ctx.isStill ? 0 : scrollCoverInitialIndex)
+    }
 
     var body: some View {
         VStack(spacing: 10) {

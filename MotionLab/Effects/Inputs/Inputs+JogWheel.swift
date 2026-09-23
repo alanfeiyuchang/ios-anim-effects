@@ -39,6 +39,8 @@ private struct JogWheelDemo: View {
     /// The coast in flight, so a grab starts from the angle on screen rather than the landing angle.
     @State private var inFlight: JogCoast?
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let size: CGFloat = 220
 
@@ -48,6 +50,9 @@ private struct JogWheelDemo: View {
             JogWheelFace(rotation: rotation, degreesPerFrame: ctx["detent"], size: size, spinning: spinning)
                 .contentShape(Circle())
                 .gesture(drag)
+                .onChange(of: touching) { _, isTouching in
+                    if !isTouching { endSpin() }
+                }
                 .scaleEffect(ctx.isPreview ? 0.9 : 1)
             Spacer(minLength: 0)
             DemoHint(text: L("Spin the wheel, then flick it", "转动轮盘，再甩一下试试"), ctx: ctx)
@@ -59,6 +64,7 @@ private struct JogWheelDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 let dx = Double(value.location.x - size / 2)
                 let dy = Double(value.location.y - size / 2)
@@ -87,12 +93,16 @@ private struct JogWheelDemo: View {
                 lastTime = now
                 if !spinning { spinning = true }
             }
-            .onEnded { _ in
-                lastAngle = nil
-                let idle = Date.now.timeIntervalSince(lastTime) > 0.08
-                let speed = idle ? 0 : velocity
-                coast(by: speed * ctx["coast"])
-            }
+            .onEnded { _ in endSpin() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger: the wheel coasts on (or stops) and the blur arc clears.
+    private func endSpin() {
+        guard lastAngle != nil else { return }
+        lastAngle = nil
+        let idle = Date.now.timeIntervalSince(lastTime) > 0.08
+        let speed = idle ? 0 : velocity
+        coast(by: speed * ctx["coast"])
     }
 
     /// Sets the rotation without animation, which also halts an in-flight coast.

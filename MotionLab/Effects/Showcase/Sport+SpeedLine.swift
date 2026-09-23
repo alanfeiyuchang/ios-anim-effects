@@ -112,6 +112,8 @@ private struct SportSpeedDemo: View {
     @State private var shown = 0
     @State private var scrub: Int?
     @State private var runID = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled scrub still clears.
+    @GestureState private var touching = false
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -190,10 +192,14 @@ private struct SportSpeedDemo: View {
         .frame(width: size.width, height: size.height)
         .contentShape(Rectangle())
         .gesture(scrubGesture)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endScrub() }
+        }
     }
 
     private var scrubGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 let count = SpeedData.values.count
                 let f = (value.location.x / SpeedData.chartSize.width).clamped(to: 0...1)
@@ -207,9 +213,13 @@ private struct SportSpeedDemo: View {
                     if !ctx.isPreview { Haptics.selection() }
                 }
             }
-            .onEnded { _ in
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { scrub = nil }
-            }
+            .onEnded { _ in endScrub() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func endScrub() {
+        guard scrub != nil else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { scrub = nil }
     }
 
     private func play() async {

@@ -37,6 +37,10 @@ private struct WindUpTimerDemo: View {
     @State private var runID = 0
     @State private var rings = 0
     @State private var lastNotch = 0
+    /// A real finger is on the dial (set on the first change, cleared by the single cleanup).
+    @State private var grabbed = false
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let size: CGFloat = 210
     private var rate: Double { 6 * max(ctx["speed"], 1) }
@@ -59,6 +63,9 @@ private struct WindUpTimerDemo: View {
                 }
                 .contentShape(Circle())
                 .gesture(drag)
+                .onChange(of: touching) { _, isTouching in
+                    if !isTouching { endWind() }
+                }
                 .scaleEffect(ctx.isPreview ? 0.92 : 1)
             Spacer(minLength: 0)
             DemoHint(text: L("Twist clockwise to wind, then let go", "顺时针拧动上发条，然后松手"), ctx: ctx)
@@ -70,7 +77,9 @@ private struct WindUpTimerDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
+                grabbed = true
                 if runStart != nil { freeze() }
                 let dx = Double(value.location.x - size / 2)
                 let dy = Double(value.location.y - size / 2)
@@ -91,13 +100,18 @@ private struct WindUpTimerDemo: View {
                 }
                 lastTouch = touch
             }
-            .onEnded { _ in
-                lastTouch = nil
-                let notchDegrees: Double = 6 * max(ctx["notch"], 1)
-                let snapped: Double = (angle / notchDegrees).rounded() * notchDegrees
-                setImmediately(snapped.clamped(to: 0...360))
-                run()
-            }
+            .onEnded { _ in endWind() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger: snap to the notch and let the timer run.
+    private func endWind() {
+        guard grabbed else { return }
+        grabbed = false
+        lastTouch = nil
+        let notchDegrees: Double = 6 * max(ctx["notch"], 1)
+        let snapped: Double = (angle / notchDegrees).rounded() * notchDegrees
+        setImmediately(snapped.clamped(to: 0...360))
+        run()
     }
 
     private func setImmediately(_ value: Double) {

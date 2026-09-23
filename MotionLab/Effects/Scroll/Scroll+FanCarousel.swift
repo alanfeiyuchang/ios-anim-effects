@@ -29,7 +29,7 @@ extension Effect {
 private struct ScrollFanDemo: View {
     let ctx: DemoContext
     @State private var position = ScrollPosition(edge: .leading)
-    @State private var current = 3
+    @State private var current: Int
     @State private var width: CGFloat = 340
     @State private var direction = 1
     /// True while autoplay (or the detail intro) scrolls, so scripted selection ticks stay silent.
@@ -38,6 +38,13 @@ private struct ScrollFanDemo: View {
     private let count = 9
     private let cardSize = CGSize(width: 140, height: 190)
     private let pitch: CGFloat = 110
+
+    /// Still thumbnails never run `onAppear`, so the initial scroll never happens and item 0 sits in the
+    /// selection band: seed the index to match, so title, chip and highlight describe what is drawn.
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        _current = State(initialValue: ctx.isStill ? 0 : 3)
+    }
 
     var body: some View {
         VStack(spacing: 8) {

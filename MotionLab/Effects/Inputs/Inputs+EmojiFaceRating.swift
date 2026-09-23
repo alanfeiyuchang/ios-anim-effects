@@ -31,6 +31,8 @@ private struct EmojiFaceRatingDemo: View {
     let ctx: DemoContext
     @State private var mood: Double = 0.5
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled drag still snaps.
+    @GestureState private var touching = false
 
     private let width: CGFloat = 250
     private static let previewMoods: [Double] = [1, 0.25, 0.75, 0, 0.5]
@@ -107,6 +109,7 @@ private struct EmojiFaceRatingDemo: View {
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { value in
                     let before = level
                     mood = Double(value.location.x / width).clamped(to: 0...1)
@@ -114,6 +117,10 @@ private struct EmojiFaceRatingDemo: View {
                 }
                 .onEnded { _ in snap() }
         )
+        .onChange(of: touching) { _, isTouching in
+            // Idempotent: after a normal lift `snap()` already landed on the level.
+            if !isTouching { snap() }
+        }
     }
 
     private func snap() {

@@ -31,6 +31,8 @@ private struct SportBoardDemo: View {
     let ctx: DemoContext
     @State private var angle: Double = 0
     @State private var tilt: CGSize = .zero
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled drag still levels the board.
+    @GestureState private var touching = false
 
     var body: some View {
         SignatureStage {
@@ -60,6 +62,9 @@ private struct SportBoardDemo: View {
             .contentShape(Rectangle())
             .onTapGesture { flip() }
             .gesture(tiltGesture)
+            .onChange(of: touching) { _, isTouching in
+                if !isTouching { level() }
+            }
             BoardStats(language: ctx.language)
         }
         .padding(20)
@@ -69,15 +74,20 @@ private struct SportBoardDemo: View {
 
     private var tiltGesture: some Gesture {
         DragGesture()
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 tilt = CGSize(
                     width: value.translation.width.clamped(to: -100...100),
                     height: value.translation.height.clamped(to: -100...100)
                 )
             }
-            .onEnded { _ in
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.45)) { tilt = .zero }
-            }
+            .onEnded { _ in level() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func level() {
+        guard tilt != .zero else { return }
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.45)) { tilt = .zero }
     }
 
     private func flip() {

@@ -52,6 +52,8 @@ private struct RadialMenuDemo: View {
     @State private var previewPhase = 0
     @State private var pressBeganOpen: Bool?
     @State private var token = 0
+    /// Resets on system cancellation too (scroll takeover, Control Center pull), which skips `onEnded`.
+    @GestureState private var pressing = false
 
     private let buttonSize: CGFloat = 60
 
@@ -146,6 +148,9 @@ private struct RadialMenuDemo: View {
             .animation(.spring(response: 0.35, dampingFraction: 0.7), value: open)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: highlighted)
             .gesture(pressDrag)
+            .onChange(of: pressing) { _, active in
+                if !active { cancelPress() }
+            }
     }
 
     @ViewBuilder private var chosenBadge: some View {
@@ -164,6 +169,7 @@ private struct RadialMenuDemo: View {
 
     private var pressDrag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if pressBeganOpen == nil {
                     pressBeganOpen = open
@@ -196,6 +202,14 @@ private struct RadialMenuDemo: View {
                     setOpen(false)
                 }
             }
+    }
+
+    /// Cancelled press: forget the press so the next touch on + starts fresh, and drop the highlight without
+    /// committing. The menu stays open, so its items can still be tapped. No-op after a normal release.
+    private func cancelPress() {
+        guard pressBeganOpen != nil else { return }
+        pressBeganOpen = nil
+        highlighted = nil
     }
 
     private func setOpen(_ value: Bool) {

@@ -110,7 +110,9 @@ private struct TravelNowPlayingDemo: View {
         playStart = Date()
     }
 
+    /// Single cleanup for a lifted or cancelled finger (the card calls it from both paths).
     private func endScrub() {
+        guard scrubbing else { return }
         playStart = Date()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { scrubbing = false }
     }
@@ -148,6 +150,8 @@ private struct TravelNowPlayingCard: View {
 
     private let waveWidth: CGFloat = 252
     private let waveHeight: CGFloat = 46
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled scrub still ends.
+    @GestureState private var touching = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -173,6 +177,9 @@ private struct TravelNowPlayingCard: View {
                     .scaleEffect(0.9)
                     .opacity(glow && playing ? 0.32 + 0.1 * sin(date.timeIntervalSinceReferenceDate * 2.2) : 0)
             }
+        }
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { onScrubEnd() }
         }
     }
 
@@ -241,6 +248,7 @@ private struct TravelNowPlayingCard: View {
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { value in onScrub(Double(value.location.x / waveWidth)) }
                 .onEnded { _ in onScrubEnd() }
         )

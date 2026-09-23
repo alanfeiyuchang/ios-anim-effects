@@ -35,6 +35,8 @@ private struct ToastDemo: View {
     @State private var shown: Bool
     @State private var token = 0
     @State private var dragY: CGFloat = 0
+    /// Resets on system cancellation too, so a cancelled swipe never leaves the toast offset.
+    @GestureState private var dragging = false
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -52,6 +54,11 @@ private struct ToastDemo: View {
                 .opacity(shown ? 1 : 0)
                 .offset(y: (shown ? 0 : (fromTop ? -110 : 110)) + dragY)
                 .gesture(swipeAway(fromTop: fromTop))
+                .onChange(of: dragging) { _, active in
+                    if !active && dragY != 0 {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { dragY = 0 }
+                    }
+                }
                 .allowsHitTesting(shown)
                 .padding(fromTop ? .top : .bottom, 28)
         }
@@ -77,6 +84,7 @@ private struct ToastDemo: View {
     /// Swiping toward the toast's own edge dismisses it early; the other way rubber-bands.
     private func swipeAway(fromTop: Bool) -> some Gesture {
         DragGesture(minimumDistance: 4)
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 let toward = fromTop ? -value.translation.height : value.translation.height
                 let travel = toward > 0 ? toward : rubberBand(toward, limit: 14)

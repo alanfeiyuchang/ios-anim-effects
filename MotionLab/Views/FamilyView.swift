@@ -414,7 +414,8 @@ struct FamilyPreviewStrip: View {
         let lit = shown.isEmpty ? 0 : spotlight % shown.count
         HStack(spacing: 8) {
             ForEach(Array(shown.enumerated()), id: \.element.id) { index, effect in
-                StripSlot(effect: effect, isLit: live && index == lit)
+                // Nothing goes live until the strip is actually on screen (lazy stacks build cards early).
+                StripSlot(effect: effect, isLit: live && isVisible && index == lit)
                     .overlay {
                         if live && index == lit && shown.count > 1 {
                             SpotlightRing(namespace: ring)
@@ -616,6 +617,7 @@ struct VariationStrip: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 2)
                 }
+                .pausesSnapshotsWhileScrolling()
                 // Bleeds to the screen edges like the Browse carousels.
                 .padding(.horizontal, -16)
                 .onAppear {

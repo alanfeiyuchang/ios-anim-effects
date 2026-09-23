@@ -15,10 +15,10 @@ extension Effect {
             "起床闹钟卡片中是两个自定义滚筒（小时与分钟），背后是一条柔和的选中条。每行高 36pt；行离开中心时，会按滚动位置直接映射，绕 X 轴向后倾斜最多约 60°（带透视），缩小到约 82%，透明度降到约 35%，让列表读起来像一个圆柱。上下边缘通过渐变遮罩自然消隐。快速拨动后自然减速，并总是精确停在某一行（按视图对齐吸附），每一行经过选中条都会触发一次选择触感。标题中的“8 小时 50 分钟后响铃”随滚轮落定以数字滚动更新。熟悉、机械、令人满足——一个手工打造的系统滚轮。"
         ),
         implementation: L(
-            "Each drum is a ScrollView + LazyVStack with scrollTargetLayout, .viewAligned snapping, scrollPosition(id:anchor: .center) and vertical contentMargins that center the first and last rows; scrollTransition maps phase.value to rotation3DEffect, scale and opacity, and sensoryFeedback(.selection) fires on each change.",
-            "每个滚筒是 ScrollView + LazyVStack，配合 scrollTargetLayout、.viewAligned 吸附、scrollPosition(id:anchor: .center)，并用纵向 contentMargins 让首尾行也能居中；scrollTransition 把 phase.value 映射为 rotation3DEffect、缩放与透明度，sensoryFeedback(.selection) 在每次变化时触发。"
+            "Each drum is a ScrollView + LazyVStack with scrollTargetLayout, .viewAligned snapping, scrollPosition(id:anchor: .center) and vertical contentMargins that center the first and last rows; scrollTransition maps phase.value to rotation3DEffect, scale and opacity, and a Haptics.selection() tick answers each change the finger makes.",
+            "每个滚筒是 ScrollView + LazyVStack，配合 scrollTargetLayout、.viewAligned 吸附、scrollPosition(id:anchor: .center)，并用纵向 contentMargins 让首尾行也能居中；scrollTransition 把 phase.value 映射为 rotation3DEffect、缩放与透明度；手指带来的每次变化都触发一次 Haptics.selection() 触感。"
         ),
-        apis: ["scrollTransition", "rotation3DEffect", "scrollTargetBehavior(.viewAligned)", "scrollPosition(id:anchor:)", "sensoryFeedback"],
+        apis: ["scrollTransition", "rotation3DEffect", "scrollTargetBehavior(.viewAligned)", "scrollPosition(id:anchor:)"],
         tags: ["picker", "wheel", "time picker", "3d", "滚轮", "选择器", "时间", "闹钟"],
         params: [
             .slider("tilt", L("Drum curvature", "滚筒弧度"), 20...80, default: 60, decimals: 0, unit: "°"),
@@ -73,8 +73,12 @@ private struct InputWheelPickerDemo: View {
             if hour == nil { hour = 7 }
             if minute == nil { minute = 25 }
         }
-        .sensoryFeedback(.selection, trigger: hour) { old, _ in userMoved(old) }
-        .sensoryFeedback(.selection, trigger: minute) { old, _ in userMoved(old) }
+        .onChange(of: hour) { old, _ in
+            if userMoved(old) { Haptics.selection() }
+        }
+        .onChange(of: minute) { old, _ in
+            if userMoved(old) { Haptics.selection() }
+        }
         .autoplay(ctx.isPreview, every: 1.6, delay: 0.6) { previewTick() }
     }
 

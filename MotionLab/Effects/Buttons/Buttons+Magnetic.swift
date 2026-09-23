@@ -41,6 +41,8 @@ private struct ButtonMagneticDemo: View {
     @State private var introTask: Task<Void, Never>?
     /// Bumped when the finger lifts on the button itself: plays the press pulse.
     @State private var presses = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private static let previewPath: [CGSize] = [
         CGSize(width: 70, height: -40),
@@ -96,6 +98,9 @@ private struct ButtonMagneticDemo: View {
             stageSize = newSize
         }
         .gesture(dragGesture)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { release() }
+        }
         .autoplay(ctx.isPreview, every: 1.1, delay: 0.3) {
             // Previews keep roaming; the detail intro drifts past the button once and then lets go.
             if ctx.isPreview { stepPreview() } else { introSweep() }
@@ -118,6 +123,7 @@ private struct ButtonMagneticDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 stopIntro()
                 track(value.location, animateFinger: false)
@@ -152,7 +158,9 @@ private struct ButtonMagneticDemo: View {
         }
     }
 
+    /// Single cleanup for a lifted or cancelled finger and the scripted sweep.
     private func release() {
+        guard finger != nil || captured || pull != .zero else { return }
         withAnimation(spring) {
             captured = false
             influence = 0

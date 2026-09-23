@@ -47,6 +47,8 @@ private struct SportAltitudeDemo: View {
     @State private var lastIndex = 145
     /// The settle in flight, so a grab catches the ruler where it is on screen.
     @State private var inFlight: AltitudeSettle?
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled drag still settles.
+    @GestureState private var touching = false
 
     private var spacing: CGFloat { max(ctx.cg("spacing"), 4) }
 
@@ -75,6 +77,9 @@ private struct SportAltitudeDemo: View {
             .frame(height: 76)
             .contentShape(Rectangle())
             .gesture(dragGesture)
+            .onChange(of: touching) { _, isTouching in
+                if !isTouching { cancelDrag() }
+            }
         }
         .padding(20)
         .frame(width: 300)
@@ -83,6 +88,7 @@ private struct SportAltitudeDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 let start: CGFloat = dragStart ?? grab()
                 var p = start - value.translation.width / spacing
@@ -108,6 +114,13 @@ private struct SportAltitudeDemo: View {
                 settle(to: target)
                 if !ctx.isPreview { Haptics.tap(.soft) }
             }
+    }
+
+    /// A cancelled drag (no `onEnded`, so no fling) settles on the nearest tick, and the next grab starts fresh.
+    private func cancelDrag() {
+        guard dragStart != nil else { return }
+        dragStart = nil
+        settle(to: position.rounded().clamped(to: 0...AltitudeScale.maxIndex))
     }
 
     /// Halts a settle in flight at the value on screen and starts the drag from there.

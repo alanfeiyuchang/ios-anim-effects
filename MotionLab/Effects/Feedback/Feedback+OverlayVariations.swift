@@ -37,6 +37,8 @@ private struct RecedingSheetDemo: View {
     @State private var presented = false
     @State private var drag: CGFloat = 0
     @State private var deleted = false
+    /// Resets on system cancellation too, so a cancelled drag never leaves the sheet hanging half-dismissed.
+    @GestureState private var dragging = false
 
     private let sheetHeight: CGFloat = 200
     private let tints: [Color] = [Palette.coral, Palette.sky, Palette.mint, Palette.violet, Palette.amber, Palette.pink, Palette.blue, Palette.green, Palette.indigo]
@@ -60,6 +62,11 @@ private struct RecedingSheetDemo: View {
                 sheet
                     .offset(y: presented ? max(drag, -12) : sheetHeight + 30)
                     .gesture(sheetDrag)
+                    .onChange(of: dragging) { _, active in
+                        if !active && drag != 0 {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
+                        }
+                    }
             }
             .frame(width: 300, height: 320)
             .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
@@ -174,6 +181,7 @@ private struct RecedingSheetDemo: View {
 
     private var sheetDrag: some Gesture {
         DragGesture(minimumDistance: 2)
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 let dy: CGFloat = value.translation.height
                 drag = dy > 0 ? dy : rubberBand(dy, limit: 30)

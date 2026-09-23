@@ -49,6 +49,8 @@ private let storyPages: [StoryPage] = [
 
 private struct StoryTaskKey: Hashable {
     let step: Int
+    /// Bumped on every manual restart, so a back-tap on the first page (same `step`) still restarts the timer.
+    let restarts: Int
     let duration: Double
     let count: Int
 }
@@ -57,6 +59,7 @@ private struct StoryBarsDemo: View {
     let ctx: DemoContext
     @State private var step = 0
     @State private var pageStart = Date()
+    @State private var restarts = 0
 
     private let size = CGSize(width: 214, height: 300)
     private var count: Int { min(max(ctx.int("count"), 1), storyPages.count) }
@@ -84,7 +87,7 @@ private struct StoryBarsDemo: View {
             DemoHint(text: L("Tap right to skip, left to go back", "点右侧跳过，点左侧返回"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task(id: StoryTaskKey(step: step, duration: duration, count: count)) {
+        .task(id: StoryTaskKey(step: step, restarts: restarts, duration: duration, count: count)) {
             let remaining = duration - Date().timeIntervalSince(pageStart)
             try? await Task.sleep(for: .seconds(max(remaining, 0.05)))
             guard !Task.isCancelled else { return }
@@ -95,12 +98,14 @@ private struct StoryBarsDemo: View {
     private func advance(manual: Bool) {
         if manual && !ctx.isPreview { Haptics.selection() }
         pageStart = Date()
+        restarts += 1
         withAnimation(.smooth(duration: 0.45)) { step += 1 }
     }
 
     private func back() {
         if !ctx.isPreview { Haptics.selection() }
         pageStart = Date()
+        restarts += 1
         withAnimation(.smooth(duration: 0.45)) { step = max(step - 1, 0) }
     }
 }

@@ -15,7 +15,7 @@ extension Effect {
             "The ring is a single Circle with matchedGeometryEffect rendered only behind the selected swatch; the card stacks one gradient layer per colour and fades opacities, while a keyframeAnimator keyed on the selection runs the rotation3DEffect flick.",
             "选中圆环是一枚使用 matchedGeometryEffect 的 Circle，只绘制在当前选中色块背后；卡片为每种颜色叠放一层渐变并切换透明度，由以选中项为触发器的 keyframeAnimator 驱动 rotation3DEffect 的轻弹。"
         ),
-        apis: ["matchedGeometryEffect", "keyframeAnimator", "rotation3DEffect", "transition(.push(from:))", "sensoryFeedback"],
+        apis: ["matchedGeometryEffect", "keyframeAnimator", "rotation3DEffect", "transition(.push(from:))"],
         tags: ["color picker", "swatch", "selection", "customize", "颜色选择", "色板", "选配", "选中"],
         params: [
             .slider("response", L("Ring response", "圆环响应"), 0.2...0.8, default: 0.4, unit: "s"),
@@ -38,8 +38,6 @@ private struct InputSwatchPickerDemo: View {
     @State private var selected = 0
     @State private var previous = 0
     @State private var flicks = 0
-    /// Counts real taps only, so autoplay and the detail intro never tick the haptic.
-    @State private var userPicks = 0
     @Namespace private var ns
 
     private static let swatches: [InputSwatch] = [
@@ -64,7 +62,6 @@ private struct InputSwatchPickerDemo: View {
                 .padding(.bottom, 14)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: userPicks)
         .autoplay(ctx.isPreview, every: 1.1, delay: 0.4) {
             select(Self.previewOrder[flicks % Self.previewOrder.count])
         }
@@ -133,7 +130,8 @@ private struct InputSwatchPickerDemo: View {
         let swatch = Self.swatches[index]
         let isSelected = index == selected
         return Button {
-            if index != selected { userPicks += 1 }
+            // Real taps only: autoplay and the detail intro call `select` directly and never tick.
+            if index != selected { Haptics.selection() }
             select(index)
         } label: {
             ZStack {

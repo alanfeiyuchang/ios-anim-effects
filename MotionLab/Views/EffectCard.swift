@@ -58,7 +58,8 @@ struct PreviewStage: View {
                         .interpolation(.high)
                         .frame(width: proxy.size.width, height: proxy.size.height)
                 } else if isOnScreen && proxy.size.width > 0 {
-                    Color.clear.task(id: key) {
+                    // A quiet category glyph (never an empty tile) until the still is ready.
+                    StillPlaceholder(effect: effect).task(id: key) {
                         // Let the grid's first frame land, then wait for a free render slot so a
                         // screenful of new cards never rasterises in one scroll frame.
                         await SnapshotGate.waitForTurn()
@@ -126,11 +127,34 @@ struct PreviewStage: View {
         renderer.isOpaque = false
         if let image = renderer.uiImage {
             PreviewSnapshotCache.shared.insert(image, for: key)
-            snapshot = image
-            snapshotKey = key
+            // The still cross-fades in over the placeholder.
+            withAnimation(.easeOut(duration: 0.25)) {
+                snapshot = image
+                snapshotKey = key
+            }
         } else {
             failedKey = key
         }
+    }
+}
+
+/// Shown in a thumbnail while its still frame waits for a render slot: the category's glyph, faint.
+private struct StillPlaceholder: View {
+    let effect: Effect
+
+    var body: some View {
+        GeometryReader { proxy in
+            let side: CGFloat = min(proxy.size.width, proxy.size.height)
+            let glyph: CGFloat = max(side * 0.24, 10)
+            Image(systemName: effect.category.symbol)
+                .font(.system(size: glyph, weight: .semibold))
+                .foregroundStyle(
+                    LinearGradient(colors: effect.category.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+                .opacity(0.3)
+                .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .accessibilityHidden(true)
     }
 }
 

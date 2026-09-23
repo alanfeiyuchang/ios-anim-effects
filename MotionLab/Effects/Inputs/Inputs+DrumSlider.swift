@@ -35,6 +35,8 @@ private struct DrumSliderDemo: View {
     /// The settle in flight, so a grab catches the drum where it is on screen.
     @State private var settle: DrumSettle?
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let radius: CGFloat = 150
     private let range: ClosedRange<Double> = 40...120
@@ -55,6 +57,9 @@ private struct DrumSliderDemo: View {
                     .frame(width: 300, height: 130)
                     .contentShape(Rectangle())
                     .gesture(drag)
+                    .onChange(of: touching) { _, isTouching in
+                        if !isTouching { cancelDrag() }
+                    }
             }
             .padding(.vertical, 18)
             .demoCard(cornerRadius: 26)
@@ -68,6 +73,7 @@ private struct DrumSliderDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { gesture in
                 if !dragging {
                     dragging = true
@@ -91,6 +97,13 @@ private struct DrumSliderDemo: View {
                 let target: Double = projected.rounded().clamped(to: range)
                 animate(to: target, response: 0.7)
             }
+    }
+
+    /// A cancelled drag (no `onEnded`, so no velocity) settles on the nearest tick where it was left.
+    private func cancelDrag() {
+        guard dragging else { return }
+        dragging = false
+        animate(to: value.rounded().clamped(to: range), response: 0.7)
     }
 
     private func previewFling() {

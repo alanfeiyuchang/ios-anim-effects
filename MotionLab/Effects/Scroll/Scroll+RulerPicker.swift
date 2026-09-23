@@ -32,13 +32,20 @@ private let scrollRulerMax = 120
 private struct ScrollRulerDemo: View {
     let ctx: DemoContext
     @State private var position = ScrollPosition(edge: .leading)
-    @State private var index = 28
+    @State private var index: Int
     @State private var width: CGFloat = 340
     @State private var step = 0
     /// True while autoplay (or the detail intro) scrolls the ruler, so scripted ticks stay silent.
     @State private var scripted = false
 
     private let spacing: CGFloat = 12
+
+    /// Still thumbnails never run `onAppear`, so the initial scroll never happens and item 0 sits in the
+    /// selection band: seed the index to match, so title, chip and highlight describe what is drawn.
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        _index = State(initialValue: ctx.isStill ? 0 : 28)
+    }
 
     var body: some View {
         VStack(spacing: 22) {

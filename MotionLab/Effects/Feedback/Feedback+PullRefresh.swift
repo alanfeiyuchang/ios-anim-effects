@@ -51,6 +51,10 @@ private struct PullRefreshDemo: View {
     @State private var token = 0
     /// Set by the drag gesture, cleared by the autoplay: only a real pull plays haptics.
     @State private var userDriven = false
+    /// True while a real finger is pulling; the single end/cancel path clears it.
+    @State private var tracking = false
+    /// Resets on system cancellation too (Control Center pull, scroll takeover), which skips `onEnded`.
+    @GestureState private var touching = false
 
     private let threshold: CGFloat = 72
     private let holdHeight: CGFloat = 60
@@ -76,6 +80,9 @@ private struct PullRefreshDemo: View {
             .demoCard(cornerRadius: 22)
             .contentShape(Rectangle())
             .gesture(drag)
+            .onChange(of: touching) { _, active in
+                if !active { endPull() }
+            }
             DemoHint(text: L("Pull the list down", "向下拖动列表"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -101,14 +108,23 @@ private struct PullRefreshDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 4)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 guard !refreshing else { return }
                 userDriven = true
+                tracking = true
                 let resisted = rubberBand(max(0, value.translation.height), limit: 240, coefficient: ctx.cg("resistance"))
                 updateArmed(resisted)
                 pull = resisted
             }
-            .onEnded { _ in release() }
+            .onEnded { _ in endPull() }
+    }
+
+    /// Normal release or system cancellation, once per pull: refresh if armed, otherwise spring home.
+    private func endPull() {
+        guard tracking else { return }
+        tracking = false
+        release()
     }
 
     private func updateArmed(_ value: CGFloat) {

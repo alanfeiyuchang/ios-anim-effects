@@ -47,6 +47,9 @@ private struct TravelFogDemo: View {
     let ctx: DemoContext
     @State private var strokes: [TravelFogStroke] = []
     @State private var isDrawing = false
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled wipe still ends its stroke
+    /// and the next touch starts a new one instead of joining the old.
+    @GestureState private var touching = false
     @State private var demoRunning = false
     @State private var demoTask: Task<Void, Never>?
 
@@ -111,6 +114,9 @@ private struct TravelFogDemo: View {
         .signatureCard()
         .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         .gesture(wipe)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endStroke() }
+        }
     }
 
     private var fog: some View {
@@ -174,6 +180,7 @@ private struct TravelFogDemo: View {
 
     private var wipe: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 if demoRunning {
                     // A real finger takes over from the ghost stroke.
@@ -190,10 +197,14 @@ private struct TravelFogDemo: View {
                     Haptics.tap(.soft)
                 }
             }
-            .onEnded { _ in
-                isDrawing = false
-                prune()
-            }
+            .onEnded { _ in endStroke() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func endStroke() {
+        guard isDrawing else { return }
+        isDrawing = false
+        prune()
     }
 
     private func prune() {

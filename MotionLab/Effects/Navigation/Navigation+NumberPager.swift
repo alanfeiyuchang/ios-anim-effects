@@ -80,13 +80,12 @@ private struct NumberPagerDemo: View {
         .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         .shadow(color: pagerColors[page].opacity(0.3), radius: 16, y: 8)
         .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 12)
-                .onEnded { value in
-                    if value.translation.width < -30 { go(1) }
-                    if value.translation.width > 30 { go(-1) }
-                }
-        )
+        .pageSafeHorizontalDrag(minimumDistance: 12, onChanged: { _ in }, onEnded: { value in
+            // The card never follows the finger, so a cancelled swipe (`nil`) has nothing to undo.
+            guard let value else { return }
+            if value.translation.width < -30 { go(1) }
+            if value.translation.width > 30 { go(-1) }
+        })
     }
 
     private var footer: some View {

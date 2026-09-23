@@ -41,8 +41,12 @@ private struct CardsTossDemo: View {
     /// Briefly true when a new card becomes the top one, so it lifts out of the pile.
     @State private var rise = false
     @State private var autoDirection: CGFloat = 1
-    /// The running toss sequence, cancelled if the demo leaves the screen.
+    /// The running toss sequence (scripted or real), cancelled on the first real touch and if the demo leaves the screen.
     @State private var sequence: Task<Void, Never>?
+    /// True while a real finger holds the top card.
+    @State private var held = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the card lifted off the pile.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -56,10 +60,31 @@ private struct CardsTossDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.9) { autoToss() }
-        .onDisappear {
-            sequence?.cancel()
-            sequence = nil
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { cancelHold() }
         }
+        .onDisappear { settleNow() }
+    }
+
+    /// Leaving the screen cancels whatever sequence runs and puts the deck back at rest, so a card
+    /// cancelled mid-toss is recycled instead of staying off-stage (and un-hittable) when the view returns.
+    private func settleNow() {
+        sequence?.cancel()
+        sequence = nil
+        held = false
+        if tossing {
+            land()
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                drag = .zero
+                grab = .center
+            }
+        }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { rise = false }
     }
 
     private func card(_ id: Int) -> some View {
@@ -84,8 +109,13 @@ private struct CardsTossDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture()
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if drag == .zero {
+                if !held {
+                    // The first real touch takes over from any scripted toss that hasn't released yet.
+                    held = true
+                    sequence?.cancel()
+                    sequence = nil
                     grab = UnitPoint(
                         x: (value.startLocation.x / cardsTossSize.width).clamped(to: 0...1),
                         y: (value.startLocation.y / cardsTossSize.height).clamped(to: 0...1)
@@ -96,12 +126,21 @@ private struct CardsTossDemo: View {
                 }
             }
             .onEnded { value in
+                guard held else { return }
+                held = false
                 if hypot(value.translation.width, value.translation.height) > ctx.cg("threshold") {
                     toss(direction: value.predictedEndTranslation.width >= 0 ? 1 : -1)
                 } else {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) { drag = .zero }
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): let the card fall back onto the pile.
+    private func cancelHold() {
+        guard held else { return }
+        held = false
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) { drag = .zero }
     }
 
     private func toss(direction: CGFloat, haptic: Bool = true) {
@@ -148,7 +187,7 @@ private struct CardsTossDemo: View {
     }
 
     private func autoToss() {
-        guard !tossing else { return }
+        guard !tossing && !held else { return }
         autoDirection = -autoDirection
         let direction = autoDirection
         let muted = Haptics.isMuted || ctx.isPreview

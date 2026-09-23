@@ -69,13 +69,34 @@ private final class OrbitModel {
     private var flash: CGFloat = 0
     private var appear: Double = 1
     private var lastDate: Date?
+    /// A scripted launch waiting for the respawned moon to finish fading in on the pad.
+    private var pendingVelocity: CGVector?
 
     func launch(from point: CGPoint, velocity newVelocity: CGVector) {
         position = point
         velocity = newVelocity
         isHeld = false
         inFlight = true
+        pendingVelocity = nil
         lastDate = nil
+    }
+
+    /// Scripted (preview) launch from the pad. A moon still in orbit is first recalled through the
+    /// respawn fade, and launched once it is fully back, so the thumbnail never teleports it.
+    func relaunch(velocity newVelocity: CGVector) {
+        guard !isHeld else { return }
+        if inFlight || appear < 1 {
+            if inFlight { respawn(flashStar: false) }
+            pendingVelocity = newVelocity
+        } else {
+            launch(from: orbitPad, velocity: newVelocity)
+        }
+    }
+
+    /// A real touch takes over: drop any scripted launch still waiting.
+    func grab() {
+        isHeld = true
+        pendingVelocity = nil
     }
 
     private func respawn(flashStar: Bool) {
@@ -95,6 +116,9 @@ private final class OrbitModel {
         let dt = CGFloat(min(max(raw, 0), 1.0 / 30.0))
         flash *= CGFloat(exp(-Double(dt) * 5))
         appear = min(appear + Double(dt) / 0.35, 1)
+        if let pending = pendingVelocity, !inFlight, !isHeld, appear >= 1 {
+            launch(from: orbitPad, velocity: pending)
+        }
 
         if inFlight && !isHeld && dt > 0 {
             OrbitPhysics.advance(&position, &velocity, dt: dt / 2, g: g)
@@ -122,6 +146,8 @@ private struct OrbitSlingshotDemo: View {
     @State private var model = OrbitModel()
     @State private var anchor: CGPoint?
     @State private var pull: CGSize = .zero
+    /// Resets on system cancellation too, so a stolen touch never leaves the moon held.
+    @GestureState private var dragging = false
 
     var body: some View {
         let g = orbitBaseG * ctx.cg("gravity")
@@ -148,6 +174,9 @@ private struct OrbitSlingshotDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 5.0, delay: 0.3) { autoLaunch() }
+        .onChange(of: dragging) { _, isDragging in
+            if !isDragging { release() }
+        }
     }
 
     private var moon: some View {
@@ -187,10 +216,11 @@ private struct OrbitSlingshotDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 if anchor == nil {
                     anchor = model.position
-                    model.isHeld = true
+                    model.grab()
                     if !ctx.isPreview { Haptics.tap(.light) }
                 }
                 let dx = value.translation.width
@@ -199,23 +229,23 @@ private struct OrbitSlingshotDemo: View {
                 let scale: CGFloat = length > 90 ? 90 / length : 1
                 pull = CGSize(width: dx * scale, height: dy * scale)
             }
-            .onEnded { _ in
-                guard let start = anchor else { return }
-                let from = CGPoint(x: start.x + pull.width, y: start.y + pull.height)
-                model.launch(from: from, velocity: launchVelocity())
-                anchor = nil
-                pull = .zero
-                if !ctx.isPreview { Haptics.tap(.medium) }
-            }
+            .onEnded { _ in release() }
+    }
+
+    /// Single, guarded end of a pull (normal release or system cancellation): launch from where the moon is.
+    private func release() {
+        guard let start = anchor else { return }
+        let from = CGPoint(x: start.x + pull.width, y: start.y + pull.height)
+        model.launch(from: from, velocity: launchVelocity())
+        anchor = nil
+        pull = .zero
+        if !ctx.isPreview { Haptics.tap(.medium) }
     }
 
     private func autoLaunch() {
         guard anchor == nil else { return }
         let side: CGFloat = Bool.random() ? 1 : -1
-        model.launch(
-            from: orbitPad,
-            velocity: CGVector(dx: side * CGFloat.random(in: 150...215), dy: CGFloat.random(in: -40...20))
-        )
+        model.relaunch(velocity: CGVector(dx: side * CGFloat.random(in: 150...215), dy: CGFloat.random(in: -40...20)))
     }
 }
 

@@ -56,6 +56,8 @@ private struct GalleryZoomDemo: View {
     @State private var drag: CGSize = .zero
     @State private var autoIndex = 4
     @State private var flingTask: Task<Void, Never>?
+    /// Resets on system cancellation too, so a cancelled pull never leaves the photo offset and tilted.
+    @GestureState private var dragging = false
     @Environment(\.colorScheme) private var colorScheme
 
     /// Opening is smooth and critically damped; only the flight home bounces.
@@ -141,10 +143,16 @@ private struct GalleryZoomDemo: View {
             .offset(drag)
             .gesture(dismissDrag)
             .onTapGesture { close() }
+            .onChange(of: dragging) { _, active in
+                if !active && drag != .zero {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = .zero }
+                }
+            }
     }
 
     private var dismissDrag: some Gesture {
         DragGesture()
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 flingTask?.cancel()
                 drag = value.translation

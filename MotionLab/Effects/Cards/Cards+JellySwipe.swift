@@ -36,6 +36,14 @@ private struct CardsJellySwipeDemo: View {
     @State private var pops = 0
     @State private var relaxTask: Task<Void, Never>?
     @State private var autoDirection: CGFloat = 1
+    /// True from a throw until the reorder, so the flying card can't be grabbed or thrown twice.
+    @State private var flinging = false
+    /// True while a real finger holds the top card.
+    @State private var held = false
+    /// The scripted (preview / intro) fling, cancelled on the first real touch and on disappear.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the card stretched off-centre.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -49,6 +57,22 @@ private struct CardsJellySwipeDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) { autoFling() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { cancelHold() }
+        }
+        .onDisappear {
+            script?.cancel()
+            script = nil
+            relaxTask?.cancel()
+            held = false
+            guard !flinging else { return }
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                offset = .zero
+                stretch = .zero
+            }
+        }
     }
 
     private func card(_ id: Int) -> some View {
@@ -83,18 +107,27 @@ private struct CardsJellySwipeDemo: View {
             .opacity(appear)
             .shadow(color: .black.opacity(isTop ? 0.18 : 0.1), radius: isTop ? 16 : 10, y: isTop ? 10 : 6)
             .zIndex(Double(order.count - depth))
-            .allowsHitTesting(isTop)
+            .allowsHitTesting(isTop && !flinging)
             .gesture(drag)
     }
 
     private var drag: some Gesture {
         DragGesture()
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                guard !flinging else { return }
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 offset = value.translation
                 stretch = stretchVector(for: value.velocity)
                 scheduleRelax()
             }
             .onEnded { value in
+                guard held, !flinging else { return }
+                held = false
                 relaxTask?.cancel()
                 let threshold = ctx.cg("threshold")
                 let predicted = value.predictedEndTranslation
@@ -124,7 +157,18 @@ private struct CardsJellySwipeDemo: View {
         }
     }
 
+    /// System cancellation (no `onEnded`): relax the jelly and spring the card home.
+    private func cancelHold() {
+        guard held else { return }
+        held = false
+        relaxTask?.cancel()
+        stretch = .zero
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.6)) { offset = .zero }
+    }
+
     private func fling(direction: CGFloat, haptic: Bool = true) {
+        guard !flinging else { return }
+        flinging = true
         if haptic && !ctx.isPreview { Haptics.tap(.medium) }
         stretch = CGSize(width: direction * 0.18 * ctx.cg("jelly"), height: 0)
         withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
@@ -139,6 +183,7 @@ private struct CardsJellySwipeDemo: View {
                 offset = .zero
                 stretch = .zero
             }
+            flinging = false
             // Next tick, so the new top card sees the trigger change and plays the pop.
             DispatchQueue.main.async {
                 pops += 1
@@ -147,6 +192,7 @@ private struct CardsJellySwipeDemo: View {
     }
 
     private func autoFling() {
+        guard !held && !flinging else { return }
         autoDirection = -autoDirection
         let direction = autoDirection
         let muted = Haptics.isMuted || ctx.isPreview
@@ -154,10 +200,13 @@ private struct CardsJellySwipeDemo: View {
             offset = CGSize(width: direction * 60, height: -4)
         }
         stretch = CGSize(width: direction * 0.14 * ctx.cg("jelly"), height: 0)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+        script?.cancel()
+        script = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.35))
+            guard !Task.isCancelled else { return }
             stretch = .zero
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            try? await Task.sleep(for: .seconds(0.45))
+            guard !Task.isCancelled else { return }
             fling(direction: direction, haptic: !muted)
         }
     }

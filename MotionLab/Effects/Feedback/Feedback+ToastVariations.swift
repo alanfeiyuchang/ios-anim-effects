@@ -129,8 +129,8 @@ extension Effect {
         name: L("Morphing Status Toast", "形变状态吐司"),
         summary: L("One toast that stays put and reshapes itself from 'Uploading' to 'Done' to a dot.", "同一枚吐司原地变形：从“上传中”到“完成”，再缩成一个圆点。"),
         prompt: L(
-            "A toast that is one shape from start to finish. A 12 pt green dot rises 60 pt from the bottom of a photo grid and, on a spring (response 0.45 s, damping 0.8), swells into a dark pill with a spinning arc and 'Uploading 3 photos'. When the upload finishes, the pill springs to fit 'Uploaded to Shared Album' as the arc scales out, a green check scales in and the text blur-replaces, with a success haptic. After 1.6 s it contracts back to the green dot on a snappy 0.35 s spring, holds 0.5 s, then sinks and fades as a dot. Its size always follows its content, so every change is a reshape, never a swap.",
-            "一枚从头到尾都是同一个形状的吐司。12 pt 的绿色圆点从照片网格底部升起 60 pt，随即以弹簧（响应 0.45 秒、阻尼 0.8）鼓胀成深色胶囊，露出旋转小弧线与“正在上传 3 张照片”。上传完成，胶囊弹性伸展以容纳“已上传到共享相簿”：弧线缩没、绿色对勾放大浮现，文字模糊替换，伴随成功触感。1.6 秒后以 0.35 秒的利落弹簧缩回绿点，停 0.5 秒，再以圆点的形态下沉淡出。尺寸始终跟随内容——只变形，不替换。"
+            "A toast that is one shape from start to finish. A 12 pt green dot rises 60 pt from the bottom of a photo grid while, on one spring (response 0.45 s, damping 0.8), it swells into a dark pill with a spinning arc and 'Uploading 3 photos'. When the upload finishes, the pill springs to fit 'Uploaded to Shared Album' as the arc scales out, a green check scales in and the text blur-replaces, with a success haptic. After 1.6 s it contracts back to the green dot on a snappy 0.35 s spring, holds 0.5 s, then sinks and fades as a dot. Its size always follows its content, so every change is a reshape, never a swap.",
+            "一枚从头到尾都是同一个形状的吐司。12 pt 的绿色圆点从照片网格底部升起 60 pt，同时在同一段弹簧（响应 0.45 秒、阻尼 0.8）中鼓胀成深色胶囊，露出旋转小弧线与“正在上传 3 张照片”。上传完成，胶囊弹性伸展以容纳“已上传到共享相簿”：弧线缩没、绿色对勾放大浮现，文字模糊替换，伴随成功触感。1.6 秒后以 0.35 秒的利落弹簧缩回绿点，停 0.5 秒，再以圆点的形态下沉淡出。尺寸始终跟随内容——只变形，不替换。"
         ),
         implementation: L(
             "The toast's background is a Capsule sized by its content; a stage enum swaps content with blur/opacity transitions inside a spring so the capsule reshapes to each new size.",

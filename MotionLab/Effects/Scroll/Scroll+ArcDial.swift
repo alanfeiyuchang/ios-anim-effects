@@ -49,7 +49,7 @@ private let scrollArcInitialIndex = 3
 
 private struct ScrollArcDialDemo: View {
     let ctx: DemoContext
-    @State private var current = scrollArcInitialIndex
+    @State private var current: Int
     @State private var position = ScrollPosition(edge: .leading)
     @State private var width: CGFloat = 340
     @State private var direction = 1
@@ -59,6 +59,13 @@ private struct ScrollArcDialDemo: View {
     private let side: CGFloat = 64
     private let spacing: CGFloat = 18
     private var pitch: CGFloat { side + spacing }
+
+    /// Still thumbnails never run `onAppear`, so the initial scroll never happens and item 0 sits in the
+    /// selection band: seed the index to match, so title, chip and highlight describe what is drawn.
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        _current = State(initialValue: ctx.isStill ? 0 : scrollArcInitialIndex)
+    }
 
     var body: some View {
         let filter = scrollArcFilters[current]

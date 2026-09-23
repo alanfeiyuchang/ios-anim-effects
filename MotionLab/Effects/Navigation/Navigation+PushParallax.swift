@@ -68,7 +68,7 @@ private struct PushParallaxDemo: View {
                 PushDetailScreen(item: pushItems[selected], progress: progress, width: size.width, language: ctx.language, onBack: pop)
                     .shadow(color: .black.opacity(0.2 * Double(progress)), radius: 14, x: -3)
                     .offset(x: size.width * (1 - progress))
-                    .gesture(backSwipe)
+                    .pageSafeHorizontalDrag(minimumDistance: 8, onChanged: backSwipeChanged, onEnded: backSwipeEnded)
                     .allowsHitTesting(progress > 0.01)
             }
             .frame(width: size.width, height: size.height)
@@ -82,18 +82,18 @@ private struct PushParallaxDemo: View {
         .autoplay(ctx.isPreview, every: 1.6) { previewAdvance() }
     }
 
-    private var backSwipe: some Gesture {
-        DragGesture(minimumDistance: 8)
-            .onChanged { value in
-                progress = 1 - min(max(value.translation.width, 0) / size.width, 1)
-            }
-            .onEnded { value in
-                if value.predictedEndTranslation.width > size.width * 0.5 {
-                    pop()
-                } else {
-                    withAnimation(spring) { progress = 1 }
-                }
-            }
+    private func backSwipeChanged(_ value: DragGesture.Value) {
+        progress = 1 - min(max(value.translation.width, 0) / size.width, 1)
+    }
+
+    /// Release projects the flick; a system cancellation (`nil`) settles to whichever page is closer.
+    private func backSwipeEnded(_ value: DragGesture.Value?) {
+        let back: Bool = value.map { $0.predictedEndTranslation.width > size.width * 0.5 } ?? (progress < 0.5)
+        if back {
+            pop()
+        } else {
+            withAnimation(spring) { progress = 1 }
+        }
     }
 
     private func push(_ index: Int) {

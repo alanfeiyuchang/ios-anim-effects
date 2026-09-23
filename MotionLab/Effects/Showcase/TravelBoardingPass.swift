@@ -62,6 +62,8 @@ private struct TravelBoardingDemo: View {
     @State private var regrowing = false
     @State private var flipped = false
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled pull still springs back.
+    @GestureState private var touching = false
 
     private var zh: Bool { ctx.language == .zh }
     private var threshold: CGFloat { ctx.cg("threshold") }
@@ -98,10 +100,14 @@ private struct TravelBoardingDemo: View {
             .scaleEffect(regrowing ? 0.9 : 1, anchor: .top)
             .opacity(regrowing ? 0 : 1)
             .gesture(tearGesture)
+            .onChange(of: touching) { _, isTouching in
+                if !isTouching { cancelPull() }
+            }
     }
 
     private var tearGesture: some Gesture {
         DragGesture()
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 guard !torn, !regrowing else { return }
                 // While flipped the stub sits inside a 180° Y rotation, so un-mirror the horizontal drift.
@@ -122,6 +128,14 @@ private struct TravelBoardingDemo: View {
                 }
                 armed = false
             }
+    }
+
+    /// A cancelled pull (no `onEnded`) springs the stub back without tearing it.
+    /// After a normal release the stub is already at rest or tearing, so this does nothing.
+    private func cancelPull() {
+        guard !torn, !regrowing, pull != .zero || armed else { return }
+        armed = false
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.55)) { pull = .zero }
     }
 
     private func tear(silent: Bool = false) {

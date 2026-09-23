@@ -15,10 +15,10 @@ extension Effect {
             "深色睡眠小组件：递增计数的“7 小时 42 分”标题、重播按钮，以及清醒、快速眼动、核心、深睡四泳道的阶段图，彩色圆角块由细线串起，下方是各阶段时长图例。出现时，一道带发光前沿的柔边揭示约 1.4 秒（缓入缓出）自左向右扫出全图，标题分 14 个缓出步进递增，图例条相隔 60 毫秒依次生长。横向拖动出现细游标与气泡（“02:14 · 深睡”），其他阶段以弹簧（响应 0.3 秒、阻尼 0.8）暗到约 40%，阶段每变一次触发选择触感；松手即解除。"
         ),
         implementation: L(
-            "Blocks are positioned RoundedRectangles in a ZStack plus a connector Shape, revealed by an animated leading mask; a zero-distance DragGesture maps x to minutes and the stage under it drives per-block opacity with a spring and sensoryFeedback(.selection). The headline counts with task(id:) steps under numericText.",
-            "色块是 ZStack 中按位置摆放的 RoundedRectangle，加上一个连接线 Shape，由带动画的前沿遮罩揭示；零距离 DragGesture 把横坐标换算为分钟，所在阶段通过弹簧驱动每个色块的透明度，并触发 sensoryFeedback(.selection)。标题由 task(id:) 分步递增并配合 numericText。"
+            "Blocks are positioned RoundedRectangles in a ZStack plus a connector Shape, revealed by an animated leading mask; a zero-distance DragGesture maps x to minutes and the stage under it drives per-block opacity with a spring and a Haptics.selection() tick. The headline counts with task(id:) steps under numericText.",
+            "色块是 ZStack 中按位置摆放的 RoundedRectangle，加上一个连接线 Shape，由带动画的前沿遮罩揭示；零距离 DragGesture 把横坐标换算为分钟，所在阶段通过弹簧驱动每个色块的透明度，并触发 Haptics.selection() 触感。标题由 task(id:) 分步递增并配合 numericText。"
         ),
-        apis: ["mask(alignment:_:)", "DragGesture", "sensoryFeedback", "contentTransition(.numericText(value:))", "Shape"],
+        apis: ["mask(alignment:_:)", "DragGesture", "GestureState", "contentTransition(.numericText(value:))", "Shape"],
         tags: ["sleep", "health", "hypnogram", "timeline", "睡眠", "健康", "阶段", "时间轴"],
         params: [
             .slider("duration", L("Reveal duration", "揭示时长"), 0.5...3.0, default: 1.4, unit: "s"),
@@ -115,8 +115,8 @@ private struct LifeSleepDemo: View {
     @State private var step = 0
     /// True while the reveal sweeps, so the glowing leading edge is visible (the model value of `reveal` jumps 0 → 1).
     @State private var sweeping = false
-    /// Only a real finger on the chart ticks the selection haptic; the preview scrub stays silent.
-    @State private var userScrubbing = false
+    /// A real finger on the chart. `@GestureState` also resets on system cancellation, which releases the spotlight.
+    @GestureState private var touching = false
     /// Set halfway through the sweep, so the legend bars grow as the reveal reaches mid-chart
     /// (the model value of `reveal` is already 1 when the sweep starts).
     @State private var legendShown = false
@@ -148,9 +148,6 @@ private struct LifeSleepDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task(id: runID) { await play() }
-        .sensoryFeedback(.selection, trigger: focusStage) { old, new in
-            userScrubbing && new != nil && old != new
-        }
         // The reveal already plays on appear; the detail stage must not start a preview scrub that never clears.
         .autoplay(ctx.isPreview, every: 1.1, delay: 2.0, intro: false) { previewTick() }
     }
@@ -222,6 +219,9 @@ private struct LifeSleepDemo: View {
             .overlay(alignment: .topLeading) { cursor(size) }
             .contentShape(Rectangle())
             .gesture(scrubGesture)
+            .onChange(of: touching) { _, isTouching in
+                if !isTouching { endScrub() }
+            }
             HStack {
                 Text(verbatim: "23:10")
                 Spacer(minLength: 0)
@@ -325,19 +325,25 @@ private struct LifeSleepDemo: View {
 
     private var scrubGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
-                userScrubbing = true
                 let fraction = Double(value.location.x / Self.chartSize.width).clamped(to: 0...0.999)
+                let before = focusStage
                 if scrub == nil {
                     withAnimation(.easeOut(duration: 0.15)) { scrub = fraction }
                 } else {
                     scrub = fraction
                 }
+                // Only a real finger ticks (the preview scrub sets `scrub` directly and stays silent).
+                if focusStage != before { Haptics.selection() }
             }
-            .onEnded { _ in
-                userScrubbing = false
-                withAnimation(.easeOut(duration: 0.2)) { scrub = nil }
-            }
+            .onEnded { _ in endScrub() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func endScrub() {
+        guard scrub != nil else { return }
+        withAnimation(.easeOut(duration: 0.2)) { scrub = nil }
     }
 
     private func play() async {

@@ -81,21 +81,18 @@ private struct ScrollingDotsDemo: View {
         .frame(width: 300, height: 190)
         .clipped()
         .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 8)
-                .onChanged { value in
-                    let raw: CGFloat = value.translation.width
-                    let atStart: Bool = page == 0 && raw > 0
-                    let atEnd: Bool = page == count - 1 && raw < 0
-                    drag = (atStart || atEnd) ? rubberBand(raw, limit: 60) : raw
-                }
-                .onEnded { value in
-                    let predicted: CGFloat = value.predictedEndTranslation.width
-                    let pages: Int = Int((-predicted / pitch).rounded())
-                    let step: Int = min(max(pages, -2), 2)
-                    go(to: page + step)
-                }
-        )
+        .pageSafeHorizontalDrag(onChanged: { value in
+            let raw: CGFloat = value.translation.width
+            let atStart: Bool = page == 0 && raw > 0
+            let atEnd: Bool = page == count - 1 && raw < 0
+            drag = (atStart || atEnd) ? rubberBand(raw, limit: 60) : raw
+        }, onEnded: { value in
+            // A system cancellation (`nil`) snaps to the card nearest the current offset.
+            let predicted: CGFloat = value?.predictedEndTranslation.width ?? drag
+            let pages: Int = Int((-predicted / pitch).rounded())
+            let step: Int = min(max(pages, -2), 2)
+            go(to: page + step)
+        })
     }
 
     private func card(_ index: Int) -> some View {

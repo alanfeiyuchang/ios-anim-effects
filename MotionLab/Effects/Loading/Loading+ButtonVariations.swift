@@ -60,7 +60,11 @@ private struct FillButtonDemo: View {
             DemoHint(text: L("Tap the button", "点击按钮"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 5.2, delay: 0.5) { tap() }
+        // Only an idle button is tapped, so a slow download is never reset mid-way; previews
+        // return to idle 1.5 s after finishing, so the next play follows within about a second.
+        .autoplay(ctx.isPreview, every: 1.0, delay: 0.5) {
+            if state == .idle { tap() }
+        }
         .onDisappear { task?.cancel() }
     }
 
@@ -119,6 +123,7 @@ private struct FillButtonDemo: View {
         let speed = ctx["speed"]
         // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
         let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
+        let loops: Bool = ctx.isPreview
         task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.3))
             while progress < 1 {
@@ -131,6 +136,14 @@ private struct FillButtonDemo: View {
             withAnimation(.smooth(duration: 0.35)) { state = .done }
             pops += 1
             if buzz { Haptics.success() }
+            guard loops else { return }
+            // Previews hold the finished state briefly, then reset for the next play.
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
+            withAnimation(.smooth(duration: 0.4)) {
+                state = .idle
+                progress = 0
+            }
         }
     }
 }

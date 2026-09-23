@@ -38,6 +38,10 @@ private struct ButtonElasticBlobDemo: View {
     @State private var step = 0
     /// One debounced relax task for the whole drag instead of one Task per touch event.
     @State private var relaxTask: Task<Void, Never>?
+    /// A real finger is sliding (set on the first change, cleared on lift or cancel).
+    @State private var dragging = false
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let size = CGSize(width: 288, height: 64)
     private static let symbols = ["house.fill", "magnifyingglass", "camera.fill", "person.crop.circle.fill"]
@@ -80,9 +84,19 @@ private struct ButtonElasticBlobDemo: View {
         .contentShape(Capsule())
         .gesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { value in track(x: value.location.x, velocity: value.velocity.width) }
-                .onEnded { value in snap(to: value.location.x) }
+                .updating($touching) { _, state, _ in state = true }
+                .onChanged { value in
+                    dragging = true
+                    track(x: value.location.x, velocity: value.velocity.width)
+                }
+                .onEnded { value in
+                    dragging = false
+                    snap(to: value.location.x)
+                }
         )
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { cancelDrag() }
+        }
     }
 
     private func icon(_ index: Int) -> some View {
@@ -130,6 +144,19 @@ private struct ButtonElasticBlobDemo: View {
         bounces[index] += 1
         selected = index
         Haptics.selection()
+    }
+
+    /// A cancelled slide (no `onEnded`) glides the blob home to the current selection without picking anything.
+    private func cancelDrag() {
+        guard dragging else { return }
+        dragging = false
+        relaxTask?.cancel()
+        relaxTask = nil
+        generation += 1
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            blobX = center(of: selected)
+            stretch = 0
+        }
     }
 
     private func previewStep() {

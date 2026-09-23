@@ -64,6 +64,8 @@ private struct NativeZoomDemo: View {
     @State private var frames: [Int: CGRect] = [:]
     @State private var stage: CGSize = .zero
     @State private var autoIndex = 0
+    /// Resets on system cancellation too, so a cancelled pull never leaves the page shrunk and offset.
+    @GestureState private var dragging = false
 
     private var lift: CGFloat { min(max(drag.width, drag.height, 0) / 320, 1) }
 
@@ -101,10 +103,16 @@ private struct NativeZoomDemo: View {
             .offset(x: drag.width * 0.6, y: drag.height * 0.6)
             .allowsHitTesting(open > 0.5)
             .gesture(dismissDrag)
+            .onChange(of: dragging) { _, active in
+                if !active && drag != .zero {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { drag = .zero }
+                }
+            }
     }
 
     private var dismissDrag: some Gesture {
         DragGesture(minimumDistance: 12)
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { drag = $0.translation }
             .onEnded { value in
                 let flick = max(value.predictedEndTranslation.width, value.predictedEndTranslation.height)

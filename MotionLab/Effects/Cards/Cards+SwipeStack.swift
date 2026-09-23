@@ -50,6 +50,12 @@ private struct CardsSwipeDemo: View {
     @State private var autoDirection: CGFloat = -1
     /// True while a card is flying off, so a quick second tap can't skip an unseen card.
     @State private var flinging = false
+    /// True while a real finger holds the top card.
+    @State private var held = false
+    /// The scripted (preview / intro) swipe, cancelled on the first real touch and on disappear.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the card half-swiped.
+    @GestureState private var pressing = false
 
     var body: some View {
         let threshold = ctx.cg("threshold")
@@ -62,13 +68,25 @@ private struct CardsSwipeDemo: View {
             }
             .frame(height: 284, alignment: .top)
             HStack(spacing: 36) {
-                actionButton("xmark", color: Palette.red, amount: offset.width < 0 ? progress : 0) { fling(direction: -1) }
-                actionButton("heart.fill", color: Palette.green, amount: offset.width > 0 ? progress : 0) { fling(direction: 1) }
+                actionButton("xmark", color: Palette.red, amount: offset.width < 0 ? progress : 0) { buttonFling(-1) }
+                actionButton("heart.fill", color: Palette.green, amount: offset.width > 0 ? progress : 0) { buttonFling(1) }
             }
             DemoHint(text: L("Swipe the card or tap a button", "滑动卡片或点按钮"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.7) { autoSwipe() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { cancelHold() }
+        }
+        .onDisappear {
+            script?.cancel()
+            script = nil
+            held = false
+            guard !flinging else { return }
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { offset = .zero }
+        }
     }
 
     private func card(id: Int, progress: CGFloat, threshold: CGFloat) -> some View {
@@ -89,7 +107,7 @@ private struct CardsSwipeDemo: View {
         .offset(isTop ? offset : .zero)
         .opacity(appear)
         .zIndex(Double(order.count - depth))
-        .allowsHitTesting(isTop)
+        .allowsHitTesting(isTop && !flinging)
         .gesture(drag)
     }
 
@@ -109,10 +127,19 @@ private struct CardsSwipeDemo: View {
 
     private var drag: some Gesture {
         DragGesture()
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                guard !flinging else { return }
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 offset = value.translation
             }
             .onEnded { value in
+                guard held, !flinging else { return }
+                held = false
                 let threshold = ctx.cg("threshold")
                 let predicted = value.predictedEndTranslation.width
                 if abs(value.translation.width) > threshold || abs(predicted) > threshold * 2 {
@@ -123,6 +150,21 @@ private struct CardsSwipeDemo: View {
                     }
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): spring the card back to the stack.
+    private func cancelHold() {
+        guard held else { return }
+        held = false
+        withAnimation(.spring(response: 0.45, dampingFraction: ctx["snap"])) { offset = .zero }
+    }
+
+    /// A real button tap also takes over from a scripted swipe.
+    private func buttonFling(_ direction: CGFloat) {
+        guard !held else { return }
+        script?.cancel()
+        script = nil
+        fling(direction: direction)
     }
 
     private func fling(direction: CGFloat, haptic: Bool = true) {
@@ -147,13 +189,17 @@ private struct CardsSwipeDemo: View {
     }
 
     private func autoSwipe() {
+        guard !held && !flinging else { return }
         autoDirection *= -1
         let direction = autoDirection
         let muted = Haptics.isMuted || ctx.isPreview
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
             offset = CGSize(width: direction * 80, height: -6)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+        script?.cancel()
+        script = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.55))
+            guard !Task.isCancelled else { return }
             fling(direction: direction, haptic: !muted)
         }
     }

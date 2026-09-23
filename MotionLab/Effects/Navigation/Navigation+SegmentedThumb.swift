@@ -39,6 +39,8 @@ private struct SegmentedThumbDemo: View {
     @State private var dragX: CGFloat?
     @State private var hovered = 0
     @State private var token = 0
+    /// Resets on system cancellation too, so a cancelled drag never leaves the thumb lifted off-segment.
+    @GestureState private var touching = false
 
     private let width: CGFloat = 300
     private let inset: CGFloat = 4
@@ -87,6 +89,9 @@ private struct SegmentedThumbDemo: View {
         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .contentShape(Rectangle())
         .gesture(drag)
+        .onChange(of: touching) { _, active in
+            if !active { settleCancelled() }
+        }
     }
 
     private func labels(bold: Bool) -> some View {
@@ -102,6 +107,7 @@ private struct SegmentedThumbDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 let x = (value.location.x - inset - segmentWidth / 2).clamped(to: 0...maxX)
                 if dragX == nil {
@@ -124,6 +130,18 @@ private struct SegmentedThumbDemo: View {
                     dragX = nil
                 }
             }
+    }
+
+    /// System cancellation skips `onEnded`: drop the lifted thumb into the segment under it.
+    /// After a normal release `dragX` is already nil, so this does nothing.
+    private func settleCancelled() {
+        guard let x = dragX else { return }
+        let index: Int = Int((x / segmentWidth).rounded()).clamped(to: 0...(segmentTitles.count - 1))
+        hovered = index
+        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+            selected = index
+            dragX = nil
+        }
     }
 
     /// Autoplay stand-in for a finger: pick the thumb up, drag it slowly across one segment

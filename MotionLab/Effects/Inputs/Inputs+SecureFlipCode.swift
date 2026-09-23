@@ -35,6 +35,9 @@ private struct SecureFlipCodeDemo: View {
     /// Only the eye button flips tiles in a staggered run; single tiles mask on their own timer.
     @State private var staggerFlips = false
     @State private var completions = 0
+    /// Per-slot keystroke generation: a mask timer only masks the digit that started it, so a digit
+    /// deleted and retyped within the reveal window still gets its full reveal.
+    @State private var slotGeneration: [Int: Int] = [:]
     @State private var scriptIndex = 0
     /// Set by the autoplay script so the keystroke it types (in previews or the detail intro) stays silent.
     @State private var scripted = false
@@ -132,9 +135,11 @@ private struct SecureFlipCodeDemo: View {
         let index = digits.count - 1
         if !muted { Haptics.selection() }
         let reveal = ctx["reveal"]
+        let generation = (slotGeneration[index] ?? 0) + 1
+        slotGeneration[index] = generation
         Task {
             try? await Task.sleep(for: .seconds(reveal))
-            guard index < code.count else { return }
+            guard index < code.count, slotGeneration[index] == generation else { return }
             staggerFlips = false
             masked.insert(index)
         }

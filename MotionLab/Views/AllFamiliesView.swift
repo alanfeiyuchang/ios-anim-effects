@@ -14,7 +14,8 @@ private struct FamilySection: Identifiable {
 /// follows the scroll (its pill always marks the category on screen), and the always-visible search
 /// field filters families by name in either language.
 ///
-/// Reached from the "85 families" counter on Browse, the Search suggestions, or `-ML_route families`.
+/// Reached from the "85 families" counter and "Browse by Family · See All" on Browse, the Search
+/// suggestions, or `-ML_route families`; it zooms out of the link that opened it.
 struct AllFamiliesView: View {
     @Environment(\.appLanguage) private var language
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

@@ -11,18 +11,18 @@ extension Effect {
             "向下滚动时悬浮标签栏收缩为一枚小胶囊，向上滚动即恢复。"
         ),
         prompt: L(
-            "A floating frosted tab bar with four tabs plus a separate circular search button hovers over a scrolling feed. When the user scrolls down past ~24 pt with intent (more than 4 pt per frame), the bar minimizes: unselected tabs scale to 60% and fade out while the capsule contracts around the selected icon, all on a smooth spring (response ≈0.4 s, damping ≈0.85), giving the content more room. Any upward scroll, or returning to the top, expands it again with the tabs popping back in. The search button stays put as an anchor. Direction-aware and unobtrusive — the chrome gets out of the way while reading and is instantly available when you reach for it.",
-            "一条磨砂质感的悬浮标签栏（四个标签，外加独立的圆形搜索按钮）浮在可滚动的信息流之上。当用户向下滚动超过约 24pt 且意图明确（每帧超过 4pt）时，标签栏最小化：未选中的标签缩小到 60% 并淡出，胶囊收拢到只包住当前选中的图标，全部采用平滑的弹簧（响应约 0.4 秒、阻尼约 0.85），为内容腾出空间。任何向上滚动或回到顶部时，标签栏重新展开，各标签依次弹回。搜索按钮始终保持原位作为锚点。它能感知滚动方向且不打扰：阅读时自动让位，需要时随手可得。"
+            "A floating frosted tab bar with four tabs plus a separate circular search button hovers over a scrolling feed. Once the user has scrolled about 24 pt of net downward travel since the last change of direction, the bar minimizes: unselected tabs scale to 60% and fade out while the capsule contracts around the selected icon, all on a smooth spring (response ≈0.4 s, damping ≈0.85), giving the content more room. About 12 pt of net upward travel, a tap on the minimized pill, or returning to the top expands it again with the tabs popping back in, so slow deliberate scrolls work too. The search button stays put as an anchor. Direction-aware and unobtrusive — the chrome gets out of the way while reading and is instantly available when you reach for it.",
+            "一条磨砂质感的悬浮标签栏（四个标签，外加独立的圆形搜索按钮）浮在可滚动的信息流之上。自上次换向起累计向下滚动约 24pt 后，标签栏最小化：未选中的标签缩小到 60% 并淡出，胶囊收拢到只包住当前选中的图标，全部采用平滑的弹簧（响应约 0.4 秒、阻尼约 0.85），为内容腾出空间。累计向上约 12pt、轻点收起的胶囊或回到顶部时，标签栏重新展开，各标签依次弹回；缓慢滚动同样灵敏。搜索按钮始终保持原位作为锚点。它能感知滚动方向且不打扰：阅读时自动让位，需要时随手可得。"
         ),
         implementation: L(
-            "onScrollGeometryChange reports the content offset and compares old/new values to detect direction; a collapsed flag toggles inside withAnimation, removing unselected tabs with a scale-and-fade transition. Previews drive a ScrollPosition.",
-            "onScrollGeometryChange 提供内容偏移，比较新旧值判断滚动方向；在 withAnimation 中切换收起状态，以缩放加淡出的转场移除未选中标签。预览模式通过 ScrollPosition 自动滚动。"
+            "onScrollGeometryChange reports the content offset and accumulates the net travel since the last direction reversal (collapse after the threshold down, expand after half of it up); a collapsed flag toggles inside withAnimation, removing unselected tabs with a scale-and-fade transition. Previews drive a ScrollPosition.",
+            "onScrollGeometryChange 提供内容偏移，累计自上次换向以来的净滚动距离（向下超过阈值收起，向上超过一半展开）；在 withAnimation 中切换收起状态，以缩放加淡出的转场移除未选中标签。预览模式通过 ScrollPosition 自动滚动。"
         ),
         apis: ["onScrollGeometryChange", "ScrollPosition", "scrollPosition(_:)", "transition(.scale.combined(with: .opacity))"],
         tags: ["tab bar", "minimize", "scroll", "hide on scroll", "标签栏", "最小化", "滚动隐藏", "悬浮"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...0.8, default: 0.4, unit: "s"),
-            .slider("sensitivity", L("Direction threshold", "方向阈值"), 1...12, default: 4, decimals: 0, unit: "pt"),
+            .slider("sensitivity", L("Collapse distance", "收起距离"), 8...60, default: 24, decimals: 0, unit: "pt"),
         ]
     ) { ctx in
         CollapsingTabBarDemo(ctx: ctx)
@@ -37,6 +37,9 @@ private struct CollapsingTabBarDemo: View {
     @State private var selected = 0
     @State private var position = ScrollPosition(edge: .top)
     @State private var autoDown = true
+    /// Signed scroll travel since the last direction reversal, so slow scrolls add up (and 120 Hz frames don't
+    /// halve the sensitivity).
+    @State private var travel: CGFloat = 0
 
     var body: some View {
         ScrollView {
@@ -105,7 +108,13 @@ private struct CollapsingTabBarDemo: View {
         let isSelected = index == selected
         return Button {
             if !ctx.isPreview { Haptics.selection() }
-            withAnimation(.snappy) { selected = index }
+            if collapsed {
+                // Tapping the minimized pill brings the full bar back, as on iOS 26.
+                travel = 0
+                setCollapsed(false)
+            } else {
+                withAnimation(.snappy) { selected = index }
+            }
         } label: {
             Image(systemName: collapsingTabs[index])
                 .font(.system(size: 18, weight: .semibold))
@@ -121,16 +130,25 @@ private struct CollapsingTabBarDemo: View {
     }
 
     private func handleScroll(from oldValue: CGFloat, to newValue: CGFloat) {
-        let delta = newValue - oldValue
-        let threshold = ctx.cg("sensitivity")
-        var target = collapsed
-        if newValue < 24 {
-            target = false
-        } else if delta > threshold {
-            target = true
-        } else if delta < -threshold {
-            target = false
+        let delta: CGFloat = newValue - oldValue
+        guard newValue >= 24 else {
+            travel = 0
+            setCollapsed(false)
+            return
         }
+        guard delta != 0 else { return }
+        // A change of direction starts a fresh tally.
+        if travel != 0 && (delta > 0) != (travel > 0) { travel = 0 }
+        travel += delta
+        let collapseAfter: CGFloat = ctx.cg("sensitivity")
+        if travel > collapseAfter {
+            setCollapsed(true)
+        } else if travel < -collapseAfter / 2 {
+            setCollapsed(false)
+        }
+    }
+
+    private func setCollapsed(_ target: Bool) {
         guard target != collapsed else { return }
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.85)) {
             collapsed = target

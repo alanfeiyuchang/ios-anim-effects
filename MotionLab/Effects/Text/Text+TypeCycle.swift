@@ -6,21 +6,21 @@ extension Effect {
         category: .text,
         interaction: .loop,
         name: L("Type & Replace Cycle", "打字轮换"),
-        summary: L("A keyword types itself, holds, then backspaces or gets selected and replaced.", "关键词逐字打出、停留，再退格删除或被选中替换。"),
+        summary: L("Each keyword pops in glyph by glyph, holds, then is selected and replaced or lifts away.", "关键词逐字弹跳打出、停留，再被全选替换或整词上浮离场。"),
         prompt: L(
-            "A hero line ends in a rotating keyword set in gradient type, followed by a 3 pt rounded caret. Each keyword types in at 70 ms per character, every glyph popping up from 30% scale and 12 pt low with a back-ease overshoot over 140 ms while the solid caret rides it; it holds 1.4 s as the caret blinks at ~1.9 Hz, then leaves: by default Select & replace flashes a translucent accent selection over the whole word for 300 ms before it vanishes at once, or Backspace deletes a character every 35 ms. A 250 ms pause with a blinking caret precedes the next word. The rhythm — quick in, patient hold, brisk out — feels human, like someone live-editing a headline.",
-            "主标题末尾是一个轮换的关键词，使用渐变文字，后面跟着一根3 pt的圆角光标。关键词以每字70毫秒打出，每个字在140毫秒内从30%大小、低12 pt处带回弹缓动跳出，光标常亮紧随；停留1.4秒，光标约1.9 Hz闪烁；随后默认「全选替换」：整词覆上半透明强调色选区300毫秒后一次性消失，也可改为「退格」每35毫秒删一字。下一个词出现前还有250毫秒的光标闪烁停顿。快进、耐心停留、利落退出的节奏很有人味，像有人在实时修改标题。"
+            "A hero line ends in a rotating keyword set in gradient type, followed by a 3 pt rounded caret. Each keyword types in at 70 ms per character, every glyph popping up from 30% scale and 12 pt low with a back-ease overshoot over 140 ms while the solid caret rides it; it holds 1.4 s as the caret blinks at ~1.9 Hz, then leaves as a whole word, never letter by letter: by default Select & replace flashes a translucent accent selection over it for 300 ms before it vanishes at once, or Lift away floats it 18 pt up while it fades on an ease-in over 300 ms. A 250 ms pause with a blinking caret precedes the next word. The rhythm — quick in, patient hold, brisk out — feels human, like someone live-editing a headline.",
+            "主标题末尾是一个轮换的关键词，使用渐变文字，后面跟着一根3 pt的圆角光标。关键词以每字70毫秒打出，每个字在140毫秒内从30%大小、低12 pt处带回弹缓动跳出，光标常亮紧随；停留1.4秒，光标约1.9 Hz闪烁；随后整词离场而非逐字删除：默认「全选替换」覆上半透明强调色选区300毫秒后一次性消失，或「上浮离场」在300毫秒内缓入上移18 pt并淡出。下一个词出现前还有250毫秒的光标闪烁停顿。快进、耐心停留、利落退出的节奏很有人味，像有人在实时修改标题。"
         ),
         implementation: L(
-            "A TimelineView(.animation) walks a per-word schedule (type, hold, erase, pause) built from each word's length and returns the visible prefix, the newest glyph's age, caret state and selection flag; the last three glyphs are drawn separately with an age-driven back-ease pop, and the gradient is masked over the whole line. No animation state is stored.",
-            "TimelineView(.animation) 按每个词的长度生成日程（打字、停留、删除、停顿），据此返回可见前缀、最新字符的时长、光标状态与选区标记；最后三个字单独绘制，按时长做回弹缓动跳出，渐变以遮罩覆盖整行。不保存任何动画状态。"
+            "A TimelineView(.animation) walks a per-word schedule (type, hold, exit, pause) built from each word's length and returns the visible prefix, the newest glyph's age, caret state, selection flag and lift progress; the last three glyphs are drawn separately with an age-driven back-ease pop, and the gradient is masked over the whole line. No animation state is stored.",
+            "TimelineView(.animation) 按每个词的长度生成日程（打字、停留、离场、停顿），据此返回可见前缀、最新字符的时长、光标状态、选区标记与上浮进度；最后三个字单独绘制，按时长做回弹缓动跳出，渐变以遮罩覆盖整行。不保存任何动画状态。"
         ),
         apis: ["TimelineView(.animation)", "Text(verbatim:)", "prefix(_:)", "RoundedRectangle"],
         tags: ["typewriter", "typing", "rotating words", "caret", "打字", "轮换", "光标", "关键词"],
         params: [
             .slider("typeSpeed", L("Per character", "每字时长"), 0.03...0.2, default: 0.07, unit: "s"),
             .slider("hold", L("Hold", "停留"), 0.4...3.0, default: 1.4, unit: "s"),
-            .choice("erase", L("Exit style", "离场方式"), [L("Backspace", "退格"), L("Select & replace", "全选替换")], default: 1),
+            .choice("erase", L("Exit style", "离场方式"), [L("Lift away", "上浮离场"), L("Select & replace", "全选替换")], default: 1),
         ]
     ) { ctx in
         TypeCycleDemo(ctx: ctx)
@@ -32,6 +32,8 @@ private struct TypeCycleFrame {
     var visible: Int = 0
     var caretOn = true
     var selected = false
+    /// 0 → 1 progress of the "Lift away" exit.
+    var lift: Double = 0
     /// Seconds since the newest glyph appeared (large once typing is done).
     var sinceLast: Double = 10
 }
@@ -79,6 +81,8 @@ private struct TypeCycleDemo: View {
                     Palette.indigo.opacity(frame.selected ? 0.25 : 0),
                     in: RoundedRectangle(cornerRadius: 6, style: .continuous)
                 )
+                .offset(y: CGFloat(-18 * frame.lift))
+                .opacity(1 - frame.lift)
             RoundedRectangle(cornerRadius: 1.5, style: .continuous)
                 .fill(Palette.indigo)
                 .frame(width: 3, height: 44)
@@ -127,9 +131,8 @@ private struct TypeCycleDemo: View {
         var durations: [Double] = []
         for chars in list {
             let count = Double(chars.count)
-            let typing: Double = count * perChar
-            let erasing: Double = selectMode ? 0.3 : count * perChar * 0.5
-            durations.append(typing + hold + erasing + pause)
+            // Both exits take the whole word out in 300 ms.
+            durations.append(count * perChar + hold + 0.3 + pause)
         }
         let total: Double = durations.reduce(0, +)
         var t: Double = time.truncatingRemainder(dividingBy: max(total, 0.1))
@@ -168,10 +171,11 @@ private struct TypeCycleDemo: View {
             result.caretOn = !visibleSelection && blink
             return result
         }
-        let eraseStep: Double = perChar * 0.5
-        let removed = Int(afterHold / eraseStep) + 1
-        result.visible = max(count - removed, 0)
-        result.caretOn = result.visible > 0 ? true : blink
+        // Lift away: the whole word rises and fades on an ease-in, the caret keeps blinking at the line end.
+        let p: Double = min(afterHold / 0.3, 1)
+        result.visible = p < 1 ? count : 0
+        result.lift = p < 1 ? p * p : 0
+        result.caretOn = blink
         return result
     }
 }

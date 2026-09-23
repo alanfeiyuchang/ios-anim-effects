@@ -40,7 +40,7 @@ private let scrollWheelInitialIndex = 4
 
 private struct ScrollWheelDemo: View {
     let ctx: DemoContext
-    @State private var current = scrollWheelInitialIndex
+    @State private var current: Int
     @State private var position = ScrollPosition(edge: .top)
     @State private var direction = 1
     /// True while autoplay (or the detail intro) scrolls the wheel, so scripted ticks stay silent.
@@ -48,6 +48,13 @@ private struct ScrollWheelDemo: View {
 
     private let rowHeight: CGFloat = 44
     private let viewport: CGFloat = 264
+
+    /// Still thumbnails never run `onAppear`, so the initial scroll never happens and item 0 sits in the
+    /// selection band: seed the index to match, so title, chip and highlight describe what is drawn.
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        _current = State(initialValue: ctx.isStill ? 0 : scrollWheelInitialIndex)
+    }
 
     var body: some View {
         VStack(spacing: 14) {

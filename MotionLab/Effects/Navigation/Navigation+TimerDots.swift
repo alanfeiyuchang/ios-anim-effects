@@ -15,10 +15,10 @@ extension Effect {
             "引导卡片（图标、标题、一行说明）下方有四个 8 pt 页码圆点。当前圆点以弹簧（响应 0.4 秒、阻尼 0.75）拉成 28 pt 胶囊，在每页 2.4 秒的停留里按缓入缓出曲线填满：起步从容，中段利落，收尾轻柔。填满后卡片以模糊替换翻到下一页，胶囊缩回圆点，下一颗随之展宽。按住卡片即可暂停：填充冻结，胶囊轻轻呼吸（透明度 60%–100%，1.6 秒一周），松手后从停下处继续。轻点左右两半可前后跳页，点圆点则直接跳转并重新计时。从容不迫，节奏由你掌控。"
         ),
         implementation: L(
-            "Elapsed time is banked on pause and resumed from a new run start, so the fill is (banked + running) / dwell passed through smoothstep; a task keyed on page and pause state sleeps for the remaining time, and one DragGesture(minimumDistance: 0) tells a quick tap (skip by side) from a hold (pause).",
-            "暂停时把已播放时长存入“余额”，恢复时从新的起点继续计时，填充 = (余额 + 本段时长) / 停留时长，再经 smoothstep 缓动；以页码与暂停状态为 id 的 task 休眠剩余时间后翻页；同一个 DragGesture(minimumDistance: 0) 区分轻点（按左右跳页）与长按（暂停）。"
+            "Elapsed time is banked on pause and resumed from a new run start, so the fill is (banked + running) / dwell passed through smoothstep; a task keyed on page and pause state sleeps for the remaining time, a never-completing onLongPressGesture's onPressingChanged pauses while held (and resumes on release or cancellation), and a SpatialTapGesture skips by side.",
+            "暂停时把已播放时长存入“余额”，恢复时从新的起点继续计时，填充 = (余额 + 本段时长) / 停留时长，再经 smoothstep 缓动；以页码与暂停状态为 id 的 task 休眠剩余时间后翻页；永不完成的 onLongPressGesture 通过 onPressingChanged 在按住时暂停、松手或被系统取消时恢复，SpatialTapGesture 按左右跳页。"
         ),
-        apis: ["task(id:)", "TimelineView(.animation(minimumInterval:))", "DragGesture(minimumDistance: 0)", "transition(.blurReplace)", "animation(_:value:)"],
+        apis: ["task(id:)", "TimelineView(.animation(minimumInterval:))", "onLongPressGesture(onPressingChanged:)", "SpatialTapGesture", "transition(.blurReplace)", "animation(_:value:)"],
         tags: ["page dots", "onboarding", "timer", "stories", "页码圆点", "引导页", "计时", "快拍"],
         params: [
             .slider("dwell", L("Time per page", "每页停留"), 1.2...5.0, default: 2.4, unit: "s"),
@@ -57,6 +57,8 @@ private struct TimerDotsDemo: View {
     @State private var banked: Double = 0
     @State private var paused = false
     @State private var pressStart: Date?
+    /// How long the last finished press lasted, for a tap that is reported after the press ended.
+    @State private var lastHeld: Double = 0
 
     private var dwell: Double { max(ctx["dwell"], 0.1) }
 
@@ -98,28 +100,34 @@ private struct TimerDotsDemo: View {
         .scaleEffect(paused ? 0.98 : 1)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: paused)
         .contentShape(Rectangle())
-        .gesture(pressGesture)
+        // Holding pauses until release. The never-completing press reports `false` on release *and* on system
+        // cancellation (scroll takeover, Control Center pull), so the timer always resumes; a swipe past 12 pt
+        // fails the press and scrolls the page instead of being captured.
+        .onLongPressGesture(minimumDuration: .infinity, maximumDistance: 12, perform: {}, onPressingChanged: pressChanged)
+        // A quick tap skips by side.
+        .simultaneousGesture(
+            SpatialTapGesture()
+                .onEnded { value in tapped(at: value.location) }
+        )
     }
 
-    /// A quick tap skips by side; holding pauses until release.
-    private var pressGesture: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { _ in
-                guard pressStart == nil else { return }
-                pressStart = Date()
-                pause()
-            }
-            .onEnded { value in
-                let held: Double = Date().timeIntervalSince(pressStart ?? Date())
-                pressStart = nil
-                let moved: CGFloat = abs(value.translation.width) + abs(value.translation.height)
-                if held < 0.25 && moved < 12 {
-                    let forward: Bool = value.startLocation.x > 135
-                    show((page + (forward ? 1 : timerPages.count - 1)) % timerPages.count)
-                } else {
-                    resume()
-                }
-            }
+    private func pressChanged(_ isPressing: Bool) {
+        if isPressing {
+            pressStart = Date()
+            pause()
+        } else {
+            lastHeld = Date().timeIntervalSince(pressStart ?? Date())
+            pressStart = nil
+            resume()
+        }
+    }
+
+    private func tapped(at location: CGPoint) {
+        // The tap may land before or after the press reports its release.
+        let held: Double = pressStart.map { Date().timeIntervalSince($0) } ?? lastHeld
+        guard held < 0.25 else { return }
+        let forward: Bool = location.x > 135
+        show((page + (forward ? 1 : timerPages.count - 1)) % timerPages.count)
     }
 
     private var dots: some View {

@@ -21,10 +21,15 @@ struct SearchView: View {
     var body: some View {
         @Bindable var navigator = navigator
         let results = EffectLibrary.search(navigator.query, category: navigator.category, interaction: navigator.interaction)
+        let familyResults = EffectFamilies.search(navigator.query, category: navigator.category, interaction: navigator.interaction)
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 filters
                 if navigator.query.isEmpty { suggestions }
+                if !familyResults.isEmpty {
+                    familySection(familyResults)
+                        .transition(.opacity.combined(with: .offset(y: -8)))
+                }
                 HStack {
                     Text(Strings.effectCount(results.count, language))
                         .font(.footnote.weight(.medium))
@@ -52,6 +57,7 @@ struct SearchView: View {
             }
             .padding(.vertical)
             .animation(.smooth(duration: 0.32), value: results.map(\.id))
+            .animation(.smooth(duration: 0.32), value: familyResults.map(\.id))
             .animation(.smooth(duration: 0.25), value: navigator.query.isEmpty)
         }
         .scrollDismissesKeyboard(.immediately)
@@ -138,6 +144,23 @@ struct SearchView: View {
     }
 
     private static let allChipID = "all"
+
+    /// Families whose name matches the query, as a horizontal row of chips above the effect grid.
+    private func familySection(_ families: [EffectFamily]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FilterRowLabel(text: "\(Strings.familyResults(language)) · \(families.count)")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(families.enumerated()), id: \.element.id) { index, family in
+                        FamilyResultChip(family: family)
+                            .appearEntrance(index: index, delay: 0.02, distance: 8, scale: 0.94, blur: 3)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 4)
+            }
+        }
+    }
 
     private var suggestions: some View {
         VStack(alignment: .leading, spacing: 10) {

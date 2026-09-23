@@ -1,0 +1,91 @@
+import Foundation
+
+/// Families (variation groups) of `EffectCategory.showcase`.
+///
+/// To add a variation: append the effect to its category list (`ShowcaseSportEffects.all`, …), then add one
+/// `"<effect id>": "<family id>",` line to `membership` below. Each effect id may appear only once
+/// (a duplicate dictionary key traps at launch). See docs/FAMILIES.md.
+enum ShowcaseFamilies {
+    static let all: [EffectFamily] = [
+        EffectFamily(
+            id: "showcase.chart-widgets",
+            category: .showcase,
+            name: L("Chart Widgets", "图表小组件"),
+            summary: L("Dark widget cards whose lines, bars and rings draw in and react to touch.", "暗黑质感小组件：折线、柱状与圆环逐步绘制并响应触摸。"),
+            symbol: "chart.xyaxis.line"
+        ),
+        EffectFamily(
+            id: "showcase.live-stats",
+            category: .showcase,
+            name: L("Live Stat Cards", "实时数据卡片"),
+            summary: L("Numbers that roll, flip and flash as live values change.", "数字随实时数据滚动、翻页与闪烁更新。"),
+            symbol: "square.grid.2x2.fill"
+        ),
+        EffectFamily(
+            id: "showcase.media-cards",
+            category: .showcase,
+            name: L("Photo & Media Cards", "照片与媒体卡片"),
+            summary: L("Photo, album and board cards that flip, fan out, expand and play.", "照片、专辑与雪板卡片的翻转、扇形展开、放大与播放。"),
+            symbol: "photo.on.rectangle.angled"
+        ),
+        EffectFamily(
+            id: "showcase.controls",
+            category: .showcase,
+            name: L("Pickers & Sliders", "选择与滑动控件"),
+            summary: L("Slide-to-start knobs, rulers, date ranges, chips and checklists with tactile feedback.", "滑动开始、刻度尺、日期区间、筛选标签与清单等质感控件。"),
+            symbol: "slider.horizontal.3"
+        ),
+        EffectFamily(
+            id: "showcase.routes",
+            category: .showcase,
+            name: L("Routes & Timelines", "路线与时间轴"),
+            summary: L("Trails, flight paths, pins and itineraries that draw themselves along a path.", "沿路径自行绘制的轨迹、航线、落钉与行程时间轴。"),
+            symbol: "map.fill"
+        ),
+        EffectFamily(
+            id: "showcase.moments",
+            category: .showcase,
+            name: L("Moments & CTAs", "行动与高光时刻"),
+            summary: L("Countdowns, start buttons, tear-off tickets and save bursts for the big moment.", "倒计时、开始按钮、撕票与收藏迸发等关键时刻动效。"),
+            symbol: "sparkles"
+        ),
+    ]
+
+    static let membership: [String: String] = [
+        // Chart widgets
+        "showcase.speed-line": "showcase.chart-widgets",
+        "showcase.fresh-snow": "showcase.chart-widgets",
+        "showcase.heart-zone": "showcase.chart-widgets",
+        "showcase.finance-card": "showcase.chart-widgets",
+        "showcase.sleep-timeline": "showcase.chart-widgets",
+        // Live stat cards
+        "showcase.lift-status": "showcase.live-stats",
+        "showcase.run-summary": "showcase.live-stats",
+        "showcase.weather-widget": "showcase.live-stats",
+        "showcase.flip-clock": "showcase.live-stats",
+        // Photo & media cards
+        "showcase.board-card": "showcase.media-cards",
+        "showcase.photo-play": "showcase.media-cards",
+        "showcase.spots-grid": "showcase.media-cards",
+        "showcase.fog-wipe": "showcase.media-cards",
+        "showcase.destination-carousel": "showcase.media-cards",
+        "showcase.polaroid-fan": "showcase.media-cards",
+        "showcase.now-playing": "showcase.media-cards",
+        // Pickers & sliders
+        "showcase.slide-to-start": "showcase.controls",
+        "showcase.altitude-ruler": "showcase.controls",
+        "showcase.gear-checklist": "showcase.controls",
+        "showcase.trip-chips": "showcase.controls",
+        "showcase.date-range": "showcase.controls",
+        // Routes & timelines
+        "showcase.best-line": "showcase.routes",
+        "showcase.flight-path": "showcase.routes",
+        "showcase.pin-route": "showcase.routes",
+        "showcase.itinerary": "showcase.routes",
+        // Moments & CTAs
+        "showcase.go-countdown": "showcase.moments",
+        "showcase.get-started": "showcase.moments",
+        "showcase.boarding-pass": "showcase.moments",
+        "showcase.save-burst": "showcase.moments",
+    ]
+}

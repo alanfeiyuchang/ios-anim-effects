@@ -161,6 +161,57 @@ enum Strings {
     static let openCategory = L("Opens the category", "打开该分类")
     static let resetDemo = L("Restarts the demo from its initial state", "让演示回到初始状态重新开始")
 
+    // MARK: Families & variations
+
+    static let families = L("Families", "系列")
+    /// Unit after a number: "85 families" / "85 个系列".
+    static let familiesUnit = L("families", "个系列")
+    static let variations = L("Variations", "变体")
+    static let browseMode = L("Browse by", "浏览方式")
+    static let byFamily = L("Families", "按系列")
+    static let familyViewMode = L("Layout", "布局")
+    static let gridMode = L("Grid", "网格")
+    static let compareMode = L("Compare", "对比")
+    static let compareHint = L(
+        "Every variation plays at once, so you can compare the motion styles side by side.",
+        "所有变体同时播放，方便并排对比不同的动效风格。"
+    )
+    static let openFamily = L("Shows every variation of this family", "查看该系列的全部变体")
+    static let showVariation = L("Switches the page to this variation", "将页面切换到该变体")
+    static let nextVariation = L("Next variation", "下一个变体")
+    static let previousVariation = L("Previous variation", "上一个变体")
+    static let swipeVariations = L("Swipe the title left or right to switch variations", "左右滑动标题即可切换变体")
+    static let familyResults = L("Matching Families", "匹配的系列")
+
+    /// "1 family" / "6 families" / "6 个系列".
+    static func familyCount(_ count: Int, _ language: AppLanguage) -> String {
+        switch language {
+        case .en: return count == 1 ? "1 family" : "\(count) families"
+        case .zh: return "\(count) 个系列"
+        }
+    }
+
+    /// "1 variation" / "5 variations" / "5 个变体".
+    static func variationCount(_ count: Int, _ language: AppLanguage) -> String {
+        switch language {
+        case .en: return count == 1 ? "1 variation" : "\(count) variations"
+        case .zh: return "\(count) 个变体"
+        }
+    }
+
+    /// "6 families · 17 effects" / "6 个系列 · 17 个动效".
+    static func familiesAndEffects(families: Int, effects: Int, _ language: AppLanguage) -> String {
+        familyCount(families, language) + " · " + effectCount(effects, language)
+    }
+
+    /// "Variation 2 of 5" / "第 2 个变体，共 5 个" (VoiceOver).
+    static func variationPosition(_ position: Int, of total: Int, _ language: AppLanguage) -> String {
+        switch language {
+        case .en: return "Variation \(position) of \(total)"
+        case .zh: return "第 \(position) 个变体，共 \(total) 个"
+        }
+    }
+
     /// "15 categories" / "15 个分类".
     static func categoryCount(_ count: Int, _ language: AppLanguage) -> String {
         switch language {

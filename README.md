@@ -12,6 +12,10 @@ and a professional **prompt** (written separately in English and Chinese) that d
 - **249 effects in 15 categories · 15 个分类共 249 个动效**: Signature Interactions (dark premium widget cards · 质感交互精选), Buttons, Inputs & Controls, Loading & Progress, Feedback & Alerts,
   Transitions & Morphing, Navigation & Menus, Cards, Scroll & Lists, Text & Numbers, Icons & Symbols,
   Gestures & Physics, Data & Charts, Backgrounds & Ambience, Shaders & Materials.
+- **Families & variations · 系列与变体**: each category is organised into families of variations of the same element
+  (every slider, every spinner, every tab indicator…). Category pages list families with a live 3-up preview strip;
+  a family page shows its variations as a grid or in **Compare** mode (all variations playing side by side);
+  the detail page has a **Variations** strip — tap one (or swipe the title) to switch in place.
 - **Live previews · 实时预览**: every card in a grid plays its own animation. Tap-driven demos autoplay in thumbnails.
 - **Interactive demos · 可交互 Demo**: tap, drag, pinch, scroll — plus a reset button.
 - **Parameters · 参数调节**: sliders, toggles and segmented choices update the demo live.
@@ -54,15 +58,18 @@ MotionLab/
   Core/           Effect model, parameters, localization, library, shared demo kit
   Views/          Browse / Category / Search / Favorites / Settings / Detail screens
   Effects/<Cat>/  One folder per category; each effect is an `Effect` + private demo view
+  Families/       One file per category: its families + effect-id → family-id membership
   Shaders/        Metal shaders ([[stitchable]]) used by the Shaders & Materials category
 docs/EFFECT_GUIDE.md   How to add a new effect (conventions, prompt style, demo rules)
+docs/FAMILIES.md       Family taxonomy per category and how to add a variation
 ```
 
 ## Adding an effect · 添加新动效
 
 See [`docs/EFFECT_GUIDE.md`](docs/EFFECT_GUIDE.md). In short: create `Effect(...)` with bilingual name, summary,
 prompt and implementation notes, declare its parameters, write a private demo view that reads `DemoContext`,
-and add it to the category's `all` list.
+add it to the category's `all` list, and add one membership line for it in `MotionLab/Families/<Category>Families.swift`
+(see [`docs/FAMILIES.md`](docs/FAMILIES.md)).
 
 ## References · 参考
 

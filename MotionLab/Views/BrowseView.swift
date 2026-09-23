@@ -91,6 +91,7 @@ struct BrowseView: View {
     private func header(_ reader: ScrollViewProxy) -> some View {
         let effectCount = EffectLibrary.all.count
         let categoryCount = EffectCategory.allCases.count
+        let familyCount = EffectFamilies.all.count
         let revealed = self.revealed
         // Counters roll up from zero on first reveal (never with Reduce Motion).
         let countsShown = revealed || reduceMotion
@@ -115,6 +116,13 @@ struct BrowseView: View {
                     }
                 }
                 .accessibilityLabel(Text(verbatim: Strings.categoryCount(categoryCount, language)))
+                .accessibilityHint(Text(Strings.jumpToCategories, language))
+                StatPill(value: countsShown ? familyCount : 0, unit: Strings.familiesUnit(language)) {
+                    withAnimation(reduceMotion ? nil : Animation.smooth) {
+                        reader.scrollTo(Self.categoriesAnchor, anchor: .top)
+                    }
+                }
+                .accessibilityLabel(Text(verbatim: Strings.familyCount(familyCount, language)))
                 .accessibilityHint(Text(Strings.jumpToCategories, language))
             }
             .entrance(revealed, delay: 0.38, distance: 10)
@@ -223,11 +231,12 @@ struct BrowseView: View {
             LazyVGrid(columns: categoryColumns, spacing: 14) {
                 ForEach(Array(EffectCategory.allCases.enumerated()), id: \.element) { index, category in
                     let count = EffectLibrary.effects(in: category).count
+                    let familyCount = EffectFamilies.families(in: category).count
                     NavigationLink(value: Route.category(category)) {
-                        CategoryTile(category: category, count: count)
+                        CategoryTile(category: category, count: count, familyCount: familyCount)
                     }
                     .buttonStyle(PressableCardStyle(depth: 10, tilt: true))
-                    .accessibilityLabel(Text(verbatim: "\(category.title(language)), \(Strings.effectCount(count, language))"))
+                    .accessibilityLabel(Text(verbatim: "\(category.title(language)), \(Strings.familiesAndEffects(families: familyCount, effects: count, language))"))
                     .accessibilityHint(Text(category.subtitle, language))
                     .entrance(revealed, delay: 0.46 + ShellMotion.stagger(index, step: 0.05, cap: 6), distance: 22, scale: 0.95)
                     .scrollReveal()
@@ -421,26 +430,26 @@ private struct CompactEffectCard: View {
 private struct CategoryTile: View {
     let category: EffectCategory
     let count: Int
+    let familyCount: Int
     @Environment(\.appLanguage) private var language
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                CategoryIcon(category: category)
-                Spacer()
-                Text("\(count)")
-                    .font(.footnote.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.primary.opacity(0.06), in: Capsule())
+            CategoryIcon(category: category)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(category.title, language)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                    .minimumScaleFactor(0.8)
+                // "6 families · 17 effects"
+                Text(verbatim: Strings.familiesAndEffects(families: familyCount, effects: count, language))
+                    .font(.caption2.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(Palette.accent)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                    .minimumScaleFactor(0.8)
             }
-            Text(category.title, language)
-                .font(.headline)
-                .foregroundStyle(.primary)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
-                .minimumScaleFactor(0.8)
             Text(category.subtitle, language)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -465,11 +474,15 @@ private struct CategoryTile: View {
     }
 }
 
+/// A category page. By default it lists the category's families (each with a live 3-up preview strip);
+/// the "All Effects" segment shows the flat grid with the interaction filter chips.
 struct CategoryView: View {
     let category: EffectCategory
     @Environment(\.appLanguage) private var language
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Namespace private var chipNamespace
+    @AppStorage("app.categoryMode") private var mode: CategoryBrowseMode = .families
     @State private var interaction: EffectInteraction?
     @State private var iconBounce = 0
 
@@ -486,34 +499,24 @@ struct CategoryView: View {
 
     var body: some View {
         let all = allEffects
-        let interactions = availableInteractions
+        let families = EffectFamilies.families(in: category)
+        let showsFamilies = mode == .families
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .center, spacing: 14) {
-                    CategoryIcon(category: category, size: 52, bounce: iconBounce)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(Strings.effectCount(all.count, language))
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.primary)
-                        Text(category.subtitle, language)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .appearEntrance(index: 1, distance: 8)
-                }
-                .padding(.horizontal)
-                .accessibilityElement(children: .combine)
-                // A filter with a single option would only ever show everything.
-                if interactions.count > 1 {
-                    interactionFilter(all: all, interactions: interactions)
-                        .appearEntrance(index: 2, distance: 10, blur: 0)
-                }
-                EffectGrid(effects: effects)
+                header(effectCount: all.count, familyCount: families.count)
+                modePicker(effectCount: all.count, familyCount: families.count)
                     .padding(.horizontal)
-                    .animation(.smooth, value: interaction)
+                    .appearEntrance(index: 2, distance: 10, blur: 0)
+                if showsFamilies {
+                    familyList(families)
+                        .transition(.opacity)
+                } else {
+                    allEffectsSection(all: all)
+                        .transition(.opacity)
+                }
             }
             .padding(.vertical)
+            .animation(reduceMotion ? Animation.easeInOut(duration: 0.2) : ShellMotion.reveal, value: showsFamilies)
         }
         .background(Palette.pageBackground)
         .navigationTitle(category.title(language))
@@ -523,6 +526,75 @@ struct CategoryView: View {
             try? await Task.sleep(for: .seconds(0.35))
             guard !Task.isCancelled else { return }
             iconBounce += 1
+        }
+    }
+
+    private func header(effectCount: Int, familyCount: Int) -> some View {
+        HStack(alignment: .center, spacing: 14) {
+            CategoryIcon(category: category, size: 52, bounce: iconBounce)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(verbatim: Strings.familiesAndEffects(families: familyCount, effects: effectCount, language))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(category.subtitle, language)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .appearEntrance(index: 1, distance: 8)
+        }
+        .padding(.horizontal)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func modePicker(effectCount: Int, familyCount: Int) -> some View {
+        Picker(Strings.browseMode(language), selection: $mode) {
+            Text(verbatim: "\(CategoryBrowseMode.families.title(language)) \(familyCount)")
+                .tag(CategoryBrowseMode.families)
+            Text(verbatim: "\(CategoryBrowseMode.all.title(language)) \(effectCount)")
+                .tag(CategoryBrowseMode.all)
+        }
+        .pickerStyle(.segmented)
+        .sensoryFeedback(.selection, trigger: mode)
+    }
+
+    // MARK: Families
+
+    private var familyColumns: [GridItem] {
+        dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible(), spacing: 14)]
+            : [GridItem(.adaptive(minimum: 300), spacing: 14)]
+    }
+
+    private func familyList(_ families: [EffectFamily]) -> some View {
+        LazyVGrid(columns: familyColumns, spacing: 14) {
+            ForEach(Array(families.enumerated()), id: \.element.id) { index, family in
+                let members = EffectFamilies.effects(in: family)
+                NavigationLink(value: Route.family(family.id)) {
+                    FamilyCard(family: family, effects: members)
+                }
+                .buttonStyle(PressableCardStyle())
+                .accessibilityLabel(Text(verbatim: "\(family.name(language)), \(Strings.variationCount(members.count, language))"))
+                .accessibilityHint(Text(family.summary, language))
+                .appearEntrance(index: index, delay: 0.12, distance: 22, scale: 0.96)
+                .scrollReveal()
+            }
+        }
+        .padding(.horizontal)
+    }
+
+    // MARK: All effects
+
+    private func allEffectsSection(all: [Effect]) -> some View {
+        let interactions = availableInteractions
+        return VStack(alignment: .leading, spacing: 16) {
+            // A filter with a single option would only ever show everything.
+            if interactions.count > 1 {
+                interactionFilter(all: all, interactions: interactions)
+            }
+            EffectGrid(effects: effects)
+                .padding(.horizontal)
+                .animation(.smooth, value: interaction)
         }
     }
 

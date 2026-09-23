@@ -83,6 +83,38 @@ enum ButtonEffects {
 }
 ```
 
+## Family membership (required)
+
+Every effect belongs to exactly one **family** — a group of variations of the same UI element or pattern
+(`inputs.slider`, `loading.spinner`, `navigation.tab-indicator`…). Families are shown between a category and its
+effects (category page → family page → detail) and power the "Variations" strip on the detail page.
+
+Membership lives outside effect files, in `MotionLab/Families/<Category>Families.swift`:
+
+```swift
+enum InputsFamilies {
+    static let all: [EffectFamily] = [ /* the category's families, in display order */ ]
+    static let membership: [String: String] = [
+        "inputs.velocity-slider": "inputs.slider",   // effect id → family id
+        // …
+    ]
+}
+```
+
+When you add an effect:
+
+1. Add it to the category's `all` list as usual. Its position there is also its position inside the family.
+2. Add **one** line `"<effect id>": "<family id>",` to that category's `membership`. Each effect id appears once —
+   a duplicate key in a dictionary literal traps at launch.
+3. Pick an existing family from [`docs/FAMILIES.md`](FAMILIES.md). Only add a new `EffectFamily` when no existing one fits;
+   its id is `"<category rawValue>.<kebab-slug>"` (note: `shaders.`, not `shader.`), with a bilingual `name` and one-line
+   `summary`, and an SF Symbol. Families of one category are listed in `all` in the order they should appear.
+4. An effect without a valid membership line is not lost: it shows up in its category's fallback "More · 更多" family.
+   Treat that family appearing as a bug to fix.
+
+A variation should differ from its siblings in *motion style* (curve, physics, choreography, material), not just in color —
+the Compare mode on the family page plays all variations side by side.
+
 ## Demo rules (important)
 
 1. **Stage size.** The demo fills whatever frame it is given. Detail stage ≈ 360×400 pt; grid previews render

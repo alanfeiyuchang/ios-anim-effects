@@ -47,6 +47,11 @@ for c in $(grep -oE '^    case [a-z]+$' MotionLab/Core/Effect.swift | awk '{prin
   shoot "category/$c" 4 -app.language zh -app.appearance 1 -ML_route "category:$c"
 done
 
+mkdir -p "$OUT/family"
+for f in $(grep -rhoE 'id: "[a-z]+\.[a-z0-9-]+"' MotionLab/Families | sed -E 's/id: "(.*)"/\1/' | sort -u); do
+  shoot "family/$f" 4 -app.language zh -app.appearance 1 -ML_route "family:$f"
+done
+
 for id in $(grep -rhoE 'id: "[a-z]+\.[a-z0-9-]+"' MotionLab/Effects | sed -E 's/id: "(.*)"/\1/' | sort -u); do
   shoot "effect/$id" 3 -app.language zh -app.appearance 1 -ML_route "effect:$id"
   if [[ "${PROMPTS:-0}" == "1" ]]; then

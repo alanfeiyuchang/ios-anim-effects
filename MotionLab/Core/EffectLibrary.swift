@@ -54,17 +54,23 @@ enum EffectLibrary {
 
     // MARK: Search
 
-    /// Lower-cased search fields for every effect, computed once.
-    private static let searchIndex: [EffectSearchEntry] = all.enumerated().map { EffectSearchEntry(effect: $1, order: $0) }
-
-    /// Every query term must match somewhere; results are ranked by where they match
-    /// (name > tag > API > category/interaction > summary > implementation, with prefix boosts),
-    /// ties keep catalog order. An empty query returns the filtered catalog in order.
-    static func search(_ query: String, category: EffectCategory?, interaction: EffectInteraction?) -> [Effect] {
-        let terms = query
+    /// Lower-cased query terms, split on ASCII and ideographic spaces. Shared with `EffectFamilies.search`.
+    static func searchTerms(_ query: String) -> [String] {
+        query
             .lowercased()
             .split(whereSeparator: { $0 == " " || $0 == "\u{3000}" })
             .map(String.init)
+    }
+
+    /// Lower-cased search fields for every effect (family names included), computed once.
+    private static let searchIndex: [EffectSearchEntry] = all.enumerated().map { EffectSearchEntry(effect: $1, order: $0) }
+
+    /// Every query term must match somewhere; results are ranked by where they match
+    /// (name > tag > family name > API > category/interaction > summary > family summary > implementation,
+    /// with prefix boosts), so an effect also matches through the family it belongs to;
+    /// ties keep catalog order. An empty query returns the filtered catalog in order.
+    static func search(_ query: String, category: EffectCategory?, interaction: EffectInteraction?) -> [Effect] {
+        let terms = searchTerms(query)
         let pool = searchIndex.filter { entry in
             if let category, entry.effect.category != category { return false }
             if let interaction, entry.effect.interaction != interaction { return false }
@@ -105,6 +111,10 @@ struct EffectSearchEntry {
     private let summary: String
     private let summaryWords: [String]
     private let implementation: String
+    /// The effect's family name (both languages) and its words, so "slider" finds every slider variation.
+    private let familyNames: [String]
+    private let familyWords: [String]
+    private let familySummary: String
 
     init(effect: Effect, order: Int) {
         self.effect = effect
@@ -120,6 +130,16 @@ struct EffectSearchEntry {
         self.summary = summary
         summaryWords = Self.words(summary)
         implementation = effect.implementation.all.lowercased()
+        if let family = EffectFamilies.family(for: effect) {
+            let familyNames = [family.name.en.lowercased(), family.name.zh.lowercased()]
+            self.familyNames = familyNames
+            familyWords = familyNames.flatMap { Self.words($0) }
+            familySummary = family.summary.all.lowercased()
+        } else {
+            familyNames = []
+            familyWords = []
+            familySummary = ""
+        }
     }
 
     private static func words(_ text: String) -> [String] {
@@ -135,11 +155,15 @@ struct EffectSearchEntry {
         if tags.contains(term) { return 60 }
         if tags.contains(where: { $0.hasPrefix(term) }) { return 50 }
         if tags.contains(where: { $0.contains(term) }) { return 40 }
+        if familyNames.contains(where: { $0.hasPrefix(term) }) { return 36 }
+        if familyWords.contains(where: { $0.hasPrefix(term) }) { return 35 }
+        if familyNames.contains(where: { $0.contains(term) }) { return 34 }
         if apis.contains(where: { $0.hasPrefix(term) }) { return 38 }
         if apis.contains(where: { $0.contains(term) }) { return 32 }
         if facets.contains(term) { return 25 }
         if summaryWords.contains(where: { $0.hasPrefix(term) }) { return 18 }
         if summary.contains(term) { return 15 }
+        if familySummary.contains(term) { return 10 }
         if implementation.contains(term) { return 5 }
         return nil
     }

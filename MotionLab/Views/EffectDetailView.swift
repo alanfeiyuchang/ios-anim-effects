@@ -2,7 +2,9 @@ import SwiftUI
 import UIKit
 
 struct EffectDetailView: View {
-    let effect: Effect
+    /// The effect on screen. Starts as the pushed effect and changes in place when another
+    /// variation of its family is picked (strip or header swipe); every per-effect state resets then.
+    @State private var effect: Effect
 
     @Environment(\.appLanguage) private var language
     @Environment(FavoritesStore.self) private var favorites
@@ -21,32 +23,59 @@ struct EffectDetailView: View {
     /// Bumped on copy (checkmark bounce).
     @State private var copies = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// +1 when the last variation switch moved forward, -1 backward (stage slide direction).
+    @State private var swapDirection: CGFloat = 1
 
     init(effect: Effect) {
-        self.effect = effect
+        _effect = State(initialValue: effect)
         _params = State(initialValue: effect.defaultParams)
     }
 
     private var isFavorite: Bool { favorites.contains(effect.id) }
 
-    /// Up to four neighbours from the same category, starting right after this effect.
+    /// Every variation in this effect's family (the effect included), in category order.
+    private var variations: [Effect] { EffectFamilies.variations(of: effect) }
+
+    /// Up to four neighbours from the same category that are not already in the variations strip,
+    /// starting right after this effect.
     private var related: [Effect] {
         let siblings = EffectLibrary.effects(in: effect.category)
         guard siblings.count > 1, let index = siblings.firstIndex(where: { $0.id == effect.id }) else { return [] }
-        return (1...min(4, siblings.count - 1)).map { siblings[(index + $0) % siblings.count] }
+        let inFamily = Set(variations.map(\.id))
+        var picked: [Effect] = []
+        for step in 1..<siblings.count {
+            let candidate = siblings[(index + step) % siblings.count]
+            if inFamily.contains(candidate.id) { continue }
+            picked.append(candidate)
+            if picked.count == 4 { break }
+        }
+        return picked
     }
 
     var body: some View {
         // Built once per body pass and shared by the share button, the prompt card and the copy action.
         let fullPrompt = effect.fullPrompt(language, params: params)
+        let variations = self.variations
+        let swap = VariationSwapTransition(direction: swapDirection, reduceMotion: reduceMotion)
         ScrollViewReader { reader in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    header
+                    header(variations: variations)
+                    if variations.count > 1, let family = EffectFamilies.family(for: effect) {
+                        VariationStrip(family: family, variations: variations, currentID: effect.id) { item in
+                            showVariation(item, in: variations)
+                        }
+                        .appearEntrance(delay: 0.08, distance: 10, blur: 0)
+                    }
                     VStack(spacing: 10) {
-                        stage(fullPrompt: fullPrompt)
-                            // Rises into place with a spring as the page arrives.
-                            .appearEntrance(delay: 0.12, distance: 36, scale: 0.94, blur: 0)
+                        ZStack {
+                            stage(fullPrompt: fullPrompt)
+                                // A new variation slides in; the old one sinks away (see VariationSwapTransition).
+                                .id(effect.id)
+                                .transition(swap)
+                        }
+                        // Rises into place with a spring as the page arrives.
+                        .appearEntrance(delay: 0.12, distance: 36, scale: 0.94, blur: 0)
                         stageControls
                             .appearEntrance(delay: 0.24, distance: 10, blur: 0)
                     }
@@ -109,7 +138,7 @@ struct EffectDetailView: View {
 
     // MARK: Sections
 
-    private var header: some View {
+    private func header(variations: [Effect]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             FlowLayout(spacing: 8) {
                 NavigationLink(value: Route.category(effect.category)) {
@@ -162,12 +191,29 @@ struct EffectDetailView: View {
             Text(effect.name, language)
                 .font(.largeTitle.weight(.bold))
                 .accessibilityAddTraits(.isHeader)
+                .modifier(VariationStepActions(enabled: variations.count > 1, language: language) { step in
+                    stepVariation(by: step, in: variations)
+                })
                 .appearEntrance(index: 1, distance: 10)
             Text(effect.summary, language)
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .appearEntrance(index: 2, distance: 10)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        // Swipe the title area sideways to step through the family's variations.
+        .simultaneousGesture(variationSwipe(variations: variations), including: variations.count > 1 ? .all : .subviews)
+    }
+
+    private func variationSwipe(variations: [Effect]) -> some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { value in
+                let dx = value.translation.width
+                let dy = value.translation.height
+                guard abs(dx) > 60, abs(dx) > abs(dy) * 1.6 else { return }
+                stepVariation(by: dx < 0 ? 1 : -1, in: variations)
+            }
     }
 
     /// The live demo. Each demo draws its own specific instruction (`DemoHint`) inside the stage.
@@ -364,6 +410,32 @@ struct EffectDetailView: View {
 
     // MARK: Actions
 
+    /// Moves `step` places through the family (wrapping around).
+    private func stepVariation(by step: Int, in variations: [Effect]) {
+        guard variations.count > 1, let index = variations.firstIndex(where: { $0.id == effect.id }) else { return }
+        let count = variations.count
+        let next = variations[((index + step) % count + count) % count]
+        showVariation(next, in: variations, direction: CGFloat(step > 0 ? 1 : -1))
+    }
+
+    /// Swaps the page to another variation in place: the stage slides, texts cross-fade and
+    /// parameters, copy state and the demo restart from the new effect's defaults.
+    private func showVariation(_ next: Effect, in variations: [Effect], direction: CGFloat? = nil) {
+        guard next.id != effect.id else { return }
+        let from = variations.firstIndex(where: { $0.id == effect.id }) ?? 0
+        let to = variations.firstIndex(where: { $0.id == next.id }) ?? 0
+        swapDirection = direction ?? (to >= from ? 1 : -1)
+        copyFeedback?.cancel()
+        copied = false
+        Haptics.selection()
+        withAnimation(reduceMotion ? Animation.easeInOut(duration: 0.2) : Animation.smooth(duration: 0.42)) {
+            effect = next
+            params = next.defaultParams
+        }
+        recents.record(next.id)
+        UIAccessibility.post(notification: .announcement, argument: next.name(language))
+    }
+
     private func resetDemo() {
         resetToken += 1
         Haptics.tap()
@@ -514,6 +586,25 @@ struct ParamControl: View {
                 .pickerStyle(.segmented)
                 .sensoryFeedback(.selection, trigger: Int(value.rounded()))
             }
+        }
+    }
+}
+
+/// VoiceOver "Next / Previous variation" actions on the detail title (only when the family has siblings).
+private struct VariationStepActions: ViewModifier {
+    let enabled: Bool
+    let language: AppLanguage
+    let step: (Int) -> Void
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled {
+            content
+                .accessibilityAction(named: Text(Strings.nextVariation, language)) { step(1) }
+                .accessibilityAction(named: Text(Strings.previousVariation, language)) { step(-1) }
+                .accessibilityHint(Text(Strings.swipeVariations, language))
+        } else {
+            content
         }
     }
 }

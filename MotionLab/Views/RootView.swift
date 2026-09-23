@@ -2,6 +2,8 @@ import SwiftUI
 
 enum Route: Hashable {
     case category(EffectCategory)
+    /// A family of variations (`EffectFamily.id`), e.g. "inputs.slider".
+    case family(String)
     /// `source` names the placement the link lives in (e.g. "featured", "recent", "grid") so the
     /// zoom transition's source id is unique even when one effect is visible in two places at once.
     /// An empty source (dice, launch arguments) pushes without a zoom source.
@@ -79,7 +81,8 @@ struct RootView: View {
 }
 
 /// Launch arguments used for automated screenshots, e.g.
-/// `-ML_route effect:shader.ripple`, `-ML_route category:buttons`, `-ML_tab 3`, `-ML_anchor prompt`.
+/// `-ML_route effect:shader.ripple`, `-ML_route category:buttons`, `-ML_route family:inputs.slider`,
+/// `-ML_tab 3`, `-ML_anchor prompt`.
 /// (`-app.language en` / `-app.appearance 2` also work because @AppStorage reads the argument domain.)
 /// Intentionally available in every build configuration.
 enum LaunchOptions {
@@ -94,13 +97,17 @@ enum LaunchOptions {
         if raw.hasPrefix("category:"), let category = EffectCategory(rawValue: String(raw.dropFirst("category:".count))) {
             return [.category(category)]
         }
+        if raw.hasPrefix("family:") {
+            let id = String(raw.dropFirst("family:".count))
+            return EffectFamilies.family(id: id) == nil ? [] : [.family(id)]
+        }
         return []
     }
 
     static var detailAnchor: String? { UserDefaults.standard.string(forKey: "ML_anchor") }
 }
 
-/// A NavigationStack that knows how to show categories and effects with a zoom transition.
+/// A NavigationStack that knows how to show categories, families and effects (the latter with a zoom transition).
 struct RoutedStack<Content: View>: View {
     @Namespace private var namespace
     @State private var path: [Route]
@@ -121,6 +128,10 @@ struct RoutedStack<Content: View>: View {
                     switch route {
                     case .category(let category):
                         CategoryView(category: category)
+                    case .family(let id):
+                        if let family = EffectFamilies.family(id: id) {
+                            FamilyView(family: family)
+                        }
                     case .effect(let id, let source):
                         if let effect = EffectLibrary.effect(id: id) {
                             if source.isEmpty {

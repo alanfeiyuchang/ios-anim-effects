@@ -75,7 +75,7 @@ private struct SparkBurstDemo: View {
                     .trim(from: 0, to: paid ? 1 : 0)
                     .stroke(.white, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
                     .frame(width: 36, height: 28)
-                    .animation(paid ? .easeOut(duration: 0.3).delay(0.2) : .easeIn(duration: 0.1), value: paid)
+                    .animation(paid ? Animation.easeOut(duration: 0.3).delay(0.2) : Animation.easeIn(duration: 0.1), value: paid)
                 if !paid {
                     amountCard(zh: zh)
                         .transition(.scale(scale: 0.9).combined(with: .opacity))

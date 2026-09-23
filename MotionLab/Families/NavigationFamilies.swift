@@ -56,21 +56,39 @@ enum NavigationFamilies {
         "navigation.tab-indicator": "navigation.tab-indicator",
         "navigation.segmented-thumb": "navigation.tab-indicator",
         "navigation.elastic-underline": "navigation.tab-indicator",
+        "navigation.gooey-tab": "navigation.tab-indicator",
+        "navigation.spotlight-tab": "navigation.tab-indicator",
+        "navigation.hop-dot-tab": "navigation.tab-indicator",
+        "navigation.trace-tab": "navigation.tab-indicator",
         // Tab bars & docks
         "navigation.collapsing-tab-bar": "navigation.tab-bar",
         "navigation.dock-magnify": "navigation.tab-bar",
+        "navigation.notch-tab-bar": "navigation.tab-bar",
+        "navigation.search-tab-morph": "navigation.tab-bar",
+        "navigation.ripple-tab-bar": "navigation.tab-bar",
         // Page & step indicators
         "navigation.page-dots": "navigation.page-indicator",
         "navigation.step-progress": "navigation.page-indicator",
+        "navigation.number-pager": "navigation.page-indicator",
+        "navigation.timer-dots": "navigation.page-indicator",
+        "navigation.scrolling-dots": "navigation.page-indicator",
         // Drawers & sidebars
         "navigation.side-drawer-3d": "navigation.drawer",
         "navigation.sidebar-rail": "navigation.drawer",
+        "navigation.parallax-drawer": "navigation.drawer",
+        "navigation.elastic-drawer": "navigation.drawer",
+        "navigation.popout-drawer": "navigation.drawer",
         // Sheets & pushes
         "navigation.push-parallax": "navigation.sheet",
         "navigation.bottom-sheet": "navigation.sheet",
+        "navigation.stacked-sheets": "navigation.sheet",
+        "navigation.fade-through": "navigation.sheet",
+        "navigation.floating-sheet": "navigation.sheet",
         // Menus
         "navigation.radial-menu": "navigation.menu",
         "navigation.context-popover": "navigation.menu",
         "navigation.context-menu-lift": "navigation.menu",
+        "navigation.fold-menu": "navigation.menu",
+        "navigation.overlay-menu": "navigation.menu",
     ]
 }

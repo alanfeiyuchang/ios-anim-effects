@@ -33,7 +33,7 @@ extension Effect {
 // MARK: - Model
 
 private enum TravelDayRole {
-    case none, start, end, inside
+    case idle, start, end, inside
 
     var isEndpoint: Bool { self == .start || self == .end }
 }
@@ -214,7 +214,7 @@ private struct TravelWeekRow: View {
         if index == start { return .start }
         if index == end { return .end }
         if index > start && index < end { return .inside }
-        return .none
+        return .idle
     }
 }
 
@@ -228,13 +228,13 @@ private struct TravelDayCell: View {
         switch role {
         case .start, .end: return Color.black
         case .inside: return Color.white
-        case .none: return Color.white.opacity(0.62)
+        case .idle: return Color.white.opacity(0.62)
         }
     }
 
     var body: some View {
         Text("\(day)")
-            .font(.system(size: 14, weight: role == .none ? .medium : .bold, design: .rounded))
+            .font(.system(size: 14, weight: role == .idle ? .medium : .bold, design: .rounded))
             .monospacedDigit()
             .foregroundStyle(textColor)
             .frame(width: size, height: size)

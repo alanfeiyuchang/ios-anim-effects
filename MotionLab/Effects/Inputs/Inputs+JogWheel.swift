@@ -36,6 +36,8 @@ private struct JogWheelDemo: View {
     @State private var spinning = false
     /// Bumped by every coast and every grab, so a stale coast never clears `spinning` under the finger.
     @State private var coastGeneration = 0
+    /// The coast in flight, so a grab starts from the angle on screen rather than the landing angle.
+    @State private var inFlight: JogCoast?
     @State private var step = 0
 
     private let size: CGFloat = 220
@@ -77,7 +79,9 @@ private struct JogWheelDemo: View {
                 } else {
                     velocity = 0
                     coastGeneration += 1
-                    stopCoast(at: rotation)
+                    let onScreen: Double = inFlight?.value(at: now) ?? rotation
+                    inFlight = nil
+                    stopCoast(at: onScreen)
                 }
                 lastAngle = angle
                 lastTime = now
@@ -101,7 +105,8 @@ private struct JogWheelDemo: View {
     private func coast(by extra: Double) {
         let capped = extra.clamped(to: -1080...1080)
         let duration = ctx["duration"]
-        withAnimation(.timingCurve(0.15, 0.7, 0.3, 1, duration: duration)) {
+        inFlight = JogCoast(from: rotation, delta: capped, start: .now, duration: duration)
+        withAnimation(.timingCurve(JogCoast.curve, duration: duration)) {
             rotation += capped
         }
         coastGeneration += 1
@@ -118,6 +123,24 @@ private struct JogWheelDemo: View {
         let direction: Double = step % 2 == 0 ? -1 : 1
         spinning = true
         coast(by: direction * 540)
+    }
+}
+
+/// A coast described by its start, so the angle on screen can be computed at any moment.
+private struct JogCoast {
+    static let curve = UnitCurve.bezier(
+        startControlPoint: UnitPoint(x: 0.15, y: 0.7),
+        endControlPoint: UnitPoint(x: 0.3, y: 1)
+    )
+    let from: Double
+    let delta: Double
+    let start: Date
+    let duration: Double
+
+    func value(at date: Date) -> Double {
+        guard duration > 0 else { return from + delta }
+        let progress: Double = (date.timeIntervalSince(start) / duration).clamped(to: 0...1)
+        return from + delta * Self.curve.value(at: progress)
     }
 }
 

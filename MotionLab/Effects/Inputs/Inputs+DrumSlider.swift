@@ -32,6 +32,8 @@ private struct DrumSliderDemo: View {
     @State private var value: Double = 68
     @State private var startValue: Double = 68
     @State private var dragging = false
+    /// The settle in flight, so a grab catches the drum where it is on screen.
+    @State private var settle: DrumSettle?
     @State private var step = 0
 
     private let radius: CGFloat = 150
@@ -69,7 +71,11 @@ private struct DrumSliderDemo: View {
             .onChanged { gesture in
                 if !dragging {
                     dragging = true
-                    startValue = value
+                    startValue = settle?.value(at: .now) ?? value
+                    settle = nil
+                    var still = Transaction()
+                    still.disablesAnimations = true
+                    withTransaction(still) { value = startValue }
                 }
                 let raw: Double = startValue - Double(gesture.translation.width / pointsPerTick)
                 let newValue = raw.clamped(to: range)
@@ -81,14 +87,35 @@ private struct DrumSliderDemo: View {
                 let travel: CGFloat = ctx.bool("momentum") ? gesture.predictedEndTranslation.width : gesture.translation.width
                 let projected: Double = startValue - Double(travel / pointsPerTick)
                 let target: Double = projected.rounded().clamped(to: range)
-                withAnimation(.spring(response: 0.7, dampingFraction: ctx["damping"])) { value = target }
+                animate(to: target, response: 0.7)
             }
     }
 
     private func previewFling() {
         let target = Self.previewTargets[step % Self.previewTargets.count]
         step += 1
-        withAnimation(.spring(response: 0.9, dampingFraction: ctx["damping"])) { value = target }
+        animate(to: target, response: 0.9)
+    }
+
+    private func animate(to target: Double, response: Double) {
+        let spring = Spring(response: response, dampingRatio: ctx["damping"])
+        settle = DrumSettle(from: value, delta: target - value, start: .now, spring: spring)
+        withAnimation(.spring(spring)) { value = target }
+    }
+}
+
+/// A settle described by its start, so the value on screen can be computed at any moment.
+private struct DrumSettle {
+    let from: Double
+    let delta: Double
+    let start: Date
+    let spring: Spring
+
+    func value(at date: Date) -> Double {
+        let elapsed: Double = date.timeIntervalSince(start)
+        guard elapsed < spring.settlingDuration else { return from + delta }
+        let moved: Double = spring.value(target: delta, initialVelocity: 0, time: elapsed)
+        return from + moved
     }
 }
 

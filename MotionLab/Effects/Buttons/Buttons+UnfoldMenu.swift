@@ -39,6 +39,8 @@ private struct ButtonUnfoldMenuDemo: View {
     @State private var open = false
     @State private var toast: LocalizedText?
     @State private var step = 0
+    /// Detail intro: unfolds, then picks a row so the stage never stays open and dimmed.
+    @State private var introTask: Task<Void, Never>?
 
     private static let rows: [ButtonMenuRow] = [
         ButtonMenuRow(symbol: "square.and.arrow.up", title: L("Share", "分享"), done: L("Link copied", "链接已复制"), destructive: false),
@@ -56,7 +58,10 @@ private struct ButtonUnfoldMenuDemo: View {
                 .padding(.bottom, 14)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.3, delay: 0.4) { previewStep() }
+        .autoplay(ctx.isPreview, every: 1.3, delay: 0.4) {
+            if ctx.isPreview { previewStep() } else { playIntro() }
+        }
+        .onDisappear { cancelIntro() }
     }
 
     private var card: some View {
@@ -109,7 +114,10 @@ private struct ButtonUnfoldMenuDemo: View {
     }
 
     private var moreButton: some View {
-        Button(action: toggle) {
+        Button {
+            cancelIntro()
+            toggle()
+        } label: {
             Image(systemName: open ? "xmark" : "ellipsis")
                 .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(.primary)
@@ -144,7 +152,10 @@ private struct ButtonUnfoldMenuDemo: View {
             topTrailingRadius: index == 0 ? 16 : 0,
             style: .continuous
         )
-        return Button { choose(index) } label: {
+        return Button {
+            cancelIntro()
+            choose(index)
+        } label: {
             HStack(spacing: 12) {
                 Image(systemName: item.symbol)
                     .font(.system(size: 15, weight: .semibold))
@@ -171,18 +182,35 @@ private struct ButtonUnfoldMenuDemo: View {
         .animation(.spring(response: ctx["response"], dampingFraction: 0.72).delay(delay), value: open)
     }
 
-    private func toggle() {
+    private func toggle(silent: Bool = false) {
         open.toggle()
-        Haptics.tap()
+        if !silent { Haptics.tap() }
         if open { withAnimation(.smooth(duration: 0.2)) { toast = nil } }
     }
 
-    private func choose(_ index: Int) {
+    private func choose(_ index: Int, silent: Bool = false) {
         guard open else { return }
         open = false
-        Haptics.success()
+        if !silent { Haptics.success() }
         let message = Self.rows[index].done
         withAnimation(.smooth(duration: 0.3).delay(0.2)) { toast = message }
+    }
+
+    /// Detail intro: the whole choreography once, ending closed with the toast showing.
+    private func playIntro() {
+        cancelIntro()
+        if !open { toggle(silent: true) }
+        introTask = Task {
+            try? await Task.sleep(for: .seconds(1.3))
+            guard !Task.isCancelled else { return }
+            choose(1, silent: true)
+            introTask = nil
+        }
+    }
+
+    private func cancelIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func previewStep() {

@@ -32,6 +32,8 @@ private struct InputExpandingSearchDemo: View {
     @State private var expanded = false
     @State private var query = ""
     @FocusState private var focused: Bool
+    /// Detail intro: expands with a query, then collapses back to the browse page.
+    @State private var introTask: Task<Void, Never>?
 
     private var trending: [LocalizedText] {
         [L("Glass", "玻璃"), L("Haptics", "触感"), L("Scroll", "滚动")]
@@ -84,7 +86,34 @@ private struct InputExpandingSearchDemo: View {
         .padding(.top, ctx.isPreview ? 24 : 34)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Simulated plays never focus the field, so the detail intro can't raise the keyboard.
-        .autoplay(ctx.isPreview, every: 2.4, delay: 0.5) { expanded ? collapse() : expand(userInitiated: false) }
+        .autoplay(ctx.isPreview, every: 2.4, delay: 0.5) {
+            if ctx.isPreview {
+                expanded ? collapse() : expand(userInitiated: false)
+            } else {
+                playIntro()
+            }
+        }
+        .onDisappear { cancelIntro() }
+        .onChange(of: focused) {
+            if focused { cancelIntro() }
+        }
+    }
+
+    /// Detail intro: the whole round trip once, ending on the browse page.
+    private func playIntro() {
+        cancelIntro()
+        if !expanded { expand(userInitiated: false) }
+        introTask = Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
+            collapse()
+            introTask = nil
+        }
+    }
+
+    private func cancelIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     /// Page title that the expanding field slides over.
@@ -195,7 +224,10 @@ private struct InputExpandingSearchDemo: View {
                     .focused($focused)
                     .submitLabel(.search)
                     .transition(.opacity.combined(with: .move(edge: .leading)))
-                Button(action: collapse) {
+                Button {
+                    cancelIntro()
+                    collapse()
+                } label: {
                     Text(L("Cancel", "取消"), ctx.language)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Palette.indigo)
@@ -213,6 +245,7 @@ private struct InputExpandingSearchDemo: View {
         .shadow(color: .black.opacity(expanded ? 0.12 : 0.08), radius: expanded ? 18 : 10, y: 8)
         .contentShape(Capsule())
         .onTapGesture {
+            cancelIntro()
             if !expanded { expand(userInitiated: true) }
         }
     }

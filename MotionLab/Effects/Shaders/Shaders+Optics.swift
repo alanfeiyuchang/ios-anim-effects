@@ -47,7 +47,7 @@ extension Effect {
         params: [
             .slider("segments", L("Mirrors", "镜面数"), 3...12, default: 8, step: 1, decimals: 0),
             .slider("speed", L("Turn speed", "旋转速度"), 0...2, default: 1.0, unit: "×"),
-            .slider("zoom", L("Zoom", "缩放"), 0.5...1.6, default: 1.0, unit: "×"),
+            .slider("zoom", L("Zoom in", "放大"), 1.0...2.0, default: 1.0, unit: "×"),
         ]
     ) { ctx in
         KaleidoscopeDemo(ctx: ctx)
@@ -121,6 +121,8 @@ private struct ChromaticDemo: View {
     @State private var sleepWatcher: Task<Void, Never>?
     /// The card only starts following once a drag has moved mostly sideways, so vertical swipes scroll the page.
     @State private var engaged = false
+    /// Resets on system cancellation too (Control Center pull, scroll takeover), so the card never stays thrown.
+    @GestureState private var touching = false
 
     var body: some View {
         let strength = ctx["strength"]
@@ -143,24 +145,11 @@ private struct ChromaticDemo: View {
                 Color.clear
                     .frame(width: 260, height: 300)
                     .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 10)
-                            .onChanged { value in
-                                if !engaged {
-                                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                                    engaged = true
-                                }
-                                // While awake the watcher is alive and a held card never settles.
-                                if !awake { wake() }
-                                model.target = value.translation
-                            }
-                            .onEnded { _ in
-                                guard engaged else { return }
-                                engaged = false
-                                model.target = .zero
-                                if !ctx.isPreview { Haptics.tap(.soft) }
-                            }
-                    )
+                    // Simultaneous, so the page's scroll view keeps vertical swipes that start on the card.
+                    .simultaneousGesture(cardDrag)
+                    .onChange(of: touching) { _, isTouching in
+                        if !isTouching { release() }
+                    }
             }
             DemoHint(text: L("Drag or flick the card", "拖动或甩动卡片"), ctx: ctx)
         }
@@ -168,6 +157,30 @@ private struct ChromaticDemo: View {
         .autoplay(ctx.isPreview, every: 1.2, delay: 0.3) { autoSwipe() }
         .onAppear { wake() }
         .onDisappear { sleepWatcher?.cancel() }
+    }
+
+    private var cardDrag: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .updating($touching) { _, state, _ in state = true }
+            .onChanged { value in
+                if !engaged {
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    engaged = true
+                }
+                // While awake the watcher is alive and a held card never settles.
+                if !awake { wake() }
+                model.target = value.translation
+            }
+            .onEnded { _ in release() }
+    }
+
+    /// Normal end or cancellation: send the card home once.
+    private func release() {
+        guard engaged else { return }
+        engaged = false
+        model.target = .zero
+        if !awake { wake() }
+        if !ctx.isPreview { Haptics.tap(.soft) }
     }
 
     /// Runs the spring only while the card moves; a watcher pauses the timeline at rest.
@@ -235,6 +248,7 @@ private struct KaleidoscopeDemo: View {
     @State private var spinOffset: Double = 0
     @State private var dragSpin: Double = 0
     @State private var dragging = false
+    @GestureState private var touching = false
     /// Scripted quarter-turn flourishes (arrival intro / previews), eased per frame in the clock.
     @State private var twistCount = 0
     @State private var twistStart = Date.distantPast
@@ -265,26 +279,35 @@ private struct KaleidoscopeDemo: View {
             .overlay(Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.7), .white.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1.5))
             .shadow(color: Palette.violet.opacity(0.35), radius: 24, y: 10)
             .contentShape(Circle())
-            .gesture(
-                // Horizontal-first with a small slop, so a vertical swipe still scrolls the page.
-                DragGesture(minimumDistance: 10)
-                    .onChanged { value in
-                        if !dragging {
-                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                            dragging = true
-                        }
-                        dragSpin = Double(value.translation.width) / 70
-                    }
-                    .onEnded { _ in
-                        spinOffset += dragSpin
-                        dragSpin = 0
-                        dragging = false
-                    }
-            )
+            // Simultaneous + horizontal-first, so a vertical swipe on the lens still scrolls the page.
+            .simultaneousGesture(twistDrag)
+            .onChange(of: touching) { _, isTouching in
+                if !isTouching { commitTwist() }
+            }
             DemoHint(text: L("Drag sideways to turn the tube", "左右拖动以转动镜筒"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 4, delay: 0.2) { introTwist() }
+    }
+
+    private var twistDrag: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .updating($touching) { _, state, _ in state = true }
+            .onChanged { value in
+                if !dragging {
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    dragging = true
+                }
+                dragSpin = Double(value.translation.width) / 70
+            }
+            .onEnded { _ in commitTwist() }
+    }
+
+    /// Keeps the twist where the finger left it, on a normal end and on cancellation alike.
+    private func commitTwist() {
+        spinOffset += dragSpin
+        dragSpin = 0
+        dragging = false
     }
 
     /// A flourish on arrival shows the tube can be twisted: each one adds 0.9 rad with an ease-out over 1.2 s.
@@ -379,6 +402,8 @@ private struct EdgeScanModifier: ViewModifier, Animatable {
 private struct EdgeScanDemo: View {
     let ctx: DemoContext
     @State private var scanned = false
+    /// Bumped by every tap, so a pending autoplay/intro restore never undoes the user's scan.
+    @State private var generation = 0
 
     /// Rest positions sit 3 glow-heights beyond the 300 pt card, where the exponential glow is < 5%.
     static func restTop(band: Double) -> Double { -3 * band }
@@ -413,14 +438,18 @@ private struct EdgeScanDemo: View {
     /// Autoplay / arrival intro: scan down, hold the wireframe briefly, then sweep back up.
     private func scanAndRestore() {
         let duration = ctx["duration"]
+        generation += 1
+        let token = generation
         withAnimation(.easeInOut(duration: duration)) { scanned = true }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(duration + 0.6))
+            guard token == generation else { return }
             withAnimation(.easeInOut(duration: duration)) { scanned = false }
         }
     }
 
     private func sweep() {
+        generation += 1
         if !ctx.isPreview { Haptics.tap(.rigid) }
         withAnimation(.easeInOut(duration: ctx["duration"])) { scanned.toggle() }
     }

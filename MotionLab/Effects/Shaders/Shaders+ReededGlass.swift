@@ -73,7 +73,8 @@ private struct ReededGlassDemo: View {
             .frame(width: ReededLayout.panelWidth, height: ReededLayout.size.height)
             .contentShape(Rectangle())
             .position(x: panelX, y: ReededLayout.size.height / 2)
-            .gesture(
+            // Simultaneous, so a vertical swipe that starts on the panel is still the page's scroll.
+            .simultaneousGesture(
                 DragGesture(minimumDistance: 10, coordinateSpace: .named(ReededLayout.space))
                     .updating($touching) { _, state, _ in state = true }
                     .onChanged { value in drag(value) }

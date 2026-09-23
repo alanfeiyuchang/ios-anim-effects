@@ -236,24 +236,34 @@ extension View {
 enum Haptics {
     /// Set while an autoplay (preview) action runs so simulated interactions stay silent.
     nonisolated(unsafe) static var isMuted = false
+    /// While a detail page plays its arrival (intro play and demos that start themselves), feedback
+    /// stays silent: haptics should answer a finger, never an animation nobody touched.
+    nonisolated(unsafe) static var quietUntil = Date.distantPast
+
+    /// Silences feedback for `seconds` from now (the detail page calls this on arrival and on Reset).
+    static func quiet(for seconds: TimeInterval) {
+        quietUntil = Date().addingTimeInterval(seconds)
+    }
+
+    private static var isSilent: Bool { isMuted || Date() < quietUntil }
 
     static func tap(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
-        guard !isMuted else { return }
+        guard !isSilent else { return }
         UIImpactFeedbackGenerator(style: style).impactOccurred()
     }
 
     static func success() {
-        guard !isMuted else { return }
+        guard !isSilent else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
     static func error() {
-        guard !isMuted else { return }
+        guard !isSilent else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.error)
     }
 
     static func selection() {
-        guard !isMuted else { return }
+        guard !isSilent else { return }
         UISelectionFeedbackGenerator().selectionChanged()
     }
 }

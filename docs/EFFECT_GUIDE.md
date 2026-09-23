@@ -132,6 +132,8 @@ the Compare mode on the family page plays all variations side by side.
    On the detail page the same autoplay action runs **once** on arrival (the intro play). A demo that already
    starts itself in `onAppear` must pass `intro: false` so it doesn't play twice. The intro and autoplay must never
    leave the demo pressed/highlighted, and haptics fired after a delay must be guarded with `!ctx.isPreview`.
+   The detail page silences `Haptics.*` for 2.5 s after arrival, a variation switch and Reset (`Haptics.quiet(for:)`),
+   so arrival plays never buzz; `.sensoryFeedback` bypasses this, so demos use `Haptics.*` instead.
    When `ctx.isStill` is true a still thumbnail is being rendered: show the finished state (chart drawn, text revealed).
 3. **Interactive in detail.** In the detail page everything should respond to touch. Show a short hint via
    `DemoHint(text: L("Tap the button", "点击按钮"), ctx: ctx)` when the interaction isn't obvious (hidden in previews).

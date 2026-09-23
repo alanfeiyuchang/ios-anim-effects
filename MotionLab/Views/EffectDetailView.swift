@@ -136,6 +136,7 @@ struct EffectDetailView: View {
         .onAppear {
             // Let the stage and the page entrance have the main thread before thumbnails rasterise.
             SnapshotGate.hold(for: .milliseconds(900))
+            Haptics.quiet(for: 2.5)
             recents.record(effect.id)
         }
         .onDisappear {
@@ -437,6 +438,8 @@ struct EffectDetailView: View {
         copyFeedback?.cancel()
         copied = false
         Haptics.selection()
+        // The new variation plays its arrival silently, like a freshly opened page.
+        Haptics.quiet(for: 2.5)
         withAnimation(reduceMotion ? Animation.easeInOut(duration: 0.2) : Animation.smooth(duration: 0.42)) {
             effect = next
             params = next.defaultParams
@@ -446,8 +449,9 @@ struct EffectDetailView: View {
     }
 
     private func resetDemo() {
-        resetToken += 1
         Haptics.tap()
+        resetToken += 1
+        Haptics.quiet(for: 2.5)
     }
 
     private func toggleFavorite() {

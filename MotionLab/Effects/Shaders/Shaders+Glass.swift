@@ -32,12 +32,12 @@ extension Effect {
         name: L("Liquid Glass Lens", "液态玻璃透镜"),
         summary: L("Drag a Liquid Glass droplet that refracts the content beneath.", "拖动一滴液态玻璃，实时折射下方内容。"),
         prompt: L(
-            "A Liquid Glass droplet (iOS 26 material) rests over a colorful grid of content. Grabbing it keeps the finger's offset and the droplet trails the finger on a tight spring (response ≈ 0.18 s); the glass refracts whatever is beneath in real time, its rim catching specular light. It stretches up to 12% along the exact direction of travel — diagonals included — while narrowing across it, springing round again (response 0.35 s, damping 0.6) on release. A tap makes it pulse like a water bead. On iOS 18 a material droplet sits over a Metal lens that stretches along the same heading and sends a ripple ring out on each tap, so the lensing and its liquid motion survive. A physical, optical layer floating over the UI.",
-            "一滴液态玻璃（iOS 26 材质）停在一片色彩丰富的内容网格之上。按住拖动时保持手指与水滴的相对偏移，水滴以紧致弹簧（响应约 0.18 秒）跟随手指；玻璃实时折射下方内容，边缘捕捉镜面高光。它沿真实运动方向（包括斜向）拉长最多 12%、垂直方向相应收窄，松手后以弹簧（响应 0.35 秒、阻尼 0.6）回弹成正圆。点击时它会像水珠一样脉动。在 iOS 18 上，材质水滴下方的 Metal 透镜随之沿同一方向拉伸，点击时荡开一圈水波，透镜感与液态动感依然保留。整体是一层悬浮于界面之上的真实光学材质。"
+            "A Liquid Glass droplet (iOS 26 material) rests over a colorful grid of content. Grabbing it keeps the finger's offset and the droplet trails the finger on a tight spring (response ≈ 0.18 s); the glass refracts whatever is beneath in real time, its rim catching specular light. It stretches up to 12% along the exact direction of travel — diagonals included — while narrowing across it, springing round again (response 0.35 s, damping 0.6) on release. A tap makes it pulse like a water bead. On iOS 18 a clear, unblurred bead sits over a Metal lens that stretches along the same heading and sends a ripple ring out on each tap, so the lensing and its liquid motion survive. A physical, optical layer floating over the UI.",
+            "一滴液态玻璃（iOS 26 材质）停在一片色彩丰富的内容网格之上。按住拖动时保持手指与水滴的相对偏移，水滴以紧致弹簧（响应约 0.18 秒）跟随手指；玻璃实时折射下方内容，边缘捕捉镜面高光。它沿真实运动方向（包括斜向）拉长最多 12%、垂直方向相应收窄，松手后以弹簧（响应 0.35 秒、阻尼 0.6）回弹成正圆。点击时它会像水珠一样脉动。在 iOS 18 上，透明无模糊的水珠下方由 Metal 透镜随之沿同一方向拉伸，点击时荡开一圈水波，透镜感与液态动感依然保留。整体是一层悬浮于界面之上的真实光学材质。"
         ),
         implementation: L(
-            "On iOS 26 the droplet uses .glassEffect(.regular.interactive(), in: Circle()); earlier systems fall back to .ultraThinMaterial with a gradient rim over an mlLensDrop distortion whose elliptical footprint follows the stretch and whose ripple ring plays on tap. Drag velocity sets a stretch applied as rotate(−θ) → scale → rotate(θ), so it follows any direction.",
-            "iOS 26 上使用 .glassEffect(.regular.interactive(), in: Circle())；更早系统回退为 .ultraThinMaterial 加渐变描边，并对背景施加 mlLensDrop 扭曲：椭圆作用区随拉伸变形，点击时播放水波环。拖动速度决定拉伸量，按 旋转(−θ) → 缩放 → 旋转(θ) 施加，可沿任意方向拉伸。"
+            "On iOS 26 the droplet uses .glassEffect(.regular.interactive(), in: Circle()); earlier systems draw a clear bead (gradient rim, inner hairline, specular highlight — no blur) over an mlLensDrop distortion whose elliptical footprint follows the stretch and whose ripple ring plays on tap. Drag velocity sets a stretch applied as rotate(−θ) → scale → rotate(θ), so it follows any direction.",
+            "iOS 26 上使用 .glassEffect(.regular.interactive(), in: Circle())；更早系统回退为无模糊的透明水珠（渐变描边、内侧细线与高光），并对背景施加 mlLensDrop 扭曲：椭圆作用区随拉伸变形，点击时播放水波环。拖动速度决定拉伸量，按 旋转(−θ) → 缩放 → 旋转(θ) 施加，可沿任意方向拉伸。"
         ),
         apis: ["glassEffect", "Glass.interactive()", "DragGesture", "scaleEffect", "distortionEffect"],
         tags: ["liquid glass", "ios 26", "refraction", "lens", "液态玻璃", "折射", "透镜", "玻璃"],
@@ -58,6 +58,8 @@ private struct GlassmorphismDemo: View {
     @State private var drag: CGSize = .zero
     /// True while a tilt is armed; resets itself if the system cancels the gesture, so the card always settles.
     @GestureState private var tilting = false
+    /// Bumped when the user arms a tilt, so a pending intro/autoplay spring-back never fights the finger.
+    @State private var generation = 0
 
     private var material: Material {
         switch ctx.int("material") {
@@ -112,6 +114,7 @@ private struct GlassmorphismDemo: View {
             .onChanged { value in
                 guard case .second(true, let pending) = value else { return }
                 guard let move = pending else {
+                    generation += 1
                     Haptics.tap(.soft)
                     return
                 }
@@ -126,11 +129,14 @@ private struct GlassmorphismDemo: View {
 
     /// Simulated drag: tilt toward a random corner, then spring back flat.
     private func tiltAndSettle() {
+        generation += 1
+        let token = generation
         withAnimation(.spring(response: 0.8, dampingFraction: 0.7)) {
             drag = CGSize(width: CGFloat.random(in: -110...110), height: CGFloat.random(in: -90...90))
         }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.8))
+            guard token == generation else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { drag = .zero }
         }
     }
@@ -228,6 +234,8 @@ private struct LiquidLensDemo: View {
     /// Counts taps; the fractional part while it animates n → n + 1 drives the fallback lens's ripple ring.
     @State private var ripples: Double = 0
     @State private var size: CGSize = CGSize(width: 340, height: 340)
+    /// Resets on system cancellation too, so the droplet never stays stretched or keeps a stale grab offset.
+    @GestureState private var dragging = false
 
     var body: some View {
         let diameter = ctx.cg("size")
@@ -256,13 +264,14 @@ private struct LiquidLensDemo: View {
                 .position(point)
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
+                        .updating($dragging) { _, state, _ in state = true }
                         .onChanged { value in drag(value, current: point, radius: diameter / 2) }
-                        .onEnded { _ in
-                            grab = nil
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { stretch = 0 }
-                        }
+                        .onEnded { _ in release() }
                 )
                 .simultaneousGesture(TapGesture().onEnded { flex() })
+                .onChange(of: dragging) { _, isDragging in
+                    if !isDragging { release() }
+                }
         }
         .coordinateSpace(.named(Self.space))
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
@@ -296,6 +305,13 @@ private struct LiquidLensDemo: View {
             if angle <= -.pi / 2 { angle += .pi }
             heading = angle
         }
+    }
+
+    /// Normal end or cancellation: forget the grab offset and spring the droplet round again.
+    private func release() {
+        guard grab != nil || stretch != 0 else { return }
+        grab = nil
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { stretch = 0 }
     }
 
     /// Simulated drag: slide diagonally with a stretch, then relax.
@@ -418,11 +434,22 @@ private struct LensDroplet: View {
     }
     #endif
 
+    /// Clear glass, not a material: a blur here would hide the Metal lens refracting beneath it.
+    /// A soft edge gradient and an inner hairline give the bead its thickness instead.
     private var fallback: some View {
-        Circle()
-            .fill(.ultraThinMaterial)
+        let edge = RadialGradient(
+            colors: [.clear, .clear, .white.opacity(0.22)],
+            center: .center,
+            startRadius: 0,
+            endRadius: diameter / 2
+        )
+        return Circle()
+            .fill(tinted ? Palette.violet.opacity(0.14) : Color.white.opacity(0.03))
+            .overlay { Circle().fill(edge) }
             .overlay {
-                Circle().fill(tinted ? Palette.violet.opacity(0.18) : Color.clear)
+                Circle()
+                    .strokeBorder(.white.opacity(0.45), lineWidth: 1)
+                    .padding(2.5)
             }
             .overlay {
                 Circle()

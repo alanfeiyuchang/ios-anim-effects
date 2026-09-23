@@ -45,6 +45,8 @@ private struct SportAltitudeDemo: View {
     @State private var position: CGFloat = 145
     @State private var dragStart: CGFloat?
     @State private var lastIndex = 145
+    /// The settle in flight, so a grab catches the ruler where it is on screen.
+    @State private var inFlight: AltitudeSettle?
 
     private var spacing: CGFloat { max(ctx.cg("spacing"), 4) }
 
@@ -82,8 +84,7 @@ private struct SportAltitudeDemo: View {
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                let start = dragStart ?? position
-                if dragStart == nil { dragStart = position }
+                let start: CGFloat = dragStart ?? grab()
                 var p = start - value.translation.width / spacing
                 if p < 0 {
                     p = rubberBand(p * spacing, limit: 40) / spacing
@@ -109,14 +110,42 @@ private struct SportAltitudeDemo: View {
             }
     }
 
+    /// Halts a settle in flight at the value on screen and starts the drag from there.
+    private func grab() -> CGFloat {
+        let onScreen: CGFloat = inFlight?.value(at: .now) ?? position
+        inFlight = nil
+        var still = Transaction()
+        still.disablesAnimations = true
+        withTransaction(still) { position = onScreen }
+        dragStart = onScreen
+        return onScreen
+    }
+
     private func settle(to target: CGFloat) {
-        withAnimation(.spring(response: 0.55, dampingFraction: ctx["damping"])) { position = target }
+        let spring = Spring(response: 0.55, dampingRatio: ctx["damping"])
+        inFlight = AltitudeSettle(from: position, delta: target - position, start: .now, spring: spring)
+        withAnimation(.spring(spring)) { position = target }
         lastIndex = Int(target)
     }
 
     private func randomJump() {
         let target = CGFloat(Int.random(in: 30...200))
         settle(to: target)
+    }
+}
+
+/// A settle described by its start, so the position on screen can be computed at any moment.
+private struct AltitudeSettle {
+    let from: CGFloat
+    let delta: CGFloat
+    let start: Date
+    let spring: Spring
+
+    func value(at date: Date) -> CGFloat {
+        let elapsed: Double = date.timeIntervalSince(start)
+        guard elapsed < spring.settlingDuration else { return from + delta }
+        let moved: CGFloat = spring.value(target: delta, initialVelocity: 0, time: elapsed)
+        return from + moved
     }
 }
 

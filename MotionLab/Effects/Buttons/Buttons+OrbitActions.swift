@@ -38,6 +38,8 @@ private struct ButtonOrbitActionsDemo: View {
     @State private var open = false
     @State private var pulses: [Int] = [0, 0, 0, 0, 0]
     @State private var step = 0
+    /// Detail intro: opens the orbit, then fires a satellite, which folds everything back in.
+    @State private var introTask: Task<Void, Never>?
 
     private static let satellites: [ButtonSatellite] = [
         ButtonSatellite(symbol: "camera.fill", color: Palette.coral, name: L("Camera", "相机")),
@@ -61,7 +63,10 @@ private struct ButtonOrbitActionsDemo: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.4, delay: 0.4) { previewStep() }
+        .autoplay(ctx.isPreview, every: 1.4, delay: 0.4) {
+            if ctx.isPreview { previewStep() } else { playIntro() }
+        }
+        .onDisappear { cancelIntro() }
     }
 
     private var orbitRing: some View {
@@ -75,7 +80,10 @@ private struct ButtonOrbitActionsDemo: View {
     }
 
     private var core: some View {
-        Button(action: toggle) {
+        Button {
+            cancelIntro()
+            toggle()
+        } label: {
             Image(systemName: "sparkles")
                 .font(.system(size: 26, weight: .semibold))
                 .foregroundStyle(.white)
@@ -98,7 +106,10 @@ private struct ButtonOrbitActionsDemo: View {
         let radius: CGFloat = open ? ctx.cg("radius") : 0
         let order = open ? index : count - 1 - index
         let delay = Double(order) * ctx["stagger"]
-        return Button { pick(index) } label: {
+        return Button {
+            cancelIntro()
+            pick(index)
+        } label: {
             Image(systemName: item.symbol)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.white)
@@ -125,19 +136,36 @@ private struct ButtonOrbitActionsDemo: View {
         .animation(.spring(response: 0.5, dampingFraction: 0.72).delay(delay), value: open)
     }
 
-    private func toggle() {
+    private func toggle(silent: Bool = false) {
         open.toggle()
-        Haptics.tap()
+        if !silent { Haptics.tap() }
     }
 
-    private func pick(_ index: Int) {
+    private func pick(_ index: Int, silent: Bool = false) {
         guard open else { return }
         pulses[index] += 1
-        Haptics.success()
+        if !silent { Haptics.success() }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(250))
             open = false
         }
+    }
+
+    /// Detail intro: the whole choreography once, ending closed.
+    private func playIntro() {
+        cancelIntro()
+        if !open { toggle(silent: true) }
+        introTask = Task {
+            try? await Task.sleep(for: .seconds(1.3))
+            guard !Task.isCancelled else { return }
+            pick(2, silent: true)
+            introTask = nil
+        }
+    }
+
+    private func cancelIntro() {
+        introTask?.cancel()
+        introTask = nil
     }
 
     private func previewStep() {

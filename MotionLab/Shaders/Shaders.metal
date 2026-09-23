@@ -325,7 +325,8 @@ half4 mlChromatic(float2 position, SwiftUI::Layer layer, float2 size, float2 shi
 half4 mlKaleidoscope(float2 position, SwiftUI::Layer layer, float2 size, float segments, float rotation, float spin, float zoom) {
     float2 c = size * 0.5;
     float2 d = position - c;
-    float r = length(d) * zoom;
+    // zoom ≥ 1 magnifies, so every sample stays inside the source circle (no clamped rim streaks).
+    float r = length(d) / max(zoom, 1.0);
     float seg = 6.2831853 / max(floor(segments), 2.0);
     float a = atan2(d.y, d.x) + rotation;
     a = a - seg * floor(a / seg);
@@ -539,7 +540,8 @@ half4 mlJellyPress(float2 position, SwiftUI::Layer layer, float2 center, float r
     }
     float t = dist / rad;
     float fall = (1.0 - t * t) * (1.0 - t * t);
-    float2 p = position - d * strength * fall - stretch * fall;
+    // + stretch: content lags behind the drag (shifts against the velocity), like a viscous gel.
+    float2 p = position - d * strength * fall + stretch * fall;
     half4 c = layer.sample(p);
     float2 dir = dist > 0.001 ? d / dist : float2(0.0);
     float slope = strength * 4.0 * t * (1.0 - t * t);

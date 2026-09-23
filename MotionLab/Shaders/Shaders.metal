@@ -440,7 +440,7 @@ static float mlWaterHeight(float2 p, float t, float2 origin, float age) {
 }
 
 static float mlCausticNetwork(float2 uv, float time) {
-    // Not wrapped with fract: the stage is < 2 tiles wide, and skipping the wrap avoids a faint seam.
+    // Deliberately not wrapped with fract(): the pattern never needs to tile, so there is no seam.
     float2 p = uv * 6.2831853 - 250.0;
     float2 i = p;
     float c = 1.0;

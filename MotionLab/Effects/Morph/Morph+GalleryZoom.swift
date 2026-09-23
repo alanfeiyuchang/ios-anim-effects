@@ -54,6 +54,7 @@ private struct GalleryZoomDemo: View {
     @State private var selected: Int?
     @State private var drag: CGSize = .zero
     @State private var autoIndex = 4
+    @Environment(\.colorScheme) private var colorScheme
 
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
     private var dragProgress: CGFloat { min(max(drag.height, 0) / 300, 1) }
@@ -71,6 +72,18 @@ private struct GalleryZoomDemo: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(
+                text: selected == nil
+                    ? L("Tap a photo", "点击一张照片")
+                    : L("Drag down to close", "向下拖动即可关闭"),
+                ctx: ctx
+            )
+            .environment(\.colorScheme, selected == nil ? colorScheme : .dark)
+            .padding(.bottom, 12)
+            .opacity(dragProgress > 0 ? 0 : 1)
+            .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 1.7) {
             if selected == nil {
                 open(galleryPhotos[autoIndex % galleryPhotos.count].id)

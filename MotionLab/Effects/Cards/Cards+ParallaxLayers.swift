@@ -8,8 +8,8 @@ extension Effect {
         name: L("Layered Parallax Card", "分层视差卡片"),
         summary: L("A landscape card whose sky, sun, ridges and title drift at different depths.", "风景卡片中的天空、太阳、山脊与标题以不同景深错位漂移。"),
         prompt: L(
-            "A tall poster card (240×300 pt, 28 pt corners) illustrates a dusk landscape built from separate layers: a violet-to-peach sky with faint stars, a glowing sun, a translucent far ridge, a dark near ridge and a bold title floating on top. Dragging tilts the card up to ~8° in perspective while every layer translates against the gesture by an amount proportional to its depth — stars ×0.1, sun ×0.25, far ridge ×0.55, near ridge ×0.9, title ×1.5 of a 16 pt base — revealing convincing depth like tvOS focus posters. Layers are overscanned so edges never show. Release returns all layers together on a soft spring (response ≈0.55 s, damping ≈0.7).",
-            "一张竖版海报卡片（240×300 pt，28 pt 圆角）描绘黄昏风景，由多个独立图层组成：紫色到蜜桃色的天空与点点星光、发光的太阳、半透明远山、深色近山，以及浮于最上层的粗体标题。拖动时卡片以透视方式倾斜最多约 8°，同时每一层按其景深比例朝手势反方向平移——以 16 pt 为基准，星空 ×0.1、太阳 ×0.25、远山 ×0.55、近山 ×0.9、标题 ×1.5——呈现类似 tvOS 焦点海报的真实纵深感。各图层留有出血，边缘永不露底。松手后所有图层以柔和弹簧（响应约 0.55 秒、阻尼约 0.7）一同归位。"
+            "A tall poster card (240×300 pt, 28 pt corners) illustrates a dusk landscape built from separate layers: a violet-to-peach sky with faint stars, a glowing sun, a translucent far ridge, a dark near ridge and a bold title floating on top. Dragging tilts the card up to ~8° in perspective while every layer translates against the gesture by an amount proportional to its depth — stars ×0.1, sun ×0.25, far ridge ×0.55, near ridge ×0.9, title ×1.5 of a 16 pt base — revealing convincing depth like tvOS focus posters. Layers are overscanned so edges never show. Release returns all layers together on a soft spring (response ≈0.55 s, damping ≈0.7). Until the first touch the card drifts in a slow idle sway so the depth is visible on arrival.",
+            "一张竖版海报卡片（240×300 pt，28 pt 圆角）描绘黄昏风景，由多个独立图层组成：紫色到蜜桃色的天空与点点星光、发光的太阳、半透明远山、深色近山，以及浮于最上层的粗体标题。拖动时卡片以透视方式倾斜最多约 8°，同时每一层按其景深比例朝手势反方向平移——以 16 pt 为基准，星空 ×0.1、太阳 ×0.25、远山 ×0.55、近山 ×0.9、标题 ×1.5——呈现类似 tvOS 焦点海报的真实纵深感。各图层留有出血，边缘永不露底。松手后所有图层以柔和弹簧（响应约 0.55 秒、阻尼约 0.7）一同归位。首次触摸前，卡片会缓慢地自行摇摆，一进入页面即可看出纵深。"
         ),
         implementation: L(
             "A ZStack of shapes and gradients where each layer gets .offset(normalisedDrag × depth × amount); a pair of rotation3DEffect modifiers add the tilt and clipShape hides the overscan.",
@@ -30,31 +30,38 @@ extension Effect {
 private struct CardsParallaxDemo: View {
     let ctx: DemoContext
     @State private var point: CGSize = .zero
+    /// Until the first touch the layers drift on their own so the depth reads on arrival.
+    @State private var touched = false
 
     var body: some View {
         VStack(spacing: 18) {
-            if ctx.isPreview {
-                TimelineView(.animation) { timeline in
-                    let t = timeline.date.timeIntervalSinceReferenceDate
-                    CardsParallaxCard(
-                        point: CGSize(width: sin(t * 0.8) * 0.9, height: cos(t * 1.1) * 0.5),
-                        amount: ctx.cg("depth"),
-                        tilt: ctx["tilt"],
-                        language: ctx.language
-                    )
-                }
-            } else {
-                CardsParallaxCard(point: point, amount: ctx.cg("depth"), tilt: ctx["tilt"], language: ctx.language)
-                    .gesture(drag)
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: touched)) { timeline in
+                CardsParallaxCard(
+                    point: touched ? point : sway(at: timeline.date.timeIntervalSinceReferenceDate),
+                    amount: ctx.cg("depth"),
+                    tilt: ctx["tilt"],
+                    language: ctx.language
+                )
             }
+            .gesture(drag)
             DemoHint(text: L("Drag the card", "拖动卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// Idle drift: full swing in previews, a gentler sway on the detail stage.
+    private func sway(at t: Double) -> CGSize {
+        let amount = ctx.isPreview ? 1.0 : 0.6
+        return CGSize(width: sin(t * 0.8) * 0.9 * amount, height: cos(t * 1.1) * 0.5 * amount)
+    }
+
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                if !touched {
+                    point = sway(at: Date().timeIntervalSinceReferenceDate)
+                    touched = true
+                }
                 let x = (value.location.x / 240 - 0.5) * 2
                 let y = (value.location.y / 300 - 0.5) * 2
                 withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.85)) {

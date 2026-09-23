@@ -8,8 +8,8 @@ extension Effect {
         name: L("3D Tilt Card", "3D 倾斜卡片"),
         summary: L("Drag to tilt a glossy card in 3D with a moving glare and shifting shadow.", "拖动让卡片在三维空间中倾斜，高光随指移动，阴影随之偏移。"),
         prompt: L(
-            "A glossy payment card (250×158 pt, 18 pt continuous corners, vivid indigo-to-pink gradient) rests flat with a soft drop shadow. As the finger drags across it, the card tilts toward the touch point in perspective — up to ±16° around both the X and Y axes — following the finger through a tight interactive spring (~250 ms) while lifting to 104% scale. A radial specular glare tracks the finger across the surface in overlay blend, the inner light blobs parallax slightly in the opposite direction, and the shadow slides opposite the tilt and grows larger and softer as the card rises. On release it springs back flat with a gentle overshoot (response 0.5 s, damping 0.6). It should feel like a weighty physical object catching studio light.",
-            "一张光泽感支付卡片（250×158 pt，18 pt 连续圆角，靛蓝到粉色的鲜亮渐变）平放静止，带柔和投影。手指在卡面拖动时，卡片以透视方式朝触点倾斜，绕 X、Y 轴最大各 ±16°，通过紧致的交互弹簧（约 250 毫秒）跟手，同时微微抬升至 104%。一束径向镜面高光以叠加混合模式随手指在卡面游走，卡内光斑向反方向轻微视差位移；投影朝倾斜的反方向滑动，并随抬升变大、变柔。松手后卡片以弹簧（响应 0.5 秒、阻尼 0.6）带轻微过冲回正。整体像一块有分量的实体卡片在影棚灯下反光。"
+            "A glossy payment card (250×158 pt, 18 pt continuous corners, vivid indigo-to-pink gradient) rests flat with a soft drop shadow. As the finger drags across it, the card tilts toward the touch point in perspective — up to ±16° around both the X and Y axes — following the finger through a tight interactive spring (~250 ms) while lifting to 104% scale. A radial specular glare tracks the finger across the surface in overlay blend, the inner light blobs parallax slightly in the opposite direction, and the shadow slides opposite the tilt and grows larger and softer as the card rises. On release it springs back flat with a gentle overshoot (response 0.5 s, damping 0.6). Before the first touch the card drifts through a slow, gentle idle tilt so the glare is already moving on arrival; the first touch picks up from that pose. It should feel like a weighty physical object catching studio light.",
+            "一张光泽感支付卡片（250×158 pt，18 pt 连续圆角，靛蓝到粉色的鲜亮渐变）平放静止，带柔和投影。手指在卡面拖动时，卡片以透视方式朝触点倾斜，绕 X、Y 轴最大各 ±16°，通过紧致的交互弹簧（约 250 毫秒）跟手，同时微微抬升至 104%。一束径向镜面高光以叠加混合模式随手指在卡面游走，卡内光斑向反方向轻微视差位移；投影朝倾斜的反方向滑动，并随抬升变大、变柔。松手后卡片以弹簧（响应 0.5 秒、阻尼 0.6）带轻微过冲回正。首次触摸前，卡片会缓慢轻柔地自行摇摆，一进入页面高光就在流动；手指按下时从当前姿态无缝接管。整体像一块有分量的实体卡片在影棚灯下反光。"
         ),
         implementation: L(
             "The drag location is normalised to −1…1 and drives two rotation3DEffect modifiers, a RadialGradient glare whose center follows the finger, and the shadow offset; release animates back to zero with a spring.",
@@ -20,8 +20,8 @@ extension Effect {
         params: [
             .slider("angle", L("Max tilt", "最大倾角"), 4...30, default: 16, step: 1, decimals: 0, unit: "°"),
             .slider("glare", L("Glare intensity", "高光强度"), 0...1, default: 0.6),
-            .slider("response", L("Spring response", "弹簧响应"), 0.2...1.0, default: 0.5, unit: "s"),
-            .slider("damping", L("Damping", "阻尼"), 0.3...1.0, default: 0.6),
+            .slider("follow", L("Follow spring", "跟手弹簧"), 0.1...0.6, default: 0.25, unit: "s"),
+            .slider("response", L("Release spring", "松手回弹"), 0.2...1.0, default: 0.5, unit: "s"),
         ]
     ) { ctx in
         CardsTiltDemo(ctx: ctx)
@@ -33,42 +33,51 @@ private struct CardsTiltDemo: View {
     /// Normalised touch position, −1…1 on each axis.
     @State private var tilt: CGSize = .zero
     @State private var touching = false
+    /// Until the first touch the card drifts through a slow idle tilt, so the stage is alive on arrival.
+    @State private var touched = false
 
     var body: some View {
         VStack(spacing: 28) {
-            if ctx.isPreview {
-                TimelineView(.animation) { timeline in
-                    let t = timeline.date.timeIntervalSinceReferenceDate
-                    CardsTiltedCard(
-                        tilt: CGSize(width: sin(t * 1.3) * 0.85, height: cos(t * 0.9) * 0.7),
-                        lifted: true,
-                        maxAngle: ctx["angle"],
-                        glare: ctx["glare"]
-                    )
-                }
-            } else {
-                CardsTiltedCard(tilt: tilt, lifted: touching, maxAngle: ctx["angle"], glare: ctx["glare"])
-                    .gesture(drag)
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: touched)) { timeline in
+                let idle = sway(at: timeline.date.timeIntervalSinceReferenceDate)
+                CardsTiltedCard(
+                    tilt: touched ? tilt : idle,
+                    lifted: touched ? touching : ctx.isPreview,
+                    maxAngle: ctx["angle"],
+                    glare: ctx["glare"]
+                )
             }
+            .gesture(drag)
             DemoHint(text: L("Drag across the card", "在卡片上拖动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// Idle Lissajous drift: full swing in previews, a gentle ~45% sway on the detail stage.
+    private func sway(at t: Double) -> CGSize {
+        let amount = ctx.isPreview ? 1.0 : 0.45
+        return CGSize(width: sin(t * 1.3) * 0.85 * amount, height: cos(t * 0.9) * 0.7 * amount)
+    }
+
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                if !touched {
+                    // Pick up from the idle pose instead of jumping.
+                    tilt = sway(at: Date().timeIntervalSinceReferenceDate)
+                    touched = true
+                }
                 let size = CardsTiltedCard.size
                 let x = (value.location.x / size.width - 0.5) * 2
                 let y = (value.location.y / size.height - 0.5) * 2
                 if !touching { Haptics.tap(.soft) }
-                withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.8)) {
+                withAnimation(.interactiveSpring(response: ctx["follow"], dampingFraction: 0.8)) {
                     tilt = CGSize(width: x.clamped(to: -1...1), height: y.clamped(to: -1...1))
                     touching = true
                 }
             }
             .onEnded { _ in
-                withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+                withAnimation(.spring(response: ctx["response"], dampingFraction: 0.6)) {
                     tilt = .zero
                     touching = false
                 }

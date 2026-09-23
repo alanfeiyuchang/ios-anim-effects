@@ -17,34 +17,68 @@ enum ShaderEffects {
         .shaderChromatic,
         .shaderKaleidoscope,
         .shaderEdgeScan,
+        .shaderProgressiveBlur,
+        .shaderCaustics,
     ]
 }
 
 /// Colourful sample artwork that the shader demos distort.
+/// Each demo picks its own variant (palette, glyph, word and motif layout) so no two stages look alike.
 struct ShaderArtwork: View {
     var variant: Int = 0
 
-    private var colors: [Color] {
-        variant == 0
-            ? [Palette.indigo, Palette.violet, Palette.pink]
-            : [Palette.mint, Palette.sky, Palette.blue]
+    private struct Look {
+        let colors: [Color]
+        let accent: Color
+        let symbol: String
+        let word: String
+        /// Offsets of the big soft disc and the small accent disc.
+        let disc: CGSize
+        let dot: CGSize
+    }
+
+    private var look: Look {
+        switch variant {
+        case 1:
+            return Look(colors: [Palette.mint, Palette.sky, Palette.blue], accent: Palette.pink, symbol: "drop.fill", word: "SHADER",
+                        disc: CGSize(width: 80, height: -100), dot: CGSize(width: -86, height: 84))
+        case 2:
+            return Look(colors: [Palette.sky, Palette.blue, Palette.indigo], accent: Palette.mint, symbol: "water.waves", word: "RIPPLE",
+                        disc: CGSize(width: -70, height: -110), dot: CGSize(width: 90, height: 96))
+        case 3:
+            return Look(colors: [Palette.amber, Palette.coral, Palette.pink], accent: Color(hex: 0x3A1C71), symbol: "flame.fill", word: "EMBER",
+                        disc: CGSize(width: 86, height: 110), dot: CGSize(width: -84, height: -96))
+        case 4:
+            return Look(colors: [Palette.violet, Palette.pink, Palette.coral], accent: Palette.amber, symbol: "tornado", word: "TWIRL",
+                        disc: CGSize(width: -90, height: 90), dot: CGSize(width: 88, height: -104))
+        case 5:
+            return Look(colors: [Palette.pink, Palette.violet, Palette.sky], accent: Palette.mint, symbol: "bolt.fill", word: "SPEED",
+                        disc: CGSize(width: 70, height: 104), dot: CGSize(width: -92, height: -70))
+        case 6:
+            return Look(colors: [Color(hex: 0x14B8A6), Palette.blue, Color(hex: 0x312E81)], accent: Palette.amber, symbol: "viewfinder", word: "SCAN",
+                        disc: CGSize(width: -84, height: -96), dot: CGSize(width: 90, height: 90))
+        default:
+            return Look(colors: [Palette.indigo, Palette.violet, Palette.pink], accent: Palette.amber, symbol: "sparkles", word: "MOTION",
+                        disc: CGSize(width: 80, height: -100), dot: CGSize(width: -86, height: 84))
+        }
     }
 
     var body: some View {
+        let look = look
         ZStack {
-            LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(colors: look.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
             Circle()
                 .fill(Color.white.opacity(0.22))
                 .frame(width: 190, height: 190)
-                .offset(x: 80, y: -100)
+                .offset(look.disc)
             Circle()
-                .fill((variant == 0 ? Palette.amber : Palette.pink).opacity(0.75))
+                .fill(look.accent.opacity(0.75))
                 .frame(width: 96, height: 96)
-                .offset(x: -86, y: 84)
+                .offset(look.dot)
             VStack(spacing: 10) {
-                Image(systemName: variant == 0 ? "sparkles" : "drop.fill")
+                Image(systemName: look.symbol)
                     .font(.system(size: 60, weight: .semibold))
-                Text(variant == 0 ? "MOTION" : "SHADER")
+                Text(verbatim: look.word)
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .tracking(4)
             }

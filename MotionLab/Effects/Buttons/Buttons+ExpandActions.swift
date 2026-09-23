@@ -50,6 +50,7 @@ private struct ButtonExpandActionsDemo: View {
     @State private var freshID: Int?
     @State private var nextID = 100
     @State private var step = 0
+    @State private var total = 24
 
     private let items: [ButtonActionItem] = [
         ButtonActionItem(symbol: "doc.viewfinder.fill", color: Palette.coral, name: L("Scan", "扫描"), newTitle: L("New scan", "新扫描件")),
@@ -103,14 +104,14 @@ private struct ButtonExpandActionsDemo: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer(minLength: 0)
-                Text("\(notes.count + 21)")
+                Text("\(total)")
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .contentTransition(.numericText(value: Double(notes.count)))
+                    .contentTransition(.numericText(value: Double(total)))
             }
-            ForEach(notes.prefix(3)) { note in
+            ForEach(notes) { note in
                 noteRow(note)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity))
             }
             Spacer(minLength: 0)
         }
@@ -221,6 +222,7 @@ private struct ButtonExpandActionsDemo: View {
             notes.insert(note, at: 0)
             if notes.count > 3 { notes.removeLast() }
             freshID = note.id
+            total += 1
         }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.2))

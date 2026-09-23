@@ -100,6 +100,8 @@ private struct LineDrawDemo: View {
     /// Seeded fully drawn so still snapshots show the line; `onAppear` rewinds and draws it on.
     @State private var progress: Double = 1
     @State private var dataset = 0
+    /// Bumped by every replay; an older pending redraw bails out so rapid taps never swap data mid-draw.
+    @State private var generation = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -166,8 +168,11 @@ private struct LineDrawDemo: View {
 
     private func replay() {
         withAnimation(.easeIn(duration: 0.25)) { progress = 0 }
+        generation += 1
+        let current = generation
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.3))
+            guard current == generation else { return }
             dataset += 1
             draw()
         }

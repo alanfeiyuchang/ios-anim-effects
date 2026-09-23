@@ -48,6 +48,8 @@ private struct SportHeartDemo: View {
     @State private var sprinting = false
     @State private var beats = 0
     @State private var halo: Double = 0
+    /// Detail intro: sprints, then recovers on its own so the stage doesn't stay pinned in the red zone.
+    @State private var recoverTask: Task<Void, Never>?
 
     private var maxHR: Double { max(ctx["maxHR"], 120) }
 
@@ -64,7 +66,10 @@ private struct SportHeartDemo: View {
         }
         .task(id: sprinting) { await drift() }
         .task { await beat() }
-        .autoplay(ctx.isPreview, every: 4.5, delay: 1.5) { toggleSprint() }
+        .autoplay(ctx.isPreview, every: 4.5, delay: 1.5) {
+            if ctx.isPreview { toggleSprint() } else { introSprint() }
+        }
+        .onDisappear { recoverTask?.cancel() }
     }
 
     private var card: some View {
@@ -83,12 +88,27 @@ private struct SportHeartDemo: View {
         .frame(width: 280)
         .signatureCard()
         .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .onTapGesture { toggleSprint() }
+        .onTapGesture {
+            recoverTask?.cancel()
+            recoverTask = nil
+            toggleSprint()
+        }
     }
 
     private func toggleSprint() {
         sprinting.toggle()
         if !ctx.isPreview { Haptics.tap(.medium) }
+    }
+
+    private func introSprint() {
+        recoverTask?.cancel()
+        sprinting = true
+        recoverTask = Task {
+            try? await Task.sleep(for: .seconds(3.2))
+            guard !Task.isCancelled else { return }
+            sprinting = false
+            recoverTask = nil
+        }
     }
 
     private func drift() async {

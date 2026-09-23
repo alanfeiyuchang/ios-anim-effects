@@ -42,6 +42,8 @@ private struct ReededGlassDemo: View {
     @State private var panelX: CGFloat = 130
     /// Finger-to-panel-center offset captured when a drag starts.
     @State private var grab: CGFloat?
+    /// nil until a touch picks a direction; only horizontal-first drags move the panel.
+    @State private var engaged: Bool?
     @State private var detentIndex = 1
 
     var body: some View {
@@ -63,20 +65,24 @@ private struct ReededGlassDemo: View {
         .autoplay(ctx.isPreview, every: 1.6, delay: 0.4) { glideToNext() }
     }
 
-    /// Only the panel itself is draggable, so swipes elsewhere still scroll the page.
+    /// Only the panel itself is draggable, and only horizontally, so vertical swipes still scroll the page.
     private var handle: some View {
         Color.clear
             .frame(width: ReededLayout.panelWidth, height: ReededLayout.size.height)
             .contentShape(Rectangle())
             .position(x: panelX, y: ReededLayout.size.height / 2)
             .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .named(ReededLayout.space))
+                DragGesture(minimumDistance: 10, coordinateSpace: .named(ReededLayout.space))
                     .onChanged { value in drag(value) }
-                    .onEnded { value in settle(value) }
+                    .onEnded { value in end(value) }
             )
     }
 
     private func drag(_ value: DragGesture.Value) {
+        if engaged == nil {
+            engaged = abs(value.translation.width) > abs(value.translation.height)
+        }
+        guard engaged == true else { return }
         if grab == nil {
             grab = panelX - value.startLocation.x
             Haptics.tap(.soft)
@@ -84,6 +90,13 @@ private struct ReededGlassDemo: View {
         let offset = grab ?? 0
         let halfPanel = ReededLayout.panelWidth / 2
         panelX = (value.location.x + offset).clamped(to: -halfPanel * 0.4...(ReededLayout.size.width + halfPanel * 0.4))
+    }
+
+    private func end(_ value: DragGesture.Value) {
+        let didEngage = engaged == true
+        engaged = nil
+        guard didEngage else { return }
+        settle(value)
     }
 
     private func settle(_ value: DragGesture.Value) {

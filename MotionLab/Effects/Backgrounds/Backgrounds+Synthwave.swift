@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A retro-futurist 1980s horizon. Upper half: a violet-to-magenta dusk gradient with a large sun filled from butter yellow to hot pink; horizontal slits cut its lower half, thin near the center and thicker toward the horizon, sliding steadily downward. Lower half: a near-black purple floor with a glowing magenta perspective grid — lines converge to a central vanishing point while rungs rush toward the viewer with correct 1/z spacing, looping seamlessly. Every line has a blurred neon bloom under a crisp core, the far grid fades into horizon haze, and a hot pink horizon line glows. Pressing and holding floors the throttle: speed eases up to 4× over about half a second and the bloom thickens, then coasts back to cruise on release. Hypnotic, nostalgic, cinematic.",
-            "八十年代复古未来主义的地平线。上半部是紫到品红的黄昏渐变，中央一轮巨大的落日由奶油黄过渡到亮粉；落日下半部被数道水平缝隙切开，越近中心越细、越近地平线越粗，并持续向下滑动。下半部是近黑的紫色地面，铺着发光的品红透视网格：纵线汇聚于中央灭点，横线按正确的 1/z 间距朝观者疾驰而来，无缝循环。每条网格线都是清晰线芯叠加模糊霓虹辉光，远处淡入地平线雾气，地平线本身是一道炽热的粉色光线。长按即踩下油门：速度在约半秒内平滑升至 4 倍，辉光随之变粗，松手后缓缓回落到巡航速度。令人着迷，怀旧而富有电影感。"
+            "八十年代复古未来主义地平线。上半部是紫到品红的黄昏渐变，中央一轮巨大的落日由奶油黄过渡到亮粉；落日下半部被数道水平缝隙切开，越近中心越细、越近地平线越粗并持续下滑。下半部是近黑的紫色地面，铺着发光的品红透视网格：纵线汇聚于中央灭点，横线按正确的 1/z 间距朝观者疾驰而来，无缝循环。每条网格线都是清晰线芯叠加模糊霓虹辉光，远处淡入地平线雾气，地平线是一道炽热的粉色光线。长按即踩下油门：速度在约半秒内平滑升至 4 倍，辉光随之变粗，松手后缓缓回落到巡航速度。怀旧而富有电影感。"
         ),
         implementation: L(
             "A single Canvas draws sky, a sun clipped by an inverse stripe path, the floor, then the grid path twice (a blurred drawLayer for bloom plus a crisp stroke) and a horizon haze gradient. A never-completing long press reports pressing, and a smoothed throttle multiplies the clock speed.",

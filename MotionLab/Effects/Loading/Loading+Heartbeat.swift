@@ -29,18 +29,34 @@ extension Effect {
     }
 }
 
+/// Sweep phase (in strips) that stays continuous when the sweep time changes,
+/// so moving the BPM or beats slider changes speed instead of teleporting the write head.
+private struct HeartbeatSweepClock {
+    var anchorDate = Date()
+    var anchorPhase: Double = 0
+
+    func phase(at date: Date, rate: Double) -> Double {
+        anchorPhase + date.timeIntervalSince(anchorDate) * rate
+    }
+
+    mutating func rebase(at date: Date, oldRate: Double) {
+        anchorPhase = phase(at: date, rate: oldRate)
+        anchorDate = date
+    }
+}
+
 private struct HeartbeatDemo: View {
     let ctx: DemoContext
+    @State private var clock = HeartbeatSweepClock()
 
     var body: some View {
         let zh = ctx.language == .zh
         let bpm: Double = max(ctx["bpm"], 20)
         let beats: Double = max(ctx["beats"], 0.5)
+        let beatTime: Double = 60 / bpm
+        let sweep: Double = beatTime * beats
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-            let t: Double = timeline.date.timeIntervalSinceReferenceDate
-            let beatTime: Double = 60 / bpm
-            let sweep: Double = beatTime * beats
-            let head: Double = (t / sweep).truncatingRemainder(dividingBy: 1)
+            let head: Double = clock.phase(at: timeline.date, rate: 1 / sweep).truncatingRemainder(dividingBy: 1)
             // Beat phase under the write head, so the heart pops exactly when the head crosses an R peak.
             let headBeat: Double = (head * beats).truncatingRemainder(dividingBy: 1)
             let sinceR: Double = (headBeat - 0.32 + 1).truncatingRemainder(dividingBy: 1) * beatTime
@@ -56,6 +72,7 @@ private struct HeartbeatDemo: View {
             .demoCard()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: sweep) { old, _ in clock.rebase(at: .now, oldRate: 1 / old) }
     }
 
     private func header(zh: Bool, bpm: Double, sinceR: Double) -> some View {

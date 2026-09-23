@@ -11,8 +11,8 @@ extension Effect {
             "漂浮的节点彼此靠近便自动连线，手指化身枢纽将它们聚拢。"
         ),
         prompt: L(
-            "A deep navy-to-indigo backdrop holds ~42 small star nodes, kept below the headline, (1.2–2.6 pt, gently twinkling) that drift on slow, independent sine paths. Every pair closer than the link distance (≈ 95 pt) is joined by a hairline whose opacity (5% up to about 20%) and weight rise with proximity ((1 − d / link)², four tiers), so the web stays a quiet texture, so the web constantly knits and unknits as nodes wander. Tapping, or dragging sideways across the stage, adds a glowing mint hub under the finger: nodes within ≈ 130 pt are drawn toward it with a quadratic falloff and connect to it with brighter mint lines, and on release the hub fades out over ~300 ms while the nodes relax back to their paths. Quiet, intelligent and quietly alive — ideal behind AI, network or onboarding screens.",
-            "深海军蓝到靛蓝的背景中，约 42 个细小的星点节点（1.2–2.6pt，轻微闪烁）分布在标题下方，各自沿缓慢的正弦路径漂移。任意两个节点距离小于连线阈值（约 95pt）时，便以一根发丝细线相连，线的透明度（5% 到约 20%）与粗细随距离接近而增强（(1 − d / 阈值)²，分四档），网络始终是一层安静的纹理，节点游走时网络随之不断编织、拆解。点击或横向拖过舞台，指尖下出现一个发光的薄荷绿枢纽：约 130pt 内的节点按二次衰减被吸向它，并以更亮的薄荷绿线条与之相连；松手后枢纽在约 300ms 内淡出，节点缓缓回到原本的轨迹。安静、智慧、暗含生命力，适合作为 AI、网络或引导页的背景。"
+            "A deep navy-to-indigo backdrop holds ~42 small star nodes (1.2–2.6 pt, gently twinkling) scattered below the headline, each drifting on its own slow sine path. Any two nodes closer than the link distance (≈ 95 pt) are joined by a hairline whose opacity (5–20%) and weight rise with proximity ((1 − d/link)², four tiers), so the web stays a quiet texture that constantly knits and unknits as nodes wander. Tapping, or dragging sideways across the stage, adds a glowing mint hub under the finger: every node within 130 pt is pulled toward it with a quadratic falloff and wired to it with a brighter mint line, and on release the hub fades out over ~300 ms while the nodes relax back to their paths. Calm, intelligent and quietly alive — ideal behind AI, network or onboarding screens.",
+            "深海军蓝到靛蓝的背景里，约 42 个细小星点（1.2–2.6pt，轻微闪烁）散布在标题下方，各自沿缓慢的正弦路径漂移。任意两点距离小于连线阈值（约 95pt）时以发丝细线相连，透明度（5%–20%）与粗细随距离接近而增强（(1 − d/阈值)²，分四档），网络如一层安静的纹理，随节点游走不断编织、拆解。点击或横向拖过舞台，指尖下出现发光的薄荷绿枢纽：130pt 内的节点按二次衰减被吸向它，并以更亮的薄荷绿线与之相连；松手后枢纽约 300ms 淡出，节点缓缓回到原轨迹。沉静而富有生命力，适合 AI、网络或引导页背景。"
         ),
         implementation: L(
             "A Canvas inside TimelineView computes node positions as pure functions of index and time, bins every close pair into four Paths by strength (four strokes per frame), and eases a hub point and its presence in a small reference-type model.",
@@ -28,6 +28,11 @@ extension Effect {
     ) { ctx in
         ConstellationDemo(ctx: ctx)
     }
+}
+
+/// One radius for both the hub's pull and its mint links, so every wired node is also being drawn in.
+private enum ConstellationHub {
+    static let reach: CGFloat = 130
 }
 
 private final class ConstellationModel {
@@ -105,7 +110,7 @@ private struct ConstellationCanvas: View {
             let t = model.step(now: now, speed: speed, simulated: simulated)
             let points = ConstellationCanvas.nodes(count: max(count, 2), size: size, t: t, hub: model.hub, presence: model.presence)
             ConstellationCanvas.drawLinks(&context, points: points, link: max(link, 1))
-            ConstellationCanvas.drawHub(&context, points: points, hub: model.hub, presence: model.presence, link: max(link, 1))
+            ConstellationCanvas.drawHub(&context, points: points, hub: model.hub, presence: model.presence)
             ConstellationCanvas.drawNodes(&context, points: points, t: t)
         }
     }
@@ -124,7 +129,7 @@ private struct ConstellationCanvas: View {
                 let ox = hub.x - p.x
                 let oy = hub.y - p.y
                 let d = (ox * ox + oy * oy).squareRoot()
-                let reach: CGFloat = 130
+                let reach = ConstellationHub.reach
                 if d < reach {
                     let falloff = (1 - d / reach) * (1 - d / reach)
                     let pull = 0.35 * falloff * CGFloat(presence)
@@ -160,9 +165,9 @@ private struct ConstellationCanvas: View {
         }
     }
 
-    private static func drawHub(_ context: inout GraphicsContext, points: [CGPoint], hub: CGPoint?, presence: Double, link: CGFloat) {
+    private static func drawHub(_ context: inout GraphicsContext, points: [CGPoint], hub: CGPoint?, presence: Double) {
         guard let hub, presence > 0.01 else { return }
-        let reach = link * 1.5
+        let reach = ConstellationHub.reach
         var path = Path()
         for p in points {
             let dx = p.x - hub.x

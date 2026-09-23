@@ -41,6 +41,10 @@ private struct InputOTPDemo: View {
     @State private var successes = 0
     @State private var scriptIndex = 0
     @State private var holdTicks = 0
+    /// Detail-page intro: types a wrong code, then the right one. Never focuses the field (no keyboard).
+    @State private var introTask: Task<Void, Never>?
+    /// True while the intro script types, so its keystrokes stay silent.
+    @State private var scripted = false
     @FocusState private var focused: Bool
 
     private var length: Int { ctx.int("digits") == 0 ? 4 : 6 }
@@ -58,7 +62,10 @@ private struct InputOTPDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background { hiddenField }
         .onChange(of: length) { _, _ in reset() }
-        .autoplay(ctx.isPreview, every: 0.32, delay: 0.5) { previewTick() }
+        .autoplay(ctx.isPreview, every: 0.32, delay: 0.5) {
+            if ctx.isPreview { previewTick() } else { playIntro() }
+        }
+        .onDisappear { stopIntro() }
     }
 
     private var boxes: some View {
@@ -66,7 +73,7 @@ private struct InputOTPDemo: View {
             ForEach(0..<length, id: \.self) { index in
                 InputOTPBox(
                     character: character(at: index),
-                    isCurrent: (focused || ctx.isPreview) && status == .idle && index == code.count,
+                    isCurrent: (focused || ctx.isPreview || scripted) && status == .idle && index == code.count,
                     status: status,
                     index: index,
                     successes: successes,
@@ -77,6 +84,7 @@ private struct InputOTPDemo: View {
         .modifier(InputShakeEffect(travel: ctx.cg("shake"), progress: attempts))
         .contentShape(Rectangle())
         .onTapGesture {
+            stopIntro()
             if status == .success { reset() }
             focused = true
         }
@@ -115,13 +123,14 @@ private struct InputOTPDemo: View {
             successes += 1
             holdTicks = 5
             focused = false
-            if !ctx.isPreview { Haptics.success() }
+            if !ctx.isPreview && !scripted { Haptics.success() }
         } else {
             withAnimation(.snappy) { status = .error }
             withAnimation(.linear(duration: 0.45)) { attempts += 1 }
-            if !ctx.isPreview { Haptics.error() }
+            if !ctx.isPreview && !scripted { Haptics.error() }
             Task {
                 try? await Task.sleep(for: .seconds(0.6))
+                guard status == .error else { return }
                 withAnimation(.snappy) {
                     code = ""
                     status = .idle
@@ -134,6 +143,43 @@ private struct InputOTPDemo: View {
         withAnimation(.snappy) {
             code = ""
             status = .idle
+        }
+    }
+
+    /// One full sequence on detail arrival: a wrong code (shake), then the right one (wave), then a clean reset.
+    private func playIntro() {
+        introTask?.cancel()
+        scripted = true
+        let wrong = wrongCode
+        let right = expected
+        introTask = Task {
+            await typeScripted(wrong)
+            try? await Task.sleep(for: .seconds(0.9))
+            await typeScripted(right)
+            try? await Task.sleep(for: .seconds(1.6))
+            guard !Task.isCancelled else { return }
+            reset()
+            scripted = false
+            introTask = nil
+        }
+    }
+
+    private func typeScripted(_ text: String) async {
+        for character in text {
+            try? await Task.sleep(for: .seconds(0.22))
+            guard !Task.isCancelled, status == .idle else { return }
+            code.append(character)
+        }
+    }
+
+    /// The first real touch takes over from the intro and clears its partial input.
+    private func stopIntro() {
+        guard let task = introTask else { return }
+        task.cancel()
+        introTask = nil
+        if scripted {
+            scripted = false
+            if status != .error { reset() }
         }
     }
 

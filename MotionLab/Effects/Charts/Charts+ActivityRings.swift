@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Three concentric gradient rings that close with springs and lap past 100% with a shadowed cap.", "三条同心渐变圆环以弹簧闭合，超额时带投影端帽继续绕圈。"),
         prompt: L(
             "Three concentric rings (22 pt stroke, 4 pt gaps, 210 pt outer diameter) in Move red-pink, Exercise lime and Stand cyan, each over a 20%-opacity track of its own color with a small bold glyph at 12 o’clock. On appear and on every tap the rings drain in 250 ms, then fill clockwise from the top, outer to inner, 150 ms apart, on a smooth spring (response ≈ 1.2 s, damping 0.82). Each arc carries an angular gradient from a darker start to a brighter tip, with a solid start-colored cap at 12 o’clock so there is no seam. Past 100% the ring keeps traveling: the gradient rotates so the bright end stays at the tip, and the round end cap casts a soft 3 pt shadow ahead of itself, fading in from 85%, so the overlap reads as a physical strap. Percentages below count up in step: rewarding, iconic.",
-            "三条同心圆环（描边 22pt、间距 4pt、外径 210pt），依次为“活动”红粉、“锻炼”青柠、“站立”青蓝，下方各有 20% 透明度的同色轨道，12 点处嵌一个粗体小图标。出现时和每次点击时，圆环先在 250ms 内清空，再从顶部顺时针填充，由外向内错开 150ms，采用平滑弹簧（响应约 1.2 秒、阻尼 0.82）。弧线带角向渐变，起点偏深、末端偏亮，12 点处的起点端帽为纯色，不留接缝。超过 100% 时圆环继续前进：渐变整体旋转，让亮端始终停在末端，圆形端帽在前方投下 3pt 柔和阴影（自 85% 起渐显），重叠处宛如一条真实表带。下方百分比同步递增，成就感十足。"
+            "三条同心圆环（描边 22pt、间距 4pt、外径 210pt）依次为“活动”红粉、“锻炼”青柠、“站立”青蓝，下方各有 20% 透明度的同色轨道，12 点处嵌一个粗体小图标。出现时和每次点击时，圆环先在 250ms 内清空，再从顶部顺时针填充，由外向内错开 150ms，采用平滑弹簧（响应约 1.2 秒、阻尼 0.82）。弧线带角向渐变，起点深、末端亮，12 点起点端帽为纯色、不留接缝。超过 100% 时圆环继续前进：渐变整体旋转，让亮端始终停在末端，圆形端帽在前方投下 3pt 柔和阴影（自 85% 起渐显），重叠处宛如真实表带。下方百分比同步递增，成就感满满。"
         ),
         implementation: L(
             "Each ring is an Animatable view: up to 100% it trims a Circle stroked with an AngularGradient; beyond 100% it draws the full ring rotated by the excess and adds a shadowed end-cap circle rotated to the tip angle.",
@@ -74,14 +74,15 @@ private struct ActivityRingsDemo: View {
             ChartEntrance.replay(reset: {
                 progress = [0, 0, 0]
             }, then: {
-                play()
+                play(haptic: false)
             })
         }
         // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
         .autoplay(ctx.isPreview, every: 3.6, delay: 3.6, intro: false) { play() }
     }
 
-    private func play() {
+    /// `haptic: false` for the silent arrival entrance; taps (and muted autoplay) keep the default.
+    private func play(haptic: Bool = true) {
         withAnimation(.easeIn(duration: 0.25)) { progress = [0, 0, 0] }
         let targets = [Double.random(in: 0.7...1.35), Double.random(in: 0.55...1.2), Double.random(in: 0.4...1.0)]
         let spring = Animation.spring(response: ctx["response"], dampingFraction: 0.82)
@@ -93,7 +94,7 @@ private struct ActivityRingsDemo: View {
                     progress[index] = targets[index]
                 }
             }
-            if !ctx.isPreview { Haptics.tap(.soft) }
+            if haptic && !ctx.isPreview { Haptics.tap(.soft) }
         }
     }
 }

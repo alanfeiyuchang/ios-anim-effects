@@ -51,7 +51,7 @@ private struct GaugeDemo: View {
             ChartEntrance.replay(reset: {
                 value = 0
             }, then: {
-                set(0.74)
+                set(0.74, haptic: false)
             })
         }
         // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
@@ -60,11 +60,12 @@ private struct GaugeDemo: View {
         }
     }
 
-    private func set(_ newValue: Double) {
+    /// `haptic: false` for the silent arrival swing; taps (and muted autoplay) keep the default.
+    private func set(_ newValue: Double, haptic: Bool = true) {
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             value = newValue
         }
-        if !ctx.isPreview { Haptics.tap(.rigid) }
+        if haptic && !ctx.isPreview { Haptics.tap(.rigid) }
     }
 
     private func aim(at location: CGPoint) {

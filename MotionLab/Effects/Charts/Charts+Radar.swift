@@ -15,7 +15,7 @@ extension Effect {
             "A custom VectorArithmetic type wraps the array of radii so a Shape can animate all vertices at once through animatableData; the segmented pills use matchedGeometryEffect for the sliding selection.",
             "自定义 VectorArithmetic 类型包装半径数组，使 Shape 能通过 animatableData 同时为所有顶点做动画；分段胶囊使用 matchedGeometryEffect 实现选中态滑动。"
         ),
-        apis: ["VectorArithmetic", "Shape.animatableData", "matchedGeometryEffect", "spring(response:dampingFraction:)", "sensoryFeedback"],
+        apis: ["VectorArithmetic", "Shape.animatableData", "matchedGeometryEffect", "spring(response:dampingFraction:)"],
         tags: ["radar chart", "spider chart", "morph", "compare", "雷达图", "蜘蛛图", "形变", "对比"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.3...1.2, default: 0.6, unit: "s"),
@@ -159,7 +159,6 @@ private struct RadarDemo: View {
             ChartTapCue(text: L("Pick a product to compare", "选择产品进行对比"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: selection) { _, _ in !ctx.isPreview }
         .autoplay(ctx.isPreview, every: 1.8) { select((selection + 1) % radarDatasets.count) }
     }
 
@@ -206,7 +205,9 @@ private struct RadarDemo: View {
         .overlay(Capsule().strokeBorder(Palette.stroke, lineWidth: 1))
     }
 
+    /// Pills and autoplay share this; the haptic is muted inside autoplay, so only real taps tick.
     private func select(_ index: Int) {
+        if index != selection { Haptics.selection() }
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             selection = index
         }

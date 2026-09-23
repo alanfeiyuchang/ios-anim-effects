@@ -111,9 +111,20 @@ private struct NotchTabBarDemo: View {
 
     private func select(_ index: Int) {
         guard index != selected else { return }
-        if !ctx.isPreview { Haptics.tap(.medium) }
         let response: Double = ctx["response"]
         moves += 1
+        // The haptic lands with the bubble (~80% of the spring response), not on touch-down.
+        // Autoplay mutes Haptics while it runs, so simulated taps stay silent after the delay too.
+        let live: Bool = !ctx.isPreview && !Haptics.isMuted
+        let arrival: Double = response * 0.8
+        let current = moves
+        if live {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(arrival))
+                guard !Task.isCancelled, moves == current else { return }
+                Haptics.tap(.medium)
+            }
+        }
         withAnimation(.snappy) { selected = index }
         let notchAnimation: Animation = ctx.bool("lag")
             ? .spring(response: response * 1.3, dampingFraction: 0.78).delay(0.05)

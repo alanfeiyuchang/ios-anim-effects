@@ -78,16 +78,16 @@ private struct RecedingSheetDemo: View {
                     .font(.headline)
                     .contentTransition(.opacity)
                 Spacer()
-                Button(action: present) {
-                    Image(systemName: "trash")
+                // After a delete the same button turns into "undo", so the stage never dead-ends.
+                Button(action: trashTapped) {
+                    Image(systemName: deleted ? "arrow.uturn.backward" : "trash")
                         .font(.headline)
                         .foregroundStyle(.white)
+                        .contentTransition(.symbolEffect(.replace))
                         .frame(width: 40, height: 40)
-                        .background(Palette.red.gradient, in: Circle())
+                        .background(deleted ? Palette.blue.gradient : Palette.red.gradient, in: Circle())
                 }
                 .buttonStyle(.plain)
-                .disabled(deleted)
-                .opacity(deleted ? 0.4 : 1)
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
                 ForEach(0..<tints.count, id: \.self) { index in
@@ -171,6 +171,15 @@ private struct RecedingSheetDemo: View {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
                 }
             }
+    }
+
+    private func trashTapped() {
+        guard deleted else {
+            present()
+            return
+        }
+        Haptics.tap()
+        withAnimation(.smooth(duration: 0.3)) { deleted = false }
     }
 
     private func present() {

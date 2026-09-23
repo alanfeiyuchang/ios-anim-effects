@@ -41,6 +41,10 @@ private struct MergePinDemo: View {
     @State private var shakes: CGFloat = 0
     @State private var scriptIndex = 0
     @State private var busy = false
+    /// Detail-page intro: types a wrong PIN, then the right one.
+    @State private var introTask: Task<Void, Never>?
+    /// True while the intro script types, so its keystrokes stay silent.
+    @State private var scripted = false
 
     private let code = "2580"
     private let pitch: CGFloat = 30
@@ -62,8 +66,13 @@ private struct MergePinDemo: View {
                 .padding(.bottom, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 0.3, delay: 0.4) { previewTick() }
+        .autoplay(ctx.isPreview, every: 0.3, delay: 0.4) {
+            if ctx.isPreview { previewTick() } else { playIntro() }
+        }
+        .onDisappear { stopIntro() }
     }
+
+    private var silent: Bool { ctx.isPreview || scripted }
 
     private var dotColor: Color {
         phase == .error ? Palette.red : Palette.indigo
@@ -132,6 +141,7 @@ private struct MergePinDemo: View {
             Color.clear.frame(height: 36)
         } else {
             Button {
+                stopIntro()
                 press(key)
             } label: {
                 Group {
@@ -162,7 +172,7 @@ private struct MergePinDemo: View {
             if !entered.isEmpty { entered.removeLast() }
             return
         }
-        if !ctx.isPreview { Haptics.tap() }
+        if !silent { Haptics.tap() }
         entered.append(contentsOf: key)
         if entered.count == 4 { verify() }
     }
@@ -170,6 +180,7 @@ private struct MergePinDemo: View {
     private func verify() {
         busy = true
         let hold = ctx["hold"]
+        let quiet = silent
         if entered == code {
             Task {
                 try? await Task.sleep(for: .seconds(hold))
@@ -177,14 +188,14 @@ private struct MergePinDemo: View {
                 try? await Task.sleep(for: .seconds(ctx["response"] * 0.7))
                 phase = .done
                 busy = false
-                if !ctx.isPreview { Haptics.success() }
+                if !quiet { Haptics.success() }
             }
         } else {
             Task {
                 try? await Task.sleep(for: .seconds(0.12))
                 withAnimation(.snappy(duration: 0.15)) { phase = .error }
                 withAnimation(.linear(duration: 0.45)) { shakes += 1 }
-                if !ctx.isPreview { Haptics.error() }
+                if !quiet { Haptics.error() }
                 try? await Task.sleep(for: .seconds(0.5))
                 for _ in 0..<4 {
                     if !entered.isEmpty { entered.removeLast() }
@@ -200,6 +211,40 @@ private struct MergePinDemo: View {
         entered = ""
         phase = .entering
         busy = false
+    }
+
+    /// One full sequence on detail arrival: a wrong PIN (shake), the right one (merge + check), then a reset.
+    private func playIntro() {
+        introTask?.cancel()
+        scripted = true
+        let right = code
+        introTask = Task {
+            await typeScripted("1470")
+            try? await Task.sleep(for: .seconds(1.1))
+            await typeScripted(right)
+            try? await Task.sleep(for: .seconds(1.8))
+            guard !Task.isCancelled else { return }
+            if phase == .done { reset() }
+            scripted = false
+            introTask = nil
+        }
+    }
+
+    private func typeScripted(_ text: String) async {
+        for character in text {
+            try? await Task.sleep(for: .seconds(0.28))
+            guard !Task.isCancelled, !busy, phase == .entering else { return }
+            press(String(character))
+        }
+    }
+
+    /// The first real touch takes over from the intro and clears its partial input.
+    private func stopIntro() {
+        guard let task = introTask else { return }
+        task.cancel()
+        introTask = nil
+        scripted = false
+        if !busy && phase == .entering { entered = "" }
     }
 
     private func previewTick() {

@@ -83,7 +83,8 @@ private struct InputExpandingSearchDemo: View {
         }
         .padding(.top, ctx.isPreview ? 24 : 34)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .autoplay(ctx.isPreview, every: 2.4, delay: 0.5) { expanded ? collapse() : expand() }
+        // Simulated plays never focus the field, so the detail intro can't raise the keyboard.
+        .autoplay(ctx.isPreview, every: 2.4, delay: 0.5) { expanded ? collapse() : expand(userInitiated: false) }
     }
 
     /// Page title that the expanding field slides over.
@@ -212,7 +213,7 @@ private struct InputExpandingSearchDemo: View {
         .shadow(color: .black.opacity(expanded ? 0.12 : 0.08), radius: expanded ? 18 : 10, y: 8)
         .contentShape(Capsule())
         .onTapGesture {
-            if !expanded { expand() }
+            if !expanded { expand(userInitiated: true) }
         }
     }
 
@@ -234,14 +235,15 @@ private struct InputExpandingSearchDemo: View {
         .transition(Self.dropIn(delay: 0.12 + Double(index) * 0.05))
     }
 
-    private func expand() {
-        if !ctx.isPreview { Haptics.tap() }
+    private func expand(userInitiated: Bool) {
+        if userInitiated && !ctx.isPreview { Haptics.tap() }
         withAnimation(spring) { expanded = true }
-        if ctx.isPreview {
+        if !userInitiated || ctx.isPreview {
             query = ctx.language == .zh ? "弹簧" : "Spring"
         } else {
             Task {
                 try? await Task.sleep(for: .seconds(0.25))
+                guard !Task.isCancelled, expanded else { return }
                 focused = true
             }
         }

@@ -32,7 +32,7 @@ extension Effect {
         params: [
             .slider("damping", L("Pop damping", "弹出阻尼"), 0.3...1.0, default: 0.5),
             .slider("reach", L("Spark power", "火花力度"), 10...60, default: 30, decimals: 0, unit: "pt"),
-            .slider("count", L("Sparks", "火花数"), 5...12, default: 8, step: 1, decimals: 0),
+            .slider("count", L("Sparks", "火花数"), 10...24, default: 16, step: 2, decimals: 0),
         ]
     ) { ctx in
         SparkBurstDemo(ctx: ctx)
@@ -91,7 +91,7 @@ private struct SparkBurstDemo: View {
     private func morphButton(zh: Bool) -> some View {
         Button(action: pay) {
             ZStack {
-                SparkFountain(count: max(ctx.int("count"), 3) * 2, power: ctx.cg("reach"))
+                SparkFountain(count: max(ctx.int("count"), 6), power: ctx.cg("reach"))
                     .keyframeAnimator(initialValue: CGFloat(0), trigger: bursts) { content, spark in
                         content.environment(\.sparkProgress, spark)
                     } keyframes: { _ in
@@ -166,12 +166,16 @@ private struct SparkBurstDemo: View {
 private struct SparkMorphShape: View {
     let phase: SparkPhase
 
-    var body: some View {
-        let size: CGSize = switch phase {
-        case .idle: CGSize(width: 200, height: 50)
-        case .paying: CGSize(width: 50, height: 50)
-        case .paid: CGSize(width: 88, height: 88)
+    private var size: CGSize {
+        switch phase {
+        case .idle: return CGSize(width: 200, height: 50)
+        case .paying: return CGSize(width: 50, height: 50)
+        case .paid: return CGSize(width: 88, height: 88)
         }
+    }
+
+    var body: some View {
+        let size: CGSize = self.size
         let paid = phase == .paid
         ZStack {
             Capsule().fill(Palette.primary)

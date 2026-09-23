@@ -56,6 +56,7 @@ private struct ContextMenuLiftDemo: View {
     @State private var lifted: Int?
     @State private var pressing: Int?
     @State private var autoIndex = 1
+    @State private var autoTask: Task<Void, Never>?
 
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: 0.78) }
 
@@ -88,8 +89,9 @@ private struct ContextMenuLiftDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) {
-            if lifted == nil { lift(autoIndex) } else { close() }
+            if lifted == nil { autoPress() } else { close() }
         }
+        .onDisappear { autoTask?.cancel() }
     }
 
     private var list: some View {
@@ -120,8 +122,22 @@ private struct ContextMenuLiftDemo: View {
         .padding(.top, 18)
     }
 
-    private func lift(_ index: Int) {
-        if !ctx.isPreview { Haptics.tap(.medium) }
+    /// Simulated long-press: sink for the hold time, then lift — silently, since no finger is down.
+    private func autoPress() {
+        guard pressing == nil else { return }
+        let index = autoIndex
+        let hold: Double = ctx["hold"]
+        withAnimation(.easeOut(duration: hold)) { pressing = index }
+        autoTask?.cancel()
+        autoTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(hold))
+            guard !Task.isCancelled, pressing == index, lifted == nil else { return }
+            lift(index, silent: true)
+        }
+    }
+
+    private func lift(_ index: Int, silent: Bool = false) {
+        if !ctx.isPreview && !silent { Haptics.tap(.medium) }
         withAnimation(spring) {
             pressing = nil
             lifted = index

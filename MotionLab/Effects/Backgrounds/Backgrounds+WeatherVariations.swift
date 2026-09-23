@@ -71,12 +71,12 @@ extension Effect {
             "落叶以真实的钟摆式翻飞飘落，点击让一阵风吹过。"
         ),
         prompt: L(
-            "A warm dusk sky (plum to rust to amber) with a low glowing sun. Leaves in amber, coral, crimson and ochre fall in depth: near leaves are bigger, sharper and faster, far ones small and softly blurred. Each leaf follows a falling-leaf pendulum: it swings side to side on a sine, tilting with the swing, and its descent speed varies as 1 − ½·cos(2·phase), so it floats at the ends of each arc and drops through the middle; a slow cosine squash of its width fakes a 3D flip. A light 18 pt/s breeze carries everything. Tapping sends a gust: +220 pt/s of wind (capped at 420) that decays at 1.6/s and briefly spins the leaves faster. Cozy, nostalgic and alive.",
-            "温暖的黄昏天空（梅紫 → 铁锈红 → 琥珀）低悬着一轮发光的太阳。琥珀、珊瑚、绯红与赭黄色的落叶分层飘落：近处的叶子更大、更清晰、更快，远处的则更小并带柔和模糊。每片叶子都遵循落叶的钟摆运动：沿正弦左右摆动、随摆动倾斜，下落速度按 1 − ½·cos(2·相位) 变化——在弧线两端几乎悬停，经过中点时加速下坠；叶片宽度随缓慢的余弦压缩，模拟三维翻转。一阵每秒 18pt 的微风带着所有叶子漂移。点击会刮起一阵风：风速 +220pt/s（上限 420），以 1.6/s 衰减，并让叶片短暂转得更快。温馨、怀旧、充满生机。"
+            "A warm dusk sky (plum to rust to amber) with a low glowing sun. Leaves in amber, coral, crimson and ochre fall in depth: near leaves are bigger, sharper and faster, far ones small and softly blurred. Each leaf follows a falling-leaf pendulum: it swings side to side on a sine, tilting with the swing, and its descent speed varies as 1 + ½·cos(2·phase), so it floats at the ends of each arc and drops through the middle; a slow cosine squash of its width fakes a 3D flip. A light 18 pt/s breeze carries everything. Tapping sends a gust: +220 pt/s of wind (capped at 420) that decays at 1.6/s and briefly spins the leaves faster. Cozy, nostalgic and alive.",
+            "温暖的黄昏天空（梅紫 → 铁锈红 → 琥珀）低悬着一轮发光的太阳。琥珀、珊瑚、绯红与赭黄色的落叶分层飘落：近处的叶子更大、更清晰、更快，远处的则更小并带柔和模糊。每片叶子都遵循落叶的钟摆运动：沿正弦左右摆动、随摆动倾斜，下落速度按 1 + ½·cos(2·相位) 变化——在弧线两端几乎悬停，经过中点时加速下坠；叶片宽度随缓慢的余弦压缩，模拟三维翻转。一阵每秒 18pt 的微风带着所有叶子漂移。点击会刮起一阵风：风速 +220pt/s（上限 420），以 1.6/s 衰减，并让叶片短暂转得更快。温馨、怀旧、充满生机。"
         ),
         implementation: L(
-            "Each leaf's position is analytic: y = fall·(t − sin(2φ)/4ω), x = sway·sin φ + wind offset; one leaf Path is appended per color with addPath(_:transform:) (translate · rotate · scale) and far leaves are drawn in a blurred layer.",
-            "每片叶子的位置由解析式得出：y = fall·(t − sin(2φ)/4ω)，x = sway·sin φ + 风偏移；同一叶形通过 addPath(_:transform:)（平移·旋转·缩放）按颜色合并到 Path 中，远处的叶子绘制在模糊图层里。"
+            "Each leaf's position is analytic: y = fall·(t + sin(2φ)/4ω), x = sway·sin φ + wind offset; one leaf Path is appended per color with addPath(_:transform:) (translate · rotate · scale) and far leaves are drawn in a blurred layer.",
+            "每片叶子的位置由解析式得出：y = fall·(t + sin(2φ)/4ω)，x = sway·sin φ + 风偏移；同一叶形通过 addPath(_:transform:)（平移·旋转·缩放）按颜色合并到 Path 中，远处的叶子绘制在模糊图层里。"
         ),
         apis: ["Canvas", "Path.addPath(_:transform:)", "CGAffineTransform", "TimelineView(.animation)", "Haptics"],
         tags: ["leaves", "autumn", "wind", "fall", "落叶", "秋天", "风", "飘落"],
@@ -511,7 +511,7 @@ private struct LeafCanvas: View {
             let phase = t * omega + BackgroundMath.rand(i, 63) * BackgroundMath.tau
             let fall = 26 + 34 * depth
             let sway = (14 + 18 * depth) * flutter
-            let drop = fall * (t - sin(2 * phase) / (4 * omega))
+            let drop = fall * (t + sin(2 * phase) / (4 * omega))
             let rawY = BackgroundMath.rand(i, 64) * wrapH + drop
             let y = BackgroundMath.fract(rawY / wrapH) * wrapH - 30
             let rawX = BackgroundMath.rand(i, 65) * wrapW + sway * sin(phase) + windOffset * (0.5 + depth)

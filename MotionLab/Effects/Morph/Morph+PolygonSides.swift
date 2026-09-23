@@ -18,7 +18,7 @@ extension Effect {
             "A Shape with an animatable side count samples 240 polar points, blending the radius functions of the floor and ceiling regular polygons and mixing in a circle for roundness; a DragGesture scrubs the value and a spring snaps it.",
             "自定义 Shape 以可动画的边数为输入，采样 240 个极坐标点，在向下取整与向上取整的两个正多边形半径函数间插值，并混入圆形以柔化圆角；DragGesture 连续拖动数值，松手后用弹簧吸附。"
         ),
-        apis: ["Shape", "animatableData", "DragGesture", "spring(response:dampingFraction:)", "sensoryFeedback"],
+        apis: ["Shape", "animatableData", "DragGesture", "spring(response:dampingFraction:)", "UISelectionFeedbackGenerator"],
         tags: ["polygon", "shape", "scrub", "morph", "多边形", "形状", "拖动", "形变"],
         params: [
             .slider("damping", L("Snap damping", "吸附阻尼"), 0.3...1.0, default: 0.55),
@@ -39,7 +39,6 @@ private struct PolygonSidesDemo: View {
     let ctx: DemoContext
     @State private var sides: Double = 3
     @State private var dragStart: Double?
-    @State private var tick = 0
 
     private var rounded: Int { Int(sides.rounded()).clamped(to: 3...8) }
 
@@ -53,7 +52,6 @@ private struct PolygonSidesDemo: View {
         .contentShape(Rectangle())
         .gesture(drag)
         .onTapGesture { step() }
-        .sensoryFeedback(.selection, trigger: tick)
         .autoplay(ctx.isPreview, every: 1.1) { step() }
     }
 
@@ -99,7 +97,7 @@ private struct PolygonSidesDemo: View {
                 withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.86)) {
                     sides = raw.clamped(to: 3...8)
                 }
-                if rounded != before { tick += 1 }
+                if rounded != before { Haptics.selection() }
             }
             .onEnded { _ in
                 dragStart = nil
@@ -109,7 +107,8 @@ private struct PolygonSidesDemo: View {
 
     private func step() {
         let next: Double = rounded >= 8 ? 3 : Double(rounded + 1)
-        if !ctx.isPreview { tick += 1 }
+        // Haptics.selection() honours the autoplay mute, so previews and the intro stay silent.
+        Haptics.selection()
         snap(to: next)
     }
 

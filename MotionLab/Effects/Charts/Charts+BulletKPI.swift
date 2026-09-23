@@ -43,6 +43,8 @@ private struct BulletKPIDemo: View {
     /// Seeded with a settled quarter so still snapshots show bars; `onAppear` rewinds and plays.
     @State private var measures: [Double] = [0.78, 0.57, 0.91]
     @State private var finals: [Double] = [0.78, 0.57, 0.91]
+    /// The arrival entrance plays silently; crossing haptics start once the user taps.
+    @State private var userRefreshed = false
 
     var body: some View {
         let onTrack = zip(finals, bulletMetrics).filter { $0.0 >= $0.1.target }.count
@@ -58,7 +60,7 @@ private struct BulletKPIDemo: View {
                     metric: bulletMetrics[index],
                     measure: measures[index],
                     language: ctx.language,
-                    haptics: !ctx.isPreview
+                    haptics: !ctx.isPreview && userRefreshed
                 )
             }
         }
@@ -66,7 +68,10 @@ private struct BulletKPIDemo: View {
         .frame(width: 300)
         .demoCard()
         .contentShape(Rectangle())
-        .onTapGesture { refresh() }
+        .onTapGesture {
+            userRefreshed = true
+            refresh()
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
             DemoHint(text: L("Tap to refresh", "点击刷新"), ctx: ctx)

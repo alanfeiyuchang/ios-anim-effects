@@ -49,6 +49,11 @@ private struct DockMagnifyDemo: View {
     let ctx: DemoContext
     @State private var fingerX: CGFloat?
     @State private var hovered: Int?
+    /// Set while the detail-page intro sweeps a simulated finger across the dock.
+    @State private var sweepStart: Date?
+    @State private var sweepTask: Task<Void, Never>?
+
+    private let sweepDuration: Double = 1.2
 
     private let canvas = CGSize(width: 330, height: 170)
 
@@ -63,10 +68,12 @@ private struct DockMagnifyDemo: View {
                     }
                     .frame(width: canvas.width, height: canvas.height)
                 } else {
-                    DockRow(fingerX: fingerX, ctx: ctx, canvas: canvas)
-                        .frame(width: canvas.width, height: canvas.height)
-                        .contentShape(Rectangle())
-                        .gesture(drag)
+                    TimelineView(.animation(minimumInterval: nil, paused: sweepStart == nil)) { timeline in
+                        DockRow(fingerX: liveFingerX(at: timeline.date), ctx: ctx, canvas: canvas)
+                    }
+                    .frame(width: canvas.width, height: canvas.height)
+                    .contentShape(Rectangle())
+                    .gesture(drag)
                 }
             }
             .frame(width: canvas.width, height: 250)
@@ -75,11 +82,44 @@ private struct DockMagnifyDemo: View {
             DemoHint(text: L("Slide along the dock", "沿程序坞滑动手指"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .autoplay(false, every: 1, intro: true) { sweep() }
+        .onDisappear { sweepTask?.cancel() }
+    }
+
+    /// The real finger, or the intro's simulated one while it sweeps.
+    private func liveFingerX(at date: Date) -> CGFloat? {
+        guard let sweepStart else { return fingerX }
+        let raw: Double = date.timeIntervalSince(sweepStart) / sweepDuration
+        let t: Double = min(max(raw, 0), 1)
+        let eased: Double = t * t * (3 - 2 * t)
+        // Starts one influence range left of the first icon so the wave rolls in from rest.
+        let from: CGFloat = DockRow.restCenter(0, canvasWidth: canvas.width) - ctx.cg("range")
+        let to: CGFloat = DockRow.restCenter(dockApps.count - 1, canvasWidth: canvas.width)
+        return from + (to - from) * CGFloat(eased)
+    }
+
+    private func sweep() {
+        sweepTask?.cancel()
+        sweepStart = .now
+        let duration = sweepDuration
+        sweepTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(duration))
+            guard !Task.isCancelled, sweepStart != nil else { return }
+            // Dropping the simulated finger inside the release spring settles the row like a real lift-off.
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
+                sweepStart = nil
+                fingerX = nil
+            }
+        }
     }
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                if sweepStart != nil {
+                    sweepTask?.cancel()
+                    sweepStart = nil
+                }
                 let x = value.location.x
                 withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.8)) { fingerX = x }
                 let nearest = DockRow.nearestIndex(to: x, canvasWidth: canvas.width)

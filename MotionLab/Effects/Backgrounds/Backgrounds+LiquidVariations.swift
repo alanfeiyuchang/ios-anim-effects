@@ -15,7 +15,7 @@ extension Effect {
         ),
         prompt: L(
             "A calm paper-white surface (deep ink-black in dark mode). Each tap drops a bead of ink at the finger: a dense core appears within ~160 ms, then seven soft lobes push outward along random directions while growing, following a diffusion curve 1 − e^(−t/0.9 s) that starts fast and slows to a crawl; lobes also sink under gravity (quadratic in the growth), stretching into tendrils. A faint ring on the water surface expands and fades as the drop lands. Everything is blurred 10 pt and blended multiply on paper (screen in dark mode), so overlapping drops of indigo, magenta, teal and ochre mix like real pigment. Each drop fades quadratically over its lifetime (7 s by default). Meditative, organic and hand-made.",
-            "平静的纸白色画面（深色模式下为墨黑）。每次点击都会在指尖处滴下一滴墨：约 160 毫秒内先出现浓重的墨核，随后七团柔软的墨瓣沿随机方向向外推开并长大，遵循 1 − e^(−t/0.9 秒) 的扩散曲线——起初迅速、随后慢到几乎静止；墨瓣同时受重力下沉（与扩散进度成二次方关系），被拉成墨丝。滴落处的水面上还会有一圈淡淡的波纹扩散、淡出。所有墨色都经 10pt 模糊，并在纸面上以正片叠底（深色模式下为滤色）混合，因此靛蓝、洋红、青绿与赭黄的墨滴重叠时会像真实颜料一样交融。每滴墨在生命周期内（默认 7 秒）按二次方淡出。冥想、有机、带有手作温度。"
+            "纸白色画面（深色模式为墨黑）。每次点击在指尖处滴下一滴墨：约 160 毫秒内先出现浓重的墨核，随后七团柔软的墨瓣沿随机方向向外推开并长大，遵循 1 − e^(−t/0.9 秒) 的扩散曲线——起初迅速、随后慢到几乎静止；墨瓣同时受重力下沉（与扩散进度成二次方关系），被拉成墨丝。滴落处有一圈淡淡的波纹扩散淡出。所有墨色都经 10pt 模糊，并在纸面上以正片叠底（深色模式下为滤色）混合，靛蓝、洋红、青绿与赭黄的墨滴重叠时如真实颜料般交融。每滴墨在生命周期内（默认 7 秒）按二次方淡出。有机而带手作温度。"
         ),
         implementation: L(
             "A model stores drops (unit position, birth time, color, seed); a blurred Canvas redraws each drop's seven lobes, core and surface ring from its age every frame, using multiply or screen blend depending on the color scheme.",

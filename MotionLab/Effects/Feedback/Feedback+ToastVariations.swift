@@ -199,6 +199,7 @@ private struct MorphToastDemo: View {
             case .uploading:
                 MorphToastSpinner(preview: ctx.isPreview)
                     .frame(width: 18, height: 18)
+                    .transition(.scale(scale: 0.3).combined(with: .opacity))
                 Text(zh ? "正在上传 3 张照片" : "Uploading 3 photos")
                     .transition(.blurReplace)
             case .done:

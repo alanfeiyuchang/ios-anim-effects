@@ -11,8 +11,8 @@ extension Effect {
             "三种页面切换模式合一：淡出穿透、共享 X 轴与共享 Z 轴。"
         ),
         prompt: L(
-            "A three-destination app (Inbox, Calendar, Files) inside a phone frame with a bottom bar. Switching destinations never slides whole screens; instead it uses a choreographed hand-off. Fade through: the outgoing page fades out in the first ≈30% of the 0.3 s duration, then the incoming page fades in while scaling from 92% to 100% over the remaining 70%, so the two never overlap. Shared X axis: both pages move 30 pt in the direction of travel while cross-fading. Shared Z axis: the outgoing page grows to 110% and fades as the incoming one grows in from 80%. Calm, systematic, Material-motion-grade.",
-            "手机画框中是一个有三个目的地（收件箱、日历、文件）和底部导航栏的应用。切换目的地时不会整屏滑动，而是一次编排好的交接。淡出穿透：旧页面在 0.3 秒总时长的前约 30% 内淡出，新页面在余下 70% 内淡入并从 92% 放大到 100%，二者不会重叠。共享 X 轴：两个页面沿切换方向移动 30pt 并交叉淡化。共享 Z 轴：旧页面放大到 110% 并淡出，新页面从 80% 放大进入。沉稳、系统化，达到 Material 动效规范的水准。"
+            "A three-destination app (Inbox, Calendar, Files) inside a phone frame with a bottom bar. Switching destinations never slides whole screens; instead it uses a choreographed hand-off. Fade through: the outgoing page fades out in the first ≈30% of the 0.3 s duration, then the incoming page fades in while scaling from 92% to 100% over the remaining 70%, so the two never overlap. Shared X axis: both pages move 30 pt in the direction of travel while cross-fading. Shared Z axis: the outgoing page grows to 110% and fades out in the first 30%, then the incoming one grows in from 80%. Calm, systematic, Material-motion-grade.",
+            "手机画框中是一个有三个目的地（收件箱、日历、文件）和底部导航栏的应用。切换目的地时不会整屏滑动，而是一次编排好的交接。淡出穿透：旧页面在 0.3 秒总时长的前约 30% 内淡出，新页面在余下 70% 内淡入并从 92% 放大到 100%，二者不会重叠。共享 X 轴：两个页面沿切换方向移动 30pt 并交叉淡化。共享 Z 轴：旧页面在前 30% 内放大到 110% 并淡出，随后新页面从 80% 放大进入。沉稳、系统化，达到 Material 动效规范的水准。"
         ),
         implementation: L(
             "Pages swap by id with an asymmetric transition whose insertion and removal carry their own AnyTransition.animation timing (removal short, insertion delayed); the pattern and direction are chosen before the selection changes.",
@@ -77,7 +77,7 @@ private struct FadeThroughDemo: View {
         case 1:
             let shift: CGFloat = forward ? 30 : -30
             return .asymmetric(
-                insertion: AnyTransition.opacity.combined(with: .offset(x: shift)).animation(inAnimation),
+                insertion: AnyTransition.opacity.combined(with: .offset(x: shift)).animation(both),
                 removal: AnyTransition.opacity.combined(with: .offset(x: -shift)).animation(both)
             )
         case 2:

@@ -112,7 +112,8 @@ private struct LifeFinanceDemo: View {
         }
         .onChange(of: ctx.language) { _, _ in balance = baseBalance }
         .task(id: ctx["interval"]) { await tick() }
-        .autoplay(ctx.isPreview, every: 1.8, delay: 1.0) { previewTick() }
+        // The sparkline already draws itself in `onAppear`; the detail stage must not replay it.
+        .autoplay(ctx.isPreview, every: 1.8, delay: 1.0, intro: false) { previewTick() }
     }
 
     private var front: some View {
@@ -309,11 +310,17 @@ private struct LifeCardBack: View {
 
 // MARK: - Sparkline
 
-private struct LifeSparkline: View {
+/// Animatable, so the live dot rides the interpolated tip of the line while it draws.
+private struct LifeSparkline: View, Animatable {
     let values: [Double]
-    let progress: CGFloat
+    var progress: CGFloat
     let rising: Bool
     let preview: Bool
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
 
     /// The card's content width is fixed (300 − 2 × 18), so no GeometryReader is needed.
     private static let size = CGSize(width: 264, height: 64)
@@ -333,14 +340,25 @@ private struct LifeSparkline: View {
                 .trim(from: 0, to: progress)
                 .stroke(tint, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
                 .shadow(color: tint.opacity(0.6), radius: 5)
-            if let last = points.last {
+            if let tip = Self.tip(of: line, progress: progress) {
                 SportLiveDot(color: tint, size: 7, preview: preview)
-                    .position(last)
-                    .opacity(progress >= 0.99 ? 1 : 0)
-                    .animation(.easeOut(duration: 0.25), value: progress >= 0.99)
+                    .position(tip)
+                    .opacity(dotOpacity)
             }
         }
         .frame(width: size.width, height: size.height)
+    }
+
+    /// Fades the dot in over the first few percent of the draw so it never pops at the origin.
+    private var dotOpacity: Double {
+        let value = Double(progress) * 12
+        return min(max(value, 0), 1)
+    }
+
+    /// The end point of the trimmed line: where the stroke currently stops.
+    private static func tip(of line: Path, progress: CGFloat) -> CGPoint? {
+        let clamped = min(max(progress, 0.001), 1)
+        return line.trimmedPath(from: 0, to: clamped).currentPoint
     }
 
     private static func points(_ values: [Double], in size: CGSize) -> [CGPoint] {

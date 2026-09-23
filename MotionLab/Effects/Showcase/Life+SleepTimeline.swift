@@ -113,6 +113,8 @@ private struct LifeSleepDemo: View {
     @State private var scrub: Double?
     @State private var runID = 0
     @State private var step = 0
+    /// True while the reveal sweeps, so the glowing leading edge is visible (the model value of `reveal` jumps 0 → 1).
+    @State private var sweeping = false
     /// Only a real finger on the chart ticks the selection haptic; the preview scrub stays silent.
     @State private var userScrubbing = false
 
@@ -249,7 +251,7 @@ private struct LifeSleepDemo: View {
             .frame(width: 2, height: size.height)
             .shadow(color: Color.white.opacity(0.8), radius: 6)
             .offset(x: size.width * reveal - 1)
-            .opacity(reveal > 0.01 && reveal < 0.99 ? 0.7 : 0)
+            .opacity(sweeping ? 0.7 : 0)
             .allowsHitTesting(false)
     }
 
@@ -341,10 +343,12 @@ private struct LifeSleepDemo: View {
             reveal = 0
             counted = 0
             scrub = nil
+            sweeping = false
         }
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
         let duration = ctx["duration"]
+        withAnimation(.easeOut(duration: 0.12)) { sweeping = true }
         withAnimation(.easeInOut(duration: duration)) { reveal = 1 }
         let steps = 14
         for index in 1...steps {
@@ -354,6 +358,8 @@ private struct LifeSleepDemo: View {
             withAnimation(.snappy(duration: 0.2)) { counted = LifeSleepData.total * eased }
             try? await Task.sleep(for: .seconds(duration / Double(steps)))
         }
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.25)) { sweeping = false }
     }
 
     private func previewTick() {

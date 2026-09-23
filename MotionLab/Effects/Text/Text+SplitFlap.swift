@@ -39,10 +39,20 @@ private enum FlapWheel {
         let b = characters.firstIndex(of: to) ?? 0
         let distance = (b - a + n) % n
         guard distance > 0 else { return [from] }
+        var result: [Character] = [from]
         if distance <= maxFlips {
-            return [from] + (1...distance).map { characters[(a + $0) % n] }
+            for step in 1...distance {
+                let index: Int = (a + step) % n
+                result.append(characters[index])
+            }
+            return result
         }
-        return [from] + (0..<maxFlips).map { characters[(b - maxFlips + 1 + $0 + n) % n] }
+        let first: Int = b - maxFlips + 1 + n
+        for step in 0..<maxFlips {
+            let index: Int = (first + step) % n
+            result.append(characters[index])
+        }
+        return result
     }
 }
 

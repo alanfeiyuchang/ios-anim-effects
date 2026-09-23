@@ -24,6 +24,7 @@ extension Effect {
             .slider("count", L("Lights", "光斑数量"), 9...45, default: 27, step: 1, decimals: 0),
             .slider("blur", L("Defocus", "失焦程度"), 0...12, default: 4, decimals: 1, unit: "pt"),
             .choice("palette", L("Palette", "配色"), [L("Warm", "暖色"), L("Cool", "冷色"), L("Neon", "霓虹")]),
+            .slider("speed", L("Drift speed", "上浮速度"), 0.2...2.5, default: 1.0, unit: "×"),
         ]
     ) { ctx in
         BokehDemo(ctx: ctx)
@@ -38,7 +39,7 @@ private struct BokehDemo: View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0x120A1C), Color(hex: 0x2A1330), Color(hex: 0x1A0B16)], startPoint: .top, endPoint: .bottom)
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-                let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: 1)
+                let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
                 BokehCanvas(t: t, count: ctx.int("count"), blur: ctx.cg("blur"), palette: BokehCanvas.paletteColors(ctx.int("palette")))
             }
             card

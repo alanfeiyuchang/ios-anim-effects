@@ -11,8 +11,8 @@ extension Effect {
             "漂浮的节点彼此靠近便自动连线，手指化身枢纽将它们聚拢。"
         ),
         prompt: L(
-            "A deep navy-to-indigo backdrop holds ~42 small star nodes (1.2–2.6 pt, gently twinkling) that drift on slow, independent sine paths. Every pair closer than the link distance (≈ 95 pt) is joined by a hairline whose opacity and weight rise with proximity ((1 − d / link)², four brightness tiers), so the web constantly knits and unknits as nodes wander. Tapping, or dragging sideways across the stage, adds a glowing mint hub under the finger: nodes within ≈ 130 pt are drawn toward it with a quadratic falloff and connect to it with brighter mint lines, and on release the hub fades out over ~300 ms while the nodes relax back to their paths. Quiet, intelligent and quietly alive — ideal behind AI, network or onboarding screens.",
-            "深海军蓝到靛蓝的背景中，约 42 个细小的星点节点（1.2–2.6pt，轻微闪烁）各自沿缓慢的正弦路径漂移。任意两个节点距离小于连线阈值（约 95pt）时，便以一根发丝细线相连，线的透明度与粗细随距离接近而增强（(1 − d / 阈值)²，分四档亮度），节点游走时网络随之不断编织、拆解。点击或横向拖过舞台，指尖下出现一个发光的薄荷绿枢纽：约 130pt 内的节点按二次衰减被吸向它，并以更亮的薄荷绿线条与之相连；松手后枢纽在约 300ms 内淡出，节点缓缓回到原本的轨迹。安静、智慧、暗含生命力，适合作为 AI、网络或引导页的背景。"
+            "A deep navy-to-indigo backdrop holds ~42 small star nodes, kept below the headline, (1.2–2.6 pt, gently twinkling) that drift on slow, independent sine paths. Every pair closer than the link distance (≈ 95 pt) is joined by a hairline whose opacity (5% up to about 20%) and weight rise with proximity ((1 − d / link)², four tiers), so the web stays a quiet texture, so the web constantly knits and unknits as nodes wander. Tapping, or dragging sideways across the stage, adds a glowing mint hub under the finger: nodes within ≈ 130 pt are drawn toward it with a quadratic falloff and connect to it with brighter mint lines, and on release the hub fades out over ~300 ms while the nodes relax back to their paths. Quiet, intelligent and quietly alive — ideal behind AI, network or onboarding screens.",
+            "深海军蓝到靛蓝的背景中，约 42 个细小的星点节点（1.2–2.6pt，轻微闪烁）分布在标题下方，各自沿缓慢的正弦路径漂移。任意两个节点距离小于连线阈值（约 95pt）时，便以一根发丝细线相连，线的透明度（5% 到约 20%）与粗细随距离接近而增强（(1 − d / 阈值)²，分四档），网络始终是一层安静的纹理，节点游走时网络随之不断编织、拆解。点击或横向拖过舞台，指尖下出现一个发光的薄荷绿枢纽：约 130pt 内的节点按二次衰减被吸向它，并以更亮的薄荷绿线条与之相连；松手后枢纽在约 300ms 内淡出，节点缓缓回到原本的轨迹。安静、智慧、暗含生命力，适合作为 AI、网络或引导页的背景。"
         ),
         implementation: L(
             "A Canvas inside TimelineView computes node positions as pure functions of index and time, bins every close pair into four Paths by strength (four strokes per frame), and eases a hub point and its presence in a small reference-type model.",
@@ -117,7 +117,8 @@ private struct ConstellationCanvas: View {
             let dy = 18 * cos(t * (0.15 + 0.22 * r(5)) + r(6) * BackgroundMath.tau)
             var p = CGPoint(
                 x: (0.04 + 0.92 * BackgroundMath.unit(i, 1)) * size.width + CGFloat(dx),
-                y: (0.04 + 0.92 * BackgroundMath.unit(i, 2)) * size.height + CGFloat(dy)
+                // Keep the web below the headline (top ~30% of the stage) so text stays clean.
+                y: (0.34 + 0.62 * BackgroundMath.unit(i, 2)) * size.height + CGFloat(dy)
             )
             if let hub, presence > 0.001 {
                 let ox = hub.x - p.x
@@ -153,7 +154,7 @@ private struct ConstellationCanvas: View {
         for tier in 0..<4 {
             context.stroke(
                 tiers[tier],
-                with: .color(lineColor.opacity(0.12 + 0.2 * Double(tier))),
+                with: .color(lineColor.opacity(0.05 + 0.05 * Double(tier))),
                 lineWidth: 0.5 + 0.3 * CGFloat(tier)
             )
         }

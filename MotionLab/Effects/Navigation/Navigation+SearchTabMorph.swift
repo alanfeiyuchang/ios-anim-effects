@@ -32,7 +32,7 @@ extension Effect {
 
 private let searchTabSymbols: [String] = ["house.fill", "square.stack.fill", "dot.radiowaves.left.and.right"]
 private let searchTabTitles: [LocalizedText] = [L("Home", "首页"), L("Library", "资料库"), L("Radio", "电台")]
-private let searchSuggestions: [LocalizedText] = [L("Lo-fi focus", "专注低保真"), L("Morning jazz", "晨间爵士"), L("Rain sounds", "雨声白噪音")]
+private let searchTabSuggestionItems: [LocalizedText] = [L("Lo-fi focus", "专注低保真"), L("Morning jazz", "晨间爵士"), L("Rain sounds", "雨声白噪音")]
 
 private struct SearchTabMorphDemo: View {
     let ctx: DemoContext
@@ -151,13 +151,13 @@ private struct SearchTabMorphDemo: View {
 
     private var suggestions: some View {
         VStack(spacing: 8) {
-            ForEach(0..<searchSuggestions.count, id: \.self) { index in
+            ForEach(0..<searchTabSuggestionItems.count, id: \.self) { index in
                 let delay: Double = searching ? Double(index) * ctx["stagger"] + 0.12 : 0
                 HStack(spacing: 10) {
                     Image(systemName: "arrow.up.right")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Palette.indigo)
-                    Text(searchSuggestions[index], ctx.language)
+                    Text(searchTabSuggestionItems[index], ctx.language)
                         .font(.subheadline.weight(.medium))
                     Spacer()
                 }

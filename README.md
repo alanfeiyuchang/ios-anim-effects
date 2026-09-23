@@ -9,7 +9,7 @@ and a professional **prompt** (written separately in English and Chinese) that d
 
 ## Features · 功能
 
-- **249 effects in 15 categories · 15 个分类共 249 个动效**: Signature Interactions (dark premium widget cards · 质感交互精选), Buttons, Inputs & Controls, Loading & Progress, Feedback & Alerts,
+- **461 effects in 85 families across 15 categories · 15 个分类、85 个动效家族，共 461 个动效**: Signature Interactions (dark premium widget cards · 质感交互精选), Buttons, Inputs & Controls, Loading & Progress, Feedback & Alerts,
   Transitions & Morphing, Navigation & Menus, Cards, Scroll & Lists, Text & Numbers, Icons & Symbols,
   Gestures & Physics, Data & Charts, Backgrounds & Ambience, Shaders & Materials.
 - **Families & variations · 系列与变体**: each category is organised into families of variations of the same element

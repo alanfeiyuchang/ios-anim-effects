@@ -4,7 +4,7 @@ A **family** groups variations of the same UI element or pattern — every slide
 so the app can show *many motion styles for one control* side by side. Navigation is
 **Browse → Category (families) → Family (variations: Grid / Compare) → Detail (Variations strip)**.
 
-Current catalog: **249 effects** in **85 families** across **15 categories**.
+Current catalog: **461 effects** in **85 families** across **15 categories**.
 Counts below are the number of variations per family today; singletons (1) are families that are
 explicitly waiting for more variations.
 
@@ -40,7 +40,7 @@ explicitly waiting for more variations.
 
 ### Signature Interactions · 质感交互精选
 
-File: `MotionLab/Families/ShowcaseFamilies.swift` · list: `ShowcaseSportEffects / ShowcaseTravelEffects / ShowcaseLifeEffects` · 6 families · 29 effects
+File: `MotionLab/Families/ShowcaseFamilies.swift` · list: `ShowcaseSportEffects / ShowcaseTravelEffects / ShowcaseLifeEffects` · 6 families · 32 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -53,7 +53,7 @@ File: `MotionLab/Families/ShowcaseFamilies.swift` · list: `ShowcaseSportEffects
 
 ### Buttons · 按钮
 
-File: `MotionLab/Families/ButtonsFamilies.swift` · list: `ButtonEffects` · 7 families · 16 effects
+File: `MotionLab/Families/ButtonsFamilies.swift` · list: `ButtonEffects` · 7 families · 41 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -67,7 +67,7 @@ File: `MotionLab/Families/ButtonsFamilies.swift` · list: `ButtonEffects` · 7 f
 
 ### Inputs & Controls · 输入与控件
 
-File: `MotionLab/Families/InputsFamilies.swift` · list: `InputEffects` · 8 families · 17 effects
+File: `MotionLab/Families/InputsFamilies.swift` · list: `InputEffects` · 8 families · 45 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -82,7 +82,7 @@ File: `MotionLab/Families/InputsFamilies.swift` · list: `InputEffects` · 8 fam
 
 ### Loading & Progress · 加载与进度
 
-File: `MotionLab/Families/LoadingFamilies.swift` · list: `LoadingEffects` · 6 families · 17 effects
+File: `MotionLab/Families/LoadingFamilies.swift` · list: `LoadingEffects` · 6 families · 36 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -95,7 +95,7 @@ File: `MotionLab/Families/LoadingFamilies.swift` · list: `LoadingEffects` · 6 
 
 ### Feedback & Alerts · 反馈与提示
 
-File: `MotionLab/Families/FeedbackFamilies.swift` · list: `FeedbackEffects` · 6 families · 15 effects
+File: `MotionLab/Families/FeedbackFamilies.swift` · list: `FeedbackEffects` · 6 families · 32 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -108,7 +108,7 @@ File: `MotionLab/Families/FeedbackFamilies.swift` · list: `FeedbackEffects` · 
 
 ### Transitions & Morphing · 转场与形变
 
-File: `MotionLab/Families/MorphFamilies.swift` · list: `MorphEffects` · 5 families · 16 effects
+File: `MotionLab/Families/MorphFamilies.swift` · list: `MorphEffects` · 5 families · 25 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -120,7 +120,7 @@ File: `MotionLab/Families/MorphFamilies.swift` · list: `MorphEffects` · 5 fami
 
 ### Navigation & Menus · 导航与菜单
 
-File: `MotionLab/Families/NavigationFamilies.swift` · list: `NavigationEffects` · 6 families · 14 effects
+File: `MotionLab/Families/NavigationFamilies.swift` · list: `NavigationEffects` · 6 families · 32 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -133,7 +133,7 @@ File: `MotionLab/Families/NavigationFamilies.swift` · list: `NavigationEffects`
 
 ### Cards · 卡片
 
-File: `MotionLab/Families/CardsFamilies.swift` · list: `CardEffects` · 5 families · 13 effects
+File: `MotionLab/Families/CardsFamilies.swift` · list: `CardEffects` · 5 families · 27 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -145,7 +145,7 @@ File: `MotionLab/Families/CardsFamilies.swift` · list: `CardEffects` · 5 famil
 
 ### Scroll & Lists · 滚动与列表
 
-File: `MotionLab/Families/ScrollFamilies.swift` · list: `ScrollEffects` · 5 families · 14 effects
+File: `MotionLab/Families/ScrollFamilies.swift` · list: `ScrollEffects` · 5 families · 27 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -157,7 +157,7 @@ File: `MotionLab/Families/ScrollFamilies.swift` · list: `ScrollEffects` · 5 fa
 
 ### Text & Numbers · 文字与数字
 
-File: `MotionLab/Families/TextFamilies.swift` · list: `TextEffects` · 5 families · 16 effects
+File: `MotionLab/Families/TextFamilies.swift` · list: `TextEffects` · 5 families · 30 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -169,7 +169,7 @@ File: `MotionLab/Families/TextFamilies.swift` · list: `TextEffects` · 5 famili
 
 ### Icons & Symbols · 图标与符号
 
-File: `MotionLab/Families/IconsFamilies.swift` · list: `IconEffects` · 5 families · 16 effects
+File: `MotionLab/Families/IconsFamilies.swift` · list: `IconEffects` · 5 families · 25 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -181,7 +181,7 @@ File: `MotionLab/Families/IconsFamilies.swift` · list: `IconEffects` · 5 famil
 
 ### Gestures & Physics · 手势与物理
 
-File: `MotionLab/Families/GesturesFamilies.swift` · list: `GestureEffects` · 6 families · 16 effects
+File: `MotionLab/Families/GesturesFamilies.swift` · list: `GestureEffects` · 6 families · 32 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -194,7 +194,7 @@ File: `MotionLab/Families/GesturesFamilies.swift` · list: `GestureEffects` · 6
 
 ### Data & Charts · 数据与图表
 
-File: `MotionLab/Families/ChartsFamilies.swift` · list: `ChartEffects` · 5 families · 15 effects
+File: `MotionLab/Families/ChartsFamilies.swift` · list: `ChartEffects` · 5 families · 25 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -206,7 +206,7 @@ File: `MotionLab/Families/ChartsFamilies.swift` · list: `ChartEffects` · 5 fam
 
 ### Backgrounds & Ambience · 背景与氛围
 
-File: `MotionLab/Families/BackgroundsFamilies.swift` · list: `BackgroundEffects` · 5 families · 18 effects
+File: `MotionLab/Families/BackgroundsFamilies.swift` · list: `BackgroundEffects` · 5 families · 27 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|
@@ -218,7 +218,7 @@ File: `MotionLab/Families/BackgroundsFamilies.swift` · list: `BackgroundEffects
 
 ### Shaders & Materials · 着色器与材质
 
-File: `MotionLab/Families/ShadersFamilies.swift` · list: `ShaderEffects` · 5 families · 17 effects
+File: `MotionLab/Families/ShadersFamilies.swift` · list: `ShaderEffects` · 5 families · 25 effects
 
 | Family id | Name · 名称 | Count | Variations (effect ids) |
 |---|---|---:|---|

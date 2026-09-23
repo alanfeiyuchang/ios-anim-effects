@@ -155,6 +155,7 @@ private struct RadioTravelDemo: View {
         let newBottom: CGFloat = dotCenter(index) + dot / 2
         let head = Animation.spring(response: ctx["head"], dampingFraction: 0.8)
         let tail = Animation.spring(response: ctx["tail"], dampingFraction: 0.7)
+        let muted = ctx.isPreview || Haptics.isMuted
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { selected = index }
         withAnimation(head) {
             if movingDown { bottomEdge = newBottom } else { topEdge = newTop }
@@ -166,7 +167,7 @@ private struct RadioTravelDemo: View {
                 if movingDown { topEdge = newTop } else { bottomEdge = newBottom }
             }
             try? await Task.sleep(for: .seconds(0.12))
-            if !ctx.isPreview { Haptics.selection() }
+            if !muted { Haptics.selection() }
         }
     }
 

@@ -116,8 +116,9 @@ private struct WindUpTimerDemo: View {
         setImmediately(remaining)
     }
 
-    private func run() {
+    private func run(silent: Bool = false) {
         guard angle > 0.5 else { return }
+        let muted = ctx.isPreview || silent
         runID += 1
         let id = runID
         let duration = angle / rate
@@ -130,16 +131,18 @@ private struct WindUpTimerDemo: View {
             runStart = nil
             lastNotch = 0
             rings += 1
-            if !ctx.isPreview { Haptics.success() }
+            if !muted { Haptics.success() }
         }
     }
 
     private func previewWind() {
         guard runStart == nil else { return }
         withAnimation(.smooth(duration: 0.6)) { angle = 90 }
+        // Captured now: autoplay mutes haptics only for the synchronous part of the action.
+        let muted = Haptics.isMuted
         Task {
             try? await Task.sleep(for: .seconds(0.75))
-            run()
+            run(silent: muted)
         }
     }
 }

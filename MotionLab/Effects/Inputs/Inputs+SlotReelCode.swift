@@ -149,20 +149,26 @@ private struct SlotReelCodeDemo: View {
         let id = runID
         spinning = true
         let stagger = ctx["stagger"]
+        // Simulated spins (previews, the detail intro) stay silent; captured before the first await.
+        let muted = ctx.isPreview || Haptics.isMuted
         rows = digits.map { cycles * 10 + $0 }
         Task {
+            var elapsed: Double = 0
             for index in 0..<6 {
-                let landing: Double = index == 0 ? 0.45 : stagger
-                try? await Task.sleep(for: .seconds(landing))
+                // Same numbers as reelSpring: the reel reads as settled at ~80% of its spring response.
+                let delay = Double(index) * stagger
+                let settle = delay + (0.6 + delay * 0.4) * 0.8
+                try? await Task.sleep(for: .seconds(max(settle - elapsed, 0)))
+                elapsed = max(settle, elapsed)
                 guard id == runID else { return }
                 landed[index] = true
-                if !ctx.isPreview { Haptics.selection() }
+                if !muted { Haptics.selection() }
             }
             try? await Task.sleep(for: .seconds(0.3))
             guard id == runID else { return }
             spinning = false
             verified = true
-            if !ctx.isPreview { Haptics.success() }
+            if !muted { Haptics.success() }
         }
     }
 

@@ -114,13 +114,14 @@ private struct DragStepperDemo: View {
             .onEnded { _ in release() }
     }
 
-    private func change(_ delta: Int) {
+    private func change(_ delta: Int, silent: Bool = false) {
         let target = (value + delta).clamped(to: range)
+        let muted = ctx.isPreview || silent
         guard target != value else {
-            if !ctx.isPreview { Haptics.tap(.rigid) }
+            if !muted { Haptics.tap(.rigid) }
             return
         }
-        if !ctx.isPreview { Haptics.tap(.medium) }
+        if !muted { Haptics.tap(.medium) }
         withAnimation(.snappy(duration: 0.25)) { value = target }
     }
 
@@ -146,9 +147,11 @@ private struct DragStepperDemo: View {
         step += 1
         let side: CGFloat = (step / 3) % 2 == 0 ? 1 : -1
         withAnimation(.easeOut(duration: 0.22)) { offset = side * (ctx.cg("threshold") + 8) }
+        // Captured now: autoplay mutes haptics only for the synchronous part of the action.
+        let muted = Haptics.isMuted
         Task {
             try? await Task.sleep(for: .seconds(0.24))
-            change(Int(side))
+            change(Int(side), silent: muted)
             try? await Task.sleep(for: .seconds(0.2))
             release()
         }

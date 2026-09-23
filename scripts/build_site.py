@@ -31,17 +31,21 @@ def main():
         catalog = json.load(f)
 
     os.makedirs(os.path.join(out_dir, "media"), exist_ok=True)
-    have_video, have_poster = set(), set()
+    videos = posters = 0
     for effect in catalog["effects"]:
         eid = effect["id"]
-        for ext, bucket in ((".mp4", have_video), (".jpg", have_poster)):
-            src = os.path.join(media_dir, eid + ext)
-            if os.path.exists(src):
-                shutil.copyfile(src, os.path.join(out_dir, "media", eid + ext))
-                bucket.add(eid)
-    for effect in catalog["effects"]:
-        effect["video"] = effect["id"] in have_video
-        effect["poster"] = effect["id"] in have_poster
+        effect["video"], effect["poster"] = {}, {}
+        for lang in ("zh", "en"):
+            for ext, key in ((".mp4", "video"), (".jpg", "poster")):
+                name = f"{eid}.{lang}{ext}"
+                src = os.path.join(media_dir, name)
+                if os.path.exists(src) and os.path.getsize(src) > 0:
+                    shutil.copyfile(src, os.path.join(out_dir, "media", name))
+                    effect[key][lang] = True
+                    if key == "video":
+                        videos += 1
+                    else:
+                        posters += 1
     for category in catalog["categories"]:
         category["gradient"] = CATEGORY_GRADIENTS.get(category["id"], ["#6E7BFF", "#A46BFF"])
 
@@ -51,7 +55,7 @@ def main():
         f.write(page)
     with open(os.path.join(out_dir, ".nojekyll"), "w") as f:
         f.write("")
-    print(f"Site: {len(catalog['effects'])} effects, {len(have_video)} videos, {len(have_poster)} posters → {out_dir}")
+    print(f"Site: {len(catalog['effects'])} effects, {videos} videos, {posters} posters → {out_dir}")
 
 
 TEMPLATE = r"""<!doctype html>
@@ -182,9 +186,13 @@ const effById = Object.fromEntries(DATA.effects.map(e => [e.id, e]));
 const hay = e => [L(e.name), e.name.en, e.name.zh, e.summary.en, e.summary.zh, (e.apis||[]).join(" "), (e.tags||[]).join(" "),
   famById[e.family] ? famById[e.family].name.en + " " + famById[e.family].name.zh : "", e.id].join(" ").toLowerCase();
 
-function mediaHTML(e, big){
-  if (e.video) return `<video muted loop playsinline preload="none" ${e.poster?`poster="media/${e.id}.jpg"`:""} data-src="media/${e.id}.mp4"></video>`;
-  if (e.poster) return `<img loading="lazy" src="media/${e.id}.jpg" alt="">`;
+// Media is recorded per language (demo text follows the UI language); fall back to the other language.
+const pick = (e, key) => { const m = e[key] || {}; const l = m[lang] ? lang : (m.zh ? "zh" : (m.en ? "en" : null)); return l ? `media/${e.id}.${l}.${key==="video"?"mp4":"jpg"}` : null; };
+function mediaHTML(e, autoplay){
+  const v = pick(e, "video"), p = pick(e, "poster");
+  if (v) return autoplay ? `<video muted loop playsinline autoplay ${p?`poster="${p}"`:""} src="${v}"></video>`
+                         : `<video muted loop playsinline preload="none" ${p?`poster="${p}"`:""} data-src="${v}"></video>`;
+  if (p) return `<img loading="lazy" src="${p}" alt="">`;
   return `<div class="none">${t("none")}</div>`;
 }
 function cardHTML(e){
@@ -251,8 +259,8 @@ function openEffect(id){
   const sibs = f ? DATA.effects.filter(x => x.family === f.id) : [];
   const d = $("#dlg");
   d.innerHTML = `<div style="position:relative"><button class="btn ghost close" id="x" aria-label="${t("close")}">✕</button>
-   <div class="dlg"><div><div class="media">${e.video?`<video muted loop playsinline autoplay ${e.poster?`poster="media/${e.id}.jpg"`:""} src="media/${e.id}.mp4"></video>`:mediaHTML(e)}</div>
-   ${sibs.length>1?`<div class="block"><h5>${t("variants")}</h5><div class="variants">${sibs.map(s=>`<div class="v ${s.id===e.id?"on":""}" data-id="${s.id}"><div class="media">${s.poster?`<img loading="lazy" src="media/${s.id}.jpg" alt="">`:""}</div><span>${esc(L(s.name))}</span></div>`).join("")}</div></div>`:""}
+   <div class="dlg"><div><div class="media">${mediaHTML(e, true)}</div>
+   ${sibs.length>1?`<div class="block"><h5>${t("variants")}</h5><div class="variants">${sibs.map(s=>`<div class="v ${s.id===e.id?"on":""}" data-id="${s.id}"><div class="media">${pick(s,"poster")?`<img loading="lazy" src="${pick(s,"poster")}" alt="">`:""}</div><span>${esc(L(s.name))}</span></div>`).join("")}</div></div>`:""}
    </div><div>
    <div class="meta"><span class="tag">${esc(L((DATA.categories.find(c=>c.id===e.category)||{}).title||{}))}</span>${f?`<span class="tag">${esc(L(f.name))}</span>`:""}${e.requirement?`<span class="tag">${t("requires")} ${esc(e.requirement)}</span>`:""}</div>
    <h2>${esc(L(e.name))}</h2><div style="color:var(--muted)">${esc(L(e.summary))}</div>

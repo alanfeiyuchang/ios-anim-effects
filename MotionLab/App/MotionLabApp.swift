@@ -11,11 +11,14 @@ struct MotionLabApp: App {
     init() {
         // First launch: follow the device language (zh* → 中文, otherwise English) and remember it.
         AppLanguage.registerInitialChoice()
+        if CatalogTools.shouldExport {
+            CatalogTools.exportCatalog()
+        }
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            rootContent
                 .environment(\.appLanguage, language)
                 .environment(\.locale, language.locale)
                 .environment(favorites)
@@ -23,6 +26,15 @@ struct MotionLabApp: App {
                 .environment(navigator)
                 .preferredColorScheme(colorScheme)
                 .tint(Palette.accent)
+        }
+    }
+
+    /// CI video capture renders a single effect; everything else gets the full app.
+    @ViewBuilder private var rootContent: some View {
+        if let stageID = CatalogTools.stageEffectID {
+            StageOnlyView(effectID: stageID)
+        } else {
+            RootView()
         }
     }
 

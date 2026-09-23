@@ -1,0 +1,66 @@
+name: Docs site
+
+# Builds the bilingual documentation site (every effect with a recorded animation loop) and publishes it to
+# GitHub Pages. Trigger: "[site]" in a commit message, or run manually from the Actions tab.
+# One-time setup: repository Settings → Pages → Build and deployment → Source: GitHub Actions.
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: docs-site
+  cancel-in-progress: true
+
+jobs:
+  record:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[site]')
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    name: Record shard ${{ matrix.shard }}
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          PICK=$(ls -d /Applications/Xcode_26*.app | grep -v -i beta | sort -V | tail -n 1)
+          sudo xcode-select -s "$PICK"
+      - name: Install ffmpeg
+        run: brew install ffmpeg >/dev/null
+      - name: Record effects
+        run: scripts/record-catalog.sh out ${{ matrix.shard }} 6
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shard-${{ matrix.shard }}
+          path: out/
+          retention-days: 3
+
+  site:
+    needs: record
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: shards
+      - name: Merge shards and build site
+        run: |
+          mkdir -p media
+          for d in shards/shard-*; do cp -R "$d/media/." media/ 2>/dev/null || true; done
+          cp shards/shard-0/catalog.json catalog.json
+          python3 scripts/build_site.py catalog.json media site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

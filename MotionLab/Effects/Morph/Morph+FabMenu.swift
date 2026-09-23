@@ -176,7 +176,7 @@ private struct FabBackdrop: View {
             }
         }
         .padding(.horizontal, 22)
-        .padding(.top, 56)
+        .padding(.top, 22)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .allowsHitTesting(false)
     }

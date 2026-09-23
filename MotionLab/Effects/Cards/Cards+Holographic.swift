@@ -43,7 +43,7 @@ private struct CardsHoloDemo: View {
                     intensity: ctx["intensity"],
                     maxAngle: ctx["angle"],
                     sparkle: ctx.bool("sparkle"),
-                    // Sparkles twinkle on their own clock and speed up with the tilt.
+                    // Sparkles twinkle on their own clock; the tilt shifts their phase further.
                     sparklePhase: t.truncatingRemainder(dividingBy: 1_000) * 0.7,
                     language: ctx.language
                 )

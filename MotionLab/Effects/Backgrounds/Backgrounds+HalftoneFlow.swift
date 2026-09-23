@@ -7,16 +7,16 @@ extension Effect {
         interaction: .loop,
         name: L("Halftone Flow", "半调点阵流"),
         summary: L(
-            "A dot matrix swells and shrinks with flowing interference waves — a clean, noise-free texture.",
-            "点阵随流动的干涉波起伏缩放，干净无噪点的动态肌理。"
+            "A dot matrix swells and shrinks with flowing interference waves — tap to flash the exposure.",
+            "点阵随流动的干涉波起伏缩放，点击闪一次曝光。"
         ),
         prompt: L(
-            "A dark graphite canvas covered edge to edge by a regular halftone dot matrix. Each dot’s radius is driven by a smooth interference field — two diagonal traveling sine waves, one horizontal drift and one ripple radiating from the center, each at its own speed (4–10 s periods) — so bands of large dots glide, cross and dissolve like light under water while quiet areas shrink to pinpoints. The whole matrix is tinted by one diagonal gradient (indigo → violet → pink → amber), so color stays still while form moves. Tapping drops a new ripple source: a ring of swollen dots expands from the finger at about 200 pt/s and fades over 2.5 s, interfering with the field. Crisp, calm and quietly premium, in the spirit of Stripe and Vercel hero art.",
-            "深石墨色画布被规则的半调点阵完整铺满。每个点的半径由平滑的干涉场驱动：两道斜向行进的正弦波、一道水平漂移的波，加上一道从中心扩散的涟漪，各自速度不同（周期 4–10 秒）。大点组成的光带如水下光影般滑动、交错又消散，平静区域则缩成针尖。整片点阵由一条对角渐变（靛蓝 → 紫 → 粉 → 琥珀）统一着色，色彩静止、形态流动。点击会投下新的涟漪源：一圈膨大的点阵以约 200pt/秒的速度从指尖扩散，在 2.5 秒内淡去，并与原有波场相互干涉。清晰、沉静、低调高级，颇具 Stripe 与 Vercel 首屏美术的气质。"
+            "A dark graphite canvas covered edge to edge by a regular halftone dot matrix. Each dot’s radius is driven by a smooth interference field — two diagonal traveling sine waves, one horizontal drift and one ripple radiating from the center, each at its own speed (4–10 s periods) — so bands of large dots glide, cross and dissolve like light under water while quiet areas shrink to pinpoints. The whole matrix is tinted by one diagonal gradient (indigo → violet → pink → amber), so color stays still while form moves. A tap fires a flash-bulb exposure: within 80 ms every dot swells toward full coverage, strongest within ~180 pt of the finger, then the print relaxes through a damped swing (decay 2.6/s, 5.5 rad/s), briefly under-exposing before it settles in about 2 s. Crisp, calm and quietly premium.",
+            "深石墨色画布被规则的半调点阵完整铺满。每个点的半径由平滑的干涉场驱动：两道斜向行进的正弦波、一道水平漂移的波与一道从中心扩散的涟漪，各自速度不同（周期 4–10 秒）。大点光带如水下光影般滑动、交错又消散，平静处缩成针尖。点阵由对角渐变（靛蓝 → 紫 → 粉 → 琥珀）统一着色，色彩静止、形态流动。点击如闪光灯“曝光”：80ms 内所有点膨大到接近铺满（指尖约 180pt 内最强），再以阻尼摆动（衰减 2.6/s、5.5 rad/s）回落，途中短暂欠曝、点径略小于常态，约 2 秒内平息。沉静而高级。"
         ),
         implementation: L(
-            "Per frame, every dot's radius is sampled from a sum of sines (plus an expanding Gaussian ring per recent tap) and appended to a single Path, which is filled once with a linear gradient — one draw call for the whole field.",
-            "每帧根据正弦叠加场（外加每次点击产生的扩散高斯环）计算每个点的半径并追加到同一条 Path，最后以线性渐变一次性填充——整片点阵只需一次绘制调用。"
+            "Per frame, every dot's radius is sampled from a sum of sines, raised to a tap-driven exposure gamma (a damped swing, weighted toward the finger) and appended to a single Path, which is filled once with a linear gradient — one draw call for the whole field.",
+            "每帧根据正弦叠加场计算每个点的半径，再按点击触发的曝光 gamma（阻尼摆动，靠近指尖更强）调整，追加到同一条 Path，最后以线性渐变一次性填充——整片点阵只需一次绘制调用。"
         ),
         apis: ["Canvas", "TimelineView(.animation)", "Path.addEllipse(in:)", "GraphicsContext.Shading.linearGradient"],
         tags: ["halftone", "dots", "pattern", "texture", "半调", "点阵", "纹理", "图案"],
@@ -47,7 +47,7 @@ private struct HalftoneFlowDemo: View {
                     t: t,
                     spacing: max(ctx.cg("spacing"), 6),
                     colors: HalftoneCanvas.paletteColors(ctx.int("palette")),
-                    exposure: HalftoneExposure(origin: origin, amount: HalftoneExposure.amount(age: now - exposedAt))
+                    exposure: HalftoneExposure(origin: origin, amount: HalftoneExposure.envelope(age: now - exposedAt))
                 )
             }
             BackgroundSampleTitle(
@@ -82,7 +82,7 @@ private struct HalftoneExposure {
     let amount: Double
 
     /// Rise in 80 ms, then a damped swing (decay 2.6/s, 5.5 rad/s) that dips to ≈ −0.23 before settling.
-    static func amount(age: Double) -> Double {
+    static func envelope(age: Double) -> Double {
         guard age >= 0, age < 2.2 else { return 0 }
         let attack = min(age / 0.08, 1)
         return attack * exp(-2.6 * age) * cos(5.5 * age)

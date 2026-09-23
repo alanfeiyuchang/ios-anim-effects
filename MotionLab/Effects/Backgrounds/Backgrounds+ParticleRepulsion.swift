@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A dark midnight canvas holding a precise grid of ~500 tiny particles, each tethered to its home position by an underdamped spring (damping ratio ≈ 0.45). Tapping, or swiping sideways across the field, pushes particles radially away with a force that falls off quadratically toward the edge of an 80 pt influence radius, carving a clean moving void ringed by compressed particles. Displaced particles brighten and grow continuously with their offset — size eases from 2.2 to 4.2 pt while color blends from faint white through sky blue to glowing pink over the first 18 pt of travel — and a soft halo marks the touch point. On release, everything springs home with a small overshoot and settles in about a second. Responsive, physical and quietly delightful.",
-            "午夜深色画布上整齐排列着约 500 个细小粒子，每个粒子都由一根欠阻尼弹簧（阻尼比约 0.45）拴在自己的原点。点击或横向划过粒子场时，粒子被沿径向推开，推力在 80pt 影响半径内随距离呈二次方衰减，于是形成一块干净、随手移动的空洞，四周环绕被挤压的粒子。粒子越偏离原位就越亮、越大，且过渡连续——在前 18pt 的位移内，直径由 2.2pt 平滑增大到 4.2pt，颜色由淡白经天蓝渐变为发光的粉色——触点处还有一圈柔和光晕。松手后所有粒子带着轻微过冲弹回原位，约一秒内完全平静。灵敏、富有物理感，令人会心一笑。"
+            "午夜深色画布上整齐排列约 500 个细小粒子，每个粒子都由一根欠阻尼弹簧（阻尼比约 0.45）拴在自己的原点。点击或横向划过粒子场时，粒子被沿径向推开，推力在 80pt 影响半径内随距离呈二次方衰减，形成一块随手移动的干净空洞，四周环绕被挤压的粒子。粒子越偏离原位就越亮、越大，且过渡连续——在前 18pt 的位移内，直径由 2.2pt 平滑增大到 4.2pt，颜色由淡白经天蓝渐变为发光的粉色——触点处还有一圈柔和光晕。松手后所有粒子带着轻微过冲弹回原位，约一秒内完全平静。灵敏而富有物理感。"
         ),
         implementation: L(
             "A reference-type model held in @State integrates spring + repulsion forces with semi-implicit Euler inside the Canvas renderer each TimelineView frame; particles are batched into eight Paths by displacement, each with an interpolated size and color, so the blend looks continuous at the cost of only eight fills.",

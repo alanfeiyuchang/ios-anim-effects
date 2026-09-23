@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A near-black canvas covered by a barely visible 18 pt dot grid. A soft gradient orb — violet, pink and sky blended in a slowly breathing conic swirl, blurred to about a quarter of its diameter with a bright white core — floats over it with additive blending. Tapping or dragging sideways sends the orb after the finger on a spring with deliberate lag (response ≈ 0.45 s, damping ≈ 0.72), so fast swipes make it overshoot and settle, and wherever it passes a circular spotlight reveals the dot grid at full brightness, fading radially at the edge. At rest it breathes in scale by 8% over 2.2 s. A crisp headline sits above. It feels precise, magnetic and premium — like a Linear or Vercel hero section.",
-            "近乎纯黑的画布上铺着一层几乎不可见的 18pt 点阵网格。一颗柔和的渐变光球——紫、粉、天蓝以缓慢呼吸的锥形渐变交融，模糊半径约为直径的四分之一，中心有一枚亮白光核——以叠加混合漂浮其上。点击或横向拖动时，光球通过带有明显滞后的弹簧跟随手指（响应约 0.45 秒、阻尼约 0.72），快速划动时会过冲再回稳；光球经过之处，圆形聚光会把点阵以全亮度显现，并在边缘径向淡出。静止时光球在 2.2 秒内以 8% 的幅度呼吸缩放。上方配一行利落的标题。整体精准、有磁性、高级，犹如 Linear 或 Vercel 官网首屏。"
+            "近乎纯黑的画布上铺着一层几乎不可见的 18pt 点阵网格。一颗柔和的渐变光球——紫、粉、天蓝以缓慢呼吸的锥形渐变交融，模糊半径约为直径的四分之一，中心有一枚亮白光核——以叠加混合漂浮其上。点击或横向拖动时，光球以带明显滞后的弹簧跟随手指（响应约 0.45 秒、阻尼约 0.72），快速划动时会过冲再回稳；光球经过之处，圆形聚光以全亮度显现点阵，并在边缘径向淡出。静止时光球在 2.2 秒内以 8% 的幅度呼吸缩放。上方配一行利落的标题。精准、有磁性，犹如 Linear 官网首屏。"
         ),
         implementation: L(
             "Two Canvas dot grids stacked; the bright one is masked by a RadialGradient positioned at the orb. DragGesture retargets the orb position through withAnimation(.spring), and phaseAnimator adds the breathing.",

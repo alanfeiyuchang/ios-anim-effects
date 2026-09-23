@@ -15,8 +15,8 @@ extension Effect {
             "黄昏的窗玻璃上挂满雨珠，背后是朦胧街灯；较大的水滴以“停—滑”节奏断续滑落。"
         ),
         prompt: L(
-            "A rainy window at night: soft, heavily blurred city lights in violet, amber and teal glow behind a faintly fogged pane. About 140 tiny static beads (0.8–3.4 pt) cling to the glass, each drawn with a dark lower shadow and a pin-point highlight. A handful of larger runners (4.5–7.5 pt, slightly elongated) move with real stick-slip motion: each one holds still, then lurches 14–24 pt down within the first 30% of its cycle on a smoothstep, then waits again, meandering sideways as it goes and leaving a tapering trail of five micro-beads. Tapping the glass knocks a fresh drop loose that accelerates straight down under gravity (420 pt/s²) with a slight wobble. Quiet, intimate and cinematic.",
-            "夜雨中的窗：玻璃上蒙着一层淡雾，背后是柔和、重度模糊的紫、琥珀与青色城市灯光。约 140 颗细小的静止雨珠（0.8–3.4pt）附着在玻璃上，每颗都带有下方暗影与针尖般的高光。几颗较大的“流滴”（4.5–7.5pt，略呈椭圆）以真实的“停—滑”方式运动：先静止不动，再在每个周期的前 30% 内以 smoothstep 猛地下滑 14–24pt，然后再次停住；下滑时左右蜿蜒，身后留下五颗逐渐变小的微珠拖尾。点击玻璃会震落一颗新水滴，在重力（420pt/s²）作用下加速直落并轻微摇摆。安静、私密、富有电影感。"
+            "A rainy window at dusk: behind a faintly fogged pane, a blue-hour sky fades from slate blue through mauve to a warm apricot glow, dotted with soft, heavily blurred street lamps in amber, rose and pale blue. About 140 tiny static beads (0.8–3.4 pt) cling to the glass, each drawn with a dark lower shadow and a pin-point highlight. A handful of larger runners (4.5–7.5 pt, slightly elongated) move with real stick-slip motion: each one holds still, then lurches 14–24 pt down within the first 30% of its cycle on a smoothstep, then waits again, meandering sideways as it goes and leaving a tapering trail of five micro-beads. Tapping the glass knocks a fresh drop loose that accelerates straight down under gravity (420 pt/s²) with a slight wobble. Quiet, intimate and cinematic.",
+            "黄昏雨中的窗：玻璃蒙着淡雾，背后的蓝调天空从石板蓝经淡紫过渡到暖杏色，点缀重度模糊的琥珀、玫瑰与淡蓝街灯。约 140 颗细小静止雨珠（0.8–3.4pt）附着在玻璃上，每颗带下方暗影与针尖高光。几颗较大的“流滴”（4.5–7.5pt，略呈椭圆）以真实的“停—滑”方式运动：先静止，再于周期前 30% 内以 smoothstep 猛地下滑 14–24pt，再停住；下滑时左右蜿蜒，拖出五颗渐小的微珠。点击玻璃会震落一颗新水滴，在重力（420pt/s²）下加速直落并轻微摇摆。私密而富有电影感。"
         ),
         implementation: L(
             "One Canvas: a blurred drawLayer for the city lights, beads and highlights batched into three Paths, and runners whose y advances by floor(cycle) + smoothstep(fract(cycle)/0.3); tapped drops follow y₀ + ½·g·t².",
@@ -72,7 +72,7 @@ extension Effect {
         ),
         prompt: L(
             "A warm dusk sky (plum to rust to amber) with a low glowing sun. Leaves in amber, coral, crimson and ochre fall in depth: near leaves are bigger, sharper and faster, far ones small and softly blurred. Each leaf follows a falling-leaf pendulum: it swings side to side on a sine, tilting with the swing, and its descent speed varies as 1 + ½·cos(2·phase), so it floats at the ends of each arc and drops through the middle; a slow cosine squash of its width fakes a 3D flip. A light 18 pt/s breeze carries everything. Tapping sends a gust: +220 pt/s of wind (capped at 420) that decays at 1.6/s and briefly spins the leaves faster. Cozy, nostalgic and alive.",
-            "温暖的黄昏天空（梅紫 → 铁锈红 → 琥珀）低悬着一轮发光的太阳。琥珀、珊瑚、绯红与赭黄色的落叶分层飘落：近处的叶子更大、更清晰、更快，远处的则更小并带柔和模糊。每片叶子都遵循落叶的钟摆运动：沿正弦左右摆动、随摆动倾斜，下落速度按 1 + ½·cos(2·相位) 变化——在弧线两端几乎悬停，经过中点时加速下坠；叶片宽度随缓慢的余弦压缩，模拟三维翻转。一阵每秒 18pt 的微风带着所有叶子漂移。点击会刮起一阵风：风速 +220pt/s（上限 420），以 1.6/s 衰减，并让叶片短暂转得更快。温馨、怀旧、充满生机。"
+            "温暖的黄昏天空（梅紫 → 铁锈红 → 琥珀）低悬一轮发光的太阳。琥珀、珊瑚、绯红与赭黄色的落叶分层飘落：近处的叶子更大、更清晰、更快，远处的则更小并带柔和模糊。每片叶子遵循落叶的钟摆运动：沿正弦左右摆动、随摆动倾斜，下落速度按 1 + ½·cos(2·相位) 变化——在弧线两端几乎悬停，经过中点时加速下坠；叶片宽度随缓慢的余弦压缩，模拟三维翻转。一阵每秒 18pt 的微风带着所有叶子漂移。点击会刮起一阵风：风速 +220pt/s（上限 420），以 1.6/s 衰减，并让叶片短暂转得更快。温馨而怀旧。"
         ),
         implementation: L(
             "Each leaf's position is analytic: y = fall·(t + sin(2φ)/4ω), x = sway·sin φ + wind offset; one leaf Path is appended per color with addPath(_:transform:) (translate · rotate · scale) and far leaves are drawn in a blurred layer.",

@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A dusky forest-green gradient backdrop with a darker floor. Dozens of fireflies — warm lime and honey-gold points, each wrapped in a soft radial halo — wander on slow, organic paths made of two layered sine drifts per axis (periods ≈ 5–25 s at the default pace, each with its own seeded phase), never in lockstep. Every firefly pulses independently: brightness rises and falls on a squared-sine curve every 2.5–5 s, lingering dim and flaring briefly, and halos add together where they overlap; halo size varies per particle to fake depth. Tapping startles the swarm: fireflies within ~120 pt flare to full brightness and scatter outward up to 60 pt, then drift back over about 1.5 s as the glow decays. Quiet, magical and nocturnal — a summer evening you could fall asleep to.",
-            "暮色森林绿渐变背景，底部更深。数十只萤火虫——暖青柠色与蜂蜜金色的光点，各自包裹一圈柔和的径向光晕——沿缓慢而有机的路径游走：每个轴由两层正弦漂移叠加（默认速度下周期约 5–25 秒，相位由种子决定），彼此从不同步。每只独立呼吸闪烁：亮度按正弦平方曲线每 2.5–5 秒起落一次，多数时间微暗、偶尔骤亮，重叠处光晕叠加；光晕大小因粒子而异，营造景深。点击会惊动光群：约 120pt 范围内的萤火虫瞬间亮到最强，向外散开最多 60pt，再在约 1.5 秒内随光芒衰减漂回原处。安静奇幻，满是仲夏夜气息。"
+            "暮色森林绿渐变背景，底部更深。数十只萤火虫——暖青柠色与蜂蜜金色的光点，各自包裹一圈柔和的径向光晕——沿缓慢而有机的路径游走：每个轴由两层正弦漂移叠加（默认速度下周期约 5–25 秒，相位由种子决定），彼此从不同步。每只独立呼吸闪烁：亮度按正弦平方曲线每 2.5–5 秒起落一次，多数时间微暗、偶尔骤亮；光晕大小因粒子而异，营造景深。点击会惊动光群：约 120pt 内的萤火虫瞬间亮到最强，向外散开最多 60pt，再在约 1.5 秒内随光芒衰减漂回原处。安静奇幻，满是仲夏夜气息。"
         ),
         implementation: L(
             "Canvas inside TimelineView(.animation): each firefly's position and pulse are pure functions of its index and time, drawn as radial-gradient discs with .plusLighter blending. A tap stores an origin and timestamp; a distance falloff times an out-and-back impulse envelope offsets and brightens nearby fireflies.",

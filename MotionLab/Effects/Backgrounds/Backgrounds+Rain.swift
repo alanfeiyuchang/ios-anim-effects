@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A moody night-city backdrop: a deep blue-slate gradient with a handful of heavily blurred amber, coral and cyan window lights glowing near the bottom. Over it, a dense curtain of fine rain streaks falls at a wind-set slant; each streak's speed and length scale with a random depth value, and streaks are split into a near layer (1.3 pt, brighter) and a far layer (0.7 pt, fainter), so near drops are brighter, longer and faster while distant ones read as a faint haze. At the base, small flattened ripple ellipses expand and fade on staggered ~0.8 s cycles where drops land. Tapping triggers a lightning strike: an instant cold-white flash for 80 ms, a brief dip, a second flicker from ~160 to 240 ms, then an exponential fade over ~0.5 s with a heavy haptic. Cinematic, melancholic and cosy.",
-            "情绪化的夜城背景：深蓝灰渐变，底部点缀几团高度模糊的琥珀色、珊瑚色与青色窗灯。其上密集的细雨丝按风向倾斜坠落；每条雨丝的速度与长度随随机景深值变化，并分为近景（1.3pt、更亮）与远景（0.7pt、更淡）两层，近处雨滴更亮、更长、更快，远处则化为一层淡淡雨雾。画面底部，雨滴落点处的扁平涟漪椭圆以约 0.8 秒的错峰周期扩散并淡出。点击触发闪电：先是持续 80 毫秒的冷白闪光，短暂变暗后在约 160–240 毫秒再闪一次，随后在约 0.5 秒内指数衰减，并伴随强烈触觉反馈。电影感十足，忧郁又温馨。"
+            "情绪化的夜城背景：深蓝灰渐变，底部点缀几团高度模糊的琥珀色、珊瑚色与青色窗灯。其上密集的细雨丝按风向倾斜坠落；每条雨丝的速度与长度随随机景深值变化，并分为近景（1.3pt、更亮）与远景（0.7pt、更淡）两层，近处雨滴更亮、更长、更快，远处则化为一层淡淡雨雾。画面底部，雨滴落点处的扁平涟漪椭圆以约 0.8 秒的错峰周期扩散并淡出。点击触发闪电：先是持续 80 毫秒的冷白闪光，短暂变暗后在约 160–240 毫秒再闪一次，随后在约 0.5 秒内指数衰减，并伴随强烈触觉反馈。忧郁又温馨。"
         ),
         implementation: L(
             "One Canvas: a blurred drawLayer for city lights, rain streaks batched into two depth Paths, stroked ripple ellipses, and a flash overlay whose envelope is computed from the time since the last tap.",

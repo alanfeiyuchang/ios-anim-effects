@@ -16,7 +16,7 @@ extension Effect {
         ),
         prompt: L(
             "A near-black stage holds a luminous halo built from two heavily blurred conic (angular) gradients: a 300 pt outer disc turning clockwise at about 0.35 rad/s (≈ 18 s per turn) and a 190 pt inner disc turning the other way at 60% of that speed, added with a plus-lighter blend, plus a crisp 1.5 pt conic ring and a dark blurred core that hollows the center. Tapping injects angular momentum: +7 rad/s (capped at 16) that bleeds away through exponential friction (≈ 1.6/s, half-life ≈ 0.43 s), so the halo whips around, swells up to 6% and brightens its ring, then coasts smoothly back to its idle drift with a soft haptic. It feels like a flywheel of light — focused, calm and physical.",
-            "近乎纯黑的舞台中央，是由两层重度模糊的锥形（角度）渐变构成的发光光环：外层 300pt 圆盘以约 0.35 rad/s（约 18 秒一圈）顺时针旋转，内层 190pt 圆盘以其 60% 的速度反向旋转，以 plus-lighter 叠加；再加一圈 1.5pt 的清晰锥形细环，以及一个把中心掏空的模糊暗核。点击会注入角动量：+7 rad/s（上限 16），并按指数摩擦（约 1.6/s，半衰期约 0.43 秒）逐渐流失——光环猛地甩转、最多放大 6%、细环同时变亮，随后平滑滑行回到闲置漂移，伴随一次柔和触感。它像一只由光构成的飞轮：专注、安静，又有物理分量。"
+            "近乎纯黑的舞台中央，是由两层重度模糊的锥形渐变构成的发光光环：外层 300pt 圆盘以约 0.35 rad/s（约 18 秒一圈）顺时针旋转，内层 190pt 圆盘以其 60% 的速度反向旋转，以 plus-lighter 叠加；再加一圈 1.5pt 的清晰锥形细环与一个掏空中心的模糊暗核。点击注入角动量 +7 rad/s（上限 16），按指数摩擦（约 1.6/s，半衰期约 0.43 秒）流失：光环猛地甩转、最多放大 6%、细环同时变亮，再平滑滑回闲置漂移，伴随柔和触感。像一只由光构成的飞轮。"
         ),
         implementation: L(
             "A small model integrates angle += (base + boost)·dt each TimelineView frame and decays boost by exp(−friction·dt); two blurred AngularGradient circles, a stroked ring and a dark core are composited in one drawingGroup.",
@@ -44,7 +44,7 @@ extension Effect {
         ),
         prompt: L(
             "A dark, moody photo-like frame is crossed by four large, heavily blurred light leaks (36 pt blur) in amber, coral, magenta and cream. Each leak is a tilted ellipse that makes a long linear pass across the frame every 7–11 s, alternating left-to-right and right-to-left and entering at a new height each pass; its intensity follows sin²(π·progress), so it swells in and dies away without edges, and a white-hot inner core rides along. Leaks add with a plus-lighter blend so overlaps bloom. The whole layer flickers like a projector at 12 steps per second (up to ±8% around a 90% exposure). Tapping burns the film: a warm full-frame wash flashes in and fades exponentially (time constant ≈ 0.45 s). Nostalgic, analog and cinematic.",
-            "一张深色、带情绪的“照片”画面上，四道大面积、重度模糊（36pt）的漏光斜扫而过，颜色分别是琥珀、珊瑚、洋红与奶油白。每道漏光是一个倾斜的椭圆，每 7–11 秒完成一次横穿画面的线性扫过，左右方向交替，每次从新的高度进入；亮度遵循 sin²(π·进度)，因此无边界地渐起渐灭，内部还跟着一团白热光芯。漏光以 plus-lighter 叠加，重叠处自然溢光。整层像放映机一样以每秒 12 步闪烁（以 90% 曝光为中心最多 ±8%）。点击会“烧片”：暖色全屏光晕瞬间亮起，并以约 0.45 秒的时间常数指数衰减。怀旧、模拟、电影感十足。"
+            "一张深色、带情绪的“照片”上，四道重度模糊（36pt）的大面积漏光斜扫而过，颜色为琥珀、珊瑚、洋红与奶油白。每道漏光是一个倾斜的椭圆，每 7–11 秒线性横穿画面一次，方向左右交替，每次从新的高度进入；亮度遵循 sin²(π·进度)，无边界地渐起渐灭，内部跟着一团白热光芯。漏光以 plus-lighter 叠加，重叠处自然溢光。整层像放映机一样以每秒 12 步闪烁（以 90% 曝光为中心最多 ±8%）。点击会“烧片”：暖色全屏光晕瞬间亮起，以约 0.45 秒的时间常数指数衰减。怀旧而富有电影感。"
         ),
         implementation: L(
             "A Canvas with a blur filter and plus-lighter blend mode fills rotated ellipse Paths whose position and envelope come from accumulated time; exposure is a stepped hash of time, and the burn envelope is exp(−Δt·2.2) since the last tap.",
@@ -71,8 +71,8 @@ extension Effect {
             "斜切的网格渐变色带中有一道行进波流过，点击后像果冻一样抖动。"
         ),
         prompt: L(
-            "A landing-page hero: the top of the stage is a 4×3 mesh gradient of violet, pink, orange, amber, cyan and teal, clipped into a band whose lower edge slants down from right to left; below it sits the plain system background with a headline in primary text. Instead of wandering, the mesh's middle row carries a traveling wave — each column's vertex rises and falls on the same sine, 1.4 rad behind its left neighbor (≈ 4.8 s period at 1×) — so color crests roll across the band, while interior vertices sway ±7% sideways. Tapping hits the band: the wave amplitude jumps by 130% and rings out as a damped oscillation (decay 2.4/s, 9 rad/s), briefly inverting, like jelly settling. Confident, colorful and modern.",
-            "一个落地页首屏：舞台上方是由紫、粉、橙、琥珀、青与蓝绿组成的 4×3 网格渐变，被裁成一条下边缘从右向左斜向下的色带；色带下方是普通的系统背景与一行主色标题。网格不再四处游走，而是在中间一行承载一道行进波——每一列的顶点沿同一条正弦上下起伏，并比左侧相邻列滞后 1.4 弧度（1× 时周期约 4.8 秒）——于是色彩波峰从色带上滚过，内部顶点同时左右摇摆 ±7%。点击色带会“敲”它一下：波幅瞬间增加 130%，再以阻尼振荡（衰减 2.4/s、9 rad/s）回落，途中短暂反相，像果冻慢慢稳定。自信、鲜艳、现代。"
+            "A landing-page hero: the top of the stage is a 4×3 mesh gradient of violet, pink, orange, amber, cyan and teal, clipped into a band whose lower edge slants down from right to left; below it sits the plain system background with a headline in primary text. Instead of wandering, the mesh's middle row carries a traveling wave — each column's vertex rises and falls on the same sine, 1.4 rad behind its left neighbor (≈ 4.8 s period at 1×) — so color crests roll across the band, while interior vertices sway ±7% sideways. Tapping hits the band: the wave amplitude jumps by 130% and rings out as a damped oscillation (decay 2.4/s, 9 rad/s), dipping to about half its resting height once before settling, like jelly. Confident, colorful and modern.",
+            "一个落地页首屏：舞台上方是由紫、粉、橙、琥珀、青与蓝绿组成的 4×3 网格渐变，被裁成一条下边缘从右向左斜向下的色带，下方是系统背景与一行主色标题。网格不四处游走，而是在中间一行承载行进波：每列顶点沿同一正弦上下起伏，比左侧相邻列滞后 1.4 弧度（1× 时周期约 4.8 秒），色彩波峰从色带上滚过，内部顶点同时左右摇摆 ±7%。点击色带会“敲”它一下：波幅瞬间增加 130%，再以阻尼振荡（衰减 2.4/s、9 rad/s）回落，途中一度跌到常态的一半左右，像果冻般稳定下来。自信、鲜艳、现代。"
         ),
         implementation: L(
             "MeshGradient(width: 4, height: 3) gets its 12 points from a traveling-wave function of accumulated time; the amplitude is multiplied by 1 + 1.3·e^(−2.4t)·cos(9t) after a tap, and a custom slanted Shape clips the band.",

@@ -131,14 +131,14 @@ extension Effect {
         category: .shaders,
         interaction: .loop,
         name: L("Plasma Field", "等离子场"),
-        summary: L("A generative, endlessly flowing iridescent field.", "程序生成、无限流动的虹彩能量场。"),
+        summary: L("A generative, endlessly flowing iridescent field — tap to shift its palette.", "程序生成、无限流动的虹彩能量场，点击切换色相。"),
         prompt: L(
-            "A full-bleed generative background of flowing iridescent plasma: four overlapping sine fields (horizontal, vertical, diagonal and radial) are summed and mapped onto a deliberately limited, cyclic three-stop ramp — cyan → violet → gold — while the troughs sink into deep indigo, so luminous bands fold into one another over dark valleys. The ramp slowly advances, the motion never visibly repeats, and there are no hard edges. A tap injects a ripple into the field: a ring travelling at ~260 pt/s bends the bands as it passes and fades out within about 2.5 s. Ambient, liquid and high-energy — suited to splash screens or premium paywalls.",
-            "全屏程序化生成的流动虹彩等离子背景：水平、竖直、对角与径向四组正弦场叠加后，映射到刻意克制的三色循环色带——青 → 紫 → 金——场的低谷沉入深靛蓝，明亮的色带在暗色谷底之上持续翻卷。色带缓慢推进，画面没有可见的重复，也没有硬边。点击会向能量场注入一道涟漪：波环以约 260pt/秒扩散，经过之处色带随之弯折，约 2.5 秒内淡去。充满能量的液态氛围表面，适合启动页或高级付费墙。"
+            "A full-bleed generative background of flowing iridescent plasma: four overlapping sine fields (horizontal, vertical, diagonal and radial) are summed and mapped onto a deliberately limited, cyclic three-stop ramp — cyan → violet → gold — while the troughs sink into deep indigo, so luminous bands fold into one another over dark valleys. The ramp slowly advances, the motion never visibly repeats, and there are no hard edges. A tap jumps the whole palette one stop forward (cyan → violet → gold) on a 0.9 s cubic ease-out, while a flash that rises in 120 ms lifts the troughs and brightens the bands, then fades at ≈ 3.2/s. Ambient, liquid and high-energy — suited to splash screens or premium paywalls.",
+            "全屏程序化生成的流动虹彩等离子背景：水平、竖直、对角与径向四组正弦场叠加后，映射到刻意克制的三色循环色带——青 → 紫 → 金——场的低谷沉入深靛蓝，明亮的色带在暗色谷底之上持续翻卷。色带缓慢推进，画面没有可见的重复，也没有硬边。点击会让整条色带前进一档（青 → 紫 → 金），以 0.9 秒三次缓出过渡，同时一道 120ms 内亮起的闪光抬亮谷底与色带，再以约 3.2/s 衰减。充满能量的液态氛围表面，适合启动页或高级付费墙。"
         ),
         implementation: L(
-            "A Metal color shader computes the color purely from position, size and time on a Rectangle — four sine fields feed a smoothstepped three-stop ramp shaded toward indigo in the troughs; a tap passes an origin and age that add a travelling, decaying ring to the field.",
-            "在 Rectangle 上使用 Metal colorEffect，仅依据位置、尺寸与时间计算颜色——四组正弦场驱动平滑过渡的三色色带，低谷向靛蓝压暗；点击传入圆心与经过时间，为场叠加一道向外扩散并衰减的波环。"
+            "A Metal color shader computes the color purely from position, size and time on a Rectangle — four sine fields feed a smoothstepped three-stop ramp shaded toward indigo in the troughs; a tap eases a palette offset one stop forward per frame and passes a short flash that lifts the troughs.",
+            "在 Rectangle 上使用 Metal colorEffect，仅依据位置、尺寸与时间计算颜色——四组正弦场驱动平滑过渡的三色色带，低谷向靛蓝压暗；点击后逐帧缓动色带偏移前进一档，并传入短暂闪光以抬亮谷底。"
         ),
         apis: ["colorEffect", "visualEffect", "TimelineView", "Metal"],
         tags: ["plasma", "generative", "iridescent", "background", "等离子", "生成艺术", "虹彩", "背景"],

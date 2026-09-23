@@ -15,7 +15,7 @@ extension Effect {
         ),
         prompt: L(
             "A small planet scene — a lit sphere with a sweeping terminator, an orbiting moon and a gradient sky — is rendered through an ordered-dither screen: the image is quantized into 3 pt cells, each cell's luminance is compared against a 4×4 Bayer threshold matrix and snapped to one of four tones on a two-color ramp (Game Boy green by default), so smooth gradients turn into crisp cross-hatch patterns. The scene itself animates on twos, stepping at 12 fps like stop-motion. Tapping swaps the palette (Game Boy → 1-bit Mac → amber terminal → blueprint) with a 'pixel crunch': cells swell by 10 pt in 80 ms, the palette changes at the peak, then they spring back (response 0.45 s, damping 0.8). Nostalgic, graphic and crisp.",
-            "一个小行星场景——被光照的球体与缓缓扫过的明暗交界线、环绕的卫星、渐变天空——被送进有序抖动网屏：画面先量化为 3pt 的像素格，每格的亮度与 4×4 Bayer 阈值矩阵比较，并吸附到双色渐变上的四个色阶之一（默认 Game Boy 绿），平滑渐变因此变成清晰的交叉网纹。场景本身以“一拍二”的方式运动，每秒 12 帧逐格步进，像定格动画。点击会切换配色（Game Boy → 1-bit Mac → 琥珀终端 → 蓝图），并伴随一次“像素挤压”：80 毫秒内像素格放大 10pt，在峰值处换色，再以弹簧（响应 0.45 秒、阻尼 0.8）回弹。怀旧、图形感强、干净利落。"
+            "一个小行星场景——受光的球体与缓缓扫过的明暗交界线、环绕的卫星、渐变天空——被送进有序抖动网屏：画面先量化为 3pt 像素格，每格亮度与 4×4 Bayer 阈值矩阵比较，吸附到双色渐变上的四个色阶之一（默认 Game Boy 绿），渐变化作清晰的交叉网纹。场景以“一拍二”方式运动，每秒 12 帧逐格步进，像定格动画。点击切换配色（Game Boy → 1-bit Mac → 琥珀终端 → 蓝图），并伴随一次“像素挤压”：80 毫秒内像素格放大 10pt，在峰值处换色，再以弹簧（响应 0.45 秒、阻尼 0.8）回弹。"
         ),
         implementation: L(
             "A [[stitchable]] layer shader samples each cell center, computes a Bayer index with bit operations, quantizes luminance with floor(l·(n−1) + threshold) and maps it onto a dark→light color pair; the source time is floored to 1/12 s and the pixel size is an Animatable value.",

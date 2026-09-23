@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A deep navy-to-indigo backdrop holds ~42 small star nodes (1.2–2.6 pt, gently twinkling) scattered below the headline, each drifting on its own slow sine path. Any two nodes closer than the link distance (≈ 95 pt) are joined by a hairline whose opacity (5–20%) and weight rise with proximity ((1 − d/link)², four tiers), so the web stays a quiet texture that constantly knits and unknits as nodes wander. Tapping, or dragging sideways across the stage, adds a glowing mint hub under the finger: every node within 130 pt is pulled toward it with a quadratic falloff and wired to it with a brighter mint line, and on release the hub fades out over ~300 ms while the nodes relax back to their paths. Calm, intelligent and quietly alive — ideal behind AI, network or onboarding screens.",
-            "深海军蓝到靛蓝的背景里，约 42 个细小星点（1.2–2.6pt，轻微闪烁）散布在标题下方，各自沿缓慢的正弦路径漂移。任意两点距离小于连线阈值（约 95pt）时以发丝细线相连，透明度（5%–20%）与粗细随距离接近而增强（(1 − d/阈值)²，分四档），网络如一层安静的纹理，随节点游走不断编织、拆解。点击或横向拖过舞台，指尖下出现发光的薄荷绿枢纽：130pt 内的节点按二次衰减被吸向它，并以更亮的薄荷绿线与之相连；松手后枢纽约 300ms 淡出，节点缓缓回到原轨迹。沉静而富有生命力，适合 AI、网络或引导页背景。"
+            "深海军蓝到靛蓝的背景里，约 42 个细小星点（1.2–2.6pt，轻微闪烁）散布在标题下方，各自沿缓慢的正弦路径漂移。两点距离小于阈值（约 95pt）时以发丝细线相连，透明度（5%–20%）与粗细随距离接近而增强（(1 − d/阈值)²，分四档），网络随节点游走不断编织、拆解。点击或横向拖过舞台，指尖下出现发光的薄荷绿枢纽：130pt 内的节点按二次衰减被吸向它，并以更亮的薄荷绿线相连；松手后枢纽约 300ms 淡出，节点缓缓回到原轨迹。沉静而富有生命力，适合 AI 或引导页背景。"
         ),
         implementation: L(
             "A Canvas inside TimelineView computes node positions as pure functions of index and time, bins every close pair into four Paths by strength (four strokes per frame), and eases a hub point and its presence in a small reference-type model.",

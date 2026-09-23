@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Two more "Generative Light" variations: living Voronoi cells with a tap shockwave,
+// Two more "Generative Light" variations: living Voronoi cells that divide where you tap,
 // and a hyperspace tunnel you steer with your finger and press to accelerate.
 
 extension Effect {
@@ -10,16 +10,16 @@ extension Effect {
         interaction: .tap,
         name: L("Living Cells", "活体细胞"),
         summary: L(
-            "Bioluminescent Voronoi cells wobble and glow — tap to send a pulse rippling through them.",
-            "会发光的 Voronoi 细胞轻轻蠕动，点击让一道脉冲波穿过它们。"
+            "Bioluminescent Voronoi cells wobble and glow — tap and the cells under your finger divide.",
+            "会发光的 Voronoi 细胞轻轻蠕动，点击处的细胞随之分裂。"
         ),
         prompt: L(
-            "A full-bleed field of organic cells, like bioluminescent tissue under a microscope. The pattern is a Worley (Voronoi) diagram: every cell's nucleus wanders inside its grid square on its own slow sine orbit, so borders continuously slide, pinch and re-form. Cells are filled in deep indigo to sky blue, with rare pink cells, brighter toward their nucleus, and the shared borders glow cyan with an exponential falloff. Tapping emits a pulse ring that travels outward at 320 pt/s and fades over about 2 s; as it passes it shoves the cells outward, brightens their fill and boosts the border glow up to about 4× — a wave of life moving through the tissue. Organic, hypnotic and alive.",
-            "满版的有机细胞，如同显微镜下会发光的生物组织。图案是 Worley（Voronoi）图：每个细胞的核在自己的网格内沿各自缓慢的正弦轨道游走，于是细胞边界不断滑动、收缩、重新成形。细胞填充从深靛蓝到天蓝，偶有粉色细胞，越靠近细胞核越亮；相邻细胞的共用边界以指数衰减发出青色辉光。点击会发出一道脉冲环，以 320pt/s 向外扩散，并在约 2 秒内淡去；它经过时会把细胞向外推挤、提亮填充，并让边界辉光增强到约四倍——仿佛一阵生命的波动穿过组织。有机、催眠、充满生命感。"
+            "A full-bleed field of organic cells, like bioluminescent tissue under a microscope. The pattern is a Worley (Voronoi) diagram: every cell's nucleus wanders inside its grid square on its own slow sine orbit, so borders continuously slide, pinch and re-form. Cells are filled in deep indigo to sky blue, with rare pink cells, brighter toward their nucleus, and the shared borders glow cyan with an exponential falloff. Tapping makes the tissue divide: within a soft ≈ 110 pt footprint around the finger, cell density doubles over 0.35 s, so each cell there splits into about four smaller, brighter ones whose borders glow up to about 4×, and they merge back over roughly 2.5 s — mitosis on demand. Organic, hypnotic and alive.",
+            "满版的有机细胞，如同显微镜下会发光的生物组织。图案是 Worley（Voronoi）图：每个细胞的核在自己的网格内沿各自缓慢的正弦轨道游走，于是细胞边界不断滑动、收缩、重新成形。细胞填充从深靛蓝到天蓝，偶有粉色细胞，越靠近细胞核越亮；相邻细胞的共用边界以指数衰减发出青色辉光。点击会让组织“分裂”：指尖周围约 110pt 的柔和范围内，细胞密度在 0.35 秒内升至 2 倍，每个细胞分成约四个更小更亮的细胞，边界辉光增强到约四倍，随后约 2.5 秒内重新合并。有机而催眠。"
         ),
         implementation: L(
-            "A [[stitchable]] color shader searches the 3×3 neighboring grid cells for the nearest and second-nearest animated feature points (F1, F2), glows on F2 − F1, colors each cell by a hash of its id and warps the lookup by a Gaussian ring whose radius grows with the time since the tap.",
-            "[[stitchable]] colorEffect 着色器在 3×3 邻域网格中寻找最近与次近的动态特征点（F1、F2），以 F2 − F1 生成边界辉光，按格子 id 的哈希为细胞上色，并用随点击后时间扩大的高斯环扭曲查找坐标。"
+            "A [[stitchable]] color shader searches the 3×3 neighboring grid cells for the nearest and second-nearest animated feature points (F1, F2), glows on F2 − F1, colors each cell by a hash of its id and, after a tap, scales the lookup about the finger by 1 + s·e^(−(r/110)²), a monotonic map that doubles the cell density locally.",
+            "[[stitchable]] colorEffect 着色器在 3×3 邻域网格中寻找最近与次近的动态特征点（F1、F2），以 F2 − F1 生成边界辉光，按格子 id 的哈希为细胞上色，点击后以 1 + s·e^(−(r/110)²) 围绕指尖缩放查找坐标（单调映射，不会折叠），使局部细胞密度加倍。"
         ),
         apis: ["colorEffect", "visualEffect", "TimelineView", "onTapGesture(coordinateSpace:perform:)", "Metal"],
         tags: ["voronoi", "cells", "worley", "organic", "细胞", "泰森多边形", "有机", "生物光"],
@@ -99,7 +99,7 @@ private struct VoronoiCellsDemo: View {
         .autoplay(ctx.isPreview, every: 2.6, delay: 0.5) {
             emit(at: CGPoint(x: CGFloat.random(in: 0.25...0.75) * size.width, y: CGFloat.random(in: 0.25...0.75) * size.height))
         }
-        .backgroundsHint(L("Tap to send a pulse", "点击发出脉冲"), ctx)
+        .backgroundsHint(L("Tap to make the cells divide", "点击让细胞分裂"), ctx)
     }
 
     private func emit(at point: CGPoint) {

@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A near-black stage covered by a regular dot lattice (18 pt pitch). Every dot is a tiny damped spring: when a tap's shockwave front reaches it — the front travels outward at 260 pt/s — the dot starts a radial oscillation of 9 pt × e^(−2.4·τ) × sin(12·τ), scaled down with distance as 1 / (1 + d/180 pt), where τ is the time since the front passed. The result is an expanding ring of displacement with a ringing wake behind it rather than a single pulse. Dots brighten and grow with their energy — dim white at rest, sky-blue while moving, white-hot with a soft glow at the crest — and up to five shockwaves superimpose. Each tap gives a rigid haptic. Technical, crisp and satisfying.",
-            "近乎纯黑的舞台上铺满规则点阵（间距 18pt）。每个点都是一个带阻尼的小弹簧：当点击产生的冲击波前沿到达它时——前沿以 260pt/s 向外扩散——该点开始做径向振荡，位移为 9pt × e^(−2.4·τ) × sin(12·τ)，并随距离按 1 / (1 + d/180pt) 衰减，其中 τ 为前沿经过后的时间。于是看到的是一圈不断扩大的位移环，后面拖着逐渐平息的余振，而不是单一脉冲。点的亮度与大小随能量变化——静止时是暗白色，运动时变成天蓝，波峰处白热并带柔和光晕——最多五道冲击波可以叠加。每次点击伴随一次清脆的触感。理性、利落、令人满足。"
+            "近乎纯黑的舞台上铺满规则点阵（间距 18pt）。每个点都是一个带阻尼的小弹簧：点击产生的冲击波前沿以 260pt/s 向外扩散，到达某点时，该点开始径向振荡，位移为 9pt × e^(−2.4·τ) × sin(12·τ)，并按 1 / (1 + d/180pt) 随距离衰减，τ 为前沿经过后的时间。于是看到一圈不断扩大的位移环，后面拖着渐渐平息的余振，而非单一脉冲。点的亮度与大小随能量变化——静止时暗白，运动时转为天蓝，波峰处白热并带柔和光晕——最多五道冲击波可叠加。每次点击伴随清脆触感。理性而利落。"
         ),
         implementation: L(
             "A Canvas evaluates each dot's summed damped-sine displacement from every live shockwave analytically (no per-dot state), buckets dots by energy into three Paths and draws the hottest bucket twice, once blurred, for glow.",

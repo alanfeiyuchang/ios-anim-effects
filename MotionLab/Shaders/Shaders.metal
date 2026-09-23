@@ -710,8 +710,8 @@ half4 mlVHS(float2 position, SwiftUI::Layer layer, float2 size, float time, floa
 
 // MARK: - Voronoi cells (color effect, generative)
 // Animated Worley cells: each feature point wobbles inside its grid cell, borders (F2 − F1 ≈ 0) glow, and each
-// cell takes a hashed color. A tap makes the tissue around it divide: within a Gaussian footprint (σ ≈ 110 pt)
-// the lookup is magnified about the tap by up to 2×, so each cell there splits into about four smaller,
+// cell takes a hashed color. A tap makes the tissue around it divide: within a Gaussian footprint (≈ 110 pt)
+// the lookup coordinates are scaled about the tap by up to 2× (cell density doubles), so each cell there splits into about four smaller,
 // brighter ones (rise ≈ 0.35 s), which then merge back (decay ≈ 1.4/s, fully gone by 3 s).
 // The radial map r → r·(1 + s·e^(−(r/110)²)) stays monotonic for s ≤ 1, so the field never folds.
 // `pulse` is the time since the tap in seconds; < 0 means idle.

@@ -11,8 +11,8 @@ extension Effect {
             "方块的四个圆角依次独立变化，沿顺时针接力，新轮廓像绕着图形滚过一圈。"
         ),
         prompt: L(
-            "A 180 pt gradient tile cycles through five silhouettes — square, circle, leaf, drop and tab — on each tap. Instead of all four corners changing together, the corners animate one after another clockwise from top-left, each starting ≈12% of the duration (≈110 ms at 0.9 s) after the previous one and each easing out with its own back-overshoot, so a rounded corner briefly bulges past its target before settling. The result reads as a wave of curvature rolling around the outline. A thin white rim follows the edge, the glyph in the middle swaps with a symbol replace, and the shape's name below swaps with a blur-replace. Crafted, rhythmic and quietly playful.",
-            "一块约 180pt 的渐变方块，每次点击依次变为五种轮廓：方形、圆形、叶片、水滴与标签。四个圆角并非同时变化，而是从左上角开始顺时针逐一启动，每个角比前一个晚约 12% 的时长（0.9 秒时约 110 毫秒），并各自带有回拉式过冲缓出——圆角会先略微鼓过目标再回落。视觉上就像一道曲率之波绕着轮廓滚过一圈。细白描边贴合边缘，中间图标以符号替换动画切换，下方形状名称以模糊替换切换。精致、有节奏，又带一点俏皮。"
+            "A 180 pt gradient tile cycles through five silhouettes — square, circle, leaf, drop and tab — on each tap. Instead of all four corners changing together, the corners animate one after another clockwise from top-left, each starting ≈12% of the duration (≈110 ms at 0.9 s) after the previous one and each easing out with its own back-overshoot: a corner briefly bulges past its target radius — or, when heading to fully round, rebounds off that limit — before settling. The result reads as a wave of curvature rolling around the outline. A thin white rim follows the edge, the glyph in the middle swaps with a symbol replace, and the shape's name below swaps with a blur-replace. Crafted, rhythmic and quietly playful.",
+            "一块约 180pt 的渐变方块，每次点击依次变为五种轮廓：方形、圆形、叶片、水滴与标签。四个圆角并非同时变化，而是从左上角开始顺时针逐一启动，每个角比前一个晚约 12% 的时长（0.9 秒时约 110 毫秒），并各自带有回拉式过冲缓出——圆角会先略微鼓过目标再回落，驶向全圆的角则在上限处反弹后回落。视觉上就像一道曲率之波绕着轮廓滚过一圈。细白描边贴合边缘，中间图标以符号替换动画切换，下方形状名称以模糊替换切换。精致、有节奏，又带一点俏皮。"
         ),
         implementation: L(
             "A Shape with a single animatable step value computes a staggered, back-eased local progress for each corner and builds its path from UnevenRoundedRectangle with the four interpolated radii.",
@@ -114,7 +114,7 @@ private struct CascadeShape: Shape {
             let local: Double = min(max((t - Double(corner) * stagger) / span, 0), 1)
             let eased: Double = backOut(local)
             let value: Double = from[corner] + (to[corner] - from[corner]) * eased
-            radii.append(CGFloat(min(max(value, 0), 1) * half))
+            radii.append(CGFloat(reflected(value) * half))
         }
         let shape = UnevenRoundedRectangle(
             topLeadingRadius: radii[0],
@@ -124,6 +124,14 @@ private struct CascadeShape: Shape {
             style: .continuous
         )
         return shape.path(in: rect)
+    }
+
+    /// Keeps the overshoot visible at the 0…1 limits: a corner heading to fully round (or square)
+    /// bounces back off the limit instead of being clipped flat against it.
+    private func reflected(_ value: Double) -> Double {
+        if value > 1 { return max(2 - value, 0) }
+        if value < 0 { return min(-value, 1) }
+        return value
     }
 
     /// Ease-out with an overshoot ("back") of strength `overshoot`.

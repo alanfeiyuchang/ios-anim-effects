@@ -96,10 +96,21 @@ private struct SpotlightTabDemo: View {
     }
 
     private var floorPool: some View {
-        Ellipse()
+        let travel: Double = ctx["response"] * 0.7
+        return Ellipse()
             .fill(RadialGradient(colors: [warm.opacity(0.55), warm.opacity(0)], center: .center, startRadius: 0, endRadius: 60))
             .frame(width: 120, height: 34)
             .blur(radius: 4)
+            // Narrows while it slides, then widens past its rest width as it lands.
+            .keyframeAnimator(initialValue: CGFloat(1), trigger: selected) { content, widen in
+                content.scaleEffect(x: widen, y: 1)
+            } keyframes: { _ in
+                KeyframeTrack(\.self) {
+                    CubicKeyframe(0.85, duration: 0.15)
+                    CubicKeyframe(1.12, duration: travel)
+                    SpringKeyframe(1.0, duration: 0.4, spring: .smooth)
+                }
+            }
             .offset(x: tabX(selected) - 60, y: floorY - 17)
             .animation(.spring(response: ctx["response"] * 1.3, dampingFraction: 0.85), value: selected)
     }

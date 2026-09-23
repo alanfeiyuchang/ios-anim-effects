@@ -448,6 +448,20 @@ private enum InfinityPath {
     }
 }
 
+/// Sky → violet → pink, interpolated continuously along the tail so the colour slides instead of banding.
+private func infinityTailColor(_ f: Double) -> Color {
+    let stops: [UInt32] = [0x3AC4FF, 0xA46BFF, 0xFF5FA2]
+    let u: Double = min(max(f, 0), 1) * Double(stops.count - 1)
+    let i: Int = min(Int(u), stops.count - 2)
+    let t: Double = u - Double(i)
+    let a: UInt32 = stops[i]
+    let b: UInt32 = stops[i + 1]
+    let r: Double = Double((a >> 16) & 0xFF) + (Double((b >> 16) & 0xFF) - Double((a >> 16) & 0xFF)) * t
+    let g: Double = Double((a >> 8) & 0xFF) + (Double((b >> 8) & 0xFF) - Double((a >> 8) & 0xFF)) * t
+    let bl: Double = Double(a & 0xFF) + (Double(b & 0xFF) - Double(a & 0xFF)) * t
+    return Color(.sRGB, red: r / 255, green: g / 255, blue: bl / 255, opacity: 1)
+}
+
 private struct InfinityCanvas: View {
     let phase: Double
     let trail: Int
@@ -465,7 +479,7 @@ private struct InfinityCanvas: View {
                 let f: Double = Double(i) / Double(trail)
                 let p = InfinityPath.point(spinVarFrac(phase - f * 0.35), in: size)
                 let r: CGFloat = 4.5 * CGFloat(1 - 0.85 * f)
-                let color: Color = f < 0.5 ? Palette.sky : (f < 0.8 ? Palette.violet : Palette.pink)
+                let color: Color = infinityTailColor(f)
                 let rect = CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2)
                 context.fill(Path(ellipseIn: rect), with: .color(color.opacity(1 - f)))
             }

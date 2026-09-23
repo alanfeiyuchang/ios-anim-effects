@@ -34,6 +34,7 @@ private struct GlitchErrorDemo: View {
     @State private var start = Date.distantPast
     @State private var invalid = false
     @State private var token = 0
+    @State private var task: Task<Void, Never>?
 
     var body: some View {
         let zh = ctx.language == .zh
@@ -79,6 +80,11 @@ private struct GlitchErrorDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.easeInOut(duration: 0.2), value: invalid)
         .autoplay(ctx.isPreview, every: 3.0, delay: 0.5) { apply() }
+        .onDisappear {
+            task?.cancel()
+            glitching = false
+            invalid = false
+        }
     }
 
     @ViewBuilder
@@ -101,13 +107,16 @@ private struct GlitchErrorDemo: View {
         let duration: Double = max(ctx["duration"], 0.1)
         start = .now
         glitching = true
-        Task {
+        let live = !ctx.isPreview
+        task?.cancel()
+        task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(duration))
+            guard !Task.isCancelled, token == current else { return }
             glitching = false
             invalid = true
-            if !ctx.isPreview { Haptics.error() }
+            if live { Haptics.error() }
             try? await Task.sleep(for: .seconds(2.2))
-            guard token == current else { return }
+            guard !Task.isCancelled, token == current else { return }
             invalid = false
         }
     }
@@ -204,11 +213,17 @@ private struct LimitPose {
 
 private struct LimitBounceDemo: View {
     let ctx: DemoContext
-    @State private var value = 1
+    @State private var value: Int
     @State private var bumps = 0
     @State private var flash = false
     @State private var autoHits = 0
     @State private var flashToken = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Start at the limit so the first tap (and the detail intro) shows the rubber-band.
+        _value = State(initialValue: max(ctx.int("max"), 1))
+    }
 
     var body: some View {
         let zh = ctx.language == .zh
@@ -228,6 +243,9 @@ private struct LimitBounceDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: flash)
         .autoplay(ctx.isPreview, every: 0.8, delay: 0.5) { autoStep(maxValue: maxValue) }
+        .onChange(of: maxValue) { _, newMax in
+            if value > newMax { value = newMax }
+        }
     }
 
     private func stepper(maxValue: Int) -> some View {
@@ -444,6 +462,20 @@ private struct FaceBrackets: View {
     let breathing: Bool
 
     var body: some View {
+        // The looping animator only exists while scanning, so idle/failed states don't re-render forever.
+        if breathing {
+            corners
+                .phaseAnimator([false, true]) { content, pulse in
+                    content.scaleEffect(pulse ? 0.92 : 1)
+                } animation: { _ in
+                    .easeInOut(duration: 0.5)
+                }
+        } else {
+            corners
+        }
+    }
+
+    private var corners: some View {
         ZStack {
             ForEach(0..<4, id: \.self) { index in
                 FaceCorner()
@@ -452,11 +484,6 @@ private struct FaceBrackets: View {
                     .frame(width: 120, height: 120, alignment: .topLeading)
                     .rotationEffect(.degrees(Double(index) * 90))
             }
-        }
-        .phaseAnimator([false, true]) { content, pulse in
-            content.scaleEffect(breathing && pulse ? 0.92 : 1)
-        } animation: { _ in
-            .easeInOut(duration: 0.5)
         }
     }
 }

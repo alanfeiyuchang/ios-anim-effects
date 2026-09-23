@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Toss a ball: it arcs under gravity, squashes on the floor, bounces lower each time and rolls to a stop.", "抛出小球：在重力下划出抛物线，落地压扁、越弹越低，最后滚动停下。"),
         prompt: L(
             "A 56 pt beach ball (amber-to-coral gradient with a white band so its spin reads) rests on the floor of a 300 pt rounded arena above a soft contact shadow that shrinks and fades as it rises. Grab and throw it: the release velocity becomes its launch velocity and 1,800 pt/s² of gravity bends it into a true parabola. Each floor impact reflects the vertical speed with 0.62 restitution, squashes the ball up to 25% against the floor for about 80 ms and bleeds 8% of its horizontal speed, while walls and ceiling reflect it too. On the ground it rolls, spinning at v ∕ r until friction stops it, with a soft haptic on heavy impacts: honest, weighty physics.",
-            "一个 56 pt 的沙滩球（琥珀到珊瑚渐变，一条白色色带让旋转清晰可见）静置在 300 pt 圆角场地的地面上，接触阴影随球升高而缩小变淡。抓起小球抛出：离手速度即初速度，1800 pt/s² 的重力把它拉成一条真实的抛物线。每次落地，竖直速度按 0.62 的恢复系数反弹，小球贴地压扁最多 25%、约 80 毫秒，水平速度损失 8%，墙壁和顶部同样会反弹。落地后小球以 v ∕ r 的角速度滚动，直到被摩擦停住，重击时伴随柔和触感。真实、有分量的物理手感。"
+            "一个56 pt的沙滩球（琥珀到珊瑚渐变，一条白色色带让旋转清晰可见）静置在300 pt圆角场地的地面上，接触阴影随球升高而缩小变淡。抓起小球抛出：离手速度即初速度，1800 pt/s²的重力把它拉成一条真实的抛物线。每次落地，竖直速度按0.62的恢复系数反弹，小球贴地压扁最多25%、约80毫秒，水平速度损失8%，墙壁和顶部同样会反弹。落地后小球以v∕r的角速度滚动，直到被摩擦停住，重击时伴随柔和触感。真实、有分量的物理手感。"
         ),
         implementation: L(
             "A frame-stepped class integrates gravity, restitution, rolling friction and squash inside a TimelineView that sleeps once the ball settles; a DragGesture on the ball moves it by its global translation and hands the release velocity to the model.",

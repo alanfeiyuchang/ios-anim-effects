@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Long-press a tile to lift it forward over a blurred backdrop with quick actions.", "长按卡片将其抬起放大，背景模糊并弹出快捷操作。"),
         prompt: L(
             "A 2×2 grid of rounded album tiles (120 pt, 26 pt corners). Pressing a tile immediately sinks it to 95% as feedback; after a 350 ms hold it springs forward to the center and scales to ~140% (response ≈0.42 s, damping ≈0.72) with a medium haptic, while the rest of the grid blurs by 8 pt and a 22% black scrim fades in behind it. A quick-action menu (Share, Favorite, Delete) materialises beneath the lifted tile from 85% scale anchored at its top edge, in a frosted material panel. Tapping anywhere returns the tile to its slot along the same spring as the backdrop clears. Focused, iOS-native context-menu energy.",
-            "2×2 排列的圆角专辑卡片（120 pt，26 pt 圆角）。手指按下时卡片立即下沉到 95% 作为反馈；按住 350 毫秒后，它以弹簧（响应约 0.42 秒、阻尼约 0.72）弹到舞台中央并放大到约 140%，伴随中等触感，其余卡片模糊 8 pt，后方淡入 22% 黑色遮罩。快捷菜单（分享、收藏、删除）以磨砂材质面板从被抬起卡片下方、以顶边为锚点从 85% 缩放浮现。点击任意处，卡片沿同一弹簧回到原位，背景随之恢复清晰。专注、原生的 iOS 上下文菜单质感。"
+            "2×2排列的圆角专辑卡片（120 pt，26 pt圆角）。手指按下时卡片立即下沉到95%作为反馈；按住350毫秒后，它以弹簧（响应约0.42秒、阻尼约0.72）弹到舞台中央并放大到约140%，伴随中等触感，其余卡片模糊8 pt，后方淡入22%黑色遮罩。快捷菜单（分享、收藏、删除）以磨砂材质面板从被抬起卡片下方、以顶边为锚点从85%缩放浮现。点击任意处，卡片沿同一弹簧回到原位，背景随之恢复清晰。专注、原生的iOS上下文菜单质感。"
         ),
         implementation: L(
             "onLongPressGesture(minimumDuration:perform:onPressingChanged:) drives a pressed scale and a `peeked` index; the peeked tile gets zIndex, offset and scale, siblings get blur, and the menu is inserted with a scale + opacity transition.",

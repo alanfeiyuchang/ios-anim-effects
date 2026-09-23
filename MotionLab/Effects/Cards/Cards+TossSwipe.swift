@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Pick a card up by any corner and toss it: it arcs up, spins and falls off-stage under gravity.", "从任意位置拎起卡片抛出：它先向上划出弧线、旋转，再在重力下坠出舞台。"),
         prompt: L(
             "A loose pile of 180×230 pt cards, each resting at a slightly different angle (±4°). The top card is picked up where the finger lands: it pivots around that grab point, swinging up to ±18° as it is dragged, so holding it by a corner feels different from holding it by the middle. Releasing past 90 pt tosses it along a real arc — horizontally with an ease-out over 0.75 s, vertically first rising 70 pt in 0.2 s then accelerating downward with an ease-in over 0.55 s — while it keeps spinning up to 140°, then it drops off the bottom of the stage. The next card lifts out of the pile with a gentle spring. Casual, physical and fun.",
-            "一叠 180×230 pt 的卡片随意堆放，每张的角度略有不同（±4°）。顶部卡片从手指落下的位置被拎起：拖动时它绕这个抓取点摆动，最多 ±18°，因此捏着角拖和捏着中间拖的手感完全不同。拖动超过 90 pt 后松手，卡片沿真实的抛物线被抛出——水平方向在 0.75 秒内缓出，竖直方向先在 0.2 秒内上升 70 pt，再在 0.55 秒内加速下落——同时持续旋转最多 140°，最终从舞台底部掉出。下一张卡片以柔和的弹簧从牌堆中浮起。随性、真实、好玩。"
+            "一叠180×230 pt的卡片随意堆放，每张的角度略有不同（±4°）。顶部卡片从手指落下的位置被拎起：拖动时它绕这个抓取点摆动，最多±18°，因此捏着角拖和捏着中间拖的手感完全不同。拖动超过90 pt后松手，卡片沿真实的抛物线被抛出——水平方向在0.75秒内缓出，竖直方向先在0.2秒内上升70 pt，再在0.55秒内加速下落——同时持续旋转最多140°，最终从舞台底部掉出。下一张卡片以柔和的弹簧从牌堆中浮起。随性、真实、好玩。"
         ),
         implementation: L(
             "The drag's startLocation becomes the rotationEffect anchor; on release separate x, y and spin states are animated with different curves (easeOut for x, easeOut then easeIn for y) so their sum draws a parabola.",

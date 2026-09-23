@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The plug docks, a bolt pops in and the cell fills through red, amber and green.", "插头接入，闪电弹出，电量依次经过红、黄、绿涨满。"),
         prompt: L(
             "A large horizontal battery outline (150×70 pt, 3 pt rounded stroke, small terminal cap) sits at 18% with a red fill. Tapping plugs it in: a cable plug slides 60 pt from the right into the cap on a snappy spring (≈0.35 s), and 250 ms later a lightning bolt pops into the centre from 20% to 100% on a bouncy spring and keeps pulsing. The fill then grows to 100% over 2.4 s with ease-in-out, its colour stepping from red (under 20%) to amber (under 45%) to green, while the percentage counts up inside and a soft highlight sweeps across the fill every 1.3 s. A success haptic lands at full; tapping again unplugs, the bolt shrinks away and the level eases back to 18%. Clear, reassuring feedback.",
-            "一个大号横向电池轮廓（150×70 pt，3 pt 圆角描边，带小正极帽）显示 18% 电量，填充为红色。点击即插电：插头以利落的弹簧（约 0.35 秒）从右侧 60 pt 外滑进正极帽；250 毫秒后，中央闪电以弹性弹簧从 20% 放大到 100%，并持续脉动。随后电量在 2.4 秒内缓入缓出地涨满，颜色由红（低于 20%）转琥珀（低于 45%）再转绿，百分比同步计数，一道柔光每 1.3 秒扫过填充。充满时一下成功触感；再点一次就拔掉插头，闪电缩小消失，电量缓缓回到 18%。反馈清楚，让人安心。"
+            "一个大号横向电池轮廓（150×70 pt，3 pt圆角描边，带小正极帽）显示18%电量，填充为红色。点击即插电：插头以利落的弹簧（约0.35秒）从右侧60 pt外滑进正极帽；250毫秒后，中央闪电以弹性弹簧从20%放大到100%，并持续脉动。随后电量在2.4秒内缓入缓出地涨满，颜色由红（低于20%）转琥珀（低于45%）再转绿，百分比同步计数，一道柔光每1.3秒扫过填充。充满时一下成功触感；再点一次就拔掉插头，闪电缩小消失，电量缓缓回到18%。清晰安心。"
         ),
         implementation: L(
             "An Animatable fill view turns the animated level into width, a stepped colour and the percentage label every frame; the plug offset and the bolt's scale transition are sequenced with delayed springs, and a repeating keyframeAnimator drives the highlight sweep.",

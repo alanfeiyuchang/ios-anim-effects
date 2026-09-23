@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Stacked summary cards that expand in place to reveal a detail panel.", "纵向排列的摘要卡片，点击原地展开详情面板。"),
         prompt: L(
             "A column of three rounded summary cards (20 pt corners, 62 pt tall) shows an icon tile, title, amount and a chevron. Tapping one grows its height smoothly on a spring (response ≈0.5 s, damping ≈0.82) while its siblings slide to make room; the chevron rotates 180°, and the detail panel — a divider, a seven-bar mini chart and two lines of copy — fades in while drifting down 10 pt from beneath the header, with its content clipped to the growing card. The expanded card deepens its shadow to feel lifted, and the other cards recede to 97% scale and 60% opacity. Tapping another card hands the expansion over in a single fluid motion.",
-            "一列三张圆角摘要卡片（20 pt 圆角，高 62 pt），展示图标方块、标题、金额与折叠箭头。点击其中一张，其高度以弹簧（响应约 0.5 秒、阻尼约 0.82）平滑增长，相邻卡片随之让位；箭头旋转 180°，详情面板——分隔线、七柱迷你图表与两行文字——从标题下方淡入并下移 10 pt 落定，内容被裁剪在逐渐变高的卡片内。展开的卡片投影加深、显得被抬起，其余卡片退后至 97% 缩放与 60% 透明度。点击另一张卡片时，展开状态在一次流畅运动中交接过去。"
+            "一列三张圆角摘要卡片（20 pt圆角，高62 pt），展示图标方块、标题、金额与折叠箭头。点击其中一张，其高度以弹簧（响应约0.5秒、阻尼约0.82）平滑增长，相邻卡片随之让位；箭头旋转180°，详情面板——分隔线、七柱迷你图表与两行文字——从标题下方淡入并下移10 pt落定，内容被裁剪在逐渐变高的卡片内。展开的卡片投影加深、显得被抬起，其余卡片退后至97%缩放与60%透明度。点击另一张卡片时，展开状态在一次流畅运动中交接过去。"
         ),
         implementation: L(
             "A VStack of cards whose detail section is conditionally inserted with an asymmetric opacity + offset transition inside withAnimation(.spring), so SwiftUI animates the height change and the reflow of siblings.",

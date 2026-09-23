@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Sweep a finger down the checkbox column to paint a selection across rows, Photos-style.", "手指沿复选框一列滑过，像“照片”那样一口气选中多行。"),
         prompt: L(
             "Five 46 pt message rows (16 pt continuous corners) with a round checkbox column on the left and a “0 selected” pill above. Pressing in the checkbox column and sliding up or down paints a selection: the first row touched decides the mode (select or deselect), and every row between the start and the finger follows it, while rows outside the range revert, exactly like multi-select in Photos. Each row that changes pops its checkmark in on a bouncy spring (response 0.3 s, damping 0.5), tints indigo and shrinks to 97%; a translucent band marks the swept range and a selection haptic ticks per row. The pill counts with a numeric content transition. Fast, fluid, power-user friendly.",
-            "五条高 46pt 的消息行（16pt 连续圆角），左侧是一列圆形复选框，上方有“已选 0 项”的胶囊。在复选框这一列按下并上下滑动即可“刷选”：第一个触到的行决定模式（选中或取消），起点到手指之间的所有行都随之改变，滑回时范围外的行恢复原状——与“照片”的多选完全一致。每一行变化时，对勾以弹性弹簧（响应 0.3 秒、阻尼 0.5）弹出，行背景染上靛蓝并缩小到 97%；一条半透明色带标出刷过的范围，每跨过一行触发一次选择触感。胶囊中的计数以数字内容转场滚动。迅捷、流畅，适合高效操作。"
+            "五条高46pt的消息行（16pt连续圆角），左侧是一列圆形复选框，上方有“已选0项”的胶囊。在复选框这一列按下并上下滑动即可“刷选”：第一个触到的行决定模式（选中或取消），起点到手指之间的所有行都随之改变，滑回时范围外的行恢复原状——与“照片”的多选完全一致。每一行变化时，对勾以弹性弹簧（响应0.3秒、阻尼0.5）弹出，行背景染上靛蓝并缩小到97%；一条半透明色带标出刷过的范围，每跨过一行触发一次选择触感。胶囊中的计数以数字内容转场滚动。迅捷流畅。"
         ),
         implementation: L(
             "A DragGesture attached only to the checkbox column maps location.y to a row index; the selection is recomputed from a snapshot taken at touch-down plus the swept range, so moving back restores rows. Checkmarks use spring scale transitions; the counter uses contentTransition(.numericText).",

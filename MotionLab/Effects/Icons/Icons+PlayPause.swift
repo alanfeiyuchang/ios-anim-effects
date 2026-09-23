@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The play triangle splits and reshapes into two pause bars.", "播放三角形一分为二，重塑为两根暂停竖条。"),
         prompt: L(
             "Inside a compact now-playing card, a large gradient button holds a play triangle drawn as two quads that meet — overlapping by a hair so no seam shows — at the triangle's vertical midline. On tap the left half straightens into the left pause bar and the right half widens from a sliver into the right bar — every vertex interpolates on a spring (≈0.45 s, 0.75 damping) while the whole glyph spins a half turn, so the shape visibly re-forms rather than cross-fading. Rounded joins keep corners soft; the equaliser bars beside the title start dancing while playing and settle when paused. Tactile, musical and continuous.",
-            "紧凑的正在播放卡片中，一个大号渐变按钮里是由两个四边形组成的播放三角形，二者在三角形的纵向中线处相接，并略微重叠以免出现接缝。点击后，左半部分拉直成左侧暂停竖条，右半部分从一道窄尖展宽为右侧竖条——每个顶点都沿弹簧曲线（约 0.45 秒、阻尼 0.75）插值，同时整个图形旋转半圈，让人清楚看到形状在“重塑”，而不是交叉淡化。圆角连接让转角保持柔和；标题旁的均衡器条在播放时跳动、暂停时静止。有触感、有音乐性、连贯流畅。"
+            "紧凑的正在播放卡片中，一个大号渐变按钮里是由两个四边形组成的播放三角形，二者在三角形的纵向中线处相接，并略微重叠以免出现接缝。点击后，左半部分拉直成左侧暂停竖条，右半部分从一道窄尖展宽为右侧竖条——每个顶点都沿弹簧曲线（约0.45秒、阻尼0.75）插值，同时整个图形旋转半圈，让人清楚看到形状在“重塑”，而不是交叉淡化。圆角连接让转角保持柔和；标题旁的均衡器条在播放时跳动、暂停时静止。有触感、有音乐性、连贯流畅。"
         ),
         implementation: L(
             "A custom Shape with animatableData lerps eight vertices between the play and pause geometry; fill plus a round-joined stroke softens the corners.",

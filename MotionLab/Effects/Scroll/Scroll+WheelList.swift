@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A drum-style list: rows curve away in 3D around a snapping center selection.", "滚筒式列表：各行绕着吸附的中心选中项向后弯曲成三维滚轮。"),
         prompt: L(
             "A vertical list of city names in 22 pt rounded type on 44 pt rows is shaped into a rotating drum. The centre row sits flat, bold and opaque inside a subtle rounded selection band, while rows further out tilt back up to 60° in perspective, shrink by up to 12% and fade toward 25% opacity, and the top and bottom 22% dissolve through a gradient mask. Scrolling snaps a whole row into the band with a selection tick per change, and tapping a row springs it there (response 0.45 s, damping 0.85). A time-zone chip above rolls its digits to the city's UTC offset and its local time at noon UTC. Precise and mechanical, like the iOS time picker.",
-            "一列城市名（22 pt 圆体，行高 44 pt）被塑造成可转动的滚筒。正中一行平正、加粗、完全不透明，落在一条含蓄的圆角选中带里；越往外的行绕水平轴以透视向后倾斜，最多 60°，同时最多缩小 12%、淡到 25% 不透明度，上下各 22% 经渐变遮罩融化。滚动总会把一整行吸进选中带，每换一行轻轻一震；点某行则以弹簧（响应 0.45 秒、阻尼 0.85）把它转进来。上方时区胶囊以数字滚动显示该城市的 UTC 偏移，以及 UTC 正午时的当地时间。精准而富有机械感，像 iOS 的时间选择器。"
+            "一列城市名（22 pt圆体，行高44 pt）被塑造成可转动的滚筒。正中一行平正、加粗、完全不透明，落在一条含蓄的圆角选中带里；越往外的行绕水平轴以透视向后倾斜，最多60°，同时最多缩小12%、淡到25%不透明度，上下各22%经渐变遮罩融化。滚动总会把一整行吸进选中带，每换一行轻轻一震；点某行则以弹簧（响应0.45秒、阻尼0.85）把它转进来。上方时区胶囊以数字滚动显示该城市的UTC偏移，以及UTC正午时的当地时间。精准而富有机械感，像iOS的时间选择器。"
         ),
         implementation: L(
             "Each row's visualEffect maps its distance from the fixed viewport center to rotation3DEffect, scale and opacity; spacer padding centers the first and last rows, a custom ScrollTargetBehavior snaps the offset to whole rows, onScrollGeometryChange derives the selection and ScrollPosition drives programmatic scrolls, with sensoryFeedback(.selection).",

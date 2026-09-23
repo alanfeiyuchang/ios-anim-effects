@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A pen loop circles a keyword, then a wavy underline scribbles under another.", "一支笔先圈住关键词，再在另一个词下面画出波浪线。"),
         prompt: L(
             "A three-line statement in 30 pt bold type sits on the stage. On trigger a coral marker loop draws itself around one keyword: a slightly wobbly ellipse that travels 1.15 turns so its tail overshoots the start like a real pen, drawn over 0.7 s with ease-in-out in 3 pt round-capped strokes, and the keyword warms to coral as the loop closes. 100 ms later an indigo wavy underline with four crests and 3 pt amplitude scribbles left to right under a second phrase in 0.5 s. Replaying erases both strokes instantly, and a light haptic marks the start of each stroke, like a designer marking up a slide.",
-            "舞台上是一段三行、30 pt 粗体的陈述句。触发后，一支珊瑚色马克笔绕着关键词画圈：略带抖动的椭圆走过 1.15 圈，收笔像真实笔迹一样越过起笔处，以缓入缓出在 0.7 秒内画完，笔画 3 pt、圆头；圈合拢时关键词也染成珊瑚色。100 毫秒后，一条靛蓝色波浪下划线（四个波峰、振幅 3 pt）在 0.5 秒内从左到右划过第二个短语。重播时两道笔迹瞬间擦除，每一笔落下时都有一下轻触感，像设计师在幻灯片上随手批注。"
+            "舞台上是一段三行、30 pt粗体的陈述句。触发后，一支珊瑚色马克笔绕着关键词画圈：略带抖动的椭圆走过1.15圈，收笔像真实笔迹一样越过起笔处，以缓入缓出在0.7秒内画完，笔画3 pt、圆头；圈合拢时关键词也染成珊瑚色。100毫秒后，一条靛蓝色波浪下划线（四个波峰、振幅3 pt）在0.5秒内从左到右划过第二个短语。重播时两道笔迹瞬间擦除，每一笔落下时都有一下轻触感，像设计师在幻灯片上随手批注。"
         ),
         implementation: L(
             "Two custom Shapes — a wobbly multi-turn ellipse and a sine squiggle — are stroked and revealed with .trim(from:to:), whose end value animates; they sit in overlays on the exact Text runs they annotate.",

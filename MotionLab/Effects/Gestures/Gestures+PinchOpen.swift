@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Spread two fingers on a card to grow it live; past the threshold it blooms into a full page.", "双指张开，卡片随之实时放大；越过阈值便绽开为完整页面。"),
         prompt: L(
             "A 170×128 pt album card with an aurora-gradient cover and a title rests at the centre. Spreading two fingers scales it live with the pinch, lifting its shadow and tilting it 2° toward the anchor, with rubber-band resistance above 1.6×; crossing 1.3× arms it with a light haptic and a thin glowing ring. Releasing while armed hands the live scale straight over to a layout change: the card blooms into a 300×320 pt page on a spring (response 0.5 s, damping 0.78) as the cover grows into a 150 pt header and body lines fade up 8 pt, 60 ms apart. Pinching the page below 0.8× or double-tapping folds it back on the same spring, and an unarmed release simply springs back. Direct, continuous and intentional.",
-            "一张 170×128 pt 的相册卡片（极光渐变封面加标题）放在中央。双指张开时卡片随捏合实时放大，投影抬升，并朝锚点一侧倾斜 2°，超过 1.6 倍后带橡皮筋阻力；越过 1.3 倍即“就绪”，一下轻触感，卡片外缘亮起细光环。就绪时松手，实时缩放无缝交接为布局变化：卡片以弹簧（响应 0.5 秒、阻尼 0.78）绽开成 300×320 pt 的页面，封面长成 150 pt 的头图，正文行错开 60 毫秒上移 8 pt 淡入。在页面上捏到 0.8 倍以下或双击，就以同一弹簧折回卡片；未就绪松手则只是弹回。直接、连贯、意图明确。"
+            "一张170×128 pt的相册卡片（极光渐变封面加标题）居中。双指张开时卡片实时放大，投影抬升，并朝锚点一侧倾斜2°，超过1.6倍后带橡皮筋阻力；越过1.3倍即“就绪”，一下轻触感，外缘亮起细光环。就绪时松手，实时缩放无缝交接为布局变化：卡片以弹簧（响应0.5秒、阻尼0.78）绽开成300×320 pt的页面，封面长成150 pt的头图，正文行错开60毫秒上移8 pt淡入。在页面上捏到0.8倍以下或双击即以同一弹簧折回；未就绪松手则弹回。直接而连贯。"
         ),
         implementation: L(
             "MagnifyGesture sets a live scale (rubber-banded) and an armed flag; onEnded toggles the expanded state and resets the scale in one spring so the layout frame and the gesture scale blend into a single motion. sensoryFeedback marks the threshold.",

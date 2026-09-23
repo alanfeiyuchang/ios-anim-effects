@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A 3D album carousel: side covers swing away in perspective, with glossy reflections.", "3D 专辑轮播：两侧封面以透视向后旋开，并带光泽倒影。"),
         prompt: L(
             "A horizontal carousel of square album covers (150 pt, 14 pt corners) with a glossy floor reflection beneath each — a mirrored copy that starts at ~60% strength and fades out within 56 pt. The cover at the center faces the viewer flat and full-size; as covers move away from the center they rotate around their vertical axis up to ~55° in strong perspective, shrink by up to 15% and fade to 75% opacity, turning their faces toward the middle like a record crate. The rotation is a continuous function of each cover's distance from the viewport center, so it scrubs perfectly with the finger. The scroll snaps so that one cover always settles dead center, and the title beneath cross-fades to match. Nostalgic, tactile and luxurious.",
-            "一排方形专辑封面（150 pt，14 pt 圆角）横向排列，每张下方都有光泽地面倒影——镜像副本从约 60% 强度开始，在 56 pt 内渐隐。位于中心的封面正对观者、保持原始尺寸；越远离中心的封面绕竖直轴以强透视旋转，最多约 55°，同时最多缩小 15%、淡到 75% 不透明度，封面朝向中间，就像翻看唱片架。旋转是封面到视口中心距离的连续函数，因此完全跟随手指滑动。滚动会吸附，使总有一张封面稳稳停在正中央，下方标题随之淡入切换。怀旧、可触、充满质感。"
+            "一排方形专辑封面（150 pt，14 pt圆角）横向排列，每张下方都有光泽地面倒影——镜像副本从约60%强度开始，在56 pt内渐隐。位于中心的封面正对观者、保持原始尺寸；越远离中心的封面绕竖直轴以强透视旋转，最多约55°，同时最多缩小15%、淡到75%不透明度，封面朝向中间，就像翻看唱片架。旋转是封面到视口中心距离的连续函数，因此完全跟随手指滑动。滚动会吸附，使总有一张封面稳稳停在正中央，下方标题随之淡入切换。怀旧、可触、充满质感。"
         ),
         implementation: L(
             "Each cover's visualEffect reads its frame in the .scrollView coordinate space and maps its normalised distance from the center to rotation3DEffect and scale; a custom ScrollTargetBehavior snaps the offset to whole covers, and onScrollGeometryChange derives the centered cover.",

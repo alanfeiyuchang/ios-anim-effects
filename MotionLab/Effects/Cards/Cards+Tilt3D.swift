@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Drag to tilt a glossy card in 3D with a moving glare and shifting shadow.", "拖动让卡片在三维空间中倾斜，高光随指移动，阴影随之偏移。"),
         prompt: L(
             "A glossy 250×158 pt payment card with 18 pt continuous corners and an indigo-to-pink gradient rests flat on a soft shadow. Dragging tilts it toward the finger in perspective, up to ±16° on both axes, through a tight interactive spring (response 0.25 s, damping 0.8) while it lifts to 104% with a soft haptic on touch-down. A radial white glare in overlay blend tracks the finger, the inner light blobs parallax the opposite way, and the shadow slides against the tilt as it grows larger and softer. Release springs it flat with a slight overshoot (response 0.5 s, damping 0.6); before the first touch it drifts in a slow Lissajous sway, like a weighty card catching studio light.",
-            "一张 250×158 pt 的光泽支付卡，18 pt 连续圆角，靛蓝到粉色渐变，静静平放在柔和投影上。手指拖动时，卡片以透视朝触点倾斜，X、Y 轴最多各 ±16°，由紧致的交互弹簧（响应 0.25 秒、阻尼 0.8）跟手，同时抬升到 104%，按下瞬间有一下轻柔触感。径向白色高光以叠加模式追着手指走，卡内光斑反向视差；投影往倾斜的反方向滑开，并随抬升变大、变虚。松手后以弹簧（响应 0.5 秒、阻尼 0.6）略带过冲地回正。未触摸前卡片会缓缓做利萨如摇摆，像一块有分量的实体卡在影棚灯下反光。"
+            "一张250×158 pt的光泽支付卡，18 pt连续圆角，靛蓝到粉色渐变，静静平放在柔和投影上。手指拖动时，卡片以透视朝触点倾斜，X、Y轴最多各±16°，由紧致的交互弹簧（响应0.25秒、阻尼0.8）跟手，同时抬升到104%，按下瞬间有一下轻柔触感。径向白色高光以叠加模式追着手指走，卡内光斑反向视差；投影往倾斜的反方向滑开，并随抬升变大、变虚。松手后以弹簧（响应0.5秒、阻尼0.6）略带过冲地回正。未触摸前卡片会缓缓做利萨如摇摆，像影棚灯下的实体卡。"
         ),
         implementation: L(
             "The drag location is normalised to −1…1 and drives two rotation3DEffect modifiers, a RadialGradient glare whose center follows the finger, and the shadow offset; release animates back to zero with a spring.",

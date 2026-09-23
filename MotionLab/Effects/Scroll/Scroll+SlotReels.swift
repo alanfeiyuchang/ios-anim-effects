@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Three curved scroll reels spin and stop one after another with a bounce, lining up on a payline.", "三条弧形滚动卷轴旋转后依次回弹停下，在中线上对齐。"),
         prompt: L(
             "Three vertical reels of 64 pt symbol cells sit side by side inside a rounded cabinet, each curved like a drum: cells tilt back up to 50° and fade toward the top and bottom edges, which dissolve through a gradient mask. Tapping Spin sends every reel 16–27 cells down with a bouncy spring whose duration grows per reel (1.1 s, 1.55 s, 2.0 s, bounce 0.18), so they stop left to right with a small overshoot each, with a haptic on every stop. When all three symbols match on the gold payline, the payline glows and a success haptic fires. Each reel can also be flicked by hand and snaps to whole cells. Suspenseful, rhythmic and fun.",
-            "三条竖向卷轴并排放在圆角机箱中，每格符号 64 pt，每条卷轴都弯成滚筒：越靠上下边缘的格子向后倾斜越多（最多 50°）并逐渐变淡，边缘通过渐变遮罩融化。点击「旋转」后，每条卷轴向下滚动 16–27 格，弹簧时长逐条递增（1.1 秒、1.55 秒、2.0 秒，回弹 0.18），因此从左到右依次停下，每次都带轻微过冲，并伴随触感。三个符号在金色中线上一致时，中线发光并触发成功触感。每条卷轴也可以用手拨动，并吸附到整格。悬念十足、富有节奏、好玩。"
+            "三条竖向卷轴并排放在圆角机箱中，每格符号64 pt，每条卷轴都弯成滚筒：越靠上下边缘的格子向后倾斜越多（最多50°）并逐渐变淡，边缘通过渐变遮罩融化。点击「旋转」后，每条卷轴向下滚动16–27格，弹簧时长逐条递增（1.1秒、1.55秒、2.0秒，回弹0.18），因此从左到右依次停下，每次都带轻微过冲，并伴随触感。三个符号在金色中线上一致时，中线发光并触发成功触感。每条卷轴也可以用手拨动，并吸附到整格。悬念十足、富有节奏、好玩。"
         ),
         implementation: L(
             "Each reel is a ScrollView with its own ScrollPosition in an array; a spin calls scrollTo(y:) inside withAnimation(.spring(duration:bounce:)) with a per-reel duration. visualEffect curves the cells like a drum, and reels jump back by whole symbol cycles without animation before each spin so they never run out.",

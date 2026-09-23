@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Control toggles swap glyphs with the system replace transition.", "控制开关以系统替换过渡切换图标。"),
         prompt: L(
             "A Control-Center-style cluster of four circular toggles: mic, notifications, lock and camera. Toggling one swaps its glyph for the paired state (mic ↔ mic.slash, lock ↔ lock.open…) with the SF Symbols replace transition — on iOS 18 the default is a Magic Replace where shared strokes stay put and only the slash draws across, otherwise the old glyph scales down and out while the new one scales up from below. In the same snappy animation (≈0.35 s) the disc cross-fades between a translucent neutral fill and a saturated blue gradient, with a soft selection haptic. Crisp, systemic and reassuring.",
-            "仿控制中心的四个圆形开关：麦克风、通知、锁和摄像头。切换时，图标以 SF Symbols 替换过渡变为成对的状态（mic ↔ mic.slash、lock ↔ lock.open……）——iOS 18 默认使用“魔法替换”，共同的笔画保持不动，只有斜线被画出；其他样式则是旧图标缩小移出、新图标从下方放大进入。同一段利落的动画（约 0.35 秒）中，圆底在半透明中性底色与饱和蓝色渐变之间交叉渐变，并伴随轻柔的选择触感。利落、系统化、令人安心。"
+            "仿控制中心的四个圆形开关：麦克风、通知、锁和摄像头。切换时，图标以SF Symbols替换过渡变为成对的状态（mic↔mic.slash、lock↔lock.open……）——iOS 18默认使用“魔法替换”，共同的笔画保持不动，只有斜线被画出；其他样式则是旧图标缩小移出、新图标从下方放大进入。同一段利落的动画（约0.35秒）中，圆底在半透明中性底色与饱和蓝色渐变之间交叉渐变，并伴随轻柔的选择触感。利落、系统化、令人安心。"
         ),
         implementation: L(
             "Image(systemName:) whose name depends on state, with .contentTransition(.symbolEffect(.replace…)); the state flips inside withAnimation(.snappy).",

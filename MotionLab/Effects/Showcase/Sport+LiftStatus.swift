@@ -44,6 +44,7 @@ private struct SportLiftDemo: View {
     ]
     @State private var flash: Int?
     @State private var demoStep = 0
+    @State private var flashTask: Task<Void, Never>?
 
     private var openCount: Int { 10 + lifts.filter { $0.status == 0 }.count }
 
@@ -120,11 +121,11 @@ private struct SportLiftDemo: View {
     private func pulseRow(_ id: Int) {
         guard ctx.bool("flash") else { return }
         withAnimation(.easeOut(duration: 0.12)) { flash = id }
-        Task {
+        flashTask?.cancel()
+        flashTask = Task {
             try? await Task.sleep(for: .milliseconds(220))
-            if flash == id {
-                withAnimation(.easeOut(duration: 0.6)) { flash = nil }
-            }
+            guard !Task.isCancelled, flash == id else { return }
+            withAnimation(.easeOut(duration: 0.6)) { flash = nil }
         }
     }
 }

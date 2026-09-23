@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A marker stroke sweeps behind key phrases, one after another.", "荧光笔依次从关键短语下方扫过。"),
         prompt: L(
             "An editorial serif quote sits on the stage; the key phrases are emphasised by a hand-drawn marker that sweeps in behind the words from left to right. The stroke is a slightly rotated (−1.5°) rounded band covering roughly the lower half of the line, scaling horizontally from 0 to 100% with an ease-in-out curve over ~0.7 s; the second phrase starts when the first is 80% complete, so the eye is led through the sentence like a reader underlining it live. Variants swap the marker for a thick underline or a drawn box outline. Human, warm and intentional.",
-            "舞台上是一段衬线体的编辑感引文，关键短语由一支手绘感的荧光笔从左到右在文字后方扫过来强调。笔触是一条略微倾斜（−1.5°）的圆角色带，覆盖行高的下半部分左右，以缓入缓出曲线在约 0.7 秒内沿水平方向从 0 伸展到 100%；第二个短语在前一笔完成 80% 时接力开始，引导视线像读者现场划重点一样读完整句。变体可换成粗下划线或手绘方框描边。富有人情味、温暖且有明确意图。"
+            "舞台上是一段衬线体的编辑感引文，关键短语由一支手绘感的荧光笔从左到右在文字后方扫过来强调。笔触是一条略微倾斜（−1.5°）的圆角色带，覆盖行高的下半部分左右，以缓入缓出曲线在约0.7秒内沿水平方向从0伸展到100%；第二个短语在前一笔完成80%时接力开始，引导视线像读者现场划重点一样读完整句。变体可换成粗下划线或手绘方框描边。富有人情味、温暖且有明确意图。"
         ),
         implementation: L(
             "Each phrase has a background shape scaled on X from the leading anchor (or a trimmed rounded-rect stroke for the box style); two progress states animate with staggered delays.",

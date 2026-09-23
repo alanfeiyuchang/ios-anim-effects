@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Three bars collapse and rotate into an X as a menu cascades open.", "三条横线收拢并旋转成 X，同时菜单级联展开。"),
         prompt: L(
             "In the top bar of a small app screen (title, date, avatar, a feed of cards beneath), a frosted 52 pt circular menu button holds three rounded 24×3 pt bars spaced 7 pt apart. On open the morph runs in two beats: the top and bottom bars slide to the centre line while the middle bar shrinks horizontally to zero and fades; 120 ms later the outer bars rotate ±45° into a crisp X, optionally spinning the whole icon a half turn. Meanwhile the feed dims to 35% with a 2 pt blur and a four-row menu cascades down over it, each row un-blurring and dropping into place 45 ms after the last. Closing plays the exact reverse. Snappy springs (≈0.4 s, damping 0.7) and a light haptic make it feel mechanical and deliberate.",
-            "一个小型 App 页面的顶栏中（标题、日期、头像，下方是信息流卡片），52 pt 的磨砂圆形菜单按钮内有三条 24×3 pt 的圆角横线，间距 7 pt。打开时形变分两拍：上下两条先滑向中线，中间一条沿水平方向缩为零并淡出；120 毫秒后外侧两条分别旋转 ±45°，组成利落的 X，可选整体同步旋转半圈。与此同时信息流变暗至 35% 并模糊 2 pt，四行菜单覆盖其上依次以 45 毫秒间隔由模糊变清晰、下落就位。关闭时严格倒放。干脆的弹簧（约 0.4 秒、阻尼 0.7）配合轻触感，让形变机械、明确而不拖泥带水。"
+            "小型App页面顶栏中（标题、日期、头像，下为信息流卡片），52 pt的磨砂圆形菜单按钮内有三条24×3 pt的圆角横线，间距7 pt。打开时形变分两拍：上下两条先滑向中线，中间一条沿水平方向缩为零并淡出；120毫秒后外侧两条分别旋转±45°，组成利落的X，可选整体同步旋转半圈。与此同时信息流变暗至35%并模糊2 pt，四行菜单覆盖其上依次以45毫秒间隔由模糊变清晰、下落就位。关闭时严格倒放。干脆的弹簧（约0.4秒、阻尼0.7）配合轻触感，形变机械而明确。"
         ),
         implementation: L(
             "Three Capsules with separate .animation(_:value:) modifiers wrapping rotation and offset, so each property gets its own delay depending on direction; menu rows use per-index delayed springs for the cascade.",

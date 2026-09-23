@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Press any point of a card: that spot sinks, then the card wobbles back like a sprung plate.", "按下卡片任意位置，该点下沉，松手后卡片像弹簧托盘一样晃动回正。"),
         prompt: L(
             "A glossy 250×158 pt payment card rests flat with a 18 pt soft shadow. Touching down at any point tilts the card so that exact spot sinks away from the viewer — up to 12° on each axis in perspective — within a stiff 180 ms spring, while the card scales to 96.5%, its shadow tightens to 8 pt and a dark radial dent (≈110 pt) blooms under the fingertip. On release the card is let go on an under-damped spring (response 0.6 s, damping 0.3), so it overshoots through flat and rocks back and forth two or three times before settling, like a plate balanced on a spring. A soft haptic marks the press. Tactile, springy and alive.",
-            "一张 250×158 pt 的光泽支付卡平放，带 18 pt 柔和阴影。手指按在任意位置，卡片便以透视倾斜，让被按下的那一点向远离观者的方向下沉——每个轴最多 12°——由 180 毫秒的硬弹簧完成；同时卡片缩至 96.5%，阴影收紧到 8 pt，指尖下晕开约 110 pt 的深色径向凹痕。松手后卡片交给欠阻尼弹簧（响应 0.6 秒、阻尼 0.3），越过水平位置反向摆动，来回晃动两三次后才停稳，就像放在弹簧上的托盘。按下时伴随轻柔触感。触感真实、弹性十足、充满生命力。"
+            "一张250×158 pt的光泽支付卡平放，带18 pt柔和阴影。手指按在任意位置，卡片便以透视倾斜，让被按下的那一点向远离观者的方向下沉——每个轴最多12°——由180毫秒的硬弹簧完成；同时卡片缩至96.5%，阴影收紧到8 pt，指尖下晕开约110 pt的深色径向凹痕。松手后卡片交给欠阻尼弹簧（响应0.6秒、阻尼0.3），越过水平位置反向摆动，来回晃动两三次后才停稳，就像放在弹簧上的托盘。按下时伴随轻柔触感。触感真实、弹性十足、充满生命力。"
         ),
         implementation: L(
             "A zero-distance DragGesture converts the touch point to a −1…1 tilt that drives two rotation3DEffects; release hands the tilt back to zero through a low-damping spring, and a RadialGradient centered on the touch point fakes the dent.",

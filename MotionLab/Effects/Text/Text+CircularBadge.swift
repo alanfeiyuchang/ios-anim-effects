@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A ring of type slowly orbits a button; a tap whips it around a half turn.", "一圈文字缓缓环绕按钮旋转；点击后猛地甩过半圈。"),
         prompt: L(
             "A circular call-to-action: a 76 pt gradient disc with an arrow sits inside a ring of small, widely tracked caps set on a ~92 pt radius, each glyph rotated to follow the circle, with a hairline guide ring just inside. The ring orbits continuously at a calm ~24°/s. On tap the ring whips an extra half turn on a spring (response 0.8 s, damping 0.72) layered on top of the orbit, the disc squashes to 90% and rebounds, the arrow bounces, and a soft haptic lands. Editorial, playful and endlessly loopable — the kind of badge that invites a scroll or a click.",
-            "一枚环形行动按钮：76 pt 的渐变圆盘中是一个箭头，外圈是一圈字距宽松的小号大写文字，排布在约 92 pt 的半径上，每个字形都沿圆周旋转，内侧有一道细线导轨。整圈文字以约 24°/秒的舒缓速度持续公转。点击时，文字环在公转之上叠加一段弹簧（响应 0.8 秒、阻尼 0.72）驱动的额外半圈甩动，圆盘压缩到 90% 再回弹，箭头弹跳一下，并伴随柔和触感。编辑感强、俏皮，且可无缝循环——一个邀请用户滚动或点击的徽章。"
+            "一枚环形行动按钮：76 pt的渐变圆盘中是一个箭头，外圈是一圈字距宽松的小号大写文字，排布在约92 pt的半径上，每个字形都沿圆周旋转，内侧有一道细线导轨。整圈文字以约24°/秒的舒缓速度持续公转。点击时，文字环在公转之上叠加一段弹簧（响应0.8秒、阻尼0.72）驱动的额外半圈甩动，圆盘压缩到90%再回弹，箭头弹跳一下，并伴随柔和触感。编辑感强、俏皮，且可无缝循环——一个邀请用户滚动或点击的徽章。"
         ),
         implementation: L(
             "Each character is offset up by the radius and then rotated by its share of 360°, so it pivots around the ring centre; a TimelineView supplies the orbit angle, and a separate animated @State rotation adds the tap spin on top.",

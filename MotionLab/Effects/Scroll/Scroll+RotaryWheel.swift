@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Vertical scrolling turns a round dial of twelve icons; the one at 12 o'clock is selected.", "上下滚动会转动一圈十二个图标组成的转盘，位于 12 点方向的就是选中项。"),
         prompt: L(
             "A 250 pt circular dial carries twelve 40 pt icon badges evenly around a 100 pt radius, over a faint tick ring. Scrolling vertically anywhere on the dial rotates it, one 30° notch per 56 pt, and snaps to whole notches, so an icon always rests at 12 o'clock under a small triangular marker; the dial turns endlessly in either direction, straight past 11 back to 0. The badge in that slot grows to 1.3× on a quick spring and gains a gradient ring and glow, while the others orbit upright without spinning at 85% opacity. The centre title cross-fades to the selection and every notch ticks a selection haptic, like an iPod click wheel or a camera mode dial.",
-            "一个 250 pt 的圆形转盘上，十二个 40 pt 图标徽章均匀分布在半径 100 pt 的圆周上，底下是一圈淡淡的刻度环。在转盘上任意位置上下滚动就能转动它：每 56 pt 转过一个 30° 档位，并吸附到整档，总有一个图标停在 12 点方向的小三角下；转盘可朝任一方向无限转动，从 11 直接转回 0。落在该位置的徽章以快速弹簧放大到 1.3 倍，带上渐变光环与辉光，其余徽章只公转不自转，保持 85% 不透明度。中心标题随选中项淡入淡出，每过一档轻轻一震，像 iPod 点按式转盘或相机模式拨盘。"
+            "一个250 pt的圆形转盘上，十二个40 pt图标徽章均匀分布在半径100 pt的圆周上，底下是一圈淡淡的刻度环。在转盘上任意位置上下滚动就能转动它：每56 pt转过一个30°档位，并吸附到整档，总有一个图标停在12点方向的小三角下；转盘可朝任一方向无限转动，从11直接转回0。落在该位置的徽章以快速弹簧放大到1.3倍，带上渐变光环与辉光，其余徽章只公转不自转，保持85%不透明度。中心标题随选中项淡入淡出，每过一档轻轻一震，像iPod点按式转盘。"
         ),
         implementation: L(
             "An invisible vertical ScrollView (clear content with a contentShape, three turns long) sits on top of the dial, snaps to 56 pt steps and silently re-centres on the middle turn when idle; onScrollGeometryChange converts the offset into a continuous rotation that positions each badge with cos/sin, so icons orbit but never spin.",

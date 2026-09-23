@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Lock-screen style grouped notifications that unfold into a list.", "锁屏式分组通知，点击后逐条展开成列表。"),
         prompt: L(
             "Under a large lock-screen clock, four 300×60 pt notification cards with 18 pt corners sit collapsed: only the front one shows content, while two plates peek out beneath it, each 12 pt lower and 5% smaller and faintly tinted with their app colour. Tapping unfolds the group into a list with 6 pt gaps: cards spring into place top to bottom with a 40 ms stagger (response 0.5 s, damping 0.78), growing back to full size, shedding the tint and fading their content in, while the clock condenses to half size and the date fades out. The header pill cross-fades from “4 new” to “Show less”, and a second tap gathers the cards back in reverse order. Tidy, calm and unmistakably iOS.",
-            "锁屏大号时钟下方，四条 300×60 pt、18 pt 圆角的通知收成一叠：只有最前面一条显示内容，下面露出两层底板，每层下移 12 pt、缩小 5%，并透出一点所属 App 的颜色。轻点后整组展开成间距 6 pt 的列表：卡片自上而下错开 40 毫秒，以弹簧（响应 0.5 秒、阻尼 0.78）依次落位，恢复原大、褪去底色、内容淡入；时钟同时缩到一半，日期淡出让位。标题胶囊由「4 条新通知」淡变为「收起」，再点一次，卡片按相反顺序收回。整洁从容，地道的 iOS 味道。"
+            "锁屏大号时钟下方，四条300×60 pt、18 pt圆角的通知收成一叠：只有最前面一条显示内容，下面露出两层底板，每层下移12 pt、缩小5%，并透出一点所属App的颜色。轻点后整组展开成间距6 pt的列表：卡片自上而下错开40毫秒，以弹簧（响应0.5秒、阻尼0.78）依次落位，恢复原大、褪去底色、内容淡入；时钟同时缩到一半，日期淡出让位。标题胶囊由「4条新通知」淡变为「收起」，再点一次，卡片按相反顺序收回。整洁从容，地道的iOS味道。"
         ),
         implementation: L(
             "Cards share a top-aligned ZStack; collapsed vs expanded offsets, scales and content opacity are computed per index, each with a delayed .animation(_:value:) for the stagger.",

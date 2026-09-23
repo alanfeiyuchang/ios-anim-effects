@@ -48,6 +48,8 @@ private struct SportGearDemo: View {
     @State private var landed: Set<Int> = [1]
     @State private var flights: [GearFlight] = []
     @State private var flightSerial = 0
+    /// Stored landing tasks, cancelled when the demo goes away.
+    @State private var cleanups: [Int: Task<Void, Never>] = [:]
     @State private var ringHits = 0
     @State private var tileCenters: [Int: CGPoint] = [:]
     @State private var ringCenter: CGPoint = .zero
@@ -75,6 +77,7 @@ private struct SportGearDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 1.1, delay: 0.6) { previewTick() }
+        .onDisappear { cancelCleanups() }
     }
 
     private var card: some View {
@@ -185,8 +188,10 @@ private struct SportGearDemo: View {
         let duration = max(ctx["flight"], 0.1)
         // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
         let muted = ctx.isPreview || Haptics.isMuted
-        Task { @MainActor in
+        cleanups[flight.id] = Task { @MainActor in
             try? await Task.sleep(for: .seconds(duration))
+            guard !Task.isCancelled else { return }
+            cleanups[flight.id] = nil
             flights.removeAll { $0.id == flight.id }
             guard checked.contains(id) else { return }
             let wasPacked = allPacked
@@ -196,6 +201,11 @@ private struct SportGearDemo: View {
             ringHits += 1
             if !muted && allPacked && !wasPacked { Haptics.success() }
         }
+    }
+
+    private func cancelCleanups() {
+        for task in cleanups.values { task.cancel() }
+        cleanups = [:]
     }
 
     private func previewTick() {

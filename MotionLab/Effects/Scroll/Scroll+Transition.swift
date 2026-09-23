@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Rows fade, shrink, blur or fold as they enter and leave the viewport.", "列表行进入或离开可视区域时渐隐、缩小、模糊或折叠。"),
         prompt: L(
             "A vertical list of rounded content rows fills the stage. Each row is fully crisp while wholly visible, but as it crosses the top or bottom edge its appearance is interpolated continuously with the scroll position: it fades toward ~35% opacity and, in the default style, shrinks to ~88% scale; alternatives instead blur it up to 8 pt or fold it back up to ~48° around its horizontal axis like a page turning into depth. Because the effect is scrubbed by the finger rather than timed, it tracks flings and rubber-banding exactly. The result frames the content softly and gives the list a focused, cinematic depth.",
-            "舞台上是一列可垂直滚动的圆角内容行。每一行完全处于可视区域时保持清晰；一旦越过顶部或底部边缘，其外观随滚动位置连续插值：逐渐淡出至约 35% 不透明度，默认样式下同时缩小到约 88%；另两种样式则改为模糊最多 8 pt，或绕水平轴向后折叠最多约 48°，像书页翻入纵深。由于效果由手指滚动实时驱动而非定时播放，它能精确跟随快速甩动与橡皮筋回弹。整体让内容边缘柔和收束，列表更具聚焦感与电影般的层次。"
+            "舞台上是一列可垂直滚动的圆角内容行。每一行完全处于可视区域时保持清晰；一旦越过顶部或底部边缘，其外观随滚动位置连续插值：逐渐淡出至约35%不透明度，默认样式下同时缩小到约88%；另两种样式则改为模糊最多8 pt，或绕水平轴向后折叠最多约48°，像书页翻入纵深。由于效果由手指滚动实时驱动而非定时播放，它能精确跟随快速甩动与橡皮筋回弹。整体让内容边缘柔和收束，列表更具聚焦感与电影般的层次。"
         ),
         implementation: L(
             "Each row uses .scrollTransition(.interactive), mapping |phase.value| to opacity, scaleEffect, blur or rotation3DEffect depending on the chosen style.",

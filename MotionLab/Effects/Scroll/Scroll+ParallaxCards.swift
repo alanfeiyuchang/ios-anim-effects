@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Feed cards act as windows: the artwork inside drifts slower than the scroll.", "信息流卡片像一扇扇窗：内部画面比滚动更慢地漂移。"),
         prompt: L(
             "A vertical feed of wide cards (150 pt tall, 22 pt corners) scrolls through the viewport. Each card is a window onto oversized artwork — a gradient with a large glyph and soft light blobs — that is taller than the card by twice the parallax amount. As a card travels from the bottom of the viewport to the top, its artwork translates in the opposite direction by up to ±36 pt relative to the frame (never more than the overscan, so no edge ever shows), linearly with the card's distance from the viewport center, so the image appears to sit deeper than the glass. Cards near the edges also ease down to 92% scale. The motion is scrubbed directly by scroll position — subtle, dimensional and editorial.",
-            "一列宽幅卡片（高 150 pt，22 pt 圆角）在视口中纵向滚动。每张卡片都是一扇窗，窗内是比卡片高出两倍视差量的超大画面——渐变、大号图标与柔和光斑。卡片从视口底部移动到顶部的过程中，画面相对卡片框朝反方向平移，最多 ±36 pt（绝不超过画面多出的余量，因此不会露边），与卡片到视口中心的距离成线性关系，使画面看起来位于玻璃之后更深处。靠近边缘的卡片还会缓缓缩小到 92%。运动完全由滚动位置实时驱动——含蓄、立体，富有杂志编排感。"
+            "一列宽幅卡片（高150 pt，22 pt圆角）在视口中纵向滚动。每张卡片都是一扇窗，窗内是比卡片高出两倍视差量的超大画面——渐变、大号图标与柔和光斑。卡片从视口底部移动到顶部的过程中，画面相对卡片框朝反方向平移，最多±36 pt（绝不超过画面多出的余量，因此不会露边），与卡片到视口中心的距离成线性关系，使画面看起来位于玻璃之后更深处。靠近边缘的卡片还会缓缓缩小到92%。运动完全由滚动位置实时驱动——含蓄、立体，富有杂志编排感。"
         ),
         implementation: L(
             "The artwork is framed taller than its clipped container and a visualEffect offsets it by its normalised distance from the viewport center (measured via onGeometryChange); a scrollTransition adds the edge scale.",

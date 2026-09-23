@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Swiped cards turn away in 3D like a revolving door while the next one swings in.", "滑动时卡片像旋转门一样在三维中转开，下一张随之转入。"),
         prompt: L(
             "A deck of 190×240 pt cards. Dragging sideways does not slide the top card flat: it turns around its vertical axis in perspective — up to 60° at the 110 pt threshold — while travelling only 55% of the finger's distance and darkening toward edge-on, like a revolving door being pushed. Releasing past the threshold (or flicking) keeps it turning to 90°, edge-on and gone, with a firm spring (response 0.42 s, damping 0.88) and a medium haptic; the next card starts 25° turned the other way at 92% scale and swings in to face the viewer with a softer spring (response 0.55 s, damping 0.7). Short releases rotate back to flat. Architectural, smooth and a little theatrical.",
-            "一叠 190×240 pt 的卡片。左右拖动时，顶部卡片不是平移，而是绕竖直轴以透视转动——在 110 pt 阈值处最多转 60°——同时只移动手指距离的 55%，并在接近侧立时逐渐变暗，就像推动一扇旋转门。越过阈值松手（或快速甩动）时，卡片以硬朗的弹簧（响应 0.42 秒、阻尼 0.88）继续转到 90° 侧立后消失，并伴随中等触感；下一张卡片从反方向转过 25°、缩放 92% 的状态，以更柔和的弹簧（响应 0.55 秒、阻尼 0.7）转正面向观者。距离不足时松手则转回平面。富有建筑感、顺滑，又带点戏剧性。"
+            "一叠190×240 pt的卡片。左右拖动时，顶部卡片不是平移，而是绕竖直轴以透视转动——在110 pt阈值处最多转60°——同时只移动手指距离的55%，并在接近侧立时逐渐变暗，就像推动一扇旋转门。越过阈值松手（或快速甩动）时，卡片以硬朗的弹簧（响应0.42秒、阻尼0.88）继续转到90°侧立后消失，并伴随中等触感；下一张卡片从反方向转过25°、缩放92%的状态，以更柔和的弹簧（响应0.55秒、阻尼0.7）转正面向观者。距离不足则转回平面。顺滑又带点戏剧性。"
         ),
         implementation: L(
             "The drag translation maps to a y-axis rotation3DEffect plus a reduced offset on the top card; a throw animates the angle to ±90°, then the deck is reordered and a separate 'incoming' angle state springs the new top card from −25° to 0°.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A gel blob that stretches with drag velocity and wobbles back into shape.", "随拖拽速度拉长的果冻球，松手后摇晃回弹。"),
         prompt: L(
             "A 110 pt glossy gel sphere (violet-to-pink gradient, white specular highlight at the upper left, an undeformed contact shadow on the floor) follows the finger. Its shape is driven by velocity rather than position: speed maps to up to 45% strain, stretching the blob along its travel and thinning it across, smoothed by a fast 150 ms spring so it never jitters, and if the finger rests for 80 ms the strain relaxes back to round (response 0.3 s). On release it flies home on an under-damped spring (response 0.5 s, damping 0.4), and because strain is stored as a signed tensor the overshoot becomes a squash, so it jiggles stretch → squash → stretch before resting. Playful, squishy and alive.",
-            "一个 110 pt 的光泽果冻球（紫到粉渐变，左上角白色高光，地面接触阴影不参与形变）跟着手指走。形变由速度而非位置驱动：速度映射为最高 45% 的应变，沿运动方向拉长、横向变细，并经 150 毫秒的快速弹簧平滑，绝不抖动；手指停住 80 毫秒，应变就以弹簧（响应 0.3 秒）松弛回圆形。松手后它以欠阻尼弹簧（响应 0.5 秒、阻尼 0.4）飞回中心，由于应变以带符号的张量存储，过冲会自然变成挤压，于是“拉长、压扁、再拉长”地晃几下才停住。俏皮、软糯、充满生命力。"
+            "一个110 pt的光泽果冻球（紫到粉渐变，左上角白色高光，地面接触阴影不参与形变）跟着手指走。形变由速度而非位置驱动：速度映射为最高45%的应变，沿运动方向拉长、横向变细，并经150毫秒的快速弹簧平滑，绝不抖动；手指停住80毫秒，应变就以弹簧（响应0.3秒）松弛回圆形。松手后它以欠阻尼弹簧（响应0.5秒、阻尼0.4）飞回中心，由于应变以带符号的张量存储，过冲会自然变成挤压，于是“拉长、压扁、再拉长”地晃几下才停住。俏皮、软糯、充满生命力。"
         ),
         implementation: L(
             "Velocity is converted to a traceless strain tensor (s·cos2θ, s·sin2θ) animated through a custom GeometryEffect that builds an affine stretch around the view center; negative strain naturally becomes a squash.",

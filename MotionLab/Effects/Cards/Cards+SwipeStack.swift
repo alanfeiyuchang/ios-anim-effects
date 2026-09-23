@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A Tinder-style stack: fling cards left or right with rotation and stamps.", "探探式卡片堆：左右甩出卡片，带旋转与印章反馈。"),
         prompt: L(
             "A deck of 200×250 pt profile cards with 26 pt corners; the two behind step down to 94% and 88% scale and sit 22 pt lower each, so their edges read as a pile. The top card follows the finger 1:1 and pivots on its bottom edge, about 14° per 220 pt of travel; a green LIKE or red NOPE stamp inks in between 60% and 100% of the 110 pt threshold, the matching round button swells to 118%, and the cards behind slide forward into the next slot. Releasing past the threshold or flicking hard throws the card away along its path on a quick spring (response 0.4 s, damping 0.86) with a success or medium haptic; otherwise it snaps back on a bouncy spring (response 0.45 s, damping 0.62). Playful and decisive.",
-            "一叠 200×250 pt、26 pt 圆角的人物卡，后面两张依次缩到 94%、88%，并各下移 22 pt，底边错落成一叠。顶部卡片 1:1 跟手，以底边为轴旋转，每 220 pt 位移约 14°；拖到 110 pt 阈值的 60%–100% 时，绿色「喜欢」或红色「无感」印章逐渐盖实，对应的圆形按钮放大到 118%，后方卡片同步前移补位。越过阈值或用力一甩再松手，卡片以快速弹簧（响应 0.4 秒、阻尼 0.86）沿轨迹飞走，并伴随成功或中等触感；否则以弹性弹簧（响应 0.45 秒、阻尼 0.62）回弹。俏皮又果断。"
+            "一叠200×250 pt、26 pt圆角的人物卡，后面两张依次缩到94%、88%，并各下移22 pt。顶部卡片1:1跟手，以底边为轴旋转，每220 pt位移约14°；拖到110 pt阈值的60%–100%时，绿色「喜欢」或红色「无感」印章逐渐盖实，对应圆形按钮放大到118%，后方卡片前移补位。越过阈值或用力一甩再松手，卡片以快速弹簧（响应0.4秒、阻尼0.86）沿轨迹飞走，伴随成功或中等触感；否则以弹性弹簧（响应0.45秒、阻尼0.62）回弹。俏皮又果断。"
         ),
         implementation: L(
             "The top card's drag offset drives offset + rotationEffect(anchor: .bottom) and the stamp opacities; the drag progress also interpolates the depth of the cards behind. A flung card is recycled to the back without animation.",

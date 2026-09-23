@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The lid flips open, a document hops and drops in, and the can squashes shut.", "盖子掀开，文件轻跳后落入，垃圾桶压扁合盖。"),
         prompt: L(
             "A document glyph floats above a custom-drawn red trash can with a hinged lid. On tap the lid hinges open ~28° around its right end while lifting 8 pt; the document anticipates with a 16 pt hop and slight counter-tilt, then drops ~84 pt into the can on an ease-in, shrinking to 60% and fading as it passes behind the rim. As it lands the can squashes to 90% height (and widens to match) and rebounds on a bouncy spring, then the lid snaps shut with a small overshoot and a rigid haptic. A fresh document springs back in and the counter rolls up. Precise, cartoon-physical and satisfying — deletion as a tiny reward.",
-            "一个文件图标悬浮在自绘的红色垃圾桶上方，桶盖可铰接开合。点击时，桶盖以右端为铰点掀开约 28° 并上抬 8 pt；文件先向上轻跳 16 pt、带轻微反向倾斜蓄力，随后以缓入曲线下落约 84 pt 进入桶中，经过桶沿时缩小到 60% 并淡出。落底瞬间桶身压扁至 90% 高度（同时相应变宽），再以弹性弹簧回弹；随后桶盖带小幅过冲“啪”地合上，伴随一次硬朗触感。新文件弹回原位，计数向上滚动。精准、带卡通物理感、令人满足——让删除也成为小小的奖励。"
+            "一个文件图标悬浮在自绘的红色垃圾桶上方，桶盖可铰接开合。点击时，桶盖以右端为铰点掀开约28°并上抬8 pt；文件先向上轻跳16 pt、带轻微反向倾斜蓄力，随后以缓入曲线下落约84 pt进入桶中，经过桶沿时缩小到60%并淡出。落底瞬间桶身压扁至90%高度（同时相应变宽），再以弹性弹簧回弹；随后桶盖带小幅过冲“啪”地合上，伴随一次硬朗触感。新文件弹回原位，计数向上滚动。精准、带卡通物理感、令人满足——让删除也成为小小的奖励。"
         ),
         implementation: L(
             "One keyframeAnimator keyed on a counter runs parallel tracks for lid angle and lift, document offset/scale/tilt/opacity and the can's squash; the lid rotates with rotationEffect(anchor: .trailing).",

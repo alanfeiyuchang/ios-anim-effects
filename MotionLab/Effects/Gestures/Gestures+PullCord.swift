@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Tug a lamp's cord past a click point to switch it; the cord bounces back and the shade sways.", "把台灯拉绳拽过“咔哒”点即可开关，拉绳回弹、灯罩轻晃。"),
         prompt: L(
             "A pendant lamp (110 pt shade, bulb beneath) hangs at the top of the stage, with a thin cord dropping 90 pt from the shade's edge to an 18 pt bead. Dragging the bead pulls the cord down 1:1, rubber-banded toward 120 pt with a little sideways give; at 50 pt the switch arms with a rigid haptic click and the bead swells to 1.25×. Releasing while armed toggles the light: the bulb blooms amber with a 30 pt glow, a soft light cone fades in over 350 ms and the room icon below lights up, while the cord snaps back on a bouncy spring (response 0.35 s, damping 0.35) and the shade sways ±4° on its hook before settling. Releasing short just lets the cord bounce back. Tactile and nostalgic.",
-            "舞台顶部悬着一盏吊灯（110 pt 灯罩，下方是灯泡），灯罩边缘垂下一根 90 pt 的细拉绳，末端挂着 18 pt 的拉珠。拖动拉珠时拉绳 1:1 向下伸长，越往下阻力越大并趋近 120 pt，左右略可摆动；拉到 50 pt 时开关就绪，一下硬朗的“咔哒”触感，拉珠放大到 1.25 倍。就绪时松手即切换灯光：灯泡亮起带 30 pt 光晕的琥珀色，柔和光锥在 350 毫秒内淡入，下方的房间图标随之点亮；拉绳以高弹性弹簧（响应 0.35 秒、阻尼 0.35）弹回，灯罩绕挂钩摆动 ±4° 才停稳。没拉到位松手则只是弹回。真实又怀旧。"
+            "顶部悬着一盏吊灯（110 pt灯罩下是灯泡），灯罩边缘垂下90 pt细拉绳，末端挂着18 pt的拉珠。拖动拉珠，拉绳1:1伸长，越往下阻力越大并趋近120 pt，可略微摆动；拉到50 pt时开关就绪，一下硬朗的“咔哒”触感，拉珠放大到1.25倍。就绪松手即切换灯光：灯泡亮起带30 pt光晕的琥珀色，柔和光锥在350毫秒内淡入，房间图标随之点亮；拉绳以高弹性弹簧（响应0.35秒、阻尼0.35）弹回，灯罩绕挂钩摆动±4°才停稳。没拉到位则只弹回。真实又怀旧。"
         ),
         implementation: L(
             "An animatable line Shape draws the cord to the bead's offset; the bead follows a rubber-banded DragGesture and both spring back together. The shade uses rotationEffect(anchor: .top) kicked to 4° and released into an under-damped spring.",

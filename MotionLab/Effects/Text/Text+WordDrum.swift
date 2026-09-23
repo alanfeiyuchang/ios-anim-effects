@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Words sit on a turning cylinder that clicks forward with a slight overshoot.", "词语排在一个转动的圆柱上，逐格转动并略微过冲。"),
         prompt: L(
             "A two-line hero statement: a static first line, and beneath it a keyword printed around a horizontal cylinder of five words in gradient colour. Every 1.8 s the drum turns one face (72°) in 0.55 s on an ease-out-back curve (overshoot ≈10%), so the next word rolls up from below, tips past upright and clicks back into place. Each word is rotated in 3D about the x-axis to match its position on the drum, displaced by radius × sin(angle) and faded by cos(angle), and the top and bottom of the window fade through a gradient mask, selling the curvature. Tapping advances immediately with a light haptic. It is a confident, mechanical take on the rotating-word hero.",
-            "一段两行的主标题：第一行固定不动，第二行的关键词印在一个横向圆柱的五个面上，文字带渐变色。滚筒每 1.8 秒转过一个面（72°），用时 0.55 秒、采用回弹缓出曲线（过冲约 10%），于是下一个词从下方滚上来，略微越过正位再「咔嗒」回正。每个词按自己在滚筒上的角度绕 x 轴做 3D 旋转，纵向位移为半径 × sin(角度)，透明度随 cos(角度) 衰减；窗口上下边缘用渐变遮罩淡出，强化圆柱的曲面感。点击可立即转到下一个词并伴随轻触感。这是轮播关键词标题的机械感版本，干脆而自信。"
+            "一段两行的主标题：第一行固定不动，第二行的关键词印在一个横向圆柱的五个面上，文字带渐变色。滚筒每1.8秒转过一个面（72°），用时0.55秒、采用回弹缓出曲线（过冲约10%），于是下一个词从下方滚上来，略微越过正位再「咔嗒」回正。每个词按自己在滚筒上的角度绕x轴做3D旋转，纵向位移为半径× sin(角度)，透明度随cos(角度)衰减；窗口上下边缘用渐变遮罩淡出，强化圆柱的曲面感。点击可立即转到下一个词并伴随轻触感。机械感十足，干脆而自信。"
         ),
         implementation: L(
             "A TimelineView computes a continuous drum position — whole steps plus an eased fraction during the last 0.55 s of each hold — and every word derives its angle, rotation3DEffect, y offset and opacity from it, inside a gradient-masked window.",

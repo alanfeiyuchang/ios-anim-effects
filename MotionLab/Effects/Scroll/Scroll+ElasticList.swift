@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Chat bubbles trail the scroll on springs, stretching apart and bouncing back together like iMessage.", "聊天气泡通过弹簧跟随滚动，像 iMessage 一样被拉开再弹回聚拢。"),
         prompt: L(
             "A chat thread of alternating capsule message bubbles on 44 pt rows (incoming on the left, outgoing blue gradient on the right) with 10 pt gaps. The bubbles are not glued to the scroll: each one follows through its own spring, and the further a bubble sits from the leading edge of the motion, the looser its spring (response 0.2 → 0.45 s, damping 0.62) and the more it lags — up to 1.2× the per-frame scroll delta, capped at 40 pt. Fast scrolling therefore stretches the gaps open like an accordion, and when the scroll comes to rest the bubbles bounce back together with a small overshoot. Nothing changes layout; only offsets move. Lively, physical and unmistakably iOS.",
-            "一段聊天记录，胶囊形消息气泡排在 44 pt 高的行中左右交替（收到的在左、发出的蓝色渐变在右），间距 10 pt。气泡并没有和滚动牢牢粘在一起：每个气泡都通过自己的弹簧跟随，离运动前沿越远，弹簧越松（响应 0.2 → 0.45 秒、阻尼 0.62），滞后也越多——最多为每帧滚动增量的 1.2 倍，上限 40 pt。因此快速滚动时气泡间距像手风琴一样被拉开，滚动停下后，气泡带着轻微过冲弹回聚拢。布局本身不变，只有偏移在动。灵动、真实，一眼就是 iOS 的味道。"
+            "一段聊天记录，胶囊形消息气泡排在44 pt高的行中左右交替（收到的在左、发出的蓝色渐变在右），间距10 pt。气泡并没有和滚动牢牢粘在一起：每个气泡都通过自己的弹簧跟随，离运动前沿越远，弹簧越松（响应0.2→0.45秒、阻尼0.62），滞后也越多——最多为每帧滚动增量的1.2倍，上限40 pt。因此快速滚动时气泡间距像手风琴一样被拉开，滚动停下后，气泡带着轻微过冲弹回聚拢。布局本身不变，只有偏移在动。灵动、真实，一眼就是iOS的味道。"
         ),
         implementation: L(
             "onScrollGeometryChange tracks the offset and its per-frame delta; each row offsets by delta × its normalised screen position and carries its own .animation(.spring(response:…), value: delta), so rows chase each other. onScrollPhaseChange resets the delta to zero when the scroll settles.",

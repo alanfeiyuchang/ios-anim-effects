@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Each character pops up from a tilted seed and wobbles into place.", "每个字符从倾斜的小点弹出，摇摆着落位。"),
         prompt: L(
             "A two-line greeting (a 40 pt heavy rounded headline over a secondary 17 pt line) enters one character at a time. Every glyph starts at 20% scale, 24 pt below its baseline and tilted −25°, invisible, then springs to full size, upright, on an under-damped spring (response 0.5 s, damping 0.55) so it overshoots to ~110%, wobbles once and settles; characters follow each other every 40 ms and the second line begins after the first finishes. On replay the letters fade out in 200 ms before popping in again. A soft haptic ticks on start. The effect is buoyant and friendly, like letters inflating.",
-            "一段两行问候语（上方 40 pt 粗圆体标题，下方 17 pt 次要文字）逐字入场。每个字形起始时缩到 20%、低于基线 24 pt、向左倾斜 25° 且完全透明，随后以欠阻尼弹簧（响应 0.5 秒、阻尼 0.55）弹到原大小并摆正——先冲到约 110%，摇晃一下再稳住；字符之间间隔 40 毫秒，第二行在第一行结束后开始。重播时字母先在 200 毫秒内淡出，再重新弹入，开始时伴随轻柔触感。整体轻盈友好，像字母被一个个吹鼓起来。"
+            "一段两行问候语（上方40 pt粗圆体标题，下方17 pt次要文字）逐字入场。每个字形起始时缩到20%、低于基线24 pt、向左倾斜25°且完全透明，随后以欠阻尼弹簧（响应0.5秒、阻尼0.55）弹到原大小并摆正——先冲到约110%，摇晃一下再稳住；字符之间间隔40毫秒，第二行在第一行结束后开始。重播时字母先在200毫秒内淡出，再重新弹入，开始时伴随轻柔触感。整体轻盈友好，像字母被一个个吹鼓起来。"
         ),
         implementation: L(
             "The strings are split into characters laid out in an HStack; each Text gets scale, rotation, offset and opacity driven by one Bool through .animation(_:value:) with a spring delayed by its global index.",

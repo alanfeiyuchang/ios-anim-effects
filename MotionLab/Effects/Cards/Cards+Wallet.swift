@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Apple Wallet-style cards: tap one to lift it out while the rest tuck away.", "类 Apple 钱包卡片堆：点选一张抽出，其余卡片收拢到底部。"),
         prompt: L(
             "Four payment cards are stacked vertically like Apple Wallet, each overlapping the previous one and exposing a 46 pt header strip. Tapping a card slides it up to the top slot while the remaining cards drop away and compress into a tight pile at the bottom edge, 10 pt apart and scaled 90–96%. Every card moves on its own spring (response ≈0.5 s, damping ≈0.8) with a 35 ms stagger by position, so the stack ripples rather than moving as one block. Tapping the selected card reverses the choreography and fans the stack back open. Soft shadows and a light haptic make it feel tangible and orderly.",
-            "四张支付卡片像 Apple 钱包一样纵向层叠，每张压住上一张，只露出 46 pt 的顶部条。点击某张卡片，它会滑到顶部位置，其余卡片下沉，在底部边缘收拢成紧密的一叠，间距 10 pt、缩放 90%–96%。每张卡片各自使用弹簧（响应约 0.5 秒、阻尼约 0.8），并按位置错开 35 毫秒，使整叠卡片呈涟漪般依次运动而非整体平移。再次点击已选中的卡片则反向回放，重新展开卡片堆。柔和投影与轻触感让它显得真实而有序。"
+            "四张支付卡片像Apple钱包一样纵向层叠，每张压住上一张，只露出46 pt的顶部条。点击某张卡片，它会滑到顶部位置，其余卡片下沉，在底部边缘收拢成紧密的一叠，间距10 pt、缩放90%–96%。每张卡片各自使用弹簧（响应约0.5秒、阻尼约0.8），并按位置错开35毫秒，使整叠卡片呈涟漪般依次运动而非整体平移。再次点击已选中的卡片则反向回放，重新展开卡片堆。柔和投影与轻触感让它显得真实而有序。"
         ),
         implementation: L(
             "Cards live in a top-aligned ZStack; each computes its y offset and scale from the selected index, with a per-card .animation(_:value:) whose delay creates the stagger.",

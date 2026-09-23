@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A tile that gets pulled toward the nearest anchor while dragged, then clicks into place.", "拖动时被最近锚点吸过去、松手后“咔哒”落位的方块。"),
         prompt: L(
             "A 62 pt rounded tile (18 pt continuous corners, mint-to-sky gradient) sits on one of nine anchor dots laid out in a 3 × 3 grid, 92 pt apart. While dragged it follows the finger 1:1 until it comes within the magnet radius of an anchor; from there it is pulled toward it by up to 55%, growing stronger as the distance shrinks, so the tile visibly leans into the slot. The anchor under attraction blooms a 34 pt ring on a spring (response 0.3 s, damping 0.6) and a selection haptic ticks each time the target changes. On release the tile snaps to the nearest anchor on a spring (response 0.38 s, damping 0.68) with one small overshoot. Precise, confident and tactile.",
-            "一个 62pt 的圆角方块（18pt 连续圆角，薄荷绿到天蓝渐变）停在 3 × 3 共九个锚点之一上，锚点间距 92pt。拖动时方块 1:1 跟手，一旦进入某个锚点的磁吸半径，就会被向锚点方向拉拢，最多拉过 55%，距离越近吸力越强，方块明显“倒向”格位。被吸引的锚点以弹簧（响应 0.3 秒、阻尼 0.6）绽开一圈 34pt 的光环，目标每切换一次就触发一次选择触感。松手后方块以弹簧（响应 0.38 秒、阻尼 0.68）吸附到最近锚点，带一次轻微过冲。精准、笃定、手感清脆。"
+            "一个62pt的圆角方块（18pt连续圆角，薄荷绿到天蓝渐变）停在3 × 3共九个锚点之一上，锚点间距92pt。拖动时方块1:1跟手，一旦进入某个锚点的磁吸半径，就会被向锚点方向拉拢，最多拉过55%，距离越近吸力越强，方块明显“倒向”格位。被吸引的锚点以弹簧（响应0.3秒、阻尼0.6）绽开一圈34pt的光环，目标每切换一次就触发一次选择触感。松手后方块以弹簧（响应0.38秒、阻尼0.68）吸附到最近锚点，带一次轻微过冲。精准、笃定、手感清脆。"
         ),
         implementation: L(
             "The drag translation gives a raw point; the nearest anchor within the radius blends it toward the anchor by strength × (1 − d / radius). onEnded commits the nearest anchor with a spring and resets the translation in the same transaction.",

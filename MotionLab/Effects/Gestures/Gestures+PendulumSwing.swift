@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A badge carried by its lanyard hole that swings behind your finger like a pendulum.", "捏着挂孔拖动的工牌，像钟摆一样在指尖后方摆荡。"),
         prompt: L(
             "A 150×200 pt ID badge (22 pt continuous corners, elevated surface, violet header band, avatar and placeholder lines) is held by a lanyard hole at its top edge. Dragging moves the hole 1:1 while the badge pivots around it: horizontal finger velocity maps to a lag angle of up to ±28° through an under-damped spring (response 0.45 s, damping 0.4), so the badge trails behind, swings past vertical when you stop and sways back, relaxing to zero if the finger rests for 90 ms. On release it flies home on a spring (response 0.5 s, damping 0.7) while an opposite kick from the return velocity makes it swing two or three times before hanging still, with a soft haptic. Weighty, physical and charming.",
-            "一张 150×200 pt 的工牌（22 pt 连续圆角、浮起表面、紫色顶栏、头像与占位文字）被顶部的挂绳孔“捏”住。拖动时挂孔 1:1 跟手，工牌绕它摆动：手指的水平速度映射为最多 ±28° 的滞后角，经欠阻尼弹簧（响应 0.45 秒、阻尼 0.4）作用，于是工牌拖在手指后面，停下时越过竖直位置再摆回；手指静止 90 毫秒，角度便回到零。松手后工牌以弹簧（响应 0.5 秒、阻尼 0.7）飞回原位，回程速度带来一记反向摆动，来回荡两三下才静静垂下，并伴随柔和触感。有分量、有物理感，也很讨喜。"
+            "一张150×200 pt的工牌（22 pt连续圆角、浮起表面、紫色顶栏、头像与占位文字）被顶部的挂绳孔“捏”住。拖动时挂孔1:1跟手，工牌绕它摆动：手指的水平速度映射为最多±28°的滞后角，经欠阻尼弹簧（响应0.45秒、阻尼0.4）作用，于是工牌拖在手指后面，停下时越过竖直位置再摆回；手指静止90毫秒，角度便回到零。松手后工牌以弹簧（响应0.5秒、阻尼0.7）飞回原位，回程速度带来一记反向摆动，来回荡两三下才静静垂下，并伴随柔和触感。有分量又讨喜。"
         ),
         implementation: L(
             "rotationEffect(anchor: .top) is driven by DragGesture.Value.velocity through an under-damped spring on every change; a tokenised Task relaxes the angle when movement stops, and release adds a counter-swing proportional to the return distance.",

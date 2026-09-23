@@ -9,7 +9,7 @@ extension Effect {
         summary: L("SF Symbols 7 glyphs draw themselves like a pen stroke.", "SF Symbols 7 图标像钢笔描画一样自行绘出。"),
         prompt: L(
             "Four line-art SF Symbols — a signature, wind, a checkmark seal and a sun — are drawn onto the stage as if by an invisible pen. Each path starts from its natural beginning and the stroke grows along the symbol's own drawing direction with a calligraphic ease-in-out, layers drawing one after another within each symbol (~0.6 s) while all four draw in unison, so the composition assembles in a single hand-written gesture. Toggling back erases the strokes in reverse, like ink being pulled back into the pen. Organic, handcrafted and delightfully precise; on systems before iOS 26 a fade-and-scale appear/disappear stands in.",
-            "四个线稿风格的 SF Symbol——签名、风、带对勾的徽章与太阳——仿佛被一支看不见的钢笔描绘到舞台上。每条路径从其自然起点出发，笔触沿符号自身的书写方向以书法般的缓入缓出生长，每个符号内部各图层依次绘制（约 0.6 秒），四个符号同步进行，整个画面像一笔手写动作般组装完成。再次切换时笔画按相反顺序擦除，如同墨水被收回笔中。自然、手作感强又精准；在 iOS 26 之前的系统中以淡入缩放的出现/消失效果替代。"
+            "四个线稿风格的SF Symbol——签名、风、带对勾的徽章与太阳——仿佛被一支看不见的钢笔描绘到舞台上。每条路径从其自然起点出发，笔触沿符号自身的书写方向以书法般的缓入缓出生长，每个符号内部各图层依次绘制（约0.6秒），四个符号同步进行，整个画面像一笔手写动作般组装完成。再次切换时笔画按相反顺序擦除，如同墨水被收回笔中。自然、手作感强又精准；在iOS 26之前的系统中以淡入缩放的出现/消失效果替代。"
         ),
         implementation: L(
             "On iOS 26, .symbolEffect(.drawOff…, isActive:) erases the symbol while active and draws it back on when inactive; guarded by #if compiler(>=6.2) and #available with an .appear/.disappear fallback.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A ring traces itself, the tick strokes in, then the badge pops.", "圆环先自行描出，对勾随后画入，徽章轻弹定格。"),
         prompt: L(
             "A success badge assembles in three overlapping beats. First a rounded-cap ring strokes itself clockwise from 12 o'clock over ~0.6 s with an ease-in-out curve while a pale tinted disc fades up behind it. At ~70% of the ring, the checkmark draws from its short left arm through the corner to the long right arm with a fast ease-out (≈0.35 s). As the tick lands the badge springs from 90% to full size with a lively under-damped overshoot (damping 0.5), and a thin halo ring — invisible until this moment — flashes in at 50% opacity and expands to 150% while fading out; a success haptic fires on the pop. Clean, affirmative and satisfying.",
-            "成功徽章分三个相互重叠的节拍组装。首先，一条圆头描边的圆环从 12 点方向顺时针自行描出，约 0.6 秒、缓入缓出，同时背后一枚浅色圆底渐显。圆环画到约 70% 时，对勾从左侧短边经过拐点画向右侧长边，使用快速缓出（约 0.35 秒）。对勾落定的瞬间，徽章以欠阻尼弹簧（阻尼 0.5）从 90% 弹回原尺寸并带轻快过冲，一道此前完全不可见的细光环以 50% 不透明度闪现，随即扩散到 150% 并淡出；弹出时触发成功触感。干净、肯定、令人满足。"
+            "成功徽章分三个相互重叠的节拍组装。首先，一条圆头描边的圆环从12点方向顺时针自行描出，约0.6秒、缓入缓出，同时背后一枚浅色圆底渐显。圆环画到约70%时，对勾从左侧短边经过拐点画向右侧长边，使用快速缓出（约0.35秒）。对勾落定的瞬间，徽章以欠阻尼弹簧（阻尼0.5）从90%弹回原尺寸并带轻快过冲，一道此前完全不可见的细光环以50%不透明度闪现，随即扩散到150%并淡出；弹出时触发成功触感。干净、肯定、令人满足。"
         ),
         implementation: L(
             "Circle and a custom check Path both use .trim(from:to:) driven by state; the sequence is chained with Animation.delay after an instant, non-animated reset.",

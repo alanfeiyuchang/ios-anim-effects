@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Cards pin to the top as you scroll and pile into a receding stack.", "滚动时卡片依次吸顶，层层堆叠并向后退去。"),
         prompt: L(
             "A vertical feed of 300×150 pt pass cards, each a rich gradient with a large faded glyph. As a card reaches the top it pins there instead of scrolling away, 10 pt lower than the card pinned before it, so the stack keeps a neat staircase of peeking edges. The next card slides over it, and every pinned card recedes continuously with the scroll — scaling from its top edge toward ~88% and softening with up to 2 pt of blur — so the pile reads as depth rather than clutter. Everything is scrubbed by the finger, including flings and bounces. Tactile, orderly and editorial.",
-            "一列 300×150 pt 的卡券卡片纵向排列，每张都是浓郁渐变并配有大号淡化图标。卡片滚动到顶部时不会移出，而是吸附在那里，且每张比前一张低 10 pt，形成整齐的阶梯状露边。下一张卡片随即盖上来；已吸顶的卡片随滚动连续后退——以顶边为锚点缩小至约 88%，并带最多 2 pt 的轻微模糊——让堆叠呈现纵深而不显杂乱。全程由手指滚动实时驱动，甩动与回弹都精确跟随。有手感、有秩序、有杂志感。"
+            "一列300×150 pt的卡券卡片纵向排列，每张都是浓郁渐变并配有大号淡化图标。卡片滚动到顶部时不会移出，而是吸附在那里，且每张比前一张低10 pt，形成整齐的阶梯状露边。下一张卡片随即盖上来；已吸顶的卡片随滚动连续后退——以顶边为锚点缩小至约88%，并带最多2 pt的轻微模糊——让堆叠呈现纵深而不显杂乱。全程由手指滚动实时驱动，甩动与回弹都精确跟随。有手感、有秩序、有杂志感。"
         ),
         implementation: L(
             "Each card's visualEffect reads its minY in the .scrollView space; once it passes its pin line the card is offset back by the overshoot and scaled/blurred by how far it has been buried. Later siblings draw on top, so no zIndex is needed.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A soft diagonal edge wipes the headline in, led by a glowing band of colour.", "一道柔和的斜向边缘把标题擦出来，前端带着一条发光色带。"),
         prompt: L(
             "A bold two-line headline is hidden behind a diagonal mask. On trigger the mask's feathered edge, 18% of the width, sweeps from top-left to bottom-right over 1.3 s on an ease-in-out curve, revealing the text. Riding that edge is a narrow glowing band, a sunset-gradient copy of the same letters visible only inside the band and haloed by a 6 pt blur, so each glyph flashes warm as the light passes and then cools to the regular label colour. A caption springs up 150 ms after the sweep ends, and replaying hides everything in 250 ms. Cinematic, like a title card catching a studio light.",
-            "一段粗体两行标题藏在一张斜向遮罩后面。触发后，遮罩的羽化边缘（宽度的 18%）以缓入缓出曲线在 1.3 秒内从左上扫到右下，把文字揭开。这道边缘上骑着一条窄窄的发光带：同一段文字的日落渐变副本，只在光带内可见，外加 6 pt 模糊光晕，于是光扫过时每个字先亮起暖色，再冷却成普通文字颜色。光扫结束 150 毫秒后说明文字弹起，重播时所有内容在 250 毫秒内隐去。电影感十足，像片头字幕被影棚灯光扫过。"
+            "一段粗体两行标题藏在一张斜向遮罩后面。触发后，遮罩的羽化边缘（宽度的18%）以缓入缓出曲线在1.3秒内从左上扫到右下，把文字揭开。这道边缘上骑着一条窄窄的发光带：同一段文字的日落渐变副本，只在光带内可见，外加6 pt模糊光晕，于是光扫过时每个字先亮起暖色，再冷却成普通文字颜色。光扫结束150毫秒后说明文字弹起，重播时所有内容在250毫秒内隐去。电影感十足，像片头字幕被影棚灯光扫过。"
         ),
         implementation: L(
             "An Animatable view turns one progress value into gradient stops: a LinearGradient mask reveals the text behind the edge, and a second gradient mask confines a gradient-filled, blurred copy of the text to a narrow band at the edge.",

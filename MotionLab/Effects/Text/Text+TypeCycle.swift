@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A keyword types itself, holds, then backspaces or gets selected and replaced.", "关键词逐字打出、停留，再退格删除或被选中替换。"),
         prompt: L(
             "A hero line ends in a rotating keyword set in gradient type, followed by a 3 pt rounded caret. Each keyword types in at 70 ms per character, every glyph popping up from 30% scale and 12 pt low with a back-ease overshoot over 140 ms while the solid caret rides it; it holds 1.4 s as the caret blinks at ~1.9 Hz, then leaves: by default Select & replace flashes a translucent accent selection over the whole word for 300 ms before it vanishes at once, or Backspace deletes a character every 35 ms. A 250 ms pause with a blinking caret precedes the next word. The rhythm — quick in, patient hold, brisk out — feels human, like someone live-editing a headline.",
-            "主标题末尾是一个轮换的关键词，使用渐变文字，后面跟着一根 3 pt 的圆角光标。关键词以每字 70 毫秒打出，每个字在 140 毫秒内从 30% 大小、低 12 pt 处带回弹缓动跳出，光标常亮紧随；停留 1.4 秒，光标约 1.9 Hz 闪烁；随后默认「全选替换」：整词覆上半透明强调色选区 300 毫秒后一次性消失，也可改为「退格」每 35 毫秒删一字。下一个词出现前还有 250 毫秒的光标闪烁停顿。快进、耐心停留、利落退出的节奏很有人味，像有人在实时修改标题。"
+            "主标题末尾是一个轮换的关键词，使用渐变文字，后面跟着一根3 pt的圆角光标。关键词以每字70毫秒打出，每个字在140毫秒内从30%大小、低12 pt处带回弹缓动跳出，光标常亮紧随；停留1.4秒，光标约1.9 Hz闪烁；随后默认「全选替换」：整词覆上半透明强调色选区300毫秒后一次性消失，也可改为「退格」每35毫秒删一字。下一个词出现前还有250毫秒的光标闪烁停顿。快进、耐心停留、利落退出的节奏很有人味，像有人在实时修改标题。"
         ),
         implementation: L(
             "A TimelineView(.animation) walks a per-word schedule (type, hold, erase, pause) built from each word's length and returns the visible prefix, the newest glyph's age, caret state and selection flag; the last three glyphs are drawn separately with an age-driven back-ease pop, and the gradient is masked over the whole line. No animation state is stored.",

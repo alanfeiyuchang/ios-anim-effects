@@ -6,16 +6,16 @@ extension Effect {
         category: .inputs,
         interaction: .tap,
         name: L("Drawn Checkbox", "手绘勾选框"),
-        summary: L("The box pops, the checkmark draws itself and the task strikes through.", "方框弹起，对勾自行描绘，任务文字被划掉。"),
+        summary: L("A hand-inked tick flicks past the box with a spray of ink, and a wavy line scribbles through the task.", "手绘对勾一挥而出、冲出方框并溅起墨点，波浪删除线随手划过任务。"),
         prompt: L(
-            "A to-do list card whose rows each have a 28 pt rounded checkbox (8 pt continuous corners, 2 pt outline). Checking a row: the gradient fill blooms from 30% to full size inside the box while the box squashes to 85% and rebounds to 100% on a bouncy spring; after an 80 ms delay a white checkmark stroke (3 pt, round caps) draws itself from start to end over ~280 ms ease-out. The row's title dims to secondary and a 2 pt strike-through line grows left to right across it on the same curve. Unchecking rewinds the stroke in about 60% of the time and shrinks the fill away. A light haptic ticks each time. It feels crisp, handmade and rewarding to complete.",
-            "待办清单卡片，每行左侧是 28pt 的圆角勾选框（8pt 连续圆角，2pt 描边）。勾选时：渐变填充在框内从 30% 扩展到满格，方框以弹性弹簧先压缩到 85% 再回弹到 100%；延迟 80 毫秒后，一条白色对勾笔画（3pt、圆头）以约 280 毫秒的缓出曲线从起点描绘到终点。该行标题同时褪为次级色，一条 2pt 删除线以相同曲线从左到右划过。取消勾选时笔画以约 60% 的时长反向擦除，填充随之收缩。每次切换伴随轻触觉。干脆利落，带手作感，完成任务时格外有成就感。"
+            "A to-do card whose rows each have a 28 pt rounded checkbox (8 pt corners, 2 pt outline). Checking a row squashes the box to 85% and rebounds on a bouncy spring as it tints indigo; 80 ms later a hand-drawn tick — a short curved down-stroke, then a long flicked up-stroke — inks itself over ~280 ms on a pen-like curve (slow start, fast flick), overshooting past the box's top-right corner as if written in a hurry. At its tip six ink specks spray 12 pt outward and fade within 400 ms. The title dims and a slightly wavy, hand-drawn strike line scribbles across it on the same curve. Unchecking erases the ink in ~60% of the time. A light haptic ticks each time. Handmade, loose and satisfying.",
+            "待办清单卡片，每行左侧是 28pt 圆角勾选框（8pt 圆角、2pt 描边）。勾选时方框先压到 85% 再以弹性弹簧回弹，并染上靛蓝；80 毫秒后一笔手绘对勾——短而弯的下笔接一道长长的上挑——以约 280 毫秒、先慢后快的笔势描出，末端冲出方框右上角，像随手一挥。笔尖处六粒墨点向外溅开 12pt，并在 400 毫秒内淡去。标题变暗，一条略带波动的手绘删除线以同样笔势划过。取消勾选时墨迹以约 60% 的时长擦除。每次切换伴随轻触觉。随性而满足。"
         ),
         implementation: L(
-            "A custom checkmark Shape is revealed with trim(from:to:) under a delayed ease-out animation; the fill and a keyframeAnimator provide the pop, and a leading-anchored scaleEffect(x:) draws the strike-through.",
-            "自定义对勾 Shape 通过 trim(from:to:) 配合延迟缓出动画描绘；填充与 keyframeAnimator 提供弹跳，前对齐的 scaleEffect(x:) 绘制删除线。"
+            "Hand-drawn tick and wavy strike Shapes built from quad/cubic curves (the tick deliberately leaves its rect) are revealed with trim(from:to:) under a delayed timingCurve; a keyframeAnimator squashes the box, and a second one keyed on the checked flag sprays the ink specks.",
+            "手绘对勾与波浪删除线是由二次/三次曲线构成的自定义 Shape（对勾刻意越出自身矩形），在延迟的 timingCurve 下用 trim(from:to:) 描出；一个 keyframeAnimator 压缩方框，另一个以勾选状态为触发溅出墨点。"
         ),
-        apis: ["Shape", "trim(from:to:)", "keyframeAnimator", "scaleEffect(x:anchor:)"],
+        apis: ["Shape", "trim(from:to:)", "timingCurve", "keyframeAnimator"],
         tags: ["checkbox", "checkmark", "todo", "strike", "勾选", "复选框", "待办", "删除线"],
         params: [
             .slider("draw", L("Draw duration", "描绘时长"), 0.1...0.8, default: 0.28, unit: "s"),
@@ -93,17 +93,24 @@ private struct InputCheckRow: View {
                 .font(.body.weight(.medium))
                 .foregroundStyle(checked ? Color.secondary : Color.primary)
                 .overlay(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.secondary)
-                        .frame(height: 2)
-                        .scaleEffect(x: checked && strike ? 1 : 0, anchor: .leading)
-                        .animation(.easeOut(duration: draw).delay(checked ? 0.08 : 0), value: checked)
+                    InputScribbleShape()
+                        .trim(from: 0, to: checked && strike ? 1 : 0)
+                        .stroke(Color.secondary, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                        .frame(height: 6)
+                        .animation(checked ? InputInk.pen(draw).delay(0.08) : .easeIn(duration: draw * 0.6), value: checked)
                 }
                 .animation(.easeOut(duration: 0.25), value: checked)
             Spacer(minLength: 0)
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: action)
+    }
+}
+
+/// Pen-like pacing: a hesitant start, then a quick flick.
+private enum InputInk {
+    static func pen(_ duration: Double) -> Animation {
+        .timingCurve(0.55, 0, 0.25, 1, duration: duration)
     }
 }
 
@@ -116,22 +123,18 @@ private struct InputCheckBox: View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
     }
 
+    private var tickAnimation: Animation {
+        checked ? InputInk.pen(draw).delay(0.08) : .easeIn(duration: draw * 0.6)
+    }
+
     var body: some View {
         let dip = squash
         ZStack {
-            shape.strokeBorder(Color.primary.opacity(0.25), lineWidth: 2)
-            shape
-                .fill(Palette.primary)
-                .scaleEffect(checked ? 1 : 0.3)
-                .opacity(checked ? 1 : 0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.65), value: checked)
-            InputCheckmarkShape()
-                .trim(from: 0, to: checked ? 1 : 0)
-                .stroke(Color.white, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                .padding(6)
-                .animation(checked ? .easeOut(duration: draw).delay(0.08) : .easeIn(duration: draw * 0.6), value: checked)
+            shape.fill(Palette.indigo.opacity(checked ? 0.14 : 0))
+            shape.strokeBorder(checked ? Palette.indigo.opacity(0.7) : Color.primary.opacity(0.25), lineWidth: 2)
         }
         .frame(width: 28, height: 28)
+        .animation(.easeOut(duration: 0.2), value: checked)
         .keyframeAnimator(initialValue: 1.0, trigger: checked) { content, scale in
             content.scaleEffect(scale)
         } keyframes: { _ in
@@ -140,15 +143,90 @@ private struct InputCheckBox: View {
                 SpringKeyframe(1, duration: 0.4, spring: .bouncy)
             }
         }
+        .overlay {
+            InputTickShape()
+                .trim(from: 0, to: checked ? 1 : 0)
+                .stroke(Palette.primary, style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
+                .animation(tickAnimation, value: checked)
+        }
+        .overlay(alignment: .topLeading) {
+            InputInkBurst(checked: checked, delay: draw + 0.08)
+                .offset(x: 32, y: -3)
+        }
     }
 }
 
-private struct InputCheckmarkShape: Shape {
+/// Six ink specks sprayed from the tick's tip once it lands.
+private struct InputInkBurst: View {
+    let checked: Bool
+    let delay: Double
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<6, id: \.self) { index in
+                Circle()
+                    .fill(index % 2 == 0 ? Palette.indigo : Palette.violet)
+                    .frame(width: 3.5, height: 3.5)
+                    .keyframeAnimator(initialValue: 0.0, trigger: checked) { content, t in
+                        speck(content, index: index, t: t)
+                    } keyframes: { _ in
+                        KeyframeTrack(\.self) {
+                            LinearKeyframe(0, duration: 0.001 + delay * 0.8)
+                            CubicKeyframe(1, duration: 0.4)
+                        }
+                    }
+            }
+        }
+        .opacity(checked ? 1 : 0)
+        .allowsHitTesting(false)
+    }
+
+    private func speck(_ content: some View, index: Int, t: Double) -> some View {
+        let angle: Double = -120 + Double(index) * 36
+        let radians: Double = angle * .pi / 180
+        let distance: Double = 12 * t
+        let x = CGFloat(cos(radians) * distance)
+        let y = CGFloat(sin(radians) * distance)
+        let alpha: Double = t > 0 && t < 1 ? 1 - t : 0
+        let size: CGFloat = CGFloat(1 - t * 0.5)
+        return content
+            .scaleEffect(size)
+            .offset(x: x, y: y)
+            .opacity(alpha)
+    }
+}
+
+/// A quick hand-drawn tick: curved down-stroke, then a long flick that overshoots the box's top-right corner.
+private struct InputTickShape: Shape {
     func path(in rect: CGRect) -> Path {
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + rect.width * x, y: rect.minY + rect.height * y)
+        }
         var path = Path()
-        path.move(to: CGPoint(x: rect.minX + rect.width * 0.08, y: rect.midY + rect.height * 0.04))
-        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.38, y: rect.maxY - rect.height * 0.12))
-        path.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.06, y: rect.minY + rect.height * 0.14))
+        path.move(to: point(0.2, 0.5))
+        path.addQuadCurve(to: point(0.42, 0.8), control: point(0.3, 0.6))
+        path.addCurve(to: point(1.15, -0.1), control1: point(0.55, 0.5), control2: point(0.85, 0.1))
+        return path
+    }
+}
+
+/// A slightly wavy strike line, like a pen stroke through the text.
+private struct InputScribbleShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let midY = rect.midY
+        let w = rect.width
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX - 2, y: midY + 1))
+        path.addCurve(
+            to: CGPoint(x: rect.minX + w * 0.5, y: midY),
+            control1: CGPoint(x: rect.minX + w * 0.15, y: midY - 2.5),
+            control2: CGPoint(x: rect.minX + w * 0.3, y: midY + 2.5)
+        )
+        path.addCurve(
+            to: CGPoint(x: rect.maxX + 3, y: midY - 1.5),
+            control1: CGPoint(x: rect.minX + w * 0.7, y: midY - 2.5),
+            control2: CGPoint(x: rect.minX + w * 0.85, y: midY + 2)
+        )
         return path
     }
 }

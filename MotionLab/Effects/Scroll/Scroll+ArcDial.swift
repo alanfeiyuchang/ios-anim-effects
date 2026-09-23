@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A camera-style filter dial whose items ride a curved arc and snap into a fixed ring.", "相机滤镜式转盘：选项沿弧线滚动，吸附进固定的选择环。"),
         prompt: L(
             "A horizontal row of 64 pt circular filter swatches is bent onto a large invisible wheel below the stage: as they scroll, each item is placed on the arc by its distance from centre — rotated ~15° per step, dropping and tilting away, scaling down ~10% per step and fading out linearly between two and three steps from centre. A fixed hairline ring marks the centre; the item under it grows to 112% and snaps in with a firm deceleration, a selection tick and a crisp label cross-fade. The preview panel above cross-fades its gradient to the selected filter on a soft spring. Tactile and dial-like, as if turning a physical lens ring.",
-            "一排 64 pt 的圆形滤镜色块被“弯”到舞台下方一个看不见的大转轮上：滚动时，每个选项依据与中心的距离被放置到弧线上——每隔一格旋转约 15°、向下沉并向外倾斜、缩小约 10%，并在距中心两格到三格之间线性淡出。中心有一道固定的细线选择环；落入环中的选项放大到 112%，以干脆的减速吸附到位，并伴随一次选择触感与标签的清晰淡入淡出。上方预览面板的渐变以柔和弹簧过渡到所选滤镜。像拧动真实镜头环一样富有手感。"
+            "一排64 pt的圆形滤镜色块被“弯”到舞台下方一个看不见的大转轮上：滚动时，每个选项依据与中心的距离被放置到弧线上——每隔一格旋转约15°、向下沉并向外倾斜、缩小约10%，并在距中心两格到三格之间线性淡出。中心有一道固定的细线选择环；落入环中的选项放大到112%，以干脆的减速吸附到位，并伴随一次选择触感与标签的清晰淡入淡出。上方预览面板的渐变以柔和弹簧过渡到所选滤镜。像拧动真实镜头环一样富有手感。"
         ),
         implementation: L(
             "Spacer-padded LazyHStack with a custom ScrollTargetBehavior that snaps to whole items; each item's visualEffect converts its offset from centre into an angle on a circle and applies the matching offset, rotation and scale; onScrollGeometryChange derives the selection.",

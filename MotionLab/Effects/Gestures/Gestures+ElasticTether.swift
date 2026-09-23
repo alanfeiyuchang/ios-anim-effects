@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A ball on a bungee cord that sags when slack, thins when stretched and slingshots home.", "系在弹力绳上的小球：松弛时下垂，拉紧时变细，松手弹射归位。"),
         prompt: L(
             "A 64 pt glossy ball hangs 130 pt below a small pin, joined by a bungee cord drawn as a quadratic curve with an indigo-to-pink gradient. Dragging the ball moves it with rubber-band resistance (limit 160 pt per axis). The cord reacts to its length: when shorter than its 130 pt rest length it sags downward by 70% of the slack; when stretched it pulls perfectly straight and thins from 6 pt to 2 pt, like real elastic under tension. On release the ball slingshots back on an under-damped spring (response 0.55 s, damping 0.32), overshooting past the pin line and oscillating two or three times, and a rigid haptic fires in proportion to the pull. Snappy, springy, playground-physical.",
-            "一个 64pt 的光泽小球悬挂在小钉下方 130pt 处，二者由一根弹力绳相连，绳子用二次曲线绘制，带靛蓝到粉色渐变。拖动小球时带有橡皮筋阻力（每轴上限 160pt）。绳子随长度变化：短于 130pt 的自然长度时，会按松弛量的 70% 向下垂坠；被拉长时则绷得笔直，并从 6pt 逐渐变细到 2pt，如同真实弹力绳受力。松手后小球以欠阻尼弹簧（响应 0.55 秒、阻尼 0.32）弹射回位，冲过钉子所在位置并来回振荡两三次，同时按拉伸幅度触发一次硬朗的触感。干脆、有弹性，充满游乐场般的物理趣味。"
+            "一个64pt的光泽小球悬挂在小钉下方130pt处，二者由一根弹力绳相连，绳子用二次曲线绘制，带靛蓝到粉色渐变。拖动小球时带有橡皮筋阻力（每轴上限160pt）。绳子随长度变化：短于130pt的自然长度时，会按松弛量的70%向下垂坠；被拉长时则绷得笔直，并从6pt逐渐变细到2pt，如同真实弹力绳受力。松手后小球以欠阻尼弹簧（响应0.55秒、阻尼0.32）弹射回位，冲过钉子所在位置并来回振荡两三次，同时按拉伸幅度触发一次硬朗的触感。充满游乐场般的物理趣味。"
         ),
         implementation: L(
             "A Shape with an animatable end point builds the quad-curve cord and returns path.strokedPath with a width derived from the current length, so sag and thickness are recomputed on every spring frame.",

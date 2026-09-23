@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A shimmering track whose knob must be dragged to the end to commit.", "带流光文字的滑轨，把滑块拖到尽头才会提交。"),
         prompt: L(
             "A 290×64 pt capsule track holds a 56 pt white chevron knob inset 4 pt on the left, beside a “Slide to confirm” label that a light band sweeps every 2 s. Touching presses the knob to 94% with a tighter shadow; dragging moves it 1:1 while an aurora-gradient fill clipped inside the track trails behind, the label fades twice as fast as the knob travels and both ends rubber-band. Releasing beyond 80% of the travel, or flicking hard past halfway, snaps the knob to the end on a spring (response 0.35 s, damping 0.8) as the track floods green, the chevron swaps to a checkmark and a success haptic plays, resetting after 1.8 s. Releasing short springs it back (damping 0.7). Deliberate and safe, yet delightful.",
-            "一条 290×64 pt 的胶囊滑轨，左侧内嵌 4 pt 处是 56 pt 的白色箭头滑块，旁边的“滑动以确认”每 2 秒扫过一道高光。按住时滑块缩到 94%、投影收紧；拖动时 1:1 跟手，身后拖出裁在滑轨内的极光渐变填充，文字以两倍于滑块行程的速度淡出，两端都带橡皮筋阻尼。松手时超过行程 80%（或过半后用力一甩），滑块以弹簧（响应 0.35 秒、阻尼 0.8）吸到终点，滑轨铺满绿色，箭头换成对勾，伴随成功触感，1.8 秒后复位。不到阈值则以弹簧（阻尼 0.7）弹回。郑重安全，又不失愉悦。"
+            "一条290×64 pt的胶囊滑轨，左侧内嵌4 pt处是56 pt的白色箭头滑块，旁边的“滑动以确认”每2秒扫过一道高光。按住时滑块缩到94%、投影收紧；拖动时1:1跟手，身后拖出裁在滑轨内的极光渐变填充，文字以两倍于滑块行程的速度淡出，两端都带橡皮筋阻尼。松手时超过行程80%（或过半后用力一甩），滑块以弹簧（响应0.35秒、阻尼0.8）吸到终点，滑轨铺满绿色，箭头换成对勾，伴随成功触感，1.8秒后复位。不到阈值则以弹簧（阻尼0.7）弹回。郑重又愉悦。"
         ),
         implementation: L(
             "A DragGesture on the knob drives a clamped, rubber-banded x offset; a TimelineView animates the label’s gradient shimmer and contentTransition(.symbolEffect(.replace)) swaps the glyph on success.",

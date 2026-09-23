@@ -38,6 +38,8 @@ private struct ButtonLikeFloatDemo: View {
     @State private var hearts: [ButtonFloatingHeart] = []
     @State private var nextID = 0
     @State private var taps = 0
+    /// Stored removal tasks, cancelled when the demo goes away.
+    @State private var cleanups: [Int: Task<Void, Never>] = [:]
 
     private let cardSize = CGSize(width: 290, height: 290)
     private static let colors: [Color] = [Palette.pink, Palette.coral, Palette.amber, Palette.red, Palette.violet]
@@ -52,6 +54,7 @@ private struct ButtonLikeFloatDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 0.35, delay: 0.3) { tap() }
+        .onDisappear { cancelCleanups() }
     }
 
     private var card: some View {
@@ -174,9 +177,17 @@ private struct ButtonLikeFloatDemo: View {
         nextID += 1
         hearts.append(heart)
         let life = ctx["life"]
-        Task { @MainActor in
+        cleanups[heart.id] = Task { @MainActor in
             try? await Task.sleep(for: .seconds(life + 0.1))
+            guard !Task.isCancelled else { return }
             hearts.removeAll { $0.id == heart.id }
+            cleanups[heart.id] = nil
         }
     }
+
+    private func cancelCleanups() {
+        for task in cleanups.values { task.cancel() }
+        cleanups = [:]
+    }
+
 }

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Tubes stutter to life letter by letter; one faulty letter keeps buzzing.", "灯管逐字闪烁着亮起，其中一个坏字不时抽动。"),
         prompt: L(
             "A dark sign panel carries two neon lines, a large pink word and a smaller sky-blue sub-line; each letter is a pale tube core wrapped in three stacked glows (4, 12 and 28 pt), and unlit tubes stay faintly visible at 18%. On power-on every letter runs the same stutter (off 80 ms, flash to 90%, drop to 10%, full, sag to 25%, 80%, 15%) and holds at 100% after 0.46 s, but letters start 70 ms apart so ignition crackles across the word, with the sub-line 250 ms behind. A soft pink bloom on the panel brightens with the tubes, and once lit one faulty letter dips for a few frames every 1.4 s. A tap cuts the power and restarts it with a rigid haptic. Moody, nocturnal and cinematic.",
-            "深色灯牌上有两行霓虹字：大号粉色单词和较小的天蓝色副标题；每个字母是一根浅色灯芯，外裹三层叠加辉光（4、12、28 pt），未点亮的灯管保留 18% 的微弱轮廓。通电时每个字母都走同一段抽动：先灭 80 毫秒，闪到 90%，跌到 10%，全亮，再塌到 25%、80%、15%，0.46 秒后稳定在 100%；字母之间错开 70 毫秒，点火沿单词噼啪蔓延，副标题再晚 250 毫秒。背板上的粉色柔光随灯管亮起，点亮后有一个坏字母每隔 1.4 秒闪暗几帧。轻点即断电重启，伴随一下清脆触感。夜色浓郁，电影感十足。"
+            "深色灯牌上有两行霓虹字：大号粉色单词和较小的天蓝色副标题；每个字母是一根浅色灯芯，外裹三层叠加辉光（4、12、28 pt），未点亮的灯管保留18%的微弱轮廓。通电时每个字母都走同一段抽动：先灭80毫秒，闪到90%，跌到10%，全亮，再塌到25%、80%、15%，0.46秒后稳定在100%；字母之间错开70毫秒，点火沿单词噼啪蔓延，副标题再晚250毫秒。背板粉色柔光随灯管亮起，点亮后有一个坏字母每隔1.4秒闪暗几帧。轻点即断电重启，伴随清脆触感。电影感十足。"
         ),
         implementation: L(
             "A TimelineView evaluates a piecewise flicker table per letter from the time since power-on (offset by the letter's stagger); the value drives the opacity of a lit layer with three shadow glows stacked over a dim tube layer.",

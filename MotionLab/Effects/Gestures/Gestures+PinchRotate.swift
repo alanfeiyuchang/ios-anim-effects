@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Two-finger zoom and twist with soft limits and a springy settle.", "双指缩放与旋转，带柔性边界与弹性归位。"),
         prompt: L(
             "A 210 × 150 pt photo card (24 pt continuous corners, sunset gradient with mountain and sun glyphs, soft shadow) responds to simultaneous pinch and rotation. Scale and angle follow the fingers directly; beyond the comfortable range (0.6×–2.5×) the scale is rubber-banded so it resists instead of hitting a wall, and a rule-of-thirds grid fades in while the gesture is active. On lift the card either springs fully back to 1× / 0° or keeps its zoom and snaps rotation to the nearest 90° (spring response ≈ 0.5 s, damping ≈ 0.7, one gentle overshoot). A capsule readout shows ×scale and degrees in tabular digits, and a double-tap resets, like handling a real print on glass.",
-            "一张 210 × 150pt 的照片卡片（24pt 连续圆角、日落渐变配山峦与太阳图标、柔和投影）支持双指同时捏合与旋转。缩放与角度直接跟随手指；超出舒适区间（0.6×–2.5×）后缩放经橡皮筋衰减，产生阻力而非生硬截断；手势进行中淡入三分构图网格。抬起手指后，卡片或以弹簧完全回到 1× / 0°，或保留缩放并把角度吸附到最近的 90°（弹簧响应约 0.5 秒、阻尼约 0.7，轻微过冲一次）。底部胶囊实时显示倍率与角度（等宽数字），双击可复位。手感如同在玻璃上摆弄一张真实照片。"
+            "一张210 × 150pt的照片卡片（24pt连续圆角、日落渐变配山峦与太阳图标、柔和投影）支持双指同时捏合与旋转。缩放与角度直接跟随手指；超出舒适区间（0.6×–2.5×）后缩放经橡皮筋衰减，产生阻力而非生硬截断；手势进行中淡入三分构图网格。抬起手指后，卡片或以弹簧完全回到1× / 0°，或保留缩放并把角度吸附到最近的90°（弹簧响应约0.5秒、阻尼约0.7，轻微过冲一次）。底部胶囊实时显示倍率与角度（等宽数字），双击可复位。如在玻璃上摆弄真实照片。"
         ),
         implementation: L(
             "MagnifyGesture.simultaneously(with: RotateGesture()) drives scale and degrees; out-of-range scale passes through rubberBand, and onEnded springs back or snaps to 90° steps.",

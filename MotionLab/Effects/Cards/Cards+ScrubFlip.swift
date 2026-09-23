@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Scrub a card's rotation with your finger, then flick it to spin like a coin and land on a face.", "用手指拨动卡片的旋转角度，甩一下就会像硬币一样旋转并落在某一面。"),
         prompt: L(
             "A 250×158 pt card can be turned directly: horizontal drag scrubs its rotation around the vertical axis at 0.9° per point, 1:1 with the finger and in perspective, while vertical drag adds up to ±14° of pitch. Whichever face points at the viewer is drawn, and the card lifts up to 6% and deepens its shadow as it passes edge-on. On release, 60% of the gesture's predicted travel is added as momentum and the angle is rounded to the nearest face (at most three half-turns per flick), so a quick flick spins it like a coin before it lands on a spring (response 0.6 s, damping 0.72) with a light haptic. A slow release simply settles to the closest face. Direct, tactile and toy-like.",
-            "一张 250×158 pt 的卡片可以被直接转动：水平拖动以每点 0.9° 的比例拨动它绕竖直轴的透视旋转，与手指 1:1 同步；竖直拖动额外带来最多 ±14° 的俯仰。朝向观者的那一面会被绘制出来，卡片侧立经过时最多抬起 6%，阴影随之加深。松手时，手势预测位移的 60% 被当作惯性叠加，并把角度取整到最近的一面（每次甩动最多三个半圈），因此快速一甩会让它像硬币一样旋转，最后以弹簧（响应 0.6 秒、阻尼 0.72）落定并伴随轻触感；慢慢松手则直接回到最近的一面。直接、可触、像玩具一样好玩。"
+            "一张250×158 pt的卡片可以被直接转动：水平拖动以每点0.9°的比例拨动它绕竖直轴的透视旋转，与手指1:1同步；竖直拖动额外带来最多±14°的俯仰。朝向观者的那一面会被绘制出来，卡片侧立经过时最多抬起6%，阴影随之加深。松手时，手势预测位移的60%被当作惯性叠加，并把角度取整到最近的一面（每次甩动最多三个半圈），因此快速一甩会让它像硬币一样旋转，最后以弹簧（响应0.6秒、阻尼0.72）落定并伴随轻触感；慢慢松手则直接回到最近的一面。直接可触，像玩具。"
         ),
         implementation: L(
             "DragGesture sets the angle without animation while dragging; onEnded projects predictedEndTranslation, rounds to a multiple of 180° and springs there. An Animatable card view picks the visible face from the interpolated angle.",

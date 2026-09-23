@@ -9,7 +9,7 @@ extension Effect {
         summary: L("List rows rise, sharpen and fade in one after another when content loads.", "内容加载时，列表行依次上浮、由模糊变清晰并淡入。"),
         prompt: L(
             "When a list of rounded rows loads, each row starts 28 pt below its resting position at 0% opacity, 96% scale and a 6 pt blur, then springs into place (response ≈0.55 s, damping 0.82) as it sharpens and fades up. Rows enter in reading order with a 60 ms stagger, so the content cascades down the screen like a deck being dealt rather than popping in at once; only the rows in the first screenful are staggered — rows scrolled into view later run the same entrance immediately, with no delay, so long lists stay snappy. Calm, polished and confidence-inspiring.",
-            "圆角列表加载时，每一行从静止位置下方 28 pt 处开始，透明度 0%、缩放 96%、模糊 6 pt，随后以弹簧（响应约 0.55 秒、阻尼 0.82）归位，同时变清晰并淡入。各行按阅读顺序错开 60 毫秒依次入场，内容像发牌一样沿屏幕向下倾泻，而不是一次性全部弹出；只有首屏内的行参与错峰——之后滚动进入视野的行会立即执行同样的入场动画、不再等待延迟，保证长列表依旧利落。沉稳、精致，令人信赖。"
+            "圆角列表加载时，每一行从静止位置下方28 pt处开始，透明度0%、缩放96%、模糊6 pt，随后以弹簧（响应约0.55秒、阻尼0.82）归位，同时变清晰并淡入。各行按阅读顺序错开60毫秒依次入场，内容像发牌一样沿屏幕向下倾泻，而不是一次性全部弹出；只有首屏内的行参与错峰——之后滚动进入视野的行会立即执行同样的入场动画、不再等待延迟，保证长列表依旧利落。沉稳、精致，令人信赖。"
         ),
         implementation: L(
             "Each row owns an @State `visible` flag flipped in onAppear inside withAnimation(.spring.delay(index × stagger)) — the delay drops to 0 once the first screen has settled; bumping an .id on the ScrollView recreates the rows to replay the entrance.",

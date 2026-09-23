@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A Maps-style sheet that projects your flick forward and lands on the right detent.", "地图式底部面板：根据甩动速度预测落点，停在合适的档位。"),
         prompt: L(
             "Inside a 230×320 pt phone frame with 34 pt continuous corners, a map-like background sits under a bottom sheet with three detents: peek (74 pt visible), half (52%) and full (26 pt from the top). The sheet tracks the finger 1:1 and rubber-bands 40 pt past the outer detents. On release it does not pick the detent nearest where the finger stopped; it projects the position forward by velocity × 0.2 s and springs (response 0.42 s, damping 0.82) to the detent closest to that projection, so a short, fast flick skips straight from peek to full. As the sheet rises the background dims up to 30% and recedes to 94% scale, and a selection haptic ticks when the detent changes. Fluid, predictive and native.",
-            "230×320 pt 的手机框（34 pt 连续圆角）里，地图式背景上叠着一个底部面板，共三个档位：收起（露出 74 pt）、半屏（52%）和全屏（距顶 26 pt）。面板 1:1 跟手，越过两端档位后带 40 pt 橡皮筋阻尼。松手时并不停到离手指最近的档位，而是按速度 × 0.2 秒预测落点，再以弹簧（响应 0.42 秒、阻尼 0.82）停到离预测点最近的一档，所以一次短促有力的上甩就能从收起直接跳到全屏。面板升起时背景最多压暗 30%、后退到 94%，换档时有一下选择触感。流畅、可预判、原生质感。"
+            "230×320 pt的手机框（34 pt连续圆角）里，地图式背景上叠着一个底部面板，共三个档位：收起（露出74 pt）、半屏（52%）和全屏（距顶26 pt）。面板1:1跟手，越过两端档位后带40 pt橡皮筋阻尼。松手时并不停到离手指最近的档位，而是按速度× 0.2秒预测落点，再以弹簧（响应0.42秒、阻尼0.82）停到离预测点最近的一档，所以短促一甩就能从收起直达全屏。面板升起时背景最多压暗30%、后退到94%，换档时有一下选择触感。流畅可预判。"
         ),
         implementation: L(
             "A DragGesture on the sheet only adds a rubber-banded translation to the current detent's top; onEnded projects top + velocity × projection and springs to the nearest detent, and the backdrop reads the same fraction for dimming and scale.",

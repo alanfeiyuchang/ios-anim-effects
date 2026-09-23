@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The plus winds 135° into an X with a squeeze-and-pop while the button changes material.", "加号扭转 135° 变成 X，伴随挤压回弹，按钮同时换上新材质。"),
         prompt: L(
             "A 72 pt circular action button carries a bold plus made of two 30×5 pt rounded bars. Tapping winds the plus 135° clockwise on an under-damped spring (response 0.45 s, damping 0.62), overshooting a few degrees before it locks into an X; at the same moment a keyframed squeeze scales the glyph to 78% in 90 ms, pops it to 110% and settles at 100%, so the twist feels wound up and released. The disc cross-fades from the indigo-violet gradient with a coloured shadow to a dark neutral with a flatter shadow, and a caption rolls between 'New' and 'Close'. Tapping again unwinds the other way. A medium haptic accompanies each twist — decisive and springy.",
-            "一个 72 pt 的圆形操作按钮上有一个由两根 30×5 pt 圆角横条组成的粗加号。点击后，加号以欠阻尼弹簧（响应 0.45 秒、阻尼 0.62）顺时针扭转 135°，先略微转过头再锁定成 X；与此同时一段关键帧挤压让图标在 90 毫秒内缩到 78%，再弹到 110% 后回到 100%，扭转仿佛先上紧发条再释放。圆底从带彩色投影的靛紫渐变交叉淡变为深色中性底与更平的阴影，下方文字在「新建」与「关闭」之间滚动切换。再次点击则反向拧回。每次扭转伴随中等触感——果断而有弹性。"
+            "一个72 pt的圆形操作按钮上有一个由两根30×5 pt圆角横条组成的粗加号。点击后，加号以欠阻尼弹簧（响应0.45秒、阻尼0.62）顺时针扭转135°，先略微转过头再锁定成X；与此同时一段关键帧挤压让图标在90毫秒内缩到78%，再弹到110%后回到100%，扭转仿佛先上紧发条再释放。圆底从带彩色投影的靛紫渐变交叉淡变为深色中性底与更平的阴影，下方文字在「新建」与「关闭」之间滚动切换。再次点击则反向拧回。每次扭转伴随中等触感——果断而有弹性。"
         ),
         implementation: L(
             "Two Capsules in a ZStack rotate together via rotationEffect under a spring; a keyframeAnimator keyed to the tap count adds the squeeze-pop scale, and the background swaps between two ShapeStyles inside the same animation.",

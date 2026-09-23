@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A glowing top bar and a floating ring that fill as you read.", "随阅读进度填充的发光顶部进度条与悬浮圆环。"),
         prompt: L(
             "An article scrolls beneath a frosted header bar showing the section title and a live percentage in monospaced digits. A 4 pt gradient progress line (mint → sky → violet) along the header's bottom edge fills from the left in exact proportion to how far the reader has scrolled, with a soft same-color glow. In the bottom-right corner a 44 pt floating ring traces the same progress as a rounded stroke starting from 12 o'clock; when the article is finished the ring turns into an arrow-up button with a quick spring pop, and tapping it glides the article back to the top. Values are computed from scroll geometry every frame, so the indicators never lag the finger. Quiet, useful, delightful.",
-            "文章在一条磨砂标题栏下滚动，标题栏显示章节名与等宽数字的实时百分比。标题栏底边有一条 4 pt 的渐变进度线（薄荷 → 天蓝 → 紫），从左向右按读者已滚动的比例精确填充，并带同色柔光。右下角悬浮一个 44 pt 圆环，以圆头描边从 12 点方向同步绘制进度；读完时圆环以快速弹簧弹出切换为向上箭头按钮，点击后文章平滑回到顶部。数值每帧由滚动几何计算，指示器永远不会滞后于手指。安静、实用、令人愉悦。"
+            "文章在一条磨砂标题栏下滚动，标题栏显示章节名与等宽数字的实时百分比。标题栏底边有一条4 pt的渐变进度线（薄荷→天蓝→紫），从左向右按读者已滚动的比例精确填充，并带同色柔光。右下角悬浮一个44 pt圆环，以圆头描边从12点方向同步绘制进度；读完时圆环以快速弹簧弹出切换为向上箭头按钮，点击后文章平滑回到顶部。数值每帧由滚动几何计算，指示器永远不会滞后于手指。安静、实用、令人愉悦。"
         ),
         implementation: L(
             "onScrollGeometryChange maps contentOffset / (contentSize − containerSize) to a 0…1 progress that drives a scaled gradient capsule and a trimmed Circle; ScrollPosition.scrollTo(edge: .top) powers the back-to-top button.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A hero figure whose digits roll up or down into place.", "核心数字逐位上下滚动，平滑过渡到新数值。"),
         prompt: L(
             "A large, rounded-semibold balance figure with tabular digits sits in a floating card, above a small delta pill. When the value changes, only the digits that differ roll vertically: they slide up and fade when the number increases, down when it decreases, while unchanged digits stay perfectly still. Each column moves on a gentle spring (≈0.6 s, bounce 0.15) and the width re-flows smoothly as the digit count changes. The delta pill flips its arrow and tints green or red in the same beat, with a light selection haptic — precise, calm, finance-grade.",
-            "悬浮卡片中央是一组大号圆体半粗数字，使用等宽数字，下方配一枚涨跌幅小胶囊。数值变化时，只有发生变化的数位会纵向滚动：数值增大时新数字自下而上滑入并淡入，减小时方向相反，未变化的数位纹丝不动。每一列都以轻柔弹簧（约 0.6 秒、弹性 0.15）过渡，位数变化时整体宽度平滑重排。涨跌胶囊同步切换箭头方向并变为绿或红，伴随一次轻微选择触感——精准、克制，有金融级的质感。"
+            "悬浮卡片中央是一组大号圆体半粗数字，使用等宽数字，下方配一枚涨跌幅小胶囊。数值变化时，只有发生变化的数位会纵向滚动：数值增大时新数字自下而上滑入并淡入，减小时方向相反，未变化的数位纹丝不动。每一列都以轻柔弹簧（约0.6秒、弹性0.15）过渡，位数变化时整体宽度平滑重排。涨跌胶囊同步切换箭头方向并变为绿或红，伴随一次轻微选择触感——精准、克制，有金融级的质感。"
         ),
         implementation: L(
             "Text with .contentTransition(.numericText(value:)) and .monospacedDigit(); the value changes inside withAnimation(.spring(duration:bounce:)).",

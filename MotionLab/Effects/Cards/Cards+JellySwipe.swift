@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Cards stretch along the drag velocity like jelly, wobble when the finger stops and pop in with a squash.", "卡片沿拖动速度像果冻一样拉伸，手指停下时晃动，新卡片挤压弹出。"),
         prompt: L(
             "A deck of 190×240 pt destination cards with 24 pt corners. While dragging, the top card follows the finger and stretches along the direction of travel in proportion to speed — up to 18% longer and 9% thinner at 3,000 pt/s — through a wobbly spring (response 0.28 s, damping 0.32), so when the finger pauses for 80 ms or lets go the card jiggles back to shape. Releasing past 100 pt or with a fast flick throws it off-stage still stretched; the next card then pops forward with a squash-and-stretch keyframe sequence (x/y 108/92% → 95/105% → 102/98% → 100% over ~0.55 s) while the pile behind steps up. Playful, gummy and elastic.",
-            "一叠 190×240 pt、24 pt 圆角的目的地卡片。拖动时顶部卡片跟手，并按速度沿运动方向拉伸——3000 pt/s 时最多拉长 18%、变细 9%——拉伸由易晃动的弹簧（响应 0.28 秒、阻尼 0.32）驱动，手指停顿 80 毫秒或松开时，卡片便抖动着恢复原形。拖过 100 pt 或快速甩动后松手，卡片带着拉伸飞出舞台；下一张随即以挤压拉伸关键帧弹到前面（x/y 依次 108/92% → 95/105% → 102/98% → 100%，约 0.55 秒），后方卡堆同步上移。俏皮而 Q 弹。"
+            "一叠190×240 pt、24 pt圆角的目的地卡片。拖动时顶部卡片跟手，并按速度沿运动方向拉伸——3000 pt/s时最多拉长18%、变细9%——拉伸由易晃动的弹簧（响应0.28秒、阻尼0.32）驱动，手指停顿80毫秒或松开时，卡片便抖动着恢复原形。拖过100 pt或快速甩动后松手，卡片带着拉伸飞出舞台；下一张随即以挤压拉伸关键帧弹到前面（x/y依次108/92%→95/105%→102/98%→100%，约0.55秒），后方卡堆同步上移。俏皮而Q弹。"
         ),
         implementation: L(
             "DragGesture.velocity sets a stretch vector that an .animation(value:) spring smooths; the card is rotated to the velocity angle, scaled on x and rotated back. A debounce Task relaxes the stretch when events stop, and keyframeAnimator plays the pop.",

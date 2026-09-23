@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A scroll-spy rail of chapter dots fills as you read; the active dot stretches into a pill and names its chapter.", "随阅读填充的章节导轨：当前章节的圆点拉伸成胶囊，并显示章节名。"),
         prompt: L(
             "A long article with five chapters scrolls beside a slim vertical rail on the right: five 8 pt dots, 44 pt apart, joined by a 2 pt track. A gradient line fills the track continuously, so it sits exactly between two dots when the reader is halfway through a chapter. Dots already passed turn solid; the active dot stretches into a 10×24 pt gradient pill on a springy animation (response 0.35 s, damping 0.62) and a floating chip at the top slides its label to the chapter name with a numeric roll on the chapter number. Tapping a dot glides the article to that chapter's start. Oriented, calm and helpful for long reads.",
-            "一篇有五个章节的长文在右侧一条细长的纵向导轨旁滚动：五个 8 pt 圆点，间隔 44 pt，由一条 2 pt 轨道相连。一条渐变线连续填充轨道，读到某章一半时，它恰好停在两个圆点正中间。已读过的圆点变为实心；当前章节的圆点以富有弹性的动画（响应 0.35 秒、阻尼 0.62）拉伸成 10×24 pt 的渐变胶囊，顶部悬浮的标签滑动切换为该章节名，章节序号以数字滚动过渡。点击圆点，文章会平滑滚到该章节开头。方向清晰、沉静，是长文阅读的好帮手。"
+            "一篇有五个章节的长文在右侧一条细长的纵向导轨旁滚动：五个8 pt圆点，间隔44 pt，由一条2 pt轨道相连。一条渐变线连续填充轨道，读到某章一半时，它恰好停在两个圆点正中间。已读过的圆点变为实心；当前章节的圆点以富有弹性的动画（响应0.35秒、阻尼0.62）拉伸成10×24 pt的渐变胶囊，顶部悬浮的标签滑动切换为该章节名，章节序号以数字滚动过渡。点击圆点，文章会平滑滚到该章节开头。方向清晰、沉静，是长文阅读的好帮手。"
         ),
         implementation: L(
             "Chapters have known heights, so onScrollGeometryChange converts the offset into a continuous chapter position (index + fraction); it fills a scaled track, picks the active dot and drives a numericText label, while ScrollPosition.scrollTo(y:) powers dot taps.",

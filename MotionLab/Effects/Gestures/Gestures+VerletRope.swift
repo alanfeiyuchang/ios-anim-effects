@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A charm on a physically simulated rope: grab it, swing it, throw it and watch the cord whip.", "挂在物理绳索上的吊坠：抓起、摇晃、甩出，看绳子如鞭般甩动。"),
         prompt: L(
             "A 52 pt charm (sunset gradient, white star, soft coloured shadow) hangs from a small pin by a 190 pt cord made of 14 Verlet links under about 1,500 pt/s² gravity with light air drag, its constraints solved 10 times per 1/120 s step. The charm weighs about three links, so the cord stays taut under it and the charm always rotates to follow the last link. Grabbing the charm pins it to the finger, never beyond the cord's reach, while the cord drapes and curls behind it; letting go hands over the release velocity, so a flick sends it swinging in wide arcs as a wave travels down the cord and it whips around the pin. Lower stiffness turns the cord into an elastic bungee. Tactile, playful and physically honest.",
-            "一枚 52 pt 的吊坠（日落渐变、白色星形、柔和同色投影）挂在小钉上，绳长约 190 pt，由 14 节 Verlet 链段组成，受约 1500 pt/s² 的重力和轻微空气阻力，每个 1/120 秒步长求解 10 次约束。吊坠约重三节绳子，绳子被它拉得笔直，吊坠也始终顺着最后一节旋转。抓住吊坠它就固定在指尖（不会超出绳长），绳子在身后自然垂坠、卷曲；松手时继承离手速度，轻轻一甩就大幅摆荡，一道波沿绳传下，绳子绕着钉子鞭梢般甩动。降低刚度，绳子就变成有弹性的蹦极绳。可触、俏皮、物理真实。"
+            "一枚52 pt的吊坠（日落渐变、白色星形、柔和同色投影）挂在小钉上，绳长约190 pt，由14节Verlet链段组成，受约1500 pt/s²的重力和轻微空气阻力，每个1/120秒步长求解10次约束。吊坠约重三节绳子，绳子被它拉得笔直，吊坠也始终顺着最后一节旋转。抓住吊坠它就固定在指尖（不会超出绳长），绳子在身后自然垂坠、卷曲；松手时继承离手速度，轻轻一甩就大幅摆荡，一道波沿绳传下，绳子绕着钉子鞭梢般甩动。降低刚度，绳子就变成有弹性的蹦极绳。俏皮而真实。"
         ),
         implementation: L(
             "A reference-type Verlet integrator runs fixed 1/120 s steps inside TimelineView with iterative distance constraints and a lighter inverse mass for the charm; a Canvas strokes the cord through midpoint curves and the charm view is positioned and rotated from the last link.",

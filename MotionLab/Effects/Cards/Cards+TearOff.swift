@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Pull a day-calendar sheet down: it bends on its binding, tears free and tumbles away.", "向下拉日历页：纸页沿装订处弯折，撕下后翻滚着飞走。"),
         prompt: L(
             "A 200×220 pt day-calendar pad with a dark binding strip and punched holes shows a big date. Dragging the top sheet downward stretches it up to 10% toward the finger and bends it forward around the binding in perspective — up to 55° at 180 pt of pull — while it twists up to 6° from the top-left corner and a shade darkens its lower half, as if paper were peeling. Releasing past 90 pt tears it off with a haptic: the sheet falls 420 pt with an ease-in over 0.55 s, rotating 25° and fading out, and the next day's date is already waiting underneath. Short pulls spring back onto the binding (response 0.4 s, damping 0.6). Tactile, nostalgic and satisfying.",
-            "一本 200×220 pt 的日历撕页本，顶部是深色装订条和打孔，页面上印着大大的日期。向下拖动最上面的纸页时，它朝手指拉长最多 10%，并以装订处为轴在透视中向前弯折——拉动 180 pt 时最多 55°——同时从左上角扭转最多 6°，下半部分逐渐加深阴影，就像纸张正在被撕开。拉过 90 pt 松手即撕下，伴随触感：纸页以缓入曲线在 0.55 秒内下落 420 pt，旋转 25° 并淡出，下面已是第二天的日期。拉动不足时则以弹簧（响应 0.4 秒、阻尼 0.6）贴回装订处。可触、怀旧、令人满足。"
+            "一本200×220 pt的日历撕页本，顶部是深色装订条和打孔，页面印着大大的日期。向下拖动最上面的纸页时，它朝手指拉长最多10%，并以装订处为轴在透视中向前弯折——拉动180 pt时最多55°——同时从左上角扭转最多6°，下半部分逐渐加深阴影，就像纸张正在被撕开。拉过90 pt松手即撕下，伴随触感：纸页以缓入曲线在0.55秒内下落420 pt，旋转25°并淡出，下面已是第二天的日期。拉动不足时则以弹簧（响应0.4秒、阻尼0.6）贴回装订处。怀旧而令人满足。"
         ),
         implementation: L(
             "The pull distance drives a top-anchored y-stretch, rotation3DEffect around the x-axis anchored at the top, plus a small rotationEffect anchored at the top-leading corner; a torn sheet animates a separate fall state with easeIn before the day index advances.",

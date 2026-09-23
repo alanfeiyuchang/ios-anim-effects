@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Segments ignite in a scan order and fade out with a phosphor afterglow.", "数码管笔画按扫描顺序点亮，熄灭时留下荧光余辉。"),
         prompt: L(
             "A kitchen-timer display counts down from 10:00 in slanted seven-segment digits on a near-black panel, each built from seven rounded bars, with unlit bars faintly visible at 7% so the grid reads as hardware. When a digit changes, bars that switch on ignite fast (80 ms ease-out, scanning a→g with 25 ms between bars) and gain a 6 pt coloured glow, while bars that switch off fade over 350 ms like cooling phosphor, so the old numeral briefly ghosts under the new one. The colon blinks at 1 Hz, and tapping resets the timer with a light haptic. Retro, precise and warm.",
-            "近乎纯黑的面板上，厨房计时器以倾斜的七段数码管从 10:00 开始倒数；每个数字由七根圆角笔画组成，未点亮的笔画保留 7% 的微光，看起来就像真实硬件。数字变化时，要点亮的笔画迅速亮起（80 毫秒缓出，按 a→g 顺序扫描，间隔 25 毫秒），并带上 6 pt 彩色辉光；要熄灭的笔画则像冷却的荧光粉，在 350 毫秒内慢慢暗下，旧数字会在新数字下短暂残留。冒号每秒闪一次，点击即重置计时并伴随轻触感。复古、精准又有温度。"
+            "近乎纯黑的面板上，厨房计时器以倾斜的七段数码管从10:00开始倒数；每个数字由七根圆角笔画组成，未点亮的笔画保留7%的微光，看起来就像真实硬件。数字变化时，要点亮的笔画迅速亮起（80毫秒缓出，按a→g顺序扫描，间隔25毫秒），并带上6 pt彩色辉光；要熄灭的笔画则像冷却的荧光粉，在350毫秒内慢慢暗下，旧数字会在新数字下短暂残留。冒号每秒闪一次，点击即重置计时并伴随轻触感。复古、精准又有温度。"
         ),
         implementation: L(
             "Each digit maps to a 7-bit mask; every segment is a Capsule whose opacity and glow animate with .animation(_:value:) — a delayed ease-out when turning on, a long ease-out when turning off. A TimelineView derives the countdown from elapsed time × speed.",

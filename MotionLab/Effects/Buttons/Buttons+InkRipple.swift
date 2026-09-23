@@ -37,6 +37,8 @@ private struct ButtonInkRippleDemo: View {
     @State private var ripples: [ButtonRippleModel] = []
     @State private var taps = 0
     @State private var previewIndex = 0
+    /// Stored removal tasks, cancelled when the demo goes away.
+    @State private var cleanups: [UUID: Task<Void, Never>] = [:]
 
     private let size = CGSize(width: 250, height: 68)
     private static let previewPoints: [CGPoint] = [
@@ -68,6 +70,7 @@ private struct ButtonInkRippleDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.0, delay: 0.3) { previewTap() }
+        .onDisappear { cancelCleanups() }
     }
 
     private var shape: RoundedRectangle {
@@ -114,10 +117,17 @@ private struct ButtonInkRippleDemo: View {
         taps += 1
         if !ctx.isPreview { Haptics.tap() }
         let lifetime = ctx["duration"] + 0.15
-        Task {
+        cleanups[ripple.id] = Task {
             try? await Task.sleep(for: .seconds(lifetime))
+            guard !Task.isCancelled else { return }
             ripples.removeAll { $0.id == ripple.id }
+            cleanups[ripple.id] = nil
         }
+    }
+
+    private func cancelCleanups() {
+        for task in cleanups.values { task.cancel() }
+        cleanups = [:]
     }
 
     private func previewTap() {

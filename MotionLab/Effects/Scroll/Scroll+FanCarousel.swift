@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Cards ride a wide arc like a hand of playing cards, tilting outward and dipping as they leave the center.", "卡片沿大弧线排开，像手中的一把扑克牌，离开中心时向外倾斜并下沉。"),
         prompt: L(
             "A carousel of 140×190 pt cards laid out like a hand of playing cards on the rim of a large wheel (radius 420 pt): the centered card stands upright and raised, and each step away rotates a card by 14° around the wheel, so it tilts outward, drops along the arc and overlaps its neighbour. Cards away from the center also shrink by up to 10% and dim slightly, and the focused card gains a soft 18 pt glow. Scrolling turns the whole hand continuously under the finger; release snaps the nearest card to the top of the arc with a selection haptic, and tapping any card turns the wheel to it (spring response 0.5 s, damping 0.86). Playful, tactile and a little casino.",
-            "一组 140×190 pt 的卡片像手中的一把扑克牌，排列在一个半径 420 pt 的大轮盘边缘：居中的卡片直立且位置最高，每离开中心一格就绕轮盘旋转 14°，于是向外倾斜、沿弧线下沉，并与相邻卡片交叠。离开中心的卡片还会最多缩小 10% 并略微变暗，聚焦的卡片带有 18 pt 的柔和光晕。滚动时整把牌在手指下连续转动；松手后最近的卡片吸附到弧顶并伴随选择触感，点击任意卡片则转到它（弹簧响应 0.5 秒、阻尼 0.86）。俏皮、可触，还带点赌场的味道。"
+            "一组140×190 pt的卡片像手中的一把扑克牌，排列在一个半径420 pt的大轮盘边缘：居中的卡片直立且位置最高，每离开中心一格就绕轮盘旋转14°，于是向外倾斜、沿弧线下沉，并与相邻卡片交叠。离开中心的卡片还会最多缩小10%并略微变暗，聚焦的卡片带有18 pt的柔和光晕。滚动时整把牌在手指下连续转动；松手后最近的卡片吸附到弧顶并伴随选择触感，点击任意卡片则转到它（弹簧响应0.5秒、阻尼0.86）。俏皮、可触，还带点赌场的味道。"
         ),
         implementation: L(
             "Items keep a plain horizontal layout with a stride-snapping ScrollTargetBehavior; each card's visualEffect converts its distance from the center into a wheel angle and replaces the linear position with the arc position (R·sinθ, R·(1−cosθ)) plus a matching rotationEffect.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Scratch a metallic foil off a reward card; past a threshold it clears itself.", "用手指刮开奖励卡上的金属涂层，超过阈值后自动揭晓。"),
         prompt: L(
             "A 280×170 pt reward card hides its prize under a brushed-metal foil with a fine diagonal pinstripe and an embossed “Scratch here” label. The finger erases the foil along its path with a 30 pt round brush feathered by a 6 pt blur, leaving soft, powdery strokes and a light selection tick every six newly cleared grid cells. Once 55% of the grid is gone, the remaining foil fades out over 350 ms while scaling up 4%, and the prize beneath, a bold gradient amount with sparkles, springs from 92% to 100% (response 0.45 s, damping 0.6) with a success haptic. On arrival one short swoosh scratches itself to invite the finger, and a tap on a revealed card deals a fresh one. Tactile, suspenseful and rewarding.",
-            "一张 280×170 pt 的奖励卡，奖品藏在金属涂层下：细斜纹拉丝质感，压印着「刮开此处」。手指以 30 pt 圆形笔刷沿轨迹擦除涂层，笔刷边缘经 6 pt 模糊羽化，刮痕柔软如粉末；每多刮开 6 个网格单元，就有一下轻微的选择触感。刮开比例达到 55% 时，剩余涂层在 350 毫秒内放大 4% 并淡出，下方的渐变大字金额与星芒以弹簧（响应 0.45 秒、阻尼 0.6）从 92% 弹到 100%，伴随成功触感。进入页面时会自动刮出一道短弧，邀请手指接着刮；揭晓后轻点卡片即换一张新的。有手感、有悬念、有回报。"
+            "一张280×170 pt的奖励卡，奖品藏在金属涂层下：细斜纹拉丝质感，压印着「刮开此处」。手指以30 pt圆形笔刷沿轨迹擦除涂层，笔刷边缘经6 pt模糊羽化，刮痕柔软如粉末；每多刮开6个网格单元，就有一下轻微的选择触感。刮开比例达到55%时，剩余涂层在350毫秒内放大4%并淡出，下方的渐变大字金额与星芒以弹簧（响应0.45秒、阻尼0.6）从92%弹到100%，伴随成功触感。进入页面时自动刮出一道短弧，邀请手指；揭晓后轻点卡片即换一张新的。有悬念也有回报。"
         ),
         implementation: L(
             "The foil is masked by a Canvas that fills its rect, then adds a blur filter (≈20% of the brush) and strokes the recorded drag paths with blendMode .destinationOut for feathered edges; a Set of touched grid cells estimates coverage and triggers the reveal animation.",

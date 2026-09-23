@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A cover hinged on its left edge swings open like a door, sways and settles on the reveal.", "以左边为铰链的封面像门一样甩开，来回摆动后停在揭晓内容上。"),
         prompt: L(
             "A 210×140 pt gift card sits closed under a gradient cover with a ribbon and an \"Open me\" label. Tapping swings the cover open around its left edge in 3D perspective to about 108°, driven by a loose spring (response 0.8 s, damping 0.42), so it overshoots and sways on its hinge two or three times before coming to rest. As it turns, the cover darkens toward edge-on, flips to its paper-white inside past 90°, and casts a soft shadow across the revealed code that fades as it opens; the whole card drifts 30 pt right to keep the open door on stage. Tapping again closes it with a firmer, well-damped spring. Physical, suspenseful and satisfying.",
-            "一张 210×140 pt 的礼品卡被带丝带和「打开我」字样的渐变封面盖住。点击后，封面以左边为铰链在三维透视中甩开到约 108°，由松弛的弹簧（响应 0.8 秒、阻尼 0.42）驱动，因此会越过终点，在铰链上来回摆动两三次后才停稳。转动过程中，封面接近侧立时逐渐变暗，超过 90° 后翻出纸白色内侧，并在下方露出的兑换码上投下随开启而淡去的柔和阴影；整张卡同时向右平移 30 pt，让打开的门留在舞台内。再次点击则以更硬、阻尼充分的弹簧合上。真实、带悬念、令人满足。"
+            "一张210×140 pt的礼品卡被带丝带和「打开我」字样的渐变封面盖住。点击后，封面以左边为铰链在三维透视中甩开到约108°，由松弛的弹簧（响应0.8秒、阻尼0.42）驱动，因此会越过终点，在铰链上来回摆动两三次后才停稳。转动过程中，封面接近侧立时逐渐变暗，超过90°后翻出纸白色内侧，并在下方露出的兑换码上投下随开启而淡去的柔和阴影；整张卡同时向右平移30 pt，让打开的门留在舞台内。再次点击则以更硬、阻尼充分的弹簧合上。真实、带悬念、令人满足。"
         ),
         implementation: L(
             "An Animatable view interpolates the hinge angle and applies rotation3DEffect(anchor: .leading); inside it the angle picks the front or back face, the shading and the inner shadow, so every frame of the spring is consistent.",

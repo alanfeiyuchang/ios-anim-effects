@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A pendulum swing with decaying keyframes and a popping badge.", "钟摆式摇动，关键帧逐渐衰减，角标随之弹出。"),
         prompt: L(
             "A notification bell hangs from its top hinge. On a new alert it rings like a real pendulum, swinging to +18°, −15°, +11°, −7°, +3° and back to rest about 0.12 s apart with cubic easing so the energy visibly decays, while the whole bell pulses to 112% on the first strike. Sound-wave arcs flare out on both sides and fade by 0.55 s, the red count badge punches to 125% and springs back as its number rolls up, and a frosted notification pill drops in 18 pt from above (growing from 92%) as the previous one sinks away. A medium haptic lands on the first strike: lively and physical, attention-getting without being alarming.",
-            "通知铃铛以顶部为铰点悬挂。收到新提醒时，它像真正的钟摆一样摇响：依次摆到 +18°、−15°、+11°、−7°、+3° 再回到静止，每摆间隔约 0.12 秒，三次缓动让能量肉眼可见地衰减；第一下敲击时整只铃铛放大到 112%。两侧声波弧线迸发，约 0.55 秒淡尽；红色角标弹到 125% 再回落，数字向上滚动；一枚磨砂通知胶囊从上方 18 pt 落下（由 92% 放大），旧通知向下沉没。第一下敲击伴随中等触感，生动有物理感，引人注意却不吓人。"
+            "通知铃铛以顶部为铰点悬挂。收到新提醒时，它像真正的钟摆一样摇响：依次摆到+18°、−15°、+11°、−7°、+3°再回到静止，每摆间隔约0.12秒，三次缓动让能量肉眼可见地衰减；第一下敲击时整只铃铛放大到112%。两侧声波弧线迸发，约0.55秒淡尽；红色角标弹到125%再回落，数字向上滚动；一枚磨砂通知胶囊从上方18 pt落下（由92%放大），旧通知向下沉没。第一下敲击伴随中等触感，生动有物理感，引人注意却不吓人。"
         ),
         implementation: L(
             "keyframeAnimator(initialValue:trigger:) with separate KeyframeTracks for angle (CubicKeyframes), scale and wave opacity (SpringKeyframes); rotationEffect is anchored at .top.",

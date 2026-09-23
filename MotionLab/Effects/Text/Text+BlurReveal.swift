@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Glyphs resolve from a soft blur one after another.", "字形依次从柔和的模糊中清晰浮现。"),
         prompt: L(
             "A two-line editorial statement appears glyph by glyph, as if coming into focus. Each character starts fully transparent, blurred by about 10 pt and sitting 10 pt low, then resolves to sharp, opaque and in place with an ease-out-cubic curve; characters start in reading order with overlapping windows, so a soft focus front sweeps through the sentence over ~1.4 s. On dismissal the same choreography runs in reverse and the last glyphs dissolve first. Cinematic, calm and premium — like a title card in an Apple keynote.",
-            "两行编辑感的文案逐字出现，仿佛镜头慢慢对焦。每个字符起始时完全透明、带约 10pt 的模糊并下沉 10pt，随后以三次缓出曲线变得清晰、不透明并回到原位；字符按阅读顺序依次启动、时间窗口相互重叠，形成一道柔和的“对焦前沿”在约 1.4 秒内扫过整句。消失时按相反顺序执行，最后的字最先消散。电影感、沉静而高级——如同苹果发布会的标题页。"
+            "两行编辑感的文案逐字出现，仿佛镜头慢慢对焦。每个字符起始时完全透明、带约10pt的模糊并下沉10pt，随后以三次缓出曲线变得清晰、不透明并回到原位；字符按阅读顺序依次启动、时间窗口相互重叠，形成一道柔和的“对焦前沿”在约1.4秒内扫过整句。消失时按相反顺序执行，最后的字最先消散。电影感、沉静而高级——如同苹果发布会的标题页。"
         ),
         implementation: L(
             "A custom Transition swaps in a TextRenderer whose animatable progress drives per-glyph opacity, blur filter and offset with a staggered window; the change runs in a linear withAnimation.",

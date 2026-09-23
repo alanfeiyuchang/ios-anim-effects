@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A landscape card whose sky, sun, ridges and title drift at different depths.", "风景卡片中的天空、太阳、山脊与标题以不同景深错位漂移。"),
         prompt: L(
             "A 240×300 pt poster card with 28 pt corners shows a dusk landscape built from separate layers: a violet-to-peach sky with faint stars, a glowing sun, a translucent far ridge, a dark near ridge and a bold title on top. Dragging tilts the card up to 8° while each layer shifts against the finger in proportion to its depth (stars ×0.1, sun ×0.25, far ridge ×0.55, near ridge ×0.9, title ×1.5 of a 16 pt base). Every layer rides its own spring whose response grows with depth, from about 0.3 s for the stars to 0.7 s for the title (damping 0.7), so on release the layers settle one after another and the scene seems to breathe back into place. Before the first touch the card sways slowly so the depth reads on arrival.",
-            "一张 240×300 pt、28 pt 圆角的竖版海报卡，黄昏风景由多个图层叠成：缀着星光的紫到蜜桃色天空、发光的太阳、半透明远山、深色近山和最上层的粗体标题。拖动时卡片倾斜最多 8°，各层按景深朝手指反方向平移——以 16 pt 为基准，星空 ×0.1、太阳 ×0.25、远山 ×0.55、近山 ×0.9、标题 ×1.5。每层各配一个弹簧，越靠前响应越慢，从星空约 0.3 秒到标题约 0.7 秒（阻尼 0.7），松手后各层依次落定，画面像呼吸般回位。未触摸前卡片缓缓摇摆，一进页面就看得出纵深。"
+            "一张240×300 pt、28 pt圆角的竖版海报卡，黄昏风景由多个图层叠成：缀着星光的紫到蜜桃色天空、发光的太阳、半透明远山、深色近山和最上层的粗体标题。拖动时卡片倾斜最多8°，各层按景深朝手指反方向平移——以16 pt为基准，星空×0.1、太阳×0.25、远山×0.55、近山×0.9、标题×1.5。每层各配一个弹簧，越靠前响应越慢，从星空约0.3秒到标题约0.7秒（阻尼0.7），松手后各层依次落定，画面像呼吸般回位。未触摸时卡片缓缓摇摆，展示纵深。"
         ),
         implementation: L(
             "A ZStack of shapes and gradients where each layer gets .offset(normalisedDrag × depth × amount) plus its own .animation(.spring, value:) whose response scales with depth; two rotation3DEffect modifiers add the tilt and clipShape hides the overscan.",

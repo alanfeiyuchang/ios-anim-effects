@@ -34,6 +34,8 @@ private struct JogWheelDemo: View {
     @State private var lastTime: Date = .now
     @State private var velocity: Double = 0
     @State private var spinning = false
+    /// Bumped by every coast and every grab, so a stale coast never clears `spinning` under the finger.
+    @State private var coastGeneration = 0
     @State private var step = 0
 
     private let size: CGFloat = 220
@@ -74,6 +76,7 @@ private struct JogWheelDemo: View {
                     if before != after { Haptics.selection() }
                 } else {
                     velocity = 0
+                    coastGeneration += 1
                     stopCoast(at: rotation)
                 }
                 lastAngle = angle
@@ -101,8 +104,11 @@ private struct JogWheelDemo: View {
         withAnimation(.timingCurve(0.15, 0.7, 0.3, 1, duration: duration)) {
             rotation += capped
         }
+        coastGeneration += 1
+        let current = coastGeneration
         Task {
             try? await Task.sleep(for: .seconds(abs(capped) > 1 ? duration : 0.1))
+            guard coastGeneration == current, lastAngle == nil else { return }
             spinning = false
         }
     }

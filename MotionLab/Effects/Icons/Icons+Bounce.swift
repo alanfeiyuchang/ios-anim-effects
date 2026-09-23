@@ -9,7 +9,7 @@ extension Effect {
         summary: L("SF Symbols hop layer by layer when tapped.", "点击时 SF Symbol 按图层依次弹跳。"),
         prompt: L(
             "A 2×2 grid of glossy, gradient app-style tiles, each holding a white multi-layer SF Symbol (bell with badge, download tray, add-person, paper plane). On tap the symbol performs a single elastic hop: it compresses slightly, springs up ~15% and settles, with each layer offset by a few milliseconds so badges and arrows follow the main shape like secondary motion. Simultaneously the tile dips to 92% and springs back. Snappy (≈0.3 s), friendly and unmistakably native iOS.",
-            "2×2 排列的渐变光泽应用风格方块，每块中放置一个白色多图层 SF Symbol（带角标的铃铛、下载托盘、添加联系人、纸飞机）。点击时符号完成一次富有弹性的跳跃：先轻微压缩，再向上弹起约 15% 后回落稳定；各图层之间错开数毫秒，角标和箭头像次级动作一样跟随主体。与此同时方块下沉到 92% 再弹回。节奏利落（约 0.3 秒）、友好，是纯正的 iOS 原生手感。"
+            "2×2排列的渐变光泽应用风格方块，每块中放置一个白色多图层SF Symbol（带角标的铃铛、下载托盘、添加联系人、纸飞机）。点击时符号完成一次富有弹性的跳跃：先轻微压缩，再向上弹起约15%后回落稳定；各图层之间错开数毫秒，角标和箭头像次级动作一样跟随主体。与此同时方块下沉到92%再弹回。节奏利落（约0.3秒）、友好，是纯正的iOS原生手感。"
         ),
         implementation: L(
             "Image(systemName:) with .symbolEffect(.bounce.up.byLayer, options: .speed(_:), value: count) — a discrete effect that fires whenever the value changes.",

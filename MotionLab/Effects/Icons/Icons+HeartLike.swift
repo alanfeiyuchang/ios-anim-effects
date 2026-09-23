@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Tap or double-tap a post: the heart squashes, fills and bursts into particles.", "点击或双击动态：爱心压缩、填色并迸发粒子。"),
         prompt: L(
             "A photo post card has an outlined heart and a like count in its action bar. Liking, by tapping the heart or double-tapping the photo, first squashes the heart to 70% in anticipation, then springs it to 125% as it swaps to a filled red glyph and settles at 100% within about 0.6 s. At the peak a thin ring expands to about 2× and fades while ten multicoloured dots shoot 56 pt outward and shrink on an ease-out, and the count rolls up with a medium haptic. A double-tap also blooms a large white heart over the photo that springs to 115%, holds, then swells and fades; unliking swaps back to the outline and rolls the count down. Joyful and snappy.",
-            "一张图片动态卡片，操作栏里有描边爱心和点赞数。点赞时（点爱心或双击图片），爱心先压到 70% 蓄力，再弹到 125% 并换成实心红色，约 0.6 秒内回到 100%。最高点处，一道细圆环扩散到约 2 倍后淡出，十颗彩色小圆点径向射出 56 pt、缓出缩小，点赞数向上滚动，伴随中等触感。双击时画面中央还会绽开一颗白色大爱心：弹到 115%，停一拍，再放大淡出；取消点赞则换回描边、数字回滚。欢快、有回报感、干脆利落。"
+            "一张图片动态卡片，操作栏里有描边爱心和点赞数。点赞时（点爱心或双击图片），爱心先压到70%蓄力，再弹到125%并换成实心红色，约0.6秒内回到100%。最高点处，一道细圆环扩散到约2倍后淡出，十颗彩色小圆点径向射出56 pt、缓出缩小，点赞数向上滚动，伴随中等触感。双击时画面中央还会绽开一颗白色大爱心：弹到115%，停一拍，再放大淡出；取消点赞则换回描边、数字回滚。欢快、有回报感、干脆利落。"
         ),
         implementation: L(
             "keyframeAnimator drives heart scale and a 0→1 burst progress (ring + radial dots are invisible at both ends); the glyph swaps via symbolEffect replace and the count uses numericText.",

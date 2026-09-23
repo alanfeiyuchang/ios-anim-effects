@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Rotating sun rays, drifting clouds, rain and lightning.", "旋转的阳光、漂浮的云、雨滴与闪电。"),
         prompt: L(
             "A living weather glyph built from layers: a warm radial-gradient sun whose twelve rounded rays rotate at about 20°/s and breathe in length, cool-grey clouds that drift a few points on offset sine waves, slanted rain streaks that fall and fade in a staggered loop, and in storm mode an amber bolt that double-flashes every few seconds while the clouds darken. Tapping the stage cycles sunny → cloudy → rain → storm, or tap a glyph in the four-icon strip beneath to jump. Each switch springs the sun behind the cloud (70% scale, offset up-left), cross-fades the precipitation and updates the label. Everything loops seamlessly: calm, glanceable ambience worthy of a widget.",
-            "由多层组成的“活”天气图标：暖色径向渐变的太阳，十二道圆角光芒以约每秒 20° 缓缓旋转并伸缩呼吸；冷灰色云朵沿相位错开的正弦波左右漂移几个点；倾斜的雨丝错落下落并淡出；雷暴模式下云层变暗，一道琥珀色闪电每隔几秒连闪两下。点击舞台按晴 → 多云 → 雨 → 雷暴循环切换，也可以直接点下方四枚图标跳转。每次切换，太阳以弹簧退到云后（缩放 70%、向左上偏移），降水层交叉淡变，文字同步更新。所有动画无缝循环，安静、一眼即懂，足以放进小组件。"
+            "由多层组成的“活”天气图标：暖色径向渐变的太阳，十二道圆角光芒以约每秒20°缓缓旋转并伸缩呼吸；冷灰色云朵沿相位错开的正弦波左右漂移几个点；倾斜的雨丝错落下落并淡出；雷暴模式下云层变暗，一道琥珀色闪电每隔几秒连闪两下。点击舞台按晴→多云→雨→雷暴循环切换，也可以直接点下方四枚图标跳转。每次切换，太阳以弹簧退到云后（缩放70%、向左上偏移），降水层交叉淡变，文字同步更新。所有动画无缝循环，安静、一眼即懂，足以放进小组件。"
         ),
         implementation: L(
             "A TimelineView(.animation) supplies time to a layered ZStack (rotating ray Capsules, SF Symbol clouds, falling Capsule drops); condition changes animate with a spring keyed to the mode.",

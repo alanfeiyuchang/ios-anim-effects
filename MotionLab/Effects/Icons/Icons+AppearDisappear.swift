@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Toolbar glyphs dissolve layer by layer and the edit set grows in, one slot at a time.", "工具栏图标逐层消散，编辑图标按槽位依次长出。"),
         prompt: L(
             "A floating toolbar holds four browse actions (share, like, comment, save) under a Select/Done pill. Tapping Select swaps every slot to an edit action (trash, move, duplicate, pin) in a left-to-right cascade 70 ms apart: in each slot the old glyph plays the SF Symbols disappear effect by layer — its layers shrinking and sliding down in sequence — while the new glyph assembles upward from its layers, both at 1.2× speed. Tapping a single action while in either mode holds it in the scale-up effect (≈115%) with a light haptic, marking it as chosen, and tapping again releases it. The swap feels native and orderly, like the toolbar is reorganising itself.",
-            "一个悬浮工具栏上有四个浏览操作（分享、喜欢、评论、收藏），上方是「选择 / 完成」胶囊按钮。点击「选择」后，每个槽位从左到右以 70 毫秒间隔依次换成编辑操作（删除、移动、复制、置顶）：每个槽位中，旧图标执行 SF Symbols 的按图层消失特效——各图层依次缩小并向下滑走；新图标则按图层自下而上组装出现，两者都以 1.2 倍速播放。在任一模式下点击单个操作，它会保持在放大（约 115%）特效中表示已选中，并伴随轻触感，再次点击取消。整体切换原生、有秩序，仿佛工具栏在自己整理自己。"
+            "一个悬浮工具栏上有四个浏览操作（分享、喜欢、评论、收藏），上方是「选择/完成」胶囊按钮。点击「选择」后，每个槽位从左到右以70毫秒间隔依次换成编辑操作（删除、移动、复制、置顶）：每个槽位中，旧图标执行SF Symbols的按图层消失特效——各图层依次缩小并向下滑走；新图标则按图层自下而上组装出现，两者都以1.2倍速播放。在任一模式下点击单个操作，它会保持在放大（约115%）特效中表示已选中，并伴随轻触感，再次点击取消。原生而有秩序，仿佛工具栏在自我整理。"
         ),
         implementation: L(
             "Each slot stacks both glyphs and drives .symbolEffect(.disappear.down/up.byLayer, options: .speed(_:), isActive:) with complementary per-slot booleans flipped on a staggered schedule; selection uses .symbolEffect(.scale.up, isActive:).",

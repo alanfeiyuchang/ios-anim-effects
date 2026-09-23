@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A card that turns over in 3D to reveal its back, lifting mid-flip.", "卡片在三维中翻面露出背面，翻转途中微微抬起。"),
         prompt: L(
             "A dark graphite payment card sits flat on the stage. On tap it flips 180° left-to-right around its vertical axis (or top-to-bottom around its horizontal axis) with strong perspective, driven by a soft spring (response ≈0.7 s, damping ≈0.78) that lands with a barely perceptible settle. The face swaps exactly at the 90° edge-on moment so the back — magnetic stripe, signature panel, CVV and a small iridescent hologram — reads correctly rather than mirrored. Mid-flip the card rises toward the viewer by ~8% and its shadow grows deeper and softer, then both relax as it lands. Each tap keeps turning in the same direction, like handling a real card, with a medium haptic tap.",
-            "一张深石墨色支付卡平放在舞台上。点击后绕竖直轴左右翻转 180°（或绕水平轴上下翻转），带强透视，由柔和弹簧（响应约 0.7 秒、阻尼约 0.78）驱动，落定时仅有几乎察觉不到的回稳。正反面在卡片侧立的 90° 瞬间准确切换，背面的磁条、签名栏、CVV 与小块虹彩全息标都正向显示而非镜像。翻转过半时卡片向观者抬升约 8%，投影随之加深变柔，落下时再一起回落。每次点击都沿同一方向继续翻，像真实把玩一张卡，并伴随中等强度触感反馈。"
+            "一张深石墨色支付卡平放在舞台上。点击后绕竖直轴左右翻转180°（或绕水平轴上下翻转），带强透视，由柔和弹簧（响应约0.7秒、阻尼约0.78）驱动，落定时仅有几乎察觉不到的回稳。正反面在卡片侧立的90°瞬间准确切换，背面的磁条、签名栏、CVV与小块虹彩全息标都正向显示而非镜像。翻转过半时卡片向观者抬升约8%，投影随之加深变柔，落下时再一起回落。每次点击都沿同一方向继续翻，像真实把玩一张卡，并伴随中等强度触感反馈。"
         ),
         implementation: L(
             "An Animatable view interpolates the rotation angle every frame, picks the front or the pre-rotated back face at 90°, and derives lift and shadow from |sin(angle)|.",

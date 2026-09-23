@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Fling cards away, then rewind: the last one flies back along its exit path with a reverse spin.", "把卡片甩走后可以撤回：上一张沿离场路径带着反向旋转飞回。"),
         prompt: L(
             "A deck of five 190×240 pt cards with a round rewind button beneath. Dragged cards tilt up to 12° and, past 100 pt or on a flick, fly 440 pt off-stage with a 30° spin on a quick spring (response 0.4 s, damping 0.85). Tapping rewind replays the exit backwards: the most recent card swoops in from the side it left, un-spinning from 30° to 0° on a bouncy spring (response 0.55 s, damping 0.62) that overshoots slightly, lands on top of the deck, and the button's arrow spins −360°. When the deck is empty, all five cards fly back in one after another, 70 ms apart. Forgiving, reversible and delightful.",
-            "五张 190×240 pt 的卡片叠成一摞，下方有一个圆形撤回按钮。拖动卡片时最多倾斜 12°，超过 100 pt 或快速甩动时，卡片带着 30° 旋转以快速弹簧（响应 0.4 秒、阻尼 0.85）飞出舞台 440 pt。点击撤回会倒放离场过程：最近一张卡片从它离开的那一侧飞回，以带轻微过冲的弹性弹簧（响应 0.55 秒、阻尼 0.62）把旋转从 30° 收回到 0°，落回卡堆顶部，按钮上的箭头同时旋转 −360°。卡堆被清空时，五张卡片以 70 毫秒的间隔依次飞回。宽容、可逆、令人愉悦。"
+            "五张190×240 pt的卡片叠成一摞，下方有一个圆形撤回按钮。拖动卡片时最多倾斜12°，超过100 pt或快速甩动时，卡片带着30°旋转以快速弹簧（响应0.4秒、阻尼0.85）飞出舞台440 pt。点击撤回会倒放离场过程：最近一张卡片从它离开的那一侧飞回，以带轻微过冲的弹性弹簧（响应0.55秒、阻尼0.62）把旋转从30°收回到0°，落回卡堆顶部，按钮上的箭头同时旋转−360°。卡堆被清空时，五张卡片以70毫秒的间隔依次飞回。宽容、可逆、令人愉悦。"
         ),
         implementation: L(
             "Cards are never removed: each keeps an 'exit direction' in a dictionary (0 = in the deck), so flinging and rewinding are just springs on the same offset and rotation, and depth is computed over the cards still in the deck.",

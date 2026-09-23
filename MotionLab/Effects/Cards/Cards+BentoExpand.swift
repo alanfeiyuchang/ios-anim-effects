@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Tap a tile in a 2×2 bento grid: it grows to fill the grid while the others reflow into a strip.", "点击 2×2 便当格中的一块：它放大占满网格，其余卡片重排成底部一行。"),
         prompt: L(
             "A 300×300 pt bento grid of four rounded tiles (22 pt corners, 10 pt gaps), each with a gradient glyph and a title. Tapping a tile reflows the whole layout on one spring (response 0.5 s, damping 0.8): the chosen tile grows from its corner to a 300×228 pt hero, while the other three shrink and slide into a strip of 62 pt tiles along the bottom, keeping their order. Inside the hero, the glyph scales up 1.4× and three lines of detail fade and rise in 150 ms after the layout starts. Tapping the hero collapses everything back to the grid; tapping a strip tile swaps it in. Structured, fluid and spatially honest.",
-            "一个 300×300 pt 的便当式网格，由四块圆角卡片组成（22 pt 圆角、10 pt 间距），每块都有渐变图标和标题。点击某块时，整个布局以同一个弹簧（响应 0.5 秒、阻尼 0.8）重排：被选中的卡片从所在角落放大为 300×228 pt 的主卡，另外三块缩小并滑入底部 62 pt 高的一行，保持原有顺序。主卡内的图标放大到 1.4 倍，布局开始 150 毫秒后三行详情上浮淡入。点击主卡则全部收回网格；点击底部小卡则与主卡互换。结构清晰、流畅、空间关系真实可信。"
+            "一个300×300 pt的便当式网格，由四块圆角卡片组成（22 pt圆角、10 pt间距），每块都有渐变图标和标题。点击某块时，整个布局以同一个弹簧（响应0.5秒、阻尼0.8）重排：被选中的卡片从所在角落放大为300×228 pt的主卡，另外三块缩小并滑入底部62 pt高的一行，保持原有顺序。主卡内的图标放大到1.4倍，布局开始150毫秒后三行详情上浮淡入。点击主卡则全部收回网格；点击底部小卡则与主卡互换。结构清晰、流畅、空间关系真实可信。"
         ),
         implementation: L(
             "A pure function returns each tile's frame for the current selection; tiles are placed with frame + position inside a fixed 300×300 ZStack, so one withAnimation(spring) interpolates every size and position together.",

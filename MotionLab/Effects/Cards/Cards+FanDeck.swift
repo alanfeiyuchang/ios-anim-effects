@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A neat stack of cards that spreads into a hand-held fan, one card lifting on tap.", "整齐的牌堆展开成手持扇形，点击可抽起单张。"),
         prompt: L(
             "Five playing cards (104×150 pt, 14 pt corners) rest in a loose pile with ±3° of natural jitter. On tap they spread into a hand-held fan: each card rotates around a shared pivot about 90 pt below the deck, evenly distributed across a 56° arc, and rises 12 pt. The cards travel on individual springs (response ≈0.5 s, damping ≈0.72) staggered by 30 ms from left to right, so the fan unrolls like a flick of the wrist, and collapse in the reverse order. While fanned, tapping a card slides it 30 pt outward along its own radius; tapping it again gathers the deck. Crisp shadows and a soft haptic sell the tactility.",
-            "五张扑克牌（104×150 pt，14 pt 圆角）松散地叠在一起，带 ±3° 的自然错位。点击后展开成手持扇形：每张牌绕位于牌堆下方约 90 pt 的共同支点旋转，均匀分布在 56° 的弧度内，并整体上移 12 pt。每张牌使用独立弹簧（响应约 0.5 秒、阻尼约 0.72），从左到右错开 30 毫秒，像手腕一抖般依次铺开，收起时则反向依次合拢。展开状态下点击某张牌，它会沿自身半径方向向外抽出 30 pt；再次点击则收拢牌组。清晰的投影与轻柔触感增强了真实手感。"
+            "五张扑克牌（104×150 pt，14 pt圆角）松散地叠在一起，带±3°的自然错位。点击后展开成手持扇形：每张牌绕位于牌堆下方约90 pt的共同支点旋转，均匀分布在56°的弧度内，并整体上移12 pt。每张牌使用独立弹簧（响应约0.5秒、阻尼约0.72），从左到右错开30毫秒，像手腕一抖般依次铺开，收起时则反向依次合拢。展开状态下点击某张牌，它会沿自身半径方向向外抽出30 pt；再次点击则收拢牌组。清晰的投影与轻柔触感增强了真实手感。"
         ),
         implementation: L(
             "Each card uses rotationEffect with an anchor below its bottom edge (UnitPoint y 1.6) so all cards share one pivot; a per-card delayed spring via .animation(_:value:) creates the stagger.",

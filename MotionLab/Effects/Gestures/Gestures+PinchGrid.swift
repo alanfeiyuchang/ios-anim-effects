@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Pinch a photo grid to step between 2, 3 and 4 columns while every tile reflows in a cascade.", "捏合照片网格在 2、3、4 列之间切换，每张图块以瀑布式错峰重排。"),
         prompt: L(
             "A 288×288 pt photo grid (6 pt gutters, gradient tiles with white glyphs) is clipped in a 28 pt rounded frame under a column-count pill. While pinching, the whole grid scales live around the pinch anchor, rubber-banded to about ±25%; releasing past 115% steps to one column fewer with bigger tiles, below 87% to one column more. Every tile then springs to its new frame (response 0.45 s, damping 0.8) delayed 15 ms × its index, so the reflow ripples from the top-left corner like Photos while the live scale springs back to 1 in the same beat. The pill rolls to the new count with a numeric transition and a medium haptic confirms the step; double-tap cycles the density. Tactile and spatially continuous.",
-            "一个 288×288 pt 的照片网格（6 pt 间距，渐变图块配白色图标）裁在 28 pt 圆角框里，上方胶囊显示列数。捏合时整个网格围绕捏合锚点实时缩放，超出约 ±25% 带橡皮筋阻尼；松手时放大超过 115% 就少一列、图块变大，缩到 87% 以下就多一列。随后每个图块以弹簧（响应 0.45 秒、阻尼 0.8）移到新位置，按序号各延迟 15 毫秒，重排像“照片”App 一样从左上角荡开，整体缩放也在同一拍弹回 1。胶囊以数字转场滚到新列数，一下中等触感确认；双击可循环切换密度。手感扎实，空间连续。"
+            "一个288×288 pt的照片网格（6 pt间距，渐变图块配白色图标）裁在28 pt圆角框里，上方胶囊示列数。捏合时整个网格围绕捏合锚点实时缩放，超出约±25%带橡皮筋阻尼；松手时放大超过115%就少一列、图块变大，缩到87%以下就多一列。随后每个图块以弹簧（响应0.45秒、阻尼0.8）移到新位置，按序号各延迟15毫秒，重排如“照片”App般从左上角荡开，整体缩放也在同一拍弹回1。胶囊以数字转场滚到新列数，一下中等触感确认；双击可循环切换密度。扎实连贯。"
         ),
         implementation: L(
             "MagnifyGesture drives a rubber-banded scaleEffect anchored at value.startAnchor; tiles are placed with explicit frames and positions computed from the column count, each with its own .animation(spring.delay(i × stagger), value: columns) so the reflow cascades.",

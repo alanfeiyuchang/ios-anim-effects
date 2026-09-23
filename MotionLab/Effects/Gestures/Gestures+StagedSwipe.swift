@@ -9,7 +9,7 @@ extension Effect {
         summary: L("One swipe, three actions: the further you pull, the well shifts from Archive to Snooze to Delete.", "一次滑动、三种操作：拉得越远，底色从归档依次变为稍后与删除。"),
         prompt: L(
             "Three 62 pt mail rows show an avatar, a sender and a preview. Swiping a row left reveals a well whose action depends on distance, like scrubbing: 70 pt arms Archive (indigo, archive box), and each further 64 pt steps to Snooze (amber, clock) and then Delete (red, trash). At every step the well cross-fades its colour over 200 ms, the glyph swaps with a symbol replace and bounces, the caption changes and a selection haptic ticks, with the icon centred in the widening reveal. Releasing on a stage flings the row off to the left on a 250 ms ease-in while the list closes the gap on a spring (response 0.4 s, damping 0.85) and a chip confirms the action; releasing before the first stage springs back. Precise, expressive, fast triage.",
-            "三条高 62 pt 的邮件行，各有头像、发件人和预览。向左滑动会露出一个底槽，操作取决于滑动距离：到 70 pt 进入“归档”（靛蓝、归档盒），之后每多 64 pt 依次切到“稍后”（琥珀、时钟）和“删除”（红色、垃圾桶）。每换一段，底槽颜色在 200 毫秒内渐变，图标以符号替换切换并弹一下，说明文字随之改变，伴随一下选择触感。在某一段松手，该行以 250 毫秒的缓入向左甩出，列表以弹簧（响应 0.4 秒、阻尼 0.85）收拢，并弹出确认小标签；没到第一段就松手则弹回。精准利落，处理邮件又快又爽。"
+            "三条高62 pt的邮件行，各有头像、发件人和预览。向左滑动会露出一个底槽，操作取决于滑动距离：到70 pt进入“归档”（靛蓝、归档盒），之后每多64 pt依次切到“稍后”（琥珀、时钟）和“删除”（红色、垃圾桶）。每换一段，底槽颜色在200毫秒内渐变，图标以符号替换切换并弹一下，说明文字随之改变，伴随一下选择触感。在某一段松手，该行以250毫秒的缓入向左甩出，列表以弹簧（响应0.4秒、阻尼0.85）收拢，并弹出确认小标签；没到第一段就松手则弹回。精准利落。"
         ),
         implementation: L(
             "The row's offset maps to a stage enum; the well reads it for colour, symbol and caption with animation(value:), and sensoryFeedback(.selection) fires on stage changes. Release animates the offset past the edge, then removes the item in a spring so the VStack reflows.",

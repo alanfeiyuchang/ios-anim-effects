@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A custom scroll thumb that stretches with speed, squashes at the ends and melts away when idle.", "自定义滚动滑块：随速度拉长、在两端被挤扁、静止时悄然消融。"),
         prompt: L(
             "A list scrolls with a custom gradient thumb on its right edge that is invisible at rest; the moment scrolling starts it fades in and widens from 5 to 8 pt on a quick spring. Its position tracks the content exactly, while its shape is liquid: the length, proportional to the visible fraction, stretches up to 60% longer at 30 pt per frame, trailing opposite the motion, and springs back as the scroll slows (response 0.3 s, damping 0.55). Pulled past either end it squashes against the edge like a droplet, losing up to 70% of its length and bulging 2 pt wider, with a small bubble beside it reading the percentage. 0.8 s after the scroll settles, thumb and bubble melt away.",
-            "列表右侧有一个自定义渐变滑块，静止时不可见；一开始滚动，它就以快速弹簧淡入，宽度从 5 pt 变为 8 pt。滑块的位置严格跟随内容，形状却是液态的：长度按可见比例计算，每帧 30 pt 时最多再拉长 60%，朝运动反方向拖尾，滚动变慢时再以弹簧（响应 0.3 秒、阻尼 0.55）缩回。越过两端继续拉时，它像水滴一样被挤扁在边缘，长度最多减少 70%、鼓宽 2 pt，旁边的小气泡显示已读百分比。滚动停下 0.8 秒后，滑块与气泡一起消融。"
+            "列表右侧有一个自定义渐变滑块，静止时不可见；一开始滚动，它就以快速弹簧淡入，宽度从5 pt变为8 pt。滑块的位置严格跟随内容，形状却是液态的：长度按可见比例计算，每帧30 pt时最多再拉长60%，朝运动反方向拖尾，滚动变慢时再以弹簧（响应0.3秒、阻尼0.55）缩回。越过两端继续拉时，它像水滴一样被挤扁在边缘，长度最多减少70%、鼓宽2 pt，旁边的小气泡显示已读百分比。滚动停下0.8秒后，滑块与气泡一起消融。"
         ),
         implementation: L(
             "onScrollGeometryChange reports offset, range and viewport as one Equatable struct; the action derives a per-frame velocity and overscroll that set the thumb's length, anchor and width through an .animation(spring, value:), and onScrollPhaseChange plus a delayed Task controls visibility.",

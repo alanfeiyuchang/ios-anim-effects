@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A seamless looping rolodex: neighbours recede, blur and tuck behind the focused card.", "无缝循环的卡片轮盘：两侧卡片后退、虚化并收拢到焦点卡片身后。"),
         prompt: L(
             "A centre-snapping carousel of 180×220 pt gradient cards with 26 pt corners loops seamlessly in both directions, arranged like a rolodex in depth. The focused card sits in front at full size; neighbours recede by 18% scale, tuck 60 pt inward so they overlap behind it, blur by 3 pt, dim 12% and fade to 70%, all interpolated continuously with distance so a card rises out of the stack as it slides to the centre. Every 2.2 s, while the user isn't touching, it advances one card on a smooth spring (response 0.55 s, damping 0.86). Infinity is five copies end to end: when scrolling rests, the position silently jumps to the same card in the middle copy, and dots below track the real index. Deep, ambient and endlessly browsable.",
-            "一排居中吸附的渐变卡片（180×220 pt，26 pt 圆角）可向两个方向无缝循环，像纵深排列的卡片轮盘。焦点卡片在最前方保持原大；两侧卡片缩小 18%，向内收拢 60 pt 叠到它身后，模糊 3 pt、变暗 12% 并淡到 70%，全部随距离连续插值，卡片滑向中心时仿佛从牌堆中升起。用户不触摸时，每 2.2 秒以平滑弹簧（响应 0.55 秒、阻尼 0.86）前进一张。无限其实是五份内容首尾相接：滚动停下时悄悄跳到中间那份的同一张，下方圆点追踪真实页码。"
+            "一排居中吸附的渐变卡片（180×220 pt，26 pt圆角）可向两个方向无缝循环，像纵深排列的卡片轮盘。焦点卡片在最前方保持原大；两侧卡片缩小18%，向内收拢60 pt叠到它身后，模糊3 pt、变暗12%并淡到70%，全部随距离连续插值，卡片滑向中心时仿佛从牌堆中升起。用户不触摸时，每2.2秒以平滑弹簧（响应0.55秒、阻尼0.86）前进一张。无限其实是五份内容首尾相接：滚动停下时悄悄跳到中间那份的同一张，下方圆点追踪真实页码。"
         ),
         implementation: L(
             "The set is repeated five times; scrollPosition(id:) tracks the centred card and onScrollPhaseChange recentres to the middle copy (without animation) whenever the phase returns to .idle. Each card's visualEffect derives a signed distance in card pitches and applies scale, inward offset, blur, brightness and opacity, while zIndex keeps the focused card on top; a task-based autoplay advances the id.",
@@ -52,7 +52,7 @@ private struct ScrollInfiniteDemo: View {
 
     private var carousel: some View {
         let shrink = CGFloat(ctx["scale"])
-        let blur = ctx.cg("blur")
+        let sideBlur = ctx.cg("blur")
         let viewport = width
         let pitch = cardWidth + spacing
         return ScrollView(.horizontal) {
@@ -68,7 +68,7 @@ private struct ScrollInfiniteDemo: View {
                             let far: CGFloat = min(abs(d), 1.5)
                             let scale: CGFloat = 1 - shrink * far
                             let tuck: CGFloat = -d * 60
-                            let radius: CGFloat = blur * far
+                            let radius: CGFloat = sideBlur * far
                             let dim: Double = -0.12 * Double(far)
                             let alpha: Double = 1 - 0.3 * Double(far)
                             return content

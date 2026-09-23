@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The chevron's arms fold through a flat line instead of spinning, as a row expands.", "箭头两翼穿过一条直线折向另一边，而不是整体旋转，同时列表行展开。"),
         prompt: L(
             "An order-details row shows a title, a subtitle and a 34 pt chevron disc. Tapping the row expands three detail lines below it while the chevron folds from pointing down to pointing up: the joint travels up as both arm tips move down, passing through a perfectly flat line at the midpoint, on a spring (response 0.42 s, damping 0.6) that slightly over-folds before settling. The detail lines drop in 40 ms apart with a fade and an 8 pt slide, and collapse in reverse, with a light haptic on each toggle. An alternative Rotate style spins the whole chevron 180° for comparison, but folding reads as the arrow physically changing its mind, lighter and more organic than a spin.",
-            "一行订单详情包含标题、副标题和一个 34 pt 的箭头圆钮。点这一行，下方展开三行详情，箭头同时从朝下“折”成朝上：连接点向上走、两个翼尖向下走，在中点恰好拉成一条水平线，由弹簧（响应 0.42 秒、阻尼 0.6）驱动，会稍微折过头再稳住。详情行错开 40 毫秒淡入并下滑 8 pt，收起时倒序离场，每次切换都有轻触感。另有「旋转」样式把整个箭头转 180° 以便对比，但折翼更像箭头真的“改了主意”，比整体旋转更轻盈自然。"
+            "一行订单详情包含标题、副标题和一个34 pt的箭头圆钮。点这一行，下方展开三行详情，箭头同时从朝下“折”成朝上：连接点向上走、两个翼尖向下走，在中点恰好拉成一条水平线，由弹簧（响应0.42秒、阻尼0.6）驱动，会稍微折过头再稳住。详情行错开40毫秒淡入并下滑8 pt，收起时倒序离场，每次切换都有轻触感。另有「旋转」样式把整个箭头转180°以便对比，但折翼更像箭头真的“改了主意”，比整体旋转更轻盈自然。"
         ),
         implementation: L(
             "An Animatable Shape draws the chevron from a single bend value (1 = down, 0 = flat, −1 = up) and is stroked with round caps; the spring interpolates the bend, and the detail rows are inserted through a ForEach with staggered asymmetric transitions.",

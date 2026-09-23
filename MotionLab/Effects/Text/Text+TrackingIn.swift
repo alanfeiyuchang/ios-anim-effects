@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Wide-spaced, blurred letters contract into a tight wordmark.", "字距拉开、模糊的字母收拢成紧凑的字标。"),
         prompt: L(
             "A logotype-style wordmark in 46 pt black caps starts with its letters spread 26 pt apart, blurred by 12 pt, scaled to 115% and fully transparent. On trigger, the letter spacing collapses to 2 pt over 0.9 s on an ease-out-cubic curve (cubic-bezier 0.215, 0.61, 0.355, 1) while the blur clears and opacity climbs to 100%, so the word appears to condense out of fog. The outermost letters travel furthest; the centre stays nearly fixed. A thin gradient rule then draws outward from the centre and a small tagline tracks in 250 ms later with the same motion at half the spacing. It reads as premium brand-film typography: calm, confident, expensive.",
-            "一个 46 pt 粗黑大写的字标，起始时字母间距拉开到 26 pt，模糊 12 pt、放大到 115% 且完全透明。触发后，字距以三次缓出曲线（cubic-bezier 0.215, 0.61, 0.355, 1）在 0.9 秒内收拢到 2 pt，同时模糊散去、不透明度升至 100%，仿佛文字从雾中凝结出来。最外侧的字母移动最远，中间几乎不动。随后一条细渐变线从中心向两侧画出，250 毫秒后一行小标语以同样的动作、一半的字距收拢入场。像高端品牌片里的字体动画：沉稳、自信、有质感。"
+            "一个46 pt粗黑大写的字标，起始时字母间距拉开到26 pt，模糊12 pt、放大到115%且完全透明。触发后，字距以三次缓出曲线（cubic-bezier 0.215, 0.61, 0.355, 1）在0.9秒内收拢到2 pt，同时模糊散去、不透明度升至100%，仿佛文字从雾中凝结出来。最外侧的字母移动最远，中间几乎不动。随后一条细渐变线从中心向两侧画出，250毫秒后一行小标语以同样的动作、一半的字距收拢入场。像高端品牌片的字体动画：沉稳、有质感。"
         ),
         implementation: L(
             "Letters sit in a fixed-size HStack whose spacing animates between two values, so SwiftUI interpolates each glyph's position symmetrically around the centre; blur, scale and opacity share the same timing curve.",

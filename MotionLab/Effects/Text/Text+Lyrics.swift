@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Music-app lyrics: the active line fills word by word as the column glides up.", "音乐 App 式歌词：当前行逐字填色，歌词列平滑上移。"),
         prompt: L(
             "Full-bleed lyrics on a deep violet player card. The active line is set in heavy 24 pt type at full size; a soft-edged fill sweeps across it from left to right in time with the vocal, turning each word from 35% to 100% white with a faint glow. When a line finishes, the whole column glides up one line on an ease-out-back curve (~450 ms, slight overshoot) so the next line lands in the focus slot; lines above and below sit at 92% scale, dim with distance and blur by ~1.2 pt per line, like a shallow depth of field, and the column dissolves through a soft gradient mask at its top and bottom edges. The song starts with its first line in focus and nothing above it. Musical, immersive and calm.",
-            "深紫色播放器卡片上铺满歌词。当前行以 24 pt 粗体完整显示；一道边缘柔和的填色随演唱节奏从左向右扫过，让每个字从 35% 白逐渐变为 100% 白并带淡淡辉光。一行唱完后，整列歌词以带轻微过冲的缓出回弹曲线（约 450 毫秒）上移一行，下一行正好落入焦点位置；上下其余行缩小至 92%，随距离变暗，并每行增加约 1.2 pt 模糊，如同浅景深；歌词列的上下边缘通过柔和的渐变遮罩淡出。歌曲从第一行开始，上方不会出现其他歌词。富有音乐性、沉浸而安静。"
+            "深紫色播放器卡片上铺满歌词。当前行以24 pt粗体完整显示；一道边缘柔和的填色随演唱节奏从左向右扫过，让每个字从35%白逐渐变为100%白并带淡淡辉光。一行唱完后，整列歌词以带轻微过冲的缓出回弹曲线（约450毫秒）上移一行，下一行正好落入焦点位置；上下其余行缩小至92%，随距离变暗，并每行增加约1.2 pt模糊，如同浅景深；歌词列的上下边缘通过柔和的渐变遮罩淡出。歌曲从第一行开始，上方不会出现其他歌词。富有音乐性、沉浸而安静。"
         ),
         implementation: L(
             "A TimelineView(.animation) derives the current line, its fill progress and an eased scroll position from elapsed time; the active line overlays a white copy masked by a LinearGradient whose stops follow the progress.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Cards that scroll past the center don't leave: they pile up behind it, shrinking and dimming.", "滚过中心的卡片不会离开，而是在它后方叠成一摞，逐渐缩小变暗。"),
         prompt: L(
             "A horizontal carousel of 190×240 pt gradient cards snaps one card to the center. Upcoming cards wait in line on the right at normal spacing, but a card that scrolls past the center does not slide away: it is pulled back so only 12% of its travel shows, stacking behind the focused card as a deck that peeks out about 25 pt per card on the left, while each step back shrinks it by 8%, dims it by 18% and blurs it up to 3 pt. All of it is a continuous function of the scroll offset, so the pile builds and unbuilds exactly under the finger, and releases snap a card to the center with a light selection tick. Compact, tidy and tactile.",
-            "一排 190×240 pt 的渐变卡片横向轮播，每次吸附一张到正中。即将出现的卡片在右侧以正常间距排队；而滚过中心的卡片并不会滑走：它被拉回，只保留 12% 的位移，在聚焦卡片后面叠成一摞，每张向左露出约 25 pt；每往后退一层就缩小 8%、变暗 18%，并最多模糊 3 pt。这一切都是滚动偏移的连续函数，因此卡堆在手指下精确地堆起与散开；松手后一张卡片吸附到正中，并伴随轻微的选择触感。紧凑、整齐、有触感。"
+            "一排190×240 pt的渐变卡片横向轮播，每次吸附一张到正中。即将出现的卡片在右侧以正常间距排队；而滚过中心的卡片并不会滑走：它被拉回，只保留12%的位移，在聚焦卡片后面叠成一摞，每张向左露出约25 pt；每往后退一层就缩小8%、变暗18%，并最多模糊3 pt。这一切都是滚动偏移的连续函数，因此卡堆在手指下精确地堆起与散开；松手后一张卡片吸附到正中，并伴随轻微的选择触感。紧凑、整齐、有触感。"
         ),
         implementation: L(
             "Spacer padding centers item i at offset i × stride; a custom ScrollTargetBehavior snaps to whole strides. Each card's visualEffect reads its signed distance from the center and, only for cards already past it, adds a counter-offset plus scale, brightness and blur.",

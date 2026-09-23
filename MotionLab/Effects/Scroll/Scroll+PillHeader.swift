@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A full-width header detaches into a floating frosted capsule with a springy morph once you scroll.", "滚动后，通栏头部以弹性形变脱离成一枚悬浮的磨砂胶囊。"),
         prompt: L(
             "A page opens with a full-bleed 64 pt header: large \"Discover\" title, a search field and a profile button, flush with the top edge and square-cornered. As soon as the content scrolls past 40 pt the header detaches in one bouncy morph (spring response 0.45 s, damping 0.7): it insets 24 pt from each side, drops 10 pt, shrinks to 46 pt tall, rounds into a full capsule, gains a soft 16 pt shadow, and its title scales to 80% while the search field collapses into a magnifier icon. Scrolling back above the threshold springs it back into the bar. The content keeps scrolling underneath the frosted material. Modern, lightweight and dynamic, like the Dynamic Island meeting a navigation bar.",
-            "页面顶部是一条 64 pt 高的通栏头部：大号「发现」标题、搜索框和个人头像按钮，紧贴顶边、直角。内容一旦滚动超过 40 pt，头部便以一次富有弹性的形变（弹簧响应 0.45 秒、阻尼 0.7）脱离出来：左右各内缩 24 pt、下移 10 pt、高度缩到 46 pt、圆角变为完整胶囊，并带上 16 pt 的柔和阴影；标题缩小到 80%，搜索框收拢成一个放大镜图标。滚回阈值以上时，它又弹回通栏。内容始终在磨砂材质下方滚动。现代、轻盈、富有动感，就像灵动岛遇上了导航栏。"
+            "页面顶部是一条64 pt高的通栏头部：大号「发现」标题、搜索框和个人头像按钮，紧贴顶边、直角。内容一旦滚动超过40 pt，头部便以一次富有弹性的形变（弹簧响应0.45秒、阻尼0.7）脱离出来：左右各内缩24 pt、下移10 pt、高度缩到46 pt、圆角变为完整胶囊，并带上16 pt的柔和阴影；标题缩小到80%，搜索框收拢成一个放大镜图标。滚回阈值以上时，它又弹回通栏。内容始终在磨砂材质下方滚动。现代、轻盈、富有动感，就像灵动岛遇上了导航栏。"
         ),
         implementation: L(
             "onScrollGeometryChange maps the offset to a Bool (past 40 pt), so the action only fires on crossings; one spring animates padding, height, corner radius, shadow and the search field's swap, which uses a matchedGeometryEffect between the field and the icon.",

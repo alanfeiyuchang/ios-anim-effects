@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A sweeping beam and sonar rings; nearby dots flare as the beam passes.", "扫描光束配合声呐波纹，光束掠过时附近的点亮起。"),
         prompt: L(
             "A location glyph sits in a glossy blue disc at the centre of a faint circular grid. Three sonar rings leave the disc one after another, each expanding from 36 pt to the full 250 pt radar over 2.4 s on an ease-out while fading from 45% to 0, so a new ring is always on its way, and the disc breathes ±4% in sync. A conic beam with a bright leading edge and a 70° fading tail rotates once every 3 s. Five nearby-device dots sit at fixed bearings; as the beam passes, each flares to 150% with a glow and decays over about 0.8 s. Calm, continuous and alive, like a device quietly searching.",
-            "定位图标放在一枚带光泽的蓝色圆盘里，位于淡淡的圆形网格中央。三道声呐波纹依次离开圆盘，每道在 2.4 秒内以缓出曲线从 36 pt 扩散到 250 pt 的整个雷达范围，透明度从 45% 降到 0，于是总有新的波纹在路上，圆盘也随之做 ±4% 的呼吸。一道锥形扫描光束带着明亮前缘和 70° 渐隐尾迹，每 3 秒转一圈。五个“附近设备”小点固定在不同方位，光束扫过时放大到 150% 并发光，再在约 0.8 秒内衰减。平静、持续、充满生命感，像设备在安静地搜寻。"
+            "定位图标放在一枚带光泽的蓝色圆盘里，位于淡淡的圆形网格中央。三道声呐波纹依次离开圆盘，每道在2.4秒内以缓出曲线从36 pt扩散到250 pt的整个雷达范围，透明度从45%降到0，于是总有新的波纹在路上，圆盘也随之做±4%的呼吸。一道锥形扫描光束带着明亮前缘和70°渐隐尾迹，每3秒转一圈。五个“附近设备”小点固定在不同方位，光束扫过时放大到150%并发光，再在约0.8秒内衰减。平静、持续、充满生命感，像设备在安静地搜寻。"
         ),
         implementation: L(
             "A TimelineView(.animation) derives ring radii from phase-shifted time, rotates an AngularGradient beam, and computes each dot's flare from the angular distance behind the beam; the layers are flattened with drawingGroup().",

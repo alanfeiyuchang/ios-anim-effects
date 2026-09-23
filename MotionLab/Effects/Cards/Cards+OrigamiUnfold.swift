@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A card unfolds downward panel by panel like folded paper, each fold catching the light.", "卡片像折叠的纸一样逐片向下展开，每一道折痕都有明暗变化。"),
         prompt: L(
             "A 270 pt-wide boarding card shows a 78 pt header; beneath it three 58 pt panels are folded flat against it. Tapping unfolds them one after another: each panel swings down from 90° to flat around its top edge in perspective on a spring (response 0.5 s, damping 0.72), starting 120 ms after the previous one, and the card's height grows with the projected height of every panel so the layout below follows the paper. While a panel is still angled a shade darkens it by up to 45%, so each crease reads as a fold catching the light. Tapping again folds them back up in reverse order, bottom panel first. Crafted, tactile and a little magical.",
-            "一张 270 pt 宽的登机卡片，顶部是 78 pt 高的抬头，下面三块 58 pt 高的面板折叠贴合在它背后。点击后面板依次展开：每块都以自己的上边为轴，在透视中从 90° 摆到平展，使用弹簧（响应 0.5 秒、阻尼 0.72），并比上一块晚 120 毫秒开始；卡片高度随每块面板的投影高度增长，下方布局也跟着纸面移动。面板仍有角度时会被最多 45% 的阴影压暗，每道折痕都像纸张在接住光线。再次点击则按相反顺序从最下面一块开始折回。精致、可触，带一点魔法感。"
+            "一张270 pt宽的登机卡片，顶部是78 pt高的抬头，下面三块58 pt高的面板折叠贴合在它背后。点击后面板依次展开：每块都以自己的上边为轴，在透视中从90°摆到平展，使用弹簧（响应0.5秒、阻尼0.72），并比上一块晚120毫秒开始；卡片高度随每块面板的投影高度增长，下方布局也跟着纸面移动。面板仍有角度时会被最多45%的阴影压暗，每道折痕都像纸张在接住光线。再次点击则按相反顺序从最下面一块开始折回。精致、可触，带一点魔法感。"
         ),
         implementation: L(
             "Each panel is an Animatable view: rotation3DEffect(anchor: .top) turns the content while the frame height follows cos(angle), so the VStack reflows every frame; per-panel .animation(spring.delay(…), value: open) sequences the folds.",
@@ -29,7 +29,13 @@ extension Effect {
 
 private struct CardsOrigamiDemo: View {
     let ctx: DemoContext
-    @State private var open = false
+    @State private var open: Bool
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // A still thumbnail shows the unfolded boarding card, not just its header strip.
+        _open = State(initialValue: ctx.isStill)
+    }
 
     private let panelCount = 3
 

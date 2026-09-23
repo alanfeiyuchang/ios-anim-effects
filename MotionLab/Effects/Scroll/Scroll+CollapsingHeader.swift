@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A large title with avatar that morphs into a compact frosted bar as you scroll.", "带头像的大标题随滚动形变为紧凑的磨砂导航栏。"),
         prompt: L(
             "A 150 pt expanded header holds a 64 pt gradient avatar, a 30 pt bold large title and a secondary subtitle. The first 90 pt of scroll scrubs it continuously: the bar shrinks to 60 pt, the avatar to 30 pt, the title scales to 57% while sliding up beside the avatar, and the subtitle fades out twice as fast as the scroll. A frosted material background and a hairline divider fade in underneath so rows passing below stay legible, and scrolling back reverses everything exactly. If the finger lifts mid-collapse, the list eases over 0.35 s to the nearer fully expanded or collapsed state, so the bar feels glued to the finger, like a native navigation bar with more character.",
-            "顶部是 150 pt 的展开式标题区：64 pt 渐变头像、30 pt 粗体大标题和一行次要副标题。前 90 pt 的滚动连续驱动它折叠：标题区收到 60 pt，头像缩到 30 pt，大标题缩至 57% 并滑到头像右侧，副标题以两倍于滚动的速度淡出。下方同时淡入磨砂材质背景和一条细分隔线，保证下面滑过的列表行清晰可读；往回滚则一切精确还原。折叠到一半松手时，列表用 0.35 秒平滑停到更近的展开或折叠状态。整条标题栏像黏在指尖，是更有个性的原生导航栏。"
+            "顶部是150 pt的展开式标题区：64 pt渐变头像、30 pt粗体大标题和一行次要副标题。前90 pt的滚动连续驱动它折叠：标题区收到60 pt，头像缩到30 pt，大标题缩至57%并滑到头像右侧，副标题以两倍于滚动的速度淡出。下方同时淡入磨砂材质背景和一条细分隔线，保证下面滑过的列表行清晰可读；往回滚则一切精确还原。折叠到一半松手时，列表用0.35秒平滑停到更近的展开或折叠状态。整条标题栏像黏在指尖，是更有个性的原生导航栏。"
         ),
         implementation: L(
             "onScrollGeometryChange publishes the content offset; a 0…1 progress interpolates the header's height, avatar size, title scale/offset and the material opacity in an overlay above the ScrollView.",

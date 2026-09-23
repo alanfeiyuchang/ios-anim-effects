@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Four reels whip downward with speed blur and stop one by one with a kickback.", "四个滚轮带着速度模糊向下飞转，逐个停下并轻轻回弹。"),
         prompt: L(
             "Four ivory digit reels sit in a dark cabinet behind a thin amber payline, each window showing the current digit plus slivers of its neighbours on a curved, shaded drum. Tapping Spin sends every reel rolling downward through at least two full cycles: while fast the digits blur (up to 5 pt) and stretch 12% vertically, and they sharpen as the reel slows. The reels stop left to right, each 0.22 s after the previous one, on a spring with ~20% bounce, so every digit overshoots the payline by about half a digit and kicks back into place. A rigid haptic tick marks each stop. It feels like a real one-armed bandit: suspense, then four decisive clunks.",
-            "深色机箱里并排四个象牙白数字滚轮，中间横着一条细细的琥珀色中奖线；每个窗口显示当前数字，并在带明暗的弧面上露出上下相邻数字的一角。点击「转一下」，所有滚轮向下飞转至少两整圈：高速时数字模糊（最高 5 pt）并纵向拉伸 12%，减速时逐渐清晰。滚轮从左到右依次停下，每个比前一个晚 0.22 秒，停止使用约 20% 回弹的弹簧——数字先冲过中奖线约半格再回落到位，每次停轮伴随一次清脆的触感。像真正的老虎机：先吊足胃口，再「咔、咔、咔、咔」四声落定。"
+            "深色机箱里并排四个象牙白数字滚轮，中间横着一条细细的琥珀色中奖线；每个窗口显示当前数字，并在带明暗的弧面上露出上下相邻数字的一角。点击「转一下」，所有滚轮向下飞转至少两整圈：高速时数字模糊（最高5 pt）并纵向拉伸12%，减速时逐渐清晰。滚轮从左到右依次停下，每个比前一个晚0.22秒，停止使用约20%回弹的弹簧——数字先冲过中奖线约半格再回落到位，每次停轮伴随一次清脆的触感。像真正的老虎机：先吊足胃口，再「咔、咔、咔、咔」四声落定。"
         ),
         implementation: L(
             "Each reel is an Animatable view whose animatableData is an unbounded step count; it draws four digits around the window and derives blur and stretch from the distance still to travel, driven by .spring(duration:bounce:) delayed per column.",

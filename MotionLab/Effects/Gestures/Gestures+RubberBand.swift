@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A tile that resists harder the further you pull, then springs home.", "越拉越费力的方块，松手后弹性归位。"),
         prompt: L(
             "A 120 pt rounded-square tile (continuous 30 pt corners, indigo-to-violet gradient, soft coloured shadow) rests at the centre of the stage. Dragging it in any direction maps each axis of the finger translation d through a rubber-band curve, offset = (1 − 1 ∕ (d·c ∕ L + 1))·L, so the first points track almost 1:1 and resistance grows asymptotically toward the limit L, exactly like UIScrollView overscroll. While pulled, the tile stretches up to 8% along the pull axis and thins across it, and a faint dashed boundary ring fades in over 200 ms. On release it returns home on a spring (response 0.45 s, damping 0.62) that overshoots once before settling, with a soft haptic. Elastic, tactile and physically honest.",
-            "舞台中央放着一个 120 pt 的连续圆角方块（圆角 30 pt，靛蓝到紫色渐变，带同色柔和投影）。向任意方向拖动时，手指在横纵两轴的位移 d 各自经过橡皮筋函数 offset = (1 − 1/(d·c/L + 1))·L 映射：起步几乎 1:1，越往外阻力越大，无限逼近上限 L，和 UIScrollView 的越界回弹如出一辙。拉扯时方块沿拉伸方向最多伸长 8%、横向相应变细，一圈虚线边界在 200 毫秒内淡入。松手后以弹簧（响应 0.45 秒、阻尼 0.62）回到原位，过冲一次再稳住，伴随柔和触感。弹性十足，真实可信。"
+            "中央是一个120 pt的方块（30 pt连续圆角、靛紫渐变、同色柔和投影）。向任意方向拖动时，手指在横纵两轴的位移d各自经过橡皮筋函数offset = (1−1/(d·c/L + 1))·L映射：起步几乎1:1，越往外阻力越大，无限逼近上限L，如同UIScrollView越界回弹。拉扯时方块沿拉伸方向最多伸长8%、横向相应变细，一圈虚线边界在200毫秒内淡入。松手后以弹簧（响应0.45秒、阻尼0.62）回到原位，过冲一次再稳住，伴随柔和触感。真实可信。"
         ),
         implementation: L(
             "DragGesture feeds the raw translation into the shared rubberBand(_:limit:coefficient:) function; the tile is stretched along the drag angle with rotate–scale–rotate and released with a spring.",

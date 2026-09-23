@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Only the digits that change fall in from above and bounce; old ones tumble out.", "只有变化的数字从上方坠落并弹跳，旧数字翻滚着掉出。"),
         prompt: L(
             "A step counter shows a large rounded number such as 18,452 above a small caption. When the value increases, only the digits that changed are replaced: each old digit drops 60 pt out of its clipped slot, tilting 14° as it fades, while the new one falls in from 60 pt above on a bouncy spring (0.55 s, 45% bounce) that overshoots the baseline and settles in a couple of rebounds. Changed digits land right to left 50 ms apart, so a carry reads like objects stacking up, and unchanged digits never move. A medium haptic fires on tap. Physical and playful: numbers with weight.",
-            "步数卡片上是一个大号圆体数字（如 18,452）和一行小标题。数值增加时只替换真正变化的数位：旧数字在裁切槽里向下掉出 60 pt，倾斜 14° 并淡出；新数字从上方 60 pt 处坠入，由高回弹弹簧（0.55 秒、45% 回弹）驱动，冲过基线后再弹两下才停稳。变化的数位从右到左错开 50 毫秒落下，进位像物体一个个叠上去，没变的数位纹丝不动。点击时伴随中等触感。俏皮而有分量，数字仿佛真的有了重量。"
+            "步数卡片上是一个大号圆体数字（如18,452）和一行小标题。数值增加时只替换真正变化的数位：旧数字在裁切槽里向下掉出60 pt，倾斜14°并淡出；新数字从上方60 pt处坠入，由高回弹弹簧（0.55秒、45%回弹）驱动，冲过基线后再弹两下才停稳。变化的数位从右到左错开50毫秒落下，进位像物体一个个叠上去，没变的数位纹丝不动。点击时伴随中等触感。俏皮而有分量，数字仿佛真的有了重量。"
         ),
         implementation: L(
             "Each digit sits in its own clipped slot and is keyed with .id(digit), so a change swaps the view; a custom Transition offsets, tilts and fades it by TransitionPhase, and AnyTransition.animation adds a per-column delayed bouncy spring.",

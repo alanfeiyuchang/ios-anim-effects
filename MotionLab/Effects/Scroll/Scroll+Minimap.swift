@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A code-editor-style minimap beside the page with a viewport lens you can see slide and drag.", "页面旁的代码编辑器式缩略图，视口镜框随滚动滑动，也可以直接拖动。"),
         prompt: L(
             "A document of coloured blocks (headings, paragraphs, images, code) scrolls on the left, and a 44 pt-wide minimap on the right renders the same document at 18% scale. A rounded lens on the minimap outlines exactly what is visible: its top is the scroll offset × 0.18 and its height the viewport × 0.18, so it glides in lockstep with the page. While scrolling, the lens brightens from 12% to 22% tint and its border thickens from 1 to 1.5 pt, easing back 0.6 s after the scroll settles. Dragging on the minimap jumps the page so the lens centers under the finger, with a selection tick. Informative, precise and quietly technical, like a code editor.",
-            "左侧是一篇由彩色块（标题、段落、图片、代码）组成的文档，右侧一条 44 pt 宽的缩略图以 18% 的比例渲染同一篇文档。缩略图上的圆角镜框准确框出当前可见区域：顶部等于滚动偏移 × 0.18，高度等于视口 × 0.18，因此它与页面同步滑动。滚动时，镜框的着色从 12% 提亮到 22%，边框从 1 pt 加粗到 1.5 pt，滚动停止 0.6 秒后再缓缓恢复。在缩略图上拖动会让页面跳转，使镜框中心落在手指下，并伴随选择触感。信息清晰、精准，带一点安静的技术感，就像代码编辑器。"
+            "左侧是一篇由彩色块（标题、段落、图片、代码）组成的文档，右侧一条44 pt宽的缩略图以18%的比例渲染同一篇文档。缩略图上的圆角镜框准确框出当前可见区域：顶部等于滚动偏移× 0.18，高度等于视口× 0.18，因此它与页面同步滑动。滚动时，镜框的着色从12%提亮到22%，边框从1 pt加粗到1.5 pt，滚动停止0.6秒后再缓缓恢复。在缩略图上拖动会让页面跳转，使镜框中心落在手指下，并伴随选择触感。信息清晰、精准，带一点安静的技术感，就像代码编辑器。"
         ),
         implementation: L(
             "Both views are built from one block list, the minimap with every length multiplied by 0.18. onScrollGeometryChange reports offset and viewport as one Equatable struct for the lens; onScrollPhaseChange drives the active state, and a DragGesture on the minimap calls ScrollPosition.scrollTo(y:).",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Every glyph bobs and tilts on a travelling sine wave.", "每个字形沿行进的正弦波起伏、轻轻摆动。"),
         prompt: L(
             "A bold, rounded headline filled with a sunset gradient ripples like a flag: every glyph rises and falls on a continuous sine wave that travels left-to-right, each character phase-shifted from its neighbour so a smooth crest rolls through the word. As a glyph crests it also tilts a few degrees around its own centre, following the slope of the wave, and an optional slow hue drift shifts colour along the line. The loop is seamless and frame-locked at 60/120 fps — playful yet controlled, like type floating on water.",
-            "粗体圆角标题填充日落渐变，像旗帜一样荡漾：每个字形沿一条从左向右行进的连续正弦波上下起伏，相邻字符之间存在相位差，让一道平滑的波峰滚过整个单词。字形到达波峰时，还会围绕自身中心顺着波形斜率轻微倾斜数度；可选的缓慢色相漂移让颜色沿着文字流动。循环无缝，与 60/120 帧刷新同步——俏皮而不失控制，仿佛文字漂浮在水面上。"
+            "粗体圆角标题填充日落渐变，像旗帜一样荡漾：每个字形沿一条从左向右行进的连续正弦波上下起伏，相邻字符之间存在相位差，让一道平滑的波峰滚过整个单词。字形到达波峰时，还会围绕自身中心顺着波形斜率轻微倾斜数度；可选的缓慢色相漂移让颜色沿着文字流动。循环无缝，与60/120帧刷新同步——俏皮而不失控制，仿佛文字漂浮在水面上。"
         ),
         implementation: L(
             "A custom TextRenderer (iOS 18) iterates Text.Layout lines → runs → glyphs and offsets/rotates each glyph's GraphicsContext; a TimelineView(.animation) feeds it the time.",

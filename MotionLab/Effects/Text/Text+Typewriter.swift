@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Characters type in with a human rhythm and a blinking caret.", "字符以真人般的节奏逐字打出，光标柔和闪烁。"),
         prompt: L(
             "A monospaced headline inside a minimal terminal card types itself out one character at a time, with each keystroke landing after a slightly randomised interval (±30%) so the rhythm feels human rather than mechanical. A gradient caret sits flush after the last glyph: it stays solid while typing and, once the phrase completes, blinks with a soft 0.5 s ease-in-out fade. After a 1.4 s hold the line deletes backwards at roughly twice the typing speed and the next phrase begins — focused, alive, quietly confident.",
-            "极简终端卡片中的等宽标题逐字打出，每次击键的间隔都带有约 ±30% 的随机抖动，让节奏更像真人输入而非机械播放。渐变光标紧贴最后一个字符：输入过程中保持常亮，整句完成后以 0.5 秒缓入缓出的柔和淡入淡出闪烁。停留 1.4 秒后，文字以约两倍速度向后删除，随即开始下一句——专注、有生命力、从容而自信。"
+            "极简终端卡片中的等宽标题逐字打出，每次击键的间隔都带有约±30%的随机抖动，让节奏更像真人输入而非机械播放。渐变光标紧贴最后一个字符：输入过程中保持常亮，整句完成后以0.5秒缓入缓出的柔和淡入淡出闪烁。停留1.4秒后，文字以约两倍速度向后删除，随即开始下一句——专注、有生命力、从容而自信。"
         ),
         implementation: L(
             "An async .task loop appends characters with jittered Task.sleep delays; the caret blinks with phaseAnimator only while idle.",

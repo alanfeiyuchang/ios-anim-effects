@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Arcs chase outward while searching, then pop into place with a check badge.", "搜索时信号弧由内向外追逐，连上后逐层弹出并出现对勾角标。"),
         prompt: L(
             "A large Wi-Fi glyph (a dot and three concentric 90° arcs in 7 pt round-capped strokes) sits above a network name and a status line, its arcs 15% grey while off. Tapping starts a search: the arcs light blue from the inside out, one every 180 ms, then reset, a chase that repeats until the connection lands 1.8 s later. On connect all three arcs turn solid blue and pop from 88% to 100% on a bouncy spring (response 0.35 s, damping 0.45), anchored at the dot and staggered 60 ms outward, while a green check badge scales in at the top-right and the status rolls to “Connected” with a success haptic. Tapping again disconnects and the arcs fade back to grey. Clear, systemic and satisfying.",
-            "一个大号 Wi-Fi 图标（一个圆点加三道同心 90° 圆弧，7 pt 圆头描边）下方是网络名和状态文字，关闭时圆弧为 15% 灰。点击开始搜索：圆弧由内向外依次亮成蓝色，每 180 毫秒一道，然后全部熄灭，循环追逐，直到 1.8 秒后连上。连接成功时三道圆弧全部变成实心蓝，以圆点为锚点从 88% 弹到 100%（弹簧响应 0.35 秒、阻尼 0.45），由内向外错开 60 毫秒；右上角绿色对勾角标弹出，状态滚动为「已连接」，伴随成功触感。再点一次断开，圆弧淡回灰色。清晰、系统、令人满足。"
+            "一个大号Wi-Fi图标（一个圆点加三道同心90°圆弧，7 pt圆头描边）下方是网络名和状态文字，关闭时圆弧为15%灰。点击开始搜索：圆弧由内向外依次亮成蓝色，每180毫秒一道，然后全部熄灭，循环追逐，直到1.8秒后连上。连接成功时三道圆弧全部变成实心蓝，以圆点为锚点从88%弹到100%（弹簧响应0.35秒、阻尼0.45），由内向外错开60毫秒；右上角绿色对勾角标弹出，状态滚动为「已连接」，伴随成功触感。再点一次断开，圆弧淡回灰色。清晰、系统、令人满足。"
         ),
         implementation: L(
             "Each arc is a Shape stroked with round caps; a TimelineView computes the chase index while searching, and on connect every arc's scaleEffect(anchor:) animates with a per-arc delayed spring; the badge uses a scale transition and the status text .contentTransition(.numericText()).",

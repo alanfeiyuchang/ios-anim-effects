@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A keyword slot swaps vertically with blur while the pill resizes.", "关键词在槽位中纵向切换并带模糊，底部胶囊随之伸缩。"),
         prompt: L(
             "A landing-page headline keeps its first line fixed while the keyword below cycles every ~2 s inside a softly tinted pill. The outgoing word slides up about 34 pt, blurs to 8 pt and fades; the incoming word rises from 34 pt below, un-blurring into focus, both on a spring (≈0.55 s, bounce 0.25) so they overlap for a moment like a slot reel. The pill's width re-flows smoothly to fit each new word and its gradient tint shifts hue, giving the headline a confident, living rhythm without ever feeling busy.",
-            "落地页标题第一行保持不动，下方的关键词每隔约 2 秒在一枚淡色胶囊中轮换。旧词向上滑出约 34pt，同时模糊至 8pt 并淡出；新词从下方 34pt 处升起，由模糊逐渐对焦清晰，二者都使用弹簧曲线（约 0.55 秒、弹性 0.25），短暂重叠，宛如老虎机的转轴。胶囊宽度随新词平滑伸缩，渐变底色同步变换色相，让标题拥有自信而鲜活的节奏，却不显得喧闹。"
+            "落地页标题第一行保持不动，下方的关键词每隔约2秒在一枚淡色胶囊中轮换。旧词向上滑出约34pt，同时模糊至8pt并淡出；新词从下方34pt处升起，由模糊逐渐对焦清晰，二者都使用弹簧曲线（约0.55秒、弹性0.25），短暂重叠，宛如老虎机的转轴。胶囊宽度随新词平滑伸缩，渐变底色同步变换色相，让标题拥有自信而鲜活的节奏，却不显得喧闹。"
         ),
         implementation: L(
             "The word is keyed with .id(index) and uses a custom Transition (offset + blur + opacity by TransitionPhase); the surrounding capsule animates its size with the same spring.",

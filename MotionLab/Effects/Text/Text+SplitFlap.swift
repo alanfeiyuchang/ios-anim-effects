@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Airport-style flaps riffle through the alphabet to each new letter.", "机场式翻牌逐格翻过字母表，停在新字符上。"),
         prompt: L(
             "A departures board of dark split-flap cells, each showing one character with a hairline hinge across its middle. On update every cell riffles forward through the character wheel (space, digits, colon and punctuation, then A–Z) from its current glyph to the target, capped at 10 flips so a long jump shows only the last few letters. Each flip folds the upper flap with the old glyph down to 90° around the hinge, then swings the lower flap with the new glyph from −90° into place, 60 ms per flip in perspective with a darkening shadow on the moving flap. Cells start 35 ms apart left to right and each row trails the one above by 120 ms, so the board clatters to rest in about a second: nostalgic, mechanical and full of anticipation.",
-            "一块由深色翻页单元组成的出发信息牌，每格显示一个字符，中间有一道细细的铰链缝。更新时，每格从当前字符出发，沿字符轮（空格、数字、冒号与标点，然后是 A–Z）向前翻到目标，最多翻 10 次，跨度大时只翻过目标前的最后几个字符。每一翻，带旧字符的上翼先绕铰链折到 90°，带新字符的下翼再从 −90° 落到位，每次 60 毫秒，带透视，运动中的翼片逐渐变暗。各格从左到右错开 35 毫秒，每行比上一行晚 120 毫秒，整块牌子约一秒内哗啦啦依次停稳，怀旧、机械、充满期待。"
+            "一块由深色翻页单元组成的出发信息牌，每格显示一个字符，中间有一道细细的铰链缝。更新时，每格从当前字符出发，沿字符轮（空格、数字、冒号与标点，然后是A–Z）向前翻到目标，最多翻10次，跨度大时只翻过目标前的最后几个字符。每一翻，带旧字符的上翼先绕铰链折到90°，带新字符的下翼再从−90°落到位，每次60毫秒，带透视，运动中的翼片逐渐变暗。各格从左到右错开35毫秒，每行比上一行晚120毫秒，整块牌子约一秒内哗啦啦依次停稳，怀旧、机械、充满期待。"
         ),
         implementation: L(
             "On each update the board plans a short character path per cell (≤ 10 flips) and records a start date; a single TimelineView(.animation) clock derives every cell's current flip and its progress from elapsed time, which drives the rotation3DEffect of masked upper and lower glyph halves.",

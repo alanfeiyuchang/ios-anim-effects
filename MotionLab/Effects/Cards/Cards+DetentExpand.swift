@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Pull a card down to grow it through three snapping heights, with rubber-band edges and ticks.", "向下拖动卡片，让它在三个吸附高度间伸缩，边缘带橡皮筋阻尼与触感。"),
         prompt: L(
             "A 280 pt-wide order card shows a compact summary above a small grab handle. Dragging anywhere on the card stretches the card 1:1 between three detents — 112, 196 and 280 pt tall — and past the smallest or largest it resists with a rubber-band curve (≈55% coefficient over 60 pt). Rows of detail appear progressively: each fades and slides in as the card grows past its line. On release, the predicted end height picks the nearest detent and the card springs there (response 0.42 s, damping 0.78) with a rigid haptic when it lands on a new detent; the handle widens from 36 to 48 pt while grabbed. Precise, physical and controllable, like an iOS sheet in miniature.",
-            "一张 280 pt 宽的订单卡片，上方是精简摘要，下方是一个小小的拖动把手。在卡片上任意位置拖动，卡片在三个档位——112、196、280 pt 高——之间 1:1 伸缩，拉过最小或最大档位时会以橡皮筋曲线产生阻力（系数约 55%，作用范围 60 pt）。详情行逐步出现：卡片长到哪一行，哪一行就淡入滑出。松手时根据预测的结束高度选择最近的档位，卡片以弹簧（响应 0.42 秒、阻尼 0.78）吸附过去，落到新档位时伴随清脆触感；拖动时把手从 36 pt 变宽到 48 pt。精准可控，像迷你版的 iOS 面板。"
+            "一张280 pt宽的订单卡片，上为精简摘要，下为小拖动把手。在卡片上任意位置拖动，卡片在三个档位——112、196、280 pt高——之间1:1伸缩，拉过最小或最大档位时会以橡皮筋曲线产生阻力（系数约55%，作用范围60 pt）。详情行逐步出现：卡片长到哪一行，哪一行就淡入滑出。松手时根据预测的结束高度选择最近的档位，卡片以弹簧（响应0.42秒、阻尼0.78）吸附过去，落到新档位时伴随清脆触感；拖动时把手从36 pt变宽到48 pt。像迷你版iOS面板。"
         ),
         implementation: L(
             "A DragGesture adds the translation to the height at gesture start, applying rubberBand beyond the outer detents; onEnded uses predictedEndTranslation to choose a detent. Each detail row's opacity and offset are derived from the live height.",

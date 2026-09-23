@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The lens unwinds into the handle, which becomes one stroke of an X.", "镜圈沿着手柄回卷消失，手柄化作 X 的一笔。"),
         prompt: L(
             "A round search button holds a stroked magnifier, lens plus handle in 3 pt round caps. Tapping expands the button into a 270 pt search pill while the glyph morphs into a close icon in one continuous stroke: the lens unwinds from the handle's side until it vanishes, the handle slides and lengthens into the ‘\\’ diagonal of an X, and from 40% progress the opposite ‘/’ diagonal grows out from the centre. Morph and pill width share one spring (response 0.5 s, damping 0.78) as a placeholder and blinking caret fade in. Tapping the X plays it all backwards and collapses the field, each way with a light haptic, so the icon itself explains the state change.",
-            "圆形搜索按钮里是一个描边放大镜（镜圈加手柄，3 pt 圆头）。点击后按钮展开成 270 pt 宽的搜索胶囊，图标以一笔连续的变形变成关闭符号：镜圈从手柄一侧回卷直到消失，手柄滑动并拉长成 X 的「\\」对角线，进度到 40% 时，另一条「/」对角线从中心向两端长出。变形与胶囊宽度共用一个弹簧（响应 0.5 秒、阻尼 0.78），占位文字和闪烁光标随之淡入。点 X 则整段倒放、输入框收起，两个方向都有轻触感。简洁巧妙，图标自己讲清了状态变化。"
+            "圆形搜索按钮里是一个描边放大镜（镜圈加手柄，3 pt圆头）。点击后按钮展开成270 pt宽的搜索胶囊，图标以一笔连续的变形变成关闭符号：镜圈从手柄一侧回卷直到消失，手柄滑动并拉长成X的「\\」对角线，进度到40%时，另一条「/」对角线从中心向两端长出。变形与胶囊宽度共用一个弹簧（响应0.5秒、阻尼0.78），占位文字和闪烁光标随之淡入。点X则整段倒放、输入框收起，两个方向都有轻触感。简洁巧妙，图标自己讲清了状态变化。"
         ),
         implementation: L(
             "An Animatable Shape takes one progress value: it trims the lens arc by (1 − progress), linearly interpolates the handle's endpoints onto the first diagonal, and grows the second diagonal from the centre after 40%; the field's width animates with the same spring.",

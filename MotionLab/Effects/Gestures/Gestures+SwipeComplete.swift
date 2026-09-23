@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Swipe a task right past a detent: it strikes itself through and sinks to the bottom of the list.", "把任务向右滑过阈值：文字划线勾掉，并沉到列表底部。"),
         prompt: L(
             "Four 58 pt task rows show a round checkbox, a title and a tinted dot on 18 pt continuous corners. Dragging a row right slides it over a green well whose opacity rises with the pull while a checkmark scales from 60% to 100%; at 110 pt the row arms as the glyph fills with a bounce and a medium haptic clicks, and beyond that it rubber-bands. Released while armed, the row springs home (response 0.35 s, damping 0.75), its checkbox fills, a 1.5 pt line draws across the title left to right over 300 ms and the text fades to 40%; 450 ms later the row glides to the bottom as the others close the gap. Swiping a finished task over an amber well restores it to the top. Satisfying, list-native closure.",
-            "四条 58 pt 高的任务行，18 pt 连续圆角，带圆形复选框、标题和彩色小圆点。向右拖某行，它会滑过下方的绿色底槽，底槽随拉动渐显，对勾从 60% 放大到 100%；拉到 110 pt 即“就绪”，图标填满并弹一下，伴随中等触感，再往后则是橡皮筋阻力。就绪时松手，该行以弹簧（响应 0.35 秒、阻尼 0.75）回位，复选框填满，一条 1.5 pt 的线在 300 毫秒内从左到右划过标题，文字淡到 40%；450 毫秒后该行滑到列表底部，其余各行上移补位。已完成的任务滑过琥珀色底槽即可恢复到顶部。完成感十足。"
+            "四条58 pt高的任务行（18 pt圆角），带圆形复选框、标题和彩色圆点。向右拖某行，它滑过下方绿色底槽，底槽随拉动渐显，对勾从60%放大到100%；拉到110 pt即“就绪”，图标填满并弹一下，伴随中等触感，再往后带橡皮筋阻力。就绪时松手，该行以弹簧（响应0.35秒、阻尼0.75）回位，复选框填满，一条1.5 pt的线在300毫秒内划过标题，文字淡到40%；450毫秒后该行滑到列表底部，其余行上移补位。已完成的任务滑过琥珀色底槽即恢复到顶部。完成感十足。"
         ),
         implementation: L(
             "Rows own a horizontal DragGesture run with simultaneousGesture so vertical page scrolling still works; the parent stores offsets, flips done inside withAnimation and then reorders the array in a second spring so ForEach animates the move. sensoryFeedback fires when the armed flag flips on.",

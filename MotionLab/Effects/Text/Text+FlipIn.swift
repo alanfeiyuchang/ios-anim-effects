@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Letters hinge into place in 3D, one after another.", "字母依次以 3D 铰链翻转落位。"),
         prompt: L(
             "A heavy, rounded display word in a warm sunset gradient assembles itself letter by letter: each glyph starts rotated −100° around the horizontal axis (flipping top-to-bottom; the alternative hinges left-to-right around the vertical axis) with strong perspective, 12 pt low, blurred and transparent, then hinges upright on a lively spring (≈0.55 s response, 0.7 damping) with a 60 ms stagger in reading order, overshooting a few degrees before settling. After a beat the word exits with the same stagger, flipping forward to +100° and dissolving, and the next word flips in while a small chapter pill beneath glides to mark its place in the sequence — bold, rhythmic kinetic typography, like a title sequence.",
-            "暖色日落渐变的粗圆体大字逐字组装：每个字形起始时绕水平轴旋转 −100°（上下翻转；另一选项为绕竖直轴左右翻转），带强烈透视，下沉 12pt、模糊且透明；随后以富有活力的弹簧（响应约 0.55 秒、阻尼 0.7）按阅读顺序每隔 60 毫秒依次翻起立正，先过冲几度再稳定。停留片刻后，整词以同样的错开节奏向前翻转到 +100° 并消散，下一个词接着翻入，下方的小章节胶囊随之滑动标示当前位置——大胆、有节奏的动态排版，宛如片头字幕。"
+            "暖色日落渐变的粗圆体大字逐字组装：每个字形起始时绕水平轴旋转−100°（上下翻转；另一选项为绕竖直轴左右翻转），带强烈透视，下沉12pt、模糊且透明；随后以富有活力的弹簧（响应约0.55秒、阻尼0.7）按阅读顺序每隔60毫秒依次翻起立正，先过冲几度再稳定。停留片刻后，整词以同样的错开节奏向前翻转到+100°并消散，下一个词接着翻入，下方的小章节胶囊随之滑动标示当前位置——大胆、有节奏的动态排版，宛如片头字幕。"
         ),
         implementation: L(
             "Each character is its own Text with rotation3DEffect, offset, blur and opacity keyed to a phase enum, animated via .animation(.spring(...).delay(i × stagger), value: phase).",

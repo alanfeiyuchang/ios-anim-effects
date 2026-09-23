@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Paging cards act as windows: the backdrop lags, the glyph drifts and the title races ahead.", "分页卡片像一扇扇窗：背景滞后、图形漂移、标题抢先滑出。"),
         prompt: L(
             "A pager of 250×250 pt cards with 28 pt corners and 12 pt gaps, snapping one card to the center with its neighbours peeking. Each card holds three depth layers that move at different speeds relative to the card: the oversized gradient backdrop counter-scrolls at 60% so it seems to stay behind the window, the big glyph drifts at 30%, and the title runs 25% ahead of the card while fading out over half a page. As a result every swipe reveals a different part of each backdrop and the layers visibly separate in depth. Paging uses view-aligned snapping; a thin progress capsule below fills continuously with the scroll. Rich, layered and cinematic.",
-            "一组 250×250 pt、28 pt 圆角、间距 12 pt 的卡片分页排列，每次吸附一张到中央，两侧露出相邻卡片。每张卡片内有三个景深图层，相对卡片以不同速度移动：超大的渐变背景以 60% 反向滚动，看起来像停留在窗户后面；大图形以 30% 漂移；标题则比卡片多走 25%、抢先滑出，并在半页距离内淡出。因此每次滑动都会露出背景的不同部分，图层之间明显拉开景深。分页使用视图对齐吸附；下方一条细胶囊随滚动连续填充。丰富、有层次、电影感十足。"
+            "一组250×250 pt、28 pt圆角、间距12 pt的卡片分页排列，每次吸附一张到中央，两侧露出相邻卡片。每张卡片内有三个景深图层，相对卡片以不同速度移动：超大的渐变背景以60%反向滚动，看起来像停留在窗户后面；大图形以30%漂移；标题则比卡片多走25%、抢先滑出，并在半页距离内淡出。因此每次滑动都会露出背景的不同部分，图层之间明显拉开景深。分页使用视图对齐吸附；下方一条细胶囊随滚动连续填充。丰富、有层次、电影感十足。"
         ),
         implementation: L(
             "The three layers each use visualEffect to read the card's distance from the viewport center (measured with onGeometryChange) and apply their own offset factor inside a clipped card; scrollTargetBehavior(.viewAligned) snaps, and onScrollGeometryChange drives the progress capsule.",

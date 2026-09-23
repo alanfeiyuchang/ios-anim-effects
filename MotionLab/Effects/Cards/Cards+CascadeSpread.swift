@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A tight pile of cards tips back in 3D and spreads into an app-switcher-style cascade.", "紧凑的卡堆在三维中向后倾倒，展开成应用切换器式的阶梯。"),
         prompt: L(
             "Four 220×139 pt payment cards sit in a tight pile, each one behind peeking out 8 pt higher and 5% smaller. Tapping tips the whole pile back by 32° around the horizontal axis in perspective and spreads it into a vertical cascade with 54 pt steps, the rear cards getting progressively smaller (88% → 100%), like the iOS app switcher seen from above. Each card travels on its own spring (response 0.5 s, damping 0.76) with a 60 ms stagger — the front card leads when spreading, the rear card leads when collapsing — so the stack unfurls and gathers like a deck being fanned on a table. Shadows grow with height. Architectural, calm and satisfying.",
-            "四张 220×139 pt 的支付卡紧紧叠成一摞，后面每张都向上露出 8 pt，并依次缩小 5%。点击后整摞卡片绕水平轴以透视向后倾倒 32°，并展开成纵向阶梯，每级间隔 54 pt，越靠后的卡片越小（88% → 100%），就像俯视 iOS 的应用切换器。每张卡片各自使用弹簧（响应 0.5 秒、阻尼 0.76），并以 60 毫秒错开——展开时最前面的卡片先动，收拢时最后面的卡片先动——整摞卡片像在桌面上摊开又收起的牌。阴影随高度增大。富有秩序感、沉静、令人满足。"
+            "四张220×139 pt的支付卡紧紧叠成一摞，后面每张都向上露出8 pt，并依次缩小5%。点击后整摞卡片绕水平轴以透视向后倾倒32°，并展开成纵向阶梯，每级间隔54 pt，越靠后的卡片越小（88%→100%），就像俯视iOS的应用切换器。每张卡片各自使用弹簧（响应0.5秒、阻尼0.76），并以60毫秒错开——展开时最前面的卡片先动，收拢时最后面的卡片先动——整摞卡片像在桌面上摊开又收起的牌。阴影随高度增大。富有秩序感、沉静、令人满足。"
         ),
         implementation: L(
             "Each card derives its offset, scale and rotation3DEffect from a single spread flag; a per-card .animation(spring.delay(…), value: spread) staggers them, with the delay order reversed depending on the direction.",

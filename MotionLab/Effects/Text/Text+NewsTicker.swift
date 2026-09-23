@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Headlines are pushed aside by a red wipe edge on a timer, with a live dot and a countdown hairline.", "头条按计时被一道红色擦除线推走换新，配合直播红点与倒计时细线。"),
         prompt: L(
             "A compact news card: a red LIVE pill with a pulsing dot, a category label and a timestamp above one headline slot, and a 2 pt countdown hairline along the bottom. Every 2.6 s the hairline completes and a 2 pt red wipe edge sweeps the slot left to right in 0.5 s on an ease-in-out cubic: behind the edge the new headline is revealed, sliding in from 24 pt right, while the old one is cropped away ahead of it and pushed 24 pt left, like a page shoved off a desk. The category and time cross-fade with it and the hairline refills linearly. Tapping skips ahead with a selection haptic. Editorial, crisp and urgent: a newsroom that never stops.",
-            "一张紧凑的新闻卡片：顶部是带脉冲红点的 LIVE 胶囊、分类与时间，下方为单条头条槽位，底部一条 2pt 倒计时细线。每 2.6 秒细线走满，一道 2pt 红色擦除线以三次缓入缓出曲线在 0.5 秒内从左扫到右：线后露出新标题，从右侧 24pt 滑入；线前的旧标题被逐步裁掉，同时向左推开 24pt，像被推下桌面的一页纸。分类与时间同步淡变，细线归零后匀速重走。点击跳到下一条并伴随选择触感。利落、克制又紧迫。"
+            "一张紧凑的新闻卡片：顶部是带脉冲红点的LIVE胶囊、分类与时间，下方为单条头条槽位，底部一条2pt倒计时细线。每2.6秒细线走满，一道2pt红色擦除线以三次缓入缓出曲线在0.5秒内从左扫到右：线后露出新标题，从右侧24pt滑入；线前的旧标题被逐步裁掉，同时向左推开24pt，像被推下桌面的一页纸。分类与时间同步淡变，细线归零后匀速重走。点击跳到下一条并伴随选择触感。利落、克制又紧迫。"
         ),
         implementation: L(
             "A TimelineView(.animation) derives the current index, the hairline fraction and an eased wipe progress from elapsed time; the old and new headlines are offset in opposite directions and cropped by complementary leading/trailing masks, with a red capsule riding the seam.",

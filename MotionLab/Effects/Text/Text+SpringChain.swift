@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Drag the word and each letter follows the one before it on a looser spring.", "拖动单词，每个字母以更松的弹簧追随前一个字母。"),
         prompt: L(
             "A short word in 56 pt heavy rounded letters, each tinted along a sunset gradient, rests centred on the stage. Dragging anywhere pulls the first letter directly under the finger's translation (spring response 0.15 s), and every following letter chases with a looser spring whose response grows by 0.07 s per letter, so the word stretches into a trailing, rope-like arc. Each letter also leans up to 18° in the direction of horizontal travel. On release all letters spring home with a lively 0.6 damping, overshooting and swinging past each other before settling; a light haptic fires on grab and on release. It feels playful and tactile, like pulling a string of beads.",
-            "一个 56 pt 粗圆体的短单词居中静置，每个字母沿日落渐变着色。在任意位置拖动时，第一个字母直接跟随手指位移（弹簧响应 0.15 秒），后面每个字母都用更松的弹簧追赶——响应时间每个字母递增 0.07 秒，于是整个单词被拉成一条拖尾的弧线，像一根绳子。每个字母还会按水平移动方向倾斜最多 18°。松手后所有字母以 0.6 的阻尼弹回原位，冲过头、彼此摆动交错后才稳定；按住与松手时各有一次轻触感。俏皮又有手感，像拉动一串珠子。"
+            "一个56 pt粗圆体的短单词居中静置，每个字母沿日落渐变着色。在任意位置拖动时，第一个字母直接跟随手指位移（弹簧响应0.15秒），后面每个字母都用更松的弹簧追赶——响应时间每个字母递增0.07秒，于是整个单词被拉成一条拖尾的弧线，像一根绳子。每个字母还会按水平移动方向倾斜最多18°。松手后所有字母以0.6的阻尼弹回原位，冲过头、彼此摆动交错后才稳定；按住与松手时各有一次轻触感。俏皮又有手感，像拉动一串珠子。"
         ),
         implementation: L(
             "One drag translation drives every letter's offset and rotation; each Text carries its own .animation(.spring(response:dampingFraction:), value:) with a response that grows by index, so the springs retarget every frame and naturally form a trailing chain.",

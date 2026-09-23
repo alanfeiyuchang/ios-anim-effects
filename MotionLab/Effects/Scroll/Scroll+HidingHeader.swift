@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The header and tab bar slide away while you read down and spring back the moment you scroll up.", "向下阅读时头部与标签栏滑走，一向上滚动就立刻弹回。"),
         prompt: L(
             "A feed with a 56 pt frosted header (title, avatar and filter chips) on top and a floating 58 pt capsule tab bar at the bottom. Once the feed has scrolled more than 60 pt, scrolling down by more than 6 pt hides both bars: the header slides up out of view and the tab bar sinks 90 pt, each on a snappy spring (response 0.35 s, damping 0.82), with the tab bar trailing by 50 ms. The instant the reader scrolls up by the same amount, both spring back, and they are always shown near the top. A hairline divider under the header fades in once content passes beneath it. Direction-aware, unobtrusive and fast, like Safari and most social feeds.",
-            "一个信息流，顶部是 56 pt 高的磨砂头部（标题、头像与筛选标签），底部悬浮一条 58 pt 高的胶囊标签栏。信息流滚动超过 60 pt 后，只要向下滚动超过 6 pt，两条栏就会隐藏：头部向上滑出视野，标签栏下沉 90 pt，各自使用干脆的弹簧（响应 0.35 秒、阻尼 0.82），标签栏比头部晚 50 毫秒。读者一旦向上滚动同样的距离，两者立即弹回；接近顶部时则始终显示。内容滑到头部下方后，头部下沿的细分隔线随之淡入。感知方向、不打扰、反应迅速，就像 Safari 和大多数社交信息流。"
+            "一个信息流，顶部是56 pt高的磨砂头部（标题、头像与筛选标签），底部悬浮一条58 pt高的胶囊标签栏。信息流滚动超过60 pt后，只要向下滚动超过6 pt，两条栏就会隐藏：头部向上滑出视野，标签栏下沉90 pt，各自使用干脆的弹簧（响应0.35秒、阻尼0.82），标签栏比头部晚50毫秒。读者一旦向上滚动同样的距离，两者立即弹回；接近顶部时则始终显示。内容滑到头部下方后，头部下沿的细分隔线随之淡入。感知方向、反应迅速，就像Safari。"
         ),
         implementation: L(
             "onScrollGeometryChange reports the content offset; the action compares it with an anchor offset to accumulate the scroll direction, toggles a hidden flag past the threshold, and both bars offset with springs (the tab bar's delayed).",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Drag a light around a dark card: its edge catches the light and a specular band sweeps across.", "拖动光源绕着深色卡片移动：卡片边缘被点亮，镜面光带随之扫过。"),
         prompt: L(
             "A midnight-blue 250×158 pt card floats almost still while the finger acts as a light source. The edge nearest the light glows with a 2.5 pt white rim plus a 6 pt blurred halo that fades out within ±60° along the border, a soft specular band slides across the face the opposite way, and the shadow falls away from the light. The card itself barely turns (at most 2°); all the motion is in the light, which trails the finger on a heavy spring (response 0.55 s, damping 0.72), and on release drifts back to a third of its offset over a slow spring (response 0.9 s). Before the first touch the light orbits the card, moody and cinematic like a product shot.",
-            "一张 250×158 pt 的午夜蓝卡片几乎静止地悬浮着，手指就是光源。离光最近的边缘亮起 2.5 pt 白色轮廓光，外加 6 pt 模糊光晕，沿边框在 ±60° 内渐隐；一道柔和镜面光带朝反方向扫过卡面，投影则落向背光一侧。卡片本身几乎不转（最多 2°），动的只有光：它以厚重的弹簧（响应 0.55 秒、阻尼 0.72）慢半拍地追随手指，松手后再以缓慢弹簧（响应 0.9 秒）退回到三分之一的位置。未触摸前光源绕卡片缓缓旋转，氛围感十足，宛如产品大片。"
+            "一张250×158 pt的午夜蓝卡片几乎静止地悬浮着，手指就是光源。离光最近的边缘亮起2.5 pt白色轮廓光，外加6 pt模糊光晕，沿边框在±60°内渐隐；一道柔和镜面光带朝反方向扫过卡面，投影则落向背光一侧。卡片本身几乎不转（最多2°），动的只有光：它以厚重的弹簧（响应0.55秒、阻尼0.72）慢半拍地追随手指，松手后再以缓慢弹簧（响应0.9秒）退回到三分之一的位置。未触摸前光源绕卡片缓缓旋转，氛围感十足，宛如产品大片。"
         ),
         implementation: L(
             "The light position (−1…1) sets an AngularGradient stroke whose peak angle is atan2 of the light, an offset specular stripe with plusLighter blending and two rotation3DEffects; a TimelineView orbits the light until the first touch.",

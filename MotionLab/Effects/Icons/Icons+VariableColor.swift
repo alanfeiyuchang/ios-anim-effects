@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Wi-Fi, speaker and signal bars sweep while searching.", "Wi-Fi、扬声器与信号格在搜索时逐层扫动。"),
         prompt: L(
             "A connection card shows three signal glyphs — Wi-Fi, cellular bars and a speaker with sound waves — beside a status label. While the device is searching, the symbol layers light up one after another from the innermost arc outward and then dim back, a continuous variable-colour sweep (≈1 s per cycle) with inactive layers at ~35% opacity. When the connection lands, the sweep stops on the fully lit state, the status icon swaps to a green checkmark with a replace transition and a success haptic fires. Informative, calm and system-native.",
-            "连接卡片中并排显示三个信号图标——Wi-Fi、蜂窝信号格和带声波的扬声器——旁边是状态文字。设备搜索时，符号的各个图层从最内侧的弧线开始逐层点亮再回落变暗，形成连续的可变颜色扫动（约 1 秒一个周期），未激活图层保持约 35% 的不透明度。连接成功后扫动停在全部点亮的状态，状态图标以替换过渡切换为绿色对勾，并触发成功触感。信息清晰、冷静，完全系统原生。"
+            "连接卡片中并排显示三个信号图标——Wi-Fi、蜂窝信号格和带声波的扬声器——旁边是状态文字。设备搜索时，符号的各个图层从最内侧的弧线开始逐层点亮再回落变暗，形成连续的可变颜色扫动（约1秒一个周期），未激活图层保持约35%的不透明度。连接成功后扫动停在全部点亮的状态，状态图标以替换过渡切换为绿色对勾，并触发成功触感。信息清晰、冷静，完全系统原生。"
         ),
         implementation: L(
             "An indefinite .symbolEffect(.variableColor.iterative.reversing, options: .speed(_:), isActive:) bound to a searching flag; the status glyph uses .contentTransition(.symbolEffect(.replace)).",

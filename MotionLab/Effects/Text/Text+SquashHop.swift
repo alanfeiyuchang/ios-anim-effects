@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Letters take turns jumping, stretching in the air and squashing on landing.", "字母轮流起跳，空中拉长、落地压扁。"),
         prompt: L(
             "A playful word in 50 pt heavy rounded letters sits on an implied floor, each letter with a soft elliptical contact shadow. Letters hop one after another in a travelling wave, 90 ms apart, on a 1.1 s cycle: during the first 45% of its cycle a letter rises up to 30 pt on a sine arc while stretching to 112% height and 92% width; on touchdown it squashes to 78% height and 118% width for ~130 ms, anchored to the baseline, then springs back to neutral and rests. Shadows shrink and fade while their letter is airborne. Classic cartoon squash-and-stretch gives the type weight, elasticity and a cheerful rhythm.",
-            "一个俏皮的单词以 50 pt 粗圆体排列在一条看不见的地面上，每个字母下方都有一块柔和的椭圆接触阴影。字母以行进波的方式依次起跳，间隔 90 毫秒，周期 1.1 秒：在各自周期的前 45% 里，字母沿正弦弧线升高最多 30 pt，同时纵向拉长到 112%、横向收窄到 92%；落地瞬间以基线为锚点压扁到 78% 高、118% 宽，持续约 130 毫秒，再弹回原形并静止等待。字母腾空时，阴影随之缩小变淡。经典的「挤压与拉伸」让文字有了重量、弹性和欢快的节奏。"
+            "一个俏皮的单词以50 pt粗圆体排列在一条看不见的地面上，每个字母下方都有一块柔和的椭圆接触阴影。字母以行进波的方式依次起跳，间隔90毫秒，周期1.1秒：在各自周期的前45%里，字母沿正弦弧线升高最多30 pt，同时纵向拉长到112%、横向收窄到92%；落地瞬间以基线为锚点压扁到78%高、118%宽，持续约130毫秒，再弹回原形并静止等待。字母腾空时，阴影随之缩小变淡。经典的「挤压与拉伸」让文字有了重量、弹性和欢快的节奏。"
         ),
         implementation: L(
             "A TimelineView(.animation) feeds elapsed time into a pure function that maps each letter's phase to height, x/y scale and shadow size; scale is anchored at .bottom so squashes plant on the baseline.",

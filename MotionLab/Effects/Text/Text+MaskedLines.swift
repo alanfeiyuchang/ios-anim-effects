@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Headline lines rise out of invisible slots, one after another, then exit upward.", "标题逐行从隐形槽口中升起，随后向上退场。"),
         prompt: L(
             "An editorial headline of three short lines, each living in its own clipped slot so the type appears to rise out of an invisible baseline. On entry every line starts one full line-height below its slot, tilted 6° around its leading baseline, then springs up and straightens (response ≈0.7 s, damping ≈0.85) with a 90 ms stagger top to bottom; a small uppercase eyebrow fades in first and a gradient rule draws out from the left 200 ms after the last line lands. After a pause the lines exit upward through the top of their slots with the same stagger and the next headline rises in. Confident, magazine-grade kinetic type.",
-            "三行简短的杂志式标题，每一行都位于自己的裁剪槽口中，文字仿佛从看不见的基线里升起。入场时，每行从槽口下方整整一行高处开始，绕行首基线倾斜 6°，随后以弹簧（响应约 0.7 秒、阻尼约 0.85）上升并回正，自上而下错开 90 毫秒；上方的小号大写眉标先淡入，最后一行落定 200 毫秒后，一道渐变细线从左向右画出。停留片刻后，各行以同样的错开节奏从槽口顶部向上退出，下一组标题随之升起。自信、有杂志水准的动态排版。"
+            "三行简短的杂志式标题，每一行都位于自己的裁剪槽口中，文字仿佛从看不见的基线里升起。入场时，每行从槽口下方整整一行高处开始，绕行首基线倾斜6°，随后以弹簧（响应约0.7秒、阻尼约0.85）上升并回正，自上而下错开90毫秒；上方的小号大写眉标先淡入，最后一行落定200毫秒后，一道渐变细线从左向右画出。停留片刻后，各行以同样的错开节奏从槽口顶部向上退出，下一组标题随之升起。自信、有杂志水准的动态排版。"
         ),
         implementation: L(
             "Each line is offset by ±its height inside a .clipped() frame and rotated with an anchor at its bottom-leading corner; a phase enum drives per-line springs delayed by index, and a scaleEffect(x:anchor: .leading) draws the rule.",

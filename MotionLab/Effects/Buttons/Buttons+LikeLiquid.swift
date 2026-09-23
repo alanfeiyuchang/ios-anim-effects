@@ -64,6 +64,10 @@ private struct ButtonLikeLiquidDemo: View {
     /// Set once the heart is full, so the count only rolls when the liquid reaches the brim.
     @State private var counted = false
     @State private var gulps = 0
+    /// The wave clock only runs while there is liquid (or it is still draining), saving idle redraws.
+    @State private var waveActive = false
+    /// Bumped on every toggle so delayed follow-ups from an earlier tap are ignored.
+    @State private var generation = 0
 
     private var count: Int { 2_318 + (counted ? 1 : 0) }
 
@@ -94,7 +98,7 @@ private struct ButtonLikeLiquidDemo: View {
         let fill = ctx["duration"]
         return Button(action: toggle) {
             ZStack {
-                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !waveActive)) { timeline in
                     let t: Double = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1400)
                     let cycles: Double = t / 1.4 * ctx["speed"]
                     let phase = CGFloat(cycles * 2 * Double.pi)
@@ -134,6 +138,9 @@ private struct ButtonLikeLiquidDemo: View {
     private func toggle() {
         let duration = ctx["duration"]
         liked.toggle()
+        generation += 1
+        let current = generation
+        waveActive = true
         withAnimation(.easeInOut(duration: duration)) {
             level = liked ? 1 : 0
         }
@@ -142,13 +149,19 @@ private struct ButtonLikeLiquidDemo: View {
             let muted = Haptics.isMuted
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(duration * 0.9))
-                guard liked else { return }
+                guard generation == current, liked else { return }
                 withAnimation(.snappy) { counted = true }
                 if !muted { Haptics.success() }
             }
         } else {
             withAnimation(.snappy) { counted = false }
             Haptics.tap()
+            // Stop the wave clock once the heart has fully drained.
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(duration + 0.1))
+                guard generation == current, !liked else { return }
+                waveActive = false
+            }
         }
     }
 }

@@ -8,8 +8,8 @@ extension Effect {
         name: L("Orbit Slingshot", "引力弹弓"),
         summary: L("Pull a moon back, see its predicted path, and release it into orbit around a glowing star.", "向后拉动卫星、预览轨迹，松手让它绕着发光恒星公转。"),
         prompt: L(
-            "A 300 pt dark-glass arena holds a 44 pt glowing star with a pulsing amber halo at its centre and a 22 pt sky-blue moon resting 100 pt below it. Grabbing the moon and pulling back works like a slingshot: the pull is capped at 90 pt, a dashed band stretches from the moon to its launch point, and a dotted preview of the next 2 s of trajectory updates live as you aim. On release the moon launches at 3.5 × the pull vector, opposite to it, and moves under inverse-square gravity, sweeping ellipses or slingshotting past the star with a fading 40-point comet trail. Hitting the star flashes it, and a collision or an escape from the arena respawns the moon. Cosmic, playful and genuinely physical.",
-            "300 pt 的深色玻璃场地中央是一颗 44 pt 的发光恒星，外圈的琥珀色光晕缓缓脉动；一颗 22 pt 的天蓝色卫星停在恒星下方 100 pt 处。抓住卫星往后拉就像拉弹弓：拉动距离最多 90 pt，一条虚线皮筋从卫星连到发射点，点线实时预览接下来 2 秒的轨迹。松手后卫星以拉动向量反方向 3.5 倍的速度射出，在平方反比引力下运动，或绕出椭圆，或借恒星引力甩出去，身后拖着 40 个点渐隐的彗尾。撞上恒星时恒星一闪，撞上或飞出场地后卫星都会重生。宇宙感十足，好玩，而且是真实的物理。"
+            "A 300 pt dark-glass arena holds a 44 pt glowing star with a pulsing amber halo at its centre and a 22 pt sky-blue moon resting 100 pt below it. Grabbing the moon and pulling back works like a slingshot: the pull is capped at 90 pt, a dashed band stretches from the moon to its launch point, and a dotted preview of the next 2 s of trajectory updates live as you aim. On release the moon launches at 3.5 × the pull vector, opposite to it, and moves under inverse-square gravity, sweeping ellipses or slingshotting past the star with a fading 40-point comet trail. Hitting the star flashes it, and a collision or leaving the arena respawns the moon, fading it back in over 350 ms. Cosmic, playful and genuinely physical.",
+            "300 pt的深色玻璃场地中央是一颗44 pt的发光恒星，琥珀色光晕缓缓脉动；一颗22 pt的天蓝色卫星停在恒星下方100 pt处。抓住卫星往后拉就像拉弹弓：拉动距离最多90 pt，一条虚线皮筋从卫星连到发射点，点线实时预览接下来2秒的轨迹。松手后卫星以拉动向量反方向3.5倍的速度射出，在平方反比引力下运动，或绕出椭圆，或借恒星引力甩出去，身后拖着40个点渐隐的彗尾。撞上恒星时恒星一闪，撞上或飞出场地后卫星都会在350毫秒内淡入重生。宇宙感十足，物理真实。"
         ),
         implementation: L(
             "A frame-stepped class integrates softened inverse-square gravity with two semi-implicit Euler sub-steps per frame; while aiming, the same integrator runs 60 steps ahead to draw the dotted prediction in a Canvas. The DragGesture lives on the moon only and reads its translation as the pull vector.",
@@ -36,6 +36,8 @@ private struct OrbitFrame {
     var position: CGPoint
     var trail: [CGPoint]
     var flash: CGFloat
+    /// 0 → 1 fade-in of a freshly respawned moon.
+    var appear: Double
 }
 
 private enum OrbitPhysics {
@@ -65,6 +67,7 @@ private final class OrbitModel {
     var inFlight = false
     private var trail: [CGPoint] = []
     private var flash: CGFloat = 0
+    private var appear: Double = 1
     private var lastDate: Date?
 
     func launch(from point: CGPoint, velocity newVelocity: CGVector) {
@@ -80,14 +83,18 @@ private final class OrbitModel {
         velocity = .zero
         inFlight = false
         trail.removeAll()
+        appear = 0
         if flashStar { flash = 1 }
     }
+
+    private static let visibleArena = CGRect(x: -20, y: -20, width: orbitArena + 40, height: orbitArena + 40)
 
     func step(to date: Date, g: CGFloat, maxTrail: Int) -> OrbitFrame {
         let raw = lastDate.map { date.timeIntervalSince($0) } ?? 0
         lastDate = date
         let dt = CGFloat(min(max(raw, 0), 1.0 / 30.0))
         flash *= CGFloat(exp(-Double(dt) * 5))
+        appear = min(appear + Double(dt) / 0.35, 1)
 
         if inFlight && !isHeld && dt > 0 {
             OrbitPhysics.advance(&position, &velocity, dt: dt / 2, g: g)
@@ -98,14 +105,15 @@ private final class OrbitModel {
             let r: CGFloat = (dx * dx + dy * dy).squareRoot()
             if r < 24 {
                 respawn(flashStar: true)
-            } else if r > 330 {
+            } else if !Self.visibleArena.contains(position) {
+                // Respawn as soon as it leaves the clipped arena, so the stage never sits empty.
                 respawn(flashStar: false)
             }
         } else if !trail.isEmpty {
             trail.removeFirst()
         }
         if trail.count > maxTrail { trail.removeFirst(trail.count - maxTrail) }
-        return OrbitFrame(position: position, trail: trail, flash: flash)
+        return OrbitFrame(position: position, trail: trail, flash: flash, appear: appear)
     }
 }
 
@@ -128,6 +136,7 @@ private struct OrbitSlingshotDemo: View {
                         OrbitStar(flash: frame.flash, date: timeline.date)
                             .position(orbitCenter)
                         moon
+                            .opacity(frame.appear)
                             .gesture(dragGesture)
                             .position(displayPosition(frame))
                     }

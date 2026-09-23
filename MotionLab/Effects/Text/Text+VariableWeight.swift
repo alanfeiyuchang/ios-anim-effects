@@ -10,7 +10,7 @@ extension Effect {
         summary: L("A wave of font weight rolls through a word; drag to pull the boldness under your finger.", "字重如波浪般在单词中流动；拖动手指，粗细随指尖聚拢。"),
         prompt: L(
             "A large display word in the system variable font breathes along its weight axis: a sine wave travels left to right, each letter easing continuously between Thin (100) and Black (900) with a 0.55 rad phase lag per letter and one full cycle every 1.25 s. Because weights interpolate rather than step, the word swells and slims like one elastic body with its width rippling, and heavier glyphs warm from indigo to coral. Dragging across the word takes over: the weight peaks under the finger with a Gaussian falloff about two letters wide, blending in over 250 ms and handing back to the wave over 400 ms on release. A monospaced “wght” readout beneath tracks the average weight; typographic and quietly hypnotic.",
-            "一个大号展示单词用系统可变字体沿字重轴“呼吸”：正弦波从左向右穿过字母，每个字在 Thin（100）与 Black（900）之间连续过渡，相邻字母相位差 0.55 弧度，1.25 秒一个周期。字重是连续插值而非跳档，整个单词像一块有弹性的整体般膨胀收细，宽度随之起伏；字越粗，颜色越从靛蓝暖向珊瑚色。在单词上拖动时手指接管：字重在指尖处最高，按约两个字母宽的高斯曲线向两侧衰减，250 毫秒内接入，松手后 400 毫秒交还给波浪。下方等宽的“wght”读数实时显示平均字重，安静而令人着迷。"
+            "一个大号展示单词用系统可变字体沿字重轴“呼吸”：正弦波从左向右穿过字母，每个字在Thin（100）与Black（900）之间连续过渡，相邻字母相位差0.55弧度，1.25秒一个周期。字重是连续插值而非跳档，整个单词像弹性整体般膨胀收细，宽度随之起伏；字越粗，颜色越从靛蓝暖向珊瑚色。在单词上拖动时手指接管：字重在指尖处最高，按约两个字母宽的高斯曲线向两侧衰减，250毫秒内接入，松手后400毫秒交还给波浪。下方等宽“wght”读数显示平均字重，令人着迷。"
         ),
         implementation: L(
             "A TimelineView(.animation) computes a 0…1 weight per letter (sine wave, or a Gaussian around the drag location, cross-faded by time); each letter is its own Text whose Font wraps UIFont.systemFont(ofSize:weight:) with a UIFont.Weight raw value quantised to 64 cached steps, tinted with Color.mix(with:by:).",
@@ -58,11 +58,12 @@ private enum TextWeightFontCache {
     static func font(raw: CGFloat, size: CGFloat) -> Font {
         let unit: CGFloat = ((raw - lower) / span).clamped(to: 0...1)
         let step = Int((unit * CGFloat(steps)).rounded())
-        if let cached = fonts[step] { return cached }
+        let key = Int(size.rounded()) * 1_000 + step
+        if let cached = fonts[key] { return cached }
         let quantised: CGFloat = lower + span * CGFloat(step) / CGFloat(steps)
         let uiFont = UIFont.systemFont(ofSize: size, weight: UIFont.Weight(rawValue: quantised))
         let font = Font(uiFont as CTFont)
-        fonts[step] = font
+        fonts[key] = font
         return font
     }
 }

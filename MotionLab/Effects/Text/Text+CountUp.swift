@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The number ticks through every value on an expo-out curve, then pops.", "数字按指数缓出曲线逐个累加，落定时轻轻一弹。"),
         prompt: L(
             "A revenue card shows a large rounded amount (e.g. $12,480) with a thin mint progress line beneath and a small delta chip. When new income arrives, the figure counts up through every intermediate integer rather than swapping digits: over 1.4 s on an exponential ease-out (cubic-bezier 0.16, 1, 0.3, 1), so it races at first and crawls into the final value. The progress line grows in lockstep with the count, the chip rolls to the new delta (e.g. +$2,140), and at the end the whole number pops to 108% and settles back on a bouncy spring. A success haptic confirms the landing. It feels like money arriving — fast, then satisfyingly final.",
-            "收入卡片上显示一个大号圆体金额（如 ¥12,480），下方是一条细细的薄荷绿进度线和一个增量小标签。有新收入到账时，金额不是直接换数字，而是逐个经过所有中间整数累加：历时 1.4 秒、采用指数缓出（cubic-bezier 0.16, 1, 0.3, 1），开头飞快、结尾缓缓爬到终值。进度线与计数同步增长，小标签滚动到新的增量（如 +¥2,140）；计数结束时整个数字弹到 108%，再用有弹性的弹簧落回原大小，并伴随一次成功触感。就像钱真的到账了——先快后稳，落定感十足。"
+            "收入卡片上显示一个大号圆体金额（如¥12,480），下方是一条细细的薄荷绿进度线和一个增量小标签。有新收入到账时，金额不是直接换数字，而是逐个经过所有中间整数累加：历时1.4秒、采用指数缓出（cubic-bezier 0.16, 1, 0.3, 1），开头飞快、结尾缓缓爬到终值。进度线与计数同步增长，小标签滚动到新的增量（如+¥2,140）；计数结束时整个数字弹到108%，再用有弹性的弹簧落回原大小，并伴随一次成功触感。就像钱真的到账了，先快后稳。"
         ),
         implementation: L(
             "An Animatable label interpolates a Double between the old and new totals and formats it every frame; the same value derives the progress line. A keyframeAnimator keyed to the run count holds scale 1 for the duration, then springs to 1.08 and back.",

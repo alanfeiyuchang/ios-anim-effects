@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Random glyphs flicker until each letter locks into place.", "随机字符不断闪烁，直到每个字逐一锁定。"),
         prompt: L(
             "Inside a secure panel, a monospaced status line starts as a field of rapidly cycling random characters tinted mint, as if a signal is being decrypted. About a quarter of the way in, letters begin locking into their final value strictly left to right; each locked glyph snaps to the primary text colour while the unresolved tail keeps flickering at ~20 changes per second. A hairline beneath fills with the decode, and once the line resolves (~1.6 s) the padlock badge morphs open, the badge, status dot and hairline all turn green, and a success haptic lands. Technical, precise and a little cinematic — hacker-film energy with product-grade restraint.",
-            "安全面板中，一行等宽状态文字起初是一片快速跳动的随机字符，染成薄荷色，如同信号正在被解密。进行到约四分之一时，字符开始严格按从左到右的顺序锁定为最终内容；每个锁定的字立即切换为主文字颜色，尚未解出的尾部仍以约每秒 20 次的频率闪烁。下方细进度线随解码推进逐渐填满；整行在约 1.6 秒内解出后，挂锁徽章切换为开锁形态，徽章、状态圆点与进度线一起转为绿色，并伴随成功触感。技术感强、精准且带一点电影氛围——黑客电影的气质，产品级的克制。"
+            "安全面板中，一行等宽状态文字起初是一片快速跳动的随机字符，染成薄荷色，如同信号正在被解密。进行到约四分之一时，字符开始严格按从左到右的顺序锁定为最终内容；每个锁定的字立即切换为主文字颜色，尚未解出的尾部仍以约每秒20次的频率闪烁。下方细进度线随解码推进逐渐填满；整行在约1.6秒内解出后，挂锁徽章切换为开锁形态，徽章、状态圆点与进度线一起转为绿色，并伴随成功触感。技术感强、精准且带一点电影氛围——黑客电影的气质，产品级的克制。"
         ),
         implementation: L(
             "TimelineView(.animation) computes, per frame and per character, whether it has locked; unlocked characters pick a glyph from a deterministic hash of frame index and position.",

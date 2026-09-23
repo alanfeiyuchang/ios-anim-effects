@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A collectible card whose rainbow foil shifts and sparkles as you tilt it.", "收藏卡片的彩虹镭射箔随倾斜流动、闪烁。"),
         prompt: L(
             "A dark 190×264 pt collectible card with 16 pt corners and a glowing emblem is coated in holographic foil: a rainbow angular gradient seen through diagonal stripe bands in screen blend. Dragging tilts it up to 12° in perspective on a heavy follow spring (response 0.45 s) while the foil reacts continuously: the gradient centre slides with the finger, its hue angle turns up to ±120° horizontally and ±60° vertically, and the bands drift sideways, so colour sweeps across like prismatic foil. A narrow white sheen crosses diagonally in plus-lighter blend, sparkle glyphs twinkle out of phase and a violet under-glow shifts against the tilt. Release is slow and under-damped (response 0.8 s, damping 0.5), so the card overshoots and rocks once before settling.",
-            "一张 190×264 pt、16 pt 圆角的深色收藏卡，中央是发光徽记，覆着一层镭射箔：彩虹角向渐变透过斜向条纹、以滤色模式叠加。拖动时卡片由偏重的跟手弹簧（响应 0.45 秒）带着透视倾斜，最多 12°；渐变中心随手指滑动，色相角随横向拖动最多转 ±120°、纵向 ±60°，条纹横向漂移，色彩像棱镜箔一样流转。细窄白光以加亮模式斜扫而过，星芒错相闪烁，紫色底光朝倾斜反方向偏移。松手回弹缓慢且欠阻尼（响应 0.8 秒、阻尼 0.5），卡片越过原位、来回摇一下才停稳。"
+            "一张190×264 pt、16 pt圆角的深色收藏卡，中央是发光徽记，覆着一层镭射箔：彩虹角向渐变透过斜向条纹、以滤色模式叠加。拖动时卡片由偏重的跟手弹簧（响应0.45秒）带着透视倾斜，最多12°；渐变中心随手指滑动，色相角随横向拖动最多转±120°、纵向±60°，条纹横向漂移，色彩像棱镜箔一样流转。细窄白光以加亮模式斜扫而过，星芒错相闪烁，紫色底光朝倾斜反方向偏移。松手回弹缓慢且欠阻尼（响应0.8秒、阻尼0.5），卡片越过原位、来回摇一下才停稳。"
         ),
         implementation: L(
             "An AngularGradient masked by striped LinearGradient bands is blended with .screen over the card; its center/angle, a .plusLighter sheen and the rotation3DEffect tilt are all driven by the normalised drag position; a TimelineView supplies the sparkle clock and an idle sway until the first touch.",

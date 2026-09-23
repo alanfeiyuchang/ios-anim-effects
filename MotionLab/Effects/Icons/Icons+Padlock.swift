@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The key turns, the shackle pops up and swivels open, and the lock glows green.", "钥匙孔先转动，锁梁弹起并旋开，锁身转为绿色辉光。"),
         prompt: L(
             "A chunky padlock drawn from shapes: a rounded 84×66 pt indigo body with a keyhole, and a thick metallic shackle whose left leg is longer than the right. Unlocking plays in three overlapping beats: the keyhole turns 90° (≈150 ms), the shackle pops up 14 pt on a bouncy spring, then swivels 180° in perspective around its long leg so the free end swings out to the left; as it clears, the body cross-fades to mint-green, a green ring pulses out to 1.8× and fades, and a success haptic plays. Locking reverses the order — swing back, drop into the body with a small overshoot, keyhole returns — ending in a rigid click. Mechanical, legible and satisfying.",
-            "一把由图形绘制的厚实挂锁：84×66 pt 的圆角靛蓝锁身带钥匙孔，粗壮的金属锁梁左腿长于右腿。解锁分三个相互交叠的节拍：钥匙孔先旋转 90°（约 150 毫秒）；锁梁以弹性弹簧向上弹起 14 pt，随后以长腿为轴在透视中旋转 180°，自由端向左甩出；锁梁脱离时，锁身渐变为薄荷绿，一道绿色光环扩散到 1.8 倍并淡出，同时触发成功触感。上锁时顺序反转——先转回、再带小幅过冲落入锁身、钥匙孔复位——以一声硬朗的“咔哒”触感收尾。机械、清晰、令人满足。"
+            "一把由图形绘制的厚实挂锁：84×66 pt的圆角靛蓝锁身带钥匙孔，粗壮的金属锁梁左腿长于右腿。解锁分三个相互交叠的节拍：钥匙孔先旋转90°（约150毫秒）；锁梁以弹性弹簧向上弹起14 pt，随后以长腿为轴在透视中旋转180°，自由端向左甩出；锁梁脱离时，锁身渐变为薄荷绿，一道绿色光环扩散到1.8倍并淡出，同时触发成功触感。上锁时顺序反转——先转回、再带小幅过冲落入锁身、钥匙孔复位——以一声硬朗的“咔哒”触感收尾。机械、清晰、令人满足。"
         ),
         implementation: L(
             "A custom Shape draws the shackle with tangent arcs; separate .animation(_:value:) modifiers with direction-dependent delays sequence the keyhole rotation, the lift offset and a rotation3DEffect anchored on the long leg, while a keyframeAnimator drives the pulse ring.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Section headers pin, frost over the content, and get pushed away by the next one.", "分组标题滚动吸顶、覆上磨砂材质，并被下一个标题顶出。"),
         prompt: L(
             "A grouped list — Today, Yesterday, This week — whose section headers rest as large, airy titles with a count pill. When a header reaches the top it pins: in ~300 ms on a snappy spring its title eases from 22 pt to 16 pt, a frosted bar material and hairline fade in behind it, and the count pill tints with the section colour, while rows scroll underneath, softly blurred by the material. As the next section arrives, its header physically pushes the pinned one up and out, then performs the same condensing as it takes over, with a light selection tick. Orderly, native and quietly polished.",
-            "分组列表——今天、昨天、本周——各分组标题静止时是大号、疏朗的标题，右侧带数量胶囊。标题滚到顶部即吸顶：约 300 毫秒内以干脆的弹簧从 22 pt 收缩到 16 pt，背后淡入磨砂栏材质与细分隔线，数量胶囊染上分组主题色；列表行从其下方滚过，被材质柔和模糊。下一个分组到来时，其标题会把已吸顶的标题物理地“顶”出屏幕，随后自己完成同样的收缩并接管顶部，伴随一次轻微的选择触感。有序、原生、低调而精致。"
+            "分组列表——今天、昨天、本周——各分组标题静止时是大号、疏朗的标题，右侧带数量胶囊。标题滚到顶部即吸顶：约300毫秒内以干脆的弹簧从22 pt收缩到16 pt，背后淡入磨砂栏材质与细分隔线，数量胶囊染上分组主题色；列表行从其下方滚过，被材质柔和模糊。下一个分组到来时，其标题会把已吸顶的标题物理地“顶”出屏幕，随后自己完成同样的收缩并接管顶部，伴随一次轻微的选择触感。有序、原生、低调而精致。"
         ),
         implementation: L(
             "LazyVStack(pinnedViews: .sectionHeaders) pins the headers natively; each header measures its own minY in the .scrollView space with onGeometryChange and animates a `pinned` state that drives font size, material and tint.",
@@ -138,7 +138,7 @@ private struct ScrollStickyHeader: View {
     }
 
     /// 0: below the top edge · 1: pinned (or less than half pushed off) · 2: mostly pushed off · 3: gone.
-    private static func band(minY: CGFloat) -> Int {
+    nonisolated private static func band(minY: CGFloat) -> Int {
         if minY > 0.5 { return 0 }
         if minY > -24 { return 1 }
         if minY > -48 { return 2 }

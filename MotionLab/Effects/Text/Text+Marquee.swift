@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Seamless, endlessly scrolling ticker rows with feathered edges.", "首尾无缝、无限滚动的行情条，边缘柔和羽化。"),
         prompt: L(
             "Two stacked ticker rows scroll horizontally forever without a visible seam: a compact stock tape with symbols, prices and green/red change chips, and below it an oversized kinetic headline of keywords separated by gradient stars, travelling the opposite way. Motion is perfectly linear at a constant speed (≈60 pt/s for the tape, 80% of that for the headline) so it reads like a physical belt; content is duplicated end-to-end and wrapped modulo its own width. Both edges are feathered by a gradient mask spanning the outer 12% of the width, so items glide in and out of view — editorial, confident, always on.",
-            "上下两条行情带无缝地无限横向滚动：上方是紧凑的股票行情，包含代码、价格与红绿涨跌标签；下方是超大号的动态关键词标题，以渐变星形分隔，并朝相反方向移动。运动严格匀速线性（行情带约 60pt/秒，标题行为其 80%），像一条真实的传送带；内容首尾复制拼接，并按自身宽度取模循环。左右两端各以占宽度 12% 的渐变遮罩羽化，让内容柔和地滑入滑出——有编辑感、自信、始终在线。"
+            "上下两条行情带无缝地无限横向滚动：上方是紧凑的股票行情，包含代码、价格与红绿涨跌标签；下方是超大号的动态关键词标题，以渐变星形分隔，并朝相反方向移动。运动严格匀速线性（行情带约60pt/秒，标题行为其80%），像一条真实的传送带；内容首尾复制拼接，并按自身宽度取模循环。左右两端各以占宽度12%的渐变遮罩羽化，让内容柔和地滑入滑出——有编辑感、自信、始终在线。"
         ),
         implementation: L(
             "TimelineView(.animation) offsets a fixed-size HStack holding three copies of the strip by (time × speed) mod stripWidth; the width is measured with onGeometryChange and edges are faded with a gradient mask.",

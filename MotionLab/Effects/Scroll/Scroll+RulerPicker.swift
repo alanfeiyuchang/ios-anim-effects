@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A horizontal tick ruler that snaps to each unit, swelling the ticks under a fixed center needle.", "横向刻度尺逐格吸附，固定中心指针下方的刻度随之放大。"),
         prompt: L(
             "A weight picker: a horizontal ruler of ticks every 12 pt (one per kilogram, 40–120 kg) with taller ticks labelled underneath every 5 kg, scrolling under a fixed 3 pt gradient needle in the center. Ticks swell as they approach the needle — up to 1.7× taller and fully opaque within 60 pt, fading to 35% further out — so the ruler reads like a lens. Scrolling snaps to whole kilograms; every tick that crosses the needle fires a selection haptic, and the big value above rolls its digits with a numeric transition. Both edges fade out through a gradient mask. Precise, tactile and calm, like a fitness app's onboarding picker.",
-            "一个体重选择器：横向刻度尺每 12 pt 一格（每格 1 公斤，40–120 公斤），每 5 公斤有一根下方标注数字的长刻度，在中央一根固定的 3 pt 渐变指针下滚动。刻度靠近指针时会膨胀——在 60 pt 内最高放大到 1.7 倍并完全不透明，远处则淡到 35%——整把尺子像被放大镜扫过。滚动吸附到整公斤；每根刻度经过指针都会触发选择触感，上方的大号数值以数字滚动过渡切换。两端通过渐变遮罩淡出。精准、可触、沉静，就像健身 App 引导页里的选择器。"
+            "一个体重选择器：横向刻度尺每12 pt一格（每格1公斤，40–120公斤），每5公斤有一根下方标注数字的长刻度，在中央一根固定的3 pt渐变指针下滚动。刻度靠近指针时会膨胀——在60 pt内最高放大到1.7倍并完全不透明，远处则淡到35%——整把尺子像被放大镜扫过。滚动吸附到整公斤；每根刻度经过指针都会触发选择触感，上方的大号数值以数字滚动过渡切换。两端通过渐变遮罩淡出。精准、可触、沉静，就像健身App引导页里的选择器。"
         ),
         implementation: L(
             "Spacer padding centers tick i at offset i × 12 pt; a stride-snapping ScrollTargetBehavior lands on whole ticks, each tick's visualEffect scales it by its distance from the center, and onScrollGeometryChange derives the value for the numericText label and sensoryFeedback.",

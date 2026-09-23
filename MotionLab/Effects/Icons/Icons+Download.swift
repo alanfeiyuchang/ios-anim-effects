@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Arrow becomes a progress ring, then resolves into a check.", "箭头化为进度环，最终变成对勾。"),
         prompt: L(
             "A file row ends in a circular download control. On tap the arrow glyph swaps (replace transition) for a small stop square while a thin track ring appears and a gradient progress arc sweeps clockwise from 12 o'clock, easing in and out over ~2.2 s; the percentage beneath counts up in lock-step with tabular digits. When the arc closes, the ring fills green, the stop icon replaces into a bold checkmark with a bounce and a success haptic, and the caption changes to \"Open\". Tapping mid-download cancels and the arc springs back to zero. Clear, trustworthy state communication.",
-            "文件行末尾是一个圆形下载控件。点击后，箭头图标以替换过渡变为小方块停止键，同时出现一圈细轨道环，一段渐变进度弧从 12 点方向顺时针扫过，以缓入缓出在约 2.2 秒内完成；下方百分比以等宽数字同步递增。进度弧闭合时圆环填充为绿色，停止键替换为粗体对勾并轻弹一下，触发成功触感，说明文字变为“打开”。下载途中再次点击即取消，进度弧以弹簧回到零。状态传达清晰、值得信赖。"
+            "文件行末尾是一个圆形下载控件。点击后，箭头图标以替换过渡变为小方块停止键，同时出现一圈细轨道环，一段渐变进度弧从12点方向顺时针扫过，以缓入缓出在约2.2秒内完成；下方百分比以等宽数字同步递增。进度弧闭合时圆环填充为绿色，停止键替换为粗体对勾并轻弹一下，触发成功触感，说明文字变为“打开”。下载途中再次点击即取消，进度弧以弹簧回到零。状态传达清晰、值得信赖。"
         ),
         implementation: L(
             "A state enum drives the glyph (.contentTransition(.symbolEffect(.replace))) and a trimmed Circle; progress animates with withAnimation(_:completion:) and an Animatable percentage label.",

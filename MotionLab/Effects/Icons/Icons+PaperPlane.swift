@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The send glyph launches on a swooping curve with a dotted contrail, then a check lands.", "发送图标沿弧线起飞并拖出虚线尾迹，随后换成对勾。"),
         prompt: L(
             "A round gradient send button holds a white paper-plane glyph. On tap the button dips to 90% and the plane pulls back with a −12° wind-up, then launches along a swooping quadratic curve — out to the left, then climbing to the top-right corner of the stage — banking to follow the curve's tangent and tinting from white to indigo once it clears the disc, easing in and out over ~0.7 s and shrinking to 70%. A dotted contrail trails a third of the path behind it and fades with the plane. While the plane is away a checkmark scales into the button and the caption changes to “Sent”; then a fresh plane springs back in (bouncy, from 20%). Light, joyful and precise.",
-            "圆形渐变发送按钮中是一架白色纸飞机图标。点击时按钮下沉到 90%，纸飞机先向后 −12° 蓄力，然后沿一条二次贝塞尔弧线起飞——先向左外摆，再爬升到舞台右上角——机身随曲线切线倾斜转向、离开按钮后由白转为靛蓝，约 0.7 秒内缓入缓出并缩小到 70%。一道虚线尾迹在其身后跟随约三分之一路径，并与飞机一同淡出。飞机离场期间，对勾在按钮中放大出现，说明文字变为「已发送」；随后一架新的纸飞机以弹性弹簧从 20% 大小弹回。轻快、愉悦而精准。"
+            "圆形渐变发送按钮中是一架白色纸飞机图标。点击时按钮下沉到90%，纸飞机先向后−12°蓄力，然后沿一条二次贝塞尔弧线起飞——先向左外摆，再爬升到舞台右上角——机身随曲线切线倾斜转向、离开按钮后由白转为靛蓝，约0.7秒内缓入缓出并缩小到70%。一道虚线尾迹在其身后跟随约三分之一路径，并与飞机一同淡出。飞机离场期间，对勾在按钮中放大出现，说明文字变为「已发送」；随后一架新的纸飞机以弹性弹簧从20%大小弹回。轻快、愉悦而精准。"
         ),
         implementation: L(
             "A keyframeAnimator animates a 0→1 flight progress plus scale, opacity and wind-up tracks; position and bank angle are evaluated from a quadratic Bézier and its derivative, and the contrail is the same curve as a Shape trimmed behind the plane.",

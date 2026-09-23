@@ -29,7 +29,7 @@ jobs:
   # Families page, the first variation of every family, zh/en, light/dark; ~30 min):
   # "[shots]" in the commit message or a manual run. EFFECTS=all adds every effect page (much longer).
   screenshots:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[shots]')
+    if: github.event_name == 'workflow_dispatch' || (contains(github.event.head_commit.message, '[shots]') || contains(github.event.head_commit.message, '[shots-effects]'))
     needs: build
     runs-on: macos-26
     timeout-minutes: 60
@@ -47,6 +47,9 @@ jobs:
           xcodebuild -version
 
       - name: Capture screenshots
+        env:
+          # "[shots-effects]" in the commit message limits the run to detail pages (quick diagnosis).
+          SHOTS_FILTER: ${{ contains(github.event.head_commit.message, '[shots-effects]') && '^effect/' || '' }}
         run: EFFECTS=sample scripts/screenshots.sh screenshots
 
       - uses: actions/upload-artifact@v4
@@ -57,8 +60,11 @@ jobs:
           retention-days: 7
 
       - name: Commit screenshots to docs/screenshots
+        env:
+          SHOTS_FILTER: ${{ contains(github.event.head_commit.message, '[shots-effects]') && '^effect/' || '' }}
         run: |
-          rm -rf docs/screenshots
+          # A filtered run only replaces the detail-page shots.
+          if [ -n "$SHOTS_FILTER" ]; then rm -rf docs/screenshots/effect docs/screenshots/diag; else rm -rf docs/screenshots; fi
           mkdir -p docs/screenshots
           cp -R screenshots/* docs/screenshots/
           rm -f docs/screenshots/plan.tsv

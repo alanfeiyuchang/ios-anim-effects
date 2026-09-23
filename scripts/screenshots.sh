@@ -15,7 +15,11 @@
 # SwiftUI's yellow "missing destination" warning). Shots that still come out blank (tiny JPEG) or
 # identical to the previous one are retried once with a longer wait.
 #
-# Usage: [EFFECTS=all] scripts/screenshots.sh [output-dir]
+# SHOTS_FILTER=<regex> keeps only shots whose name matches (e.g. "^effect/" for a quick detail-page run).
+# Shots that stay blank after the retry get a 3 s `sample` of the app's main thread in <out>/diag/
+# (first 6 only), so a hang shows its stack instead of a white page.
+#
+# Usage: [EFFECTS=all] [SHOTS_FILTER=regex] scripts/screenshots.sh [output-dir]
 set -euo pipefail
 OUT="${1:-screenshots}"
 BUNDLE_ID="com.motionlexicon.MotionLab"
@@ -128,6 +132,10 @@ for category in categories[:3]:
     if ids:
         shot(f"effect/{ids[0]}--prompt-en-dark", 3, f"{EN} -ML_route effect:{ids[0]} -ML_anchor prompt")
 PY
+if [[ -n "${SHOTS_FILTER:-}" ]]; then
+  grep -E "^[^\t]*(${SHOTS_FILTER})" "$PLAN" > "$PLAN.filtered" || true
+  mv "$PLAN.filtered" "$PLAN"
+fi
 TOTAL=$(wc -l < "$PLAN" | tr -d ' ')
 echo "Planned $TOTAL screenshots ($MODE effects)"
 
@@ -151,6 +159,24 @@ suspicious() { # name → 0 when the shot looks blank or repeats the previous on
   return 1
 }
 
+DIAGNOSED=0
+diagnose() { # name → main-thread sample + a later screenshot of a page that stayed blank
+  (( DIAGNOSED < 6 )) || return 0
+  DIAGNOSED=$((DIAGNOSED + 1))
+  local base="$OUT/diag/${1//\//_}" pid
+  mkdir -p "$OUT/diag"
+  pid=$(pgrep -f "MotionLab.app/MotionLab" | head -n 1 || true)
+  if [[ -n "$pid" ]]; then
+    sample "$pid" 3 -file "$base.sample.txt" >/dev/null 2>&1 || true
+  else
+    echo "app process not running (crashed?)" > "$base.sample.txt"
+  fi
+  sleep 10
+  xcrun simctl io "$UDID" screenshot --type=png "$base.later.png" >/dev/null 2>&1 < /dev/null || true
+  sips -s format jpeg -s formatOptions 55 -Z 1000 "$base.later.png" --out "$base.later.jpg" >/dev/null 2>&1 && rm -f "$base.later.png"
+  xcrun simctl spawn "$UDID" log show --last 40s --style compact --predicate 'process == "MotionLab"' 2>/dev/null | tail -n 80 > "$base.log.txt" || true
+}
+
 COUNT=0
 RETRIED=0
 FLAGGED=()
@@ -163,7 +189,10 @@ while IFS=$'\t' read -r name wait args <&3; do
   if suspicious "$name"; then
     RETRIED=$((RETRIED + 1))
     capture "$name" "$((wait + 3))" $args
-    if suspicious "$name"; then FLAGGED+=("$name"); fi
+    if suspicious "$name"; then
+      FLAGGED+=("$name")
+      diagnose "$name"
+    fi
   fi
   PREVIOUS_SUM=$(md5 -q "$OUT/$name.jpg" 2>/dev/null || echo "")
   COUNT=$((COUNT + 1))

@@ -9,8 +9,8 @@ extension Effect {
         name: L("Staggered Bar Growth", "柱状图错峰生长"),
         summary: L("Bars rise from the baseline one after another on bouncy springs.", "柱子从基线依次弹起，错落有致。"),
         prompt: L(
-            "A seven-day bar chart (Swift Charts, 62% bar width, 6 pt continuous top corners, sky-to-indigo vertical gradient, dashed hairline grid at 0/25/50/75/100) sits in a card under a header showing the weekly total. On appear — and on every tap — the bars first collapse into the baseline in 180 ms, then grow back left to right, each starting 70 ms after the previous one on a spring (response ≈ 0.6 s, damping ≈ 0.62) that overshoots slightly and settles. Value labels ride on top of each bar and the total rolls to its new number with a numeric content transition. The rhythm reads as a wave travelling across the chart: lively, confident and data-first.",
-            "一张七天柱状图（Swift Charts，柱宽 62%，顶部 6pt 连续圆角，天蓝到靛蓝的竖向渐变，0/25/50/75/100 处为虚线细网格）置于卡片中，上方标题显示本周总量。出现时以及每次点击时，柱子先在 180ms 内收回基线，再从左到右依次生长：每根比前一根晚 70ms 启动，使用弹簧（响应约 0.6 秒、阻尼约 0.62），轻微过冲后稳定。数值标签跟随柱顶移动，总量通过数字内容转场滚动到新值。整体节奏像一道波浪掠过图表：活泼、自信、以数据为核心。"
+            "A seven-day bar chart (Swift Charts, 62% bar width, 6 pt continuous top corners, sky-to-indigo vertical gradient, dashed hairline grid at 0/25/50/75/100) sits in a card under a header showing the weekly total. On appear — and on every tap — the bars first collapse into the baseline in 180 ms, then grow back left to right, each starting 70 ms after the previous one on a spring (response ≈ 0.6 s, damping ≈ 0.62) that overshoots slightly and settles. Value labels ride on top of each bar and roll up from 0 with it on the same staggered spring, while the total rolls to its new number with a numeric content transition. The rhythm reads as a wave traveling across the chart: lively, confident and data-first.",
+            "一张七天柱状图（Swift Charts，柱宽 62%，顶部 6pt 连续圆角，天蓝到靛蓝的竖向渐变，0/25/50/75/100 处为虚线细网格）置于卡片中，上方标题显示本周总量。出现时以及每次点击时，柱子先在 180ms 内收回基线，再从左到右依次生长：每根比前一根晚 70ms 启动，使用弹簧（响应约 0.6 秒、阻尼约 0.62），轻微过冲后稳定。数值标签跟随柱顶移动，并以同一错峰弹簧从 0 滚动增长到目标值；总量也通过数字内容转场滚动到新值。整体节奏像一道波浪掠过图表：活泼、自信、以数据为核心。"
         ),
         implementation: L(
             "Each datum carries a shown flag; BarMark reads value or 0, and a loop issues one withAnimation(.spring.delay(i × stagger)) per bar so Swift Charts interpolates them independently.",
@@ -85,9 +85,12 @@ private struct BarGrowDemo: View {
             .cornerRadius(6)
             .foregroundStyle(LinearGradient(colors: [Palette.sky, Palette.indigo], startPoint: .top, endPoint: .bottom))
             .annotation(position: .top, spacing: 4) {
-                Text("\(Int(bar.value))")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                // Rolls up from 0 with its bar (same staggered spring transaction), and back down on replay.
+                let shownValue = bar.shown ? bar.value : 0
+                Text("\(Int(shownValue))")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded).monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText(value: shownValue))
                     .opacity(bar.shown ? 1 : 0)
             }
         }

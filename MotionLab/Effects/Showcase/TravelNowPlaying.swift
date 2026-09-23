@@ -8,12 +8,12 @@ extension Effect {
         name: L("Road-Trip Now Playing", "旅途正在播放"),
         summary: L("Album art breathes, the waveform dances and doubles as a scrubber; play morphs into pause.", "封面随播放舒展，波形跳动并兼作进度条；播放键形变为暂停键。"),
         prompt: L(
-            "A dark road-trip music widget: golden-hour album art, track title and artist, a bar waveform that doubles as the scrubber, elapsed / remaining time and transport controls around an orange play button. Pressing play springs the art from 88% to full size with a warm tinted shadow blooming beneath it, symbol-replaces play with pause while the button's circle morphs into a rounded square (corner 29 → 18 pt), and the bars start dancing to layered sine motion; played bars glow orange, the rest stay faint, with a white playhead. Dragging on the waveform scrubs instantly, stretching the bars 15% taller under the finger. Pausing lets the bars sink to a quiet resting silhouette and the art shrink back. A soft ambient glow behind the card pulses while music plays. Warm, cinematic and tactile.",
-            "深色旅途音乐小组件：金色时刻的专辑封面、曲名与艺人、兼作进度条的柱状波形、已播放/剩余时间，以及围绕橙色播放键的播放控制。点击播放，封面以弹簧从 88% 舒展到原始大小，下方晕开一团暖色投影；播放图标以符号替换变为暂停，按钮圆形同时形变为圆角方形（圆角 29 → 18pt）；波形柱开始随叠加的正弦律动跳动，已播放部分发出橙色光，其余保持浅淡，并有一条白色播放头。在波形上拖动即可即时拖拽进度，手指下的波形整体拉高 15%。暂停时柱子回落为安静的静态轮廓，封面缩回。播放期间卡片背后还有一团柔和的氛围光随之呼吸。温暖、有电影感、富有触感。"
+            "A dark road-trip music widget: golden-hour album art, track title and artist, a bar waveform that doubles as the scrubber, elapsed / remaining time and transport controls around an orange play button. Pressing play springs the art from 88% to full size with a warm tinted shadow blooming beneath it, symbol-replaces play with pause while the button's circle morphs into a rounded square (corner 29 → 18 pt), and the bars start dancing to layered sine motion; played bars fill with the orange gradient, the rest stay faint, with a glowing white playhead. Dragging on the waveform scrubs instantly while a lens swells the bars nearest the finger up to 35% taller with a cosine falloff. Back and forward really skip: the title pushes in from that side, the art cross-fades and playback restarts at 0:00. Pausing lets the bars sink to a quiet resting silhouette and the art shrink back. A soft ambient glow behind the card pulses while music plays. Warm, cinematic and tactile.",
+            "深色旅途音乐小组件：金色时刻的专辑封面、曲名与艺人、兼作进度条的柱状波形、已播放/剩余时间，以及围绕橙色播放键的播放控制。点击播放，封面以弹簧从 88% 舒展到原始大小，下方晕开一团暖色投影；播放图标以符号替换变为暂停，按钮圆形同时形变为圆角方形（圆角 29 → 18pt）；波形柱开始随叠加的正弦律动跳动，已播放部分填充橙色渐变，其余保持浅淡，并有一条发光的白色播放头。在波形上拖动即可即时拖拽进度，手指附近的柱子像放大镜一样按余弦衰减最多拉高 35%。上一首/下一首真的会切歌：曲名从对应方向推入，封面交叉淡化，并从 0:00 开始播放。暂停时柱子回落为安静的静态轮廓，封面缩回。播放期间卡片背后还有一团柔和的氛围光随之呼吸。温暖、有电影感、富有触感。"
         ),
         implementation: L(
-            "A pausable TimelineView(.animation) derives playback position from accumulated time and feeds sine-driven bar heights; a DragGesture on the waveform maps x to position. The play button uses contentTransition(.symbolEffect(.replace)) inside an animated RoundedRectangle cornerRadius.",
-            "可暂停的 TimelineView(.animation) 根据累计时间计算播放位置，并驱动正弦律动的柱高；波形上的 DragGesture 把横向位置映射为进度。播放键在圆角半径可动画的 RoundedRectangle 中使用 contentTransition(.symbolEffect(.replace))。"
+            "A pausable TimelineView(.animation) derives playback position from accumulated time and feeds sine-driven bar heights; a DragGesture on the waveform maps x to position and a cosine lens enlarges the bars around it. Skips swap an id-keyed title with a push transition. The play button uses contentTransition(.symbolEffect(.replace)) inside an animated RoundedRectangle cornerRadius.",
+            "可暂停的 TimelineView(.animation) 根据累计时间计算播放位置，并驱动正弦律动的柱高；波形上的 DragGesture 把横向位置映射为进度，并以余弦“放大镜”拉高附近的柱子；切歌时以 id 区分的标题使用 push 过渡。播放键在圆角半径可动画的 RoundedRectangle 中使用 contentTransition(.symbolEffect(.replace))。"
         ),
         apis: ["TimelineView(.animation(paused:))", "DragGesture", "contentTransition(.symbolEffect(.replace))", "RoundedRectangle(cornerRadius:)", "scaleEffect"],
         tags: ["music", "now playing", "waveform", "scrubber", "音乐", "正在播放", "波形", "进度条"],
@@ -33,8 +33,11 @@ private struct TravelNowPlayingDemo: View {
     @State private var elapsed: Double = 38
     @State private var playStart = Date()
     @State private var scrubbing = false
+    @State private var trackIndex = 0
+    @State private var skipDirection: Double = 1
 
-    private let length: Double = 214
+    private var track: TravelTrack { TravelTrack.all[trackIndex] }
+    private var length: Double { track.length }
 
     var body: some View {
         SignatureStage {
@@ -44,6 +47,8 @@ private struct TravelNowPlayingDemo: View {
                     TravelNowPlayingCard(
                         seconds: position(at: timeline.date),
                         length: length,
+                        track: track,
+                        skipDirection: skipDirection,
                         time: timeline.date.timeIntervalSinceReferenceDate,
                         playing: playing,
                         scrubbing: scrubbing,
@@ -53,11 +58,12 @@ private struct TravelNowPlayingDemo: View {
                         language: ctx.language,
                         onToggle: toggle,
                         onScrub: scrub,
-                        onScrubEnd: endScrub
+                        onScrubEnd: endScrub,
+                        onSkip: skip
                     )
                 }
                 Spacer()
-                DemoHint(text: L("Play, or drag the waveform", "播放，或拖动波形"), ctx: ctx)
+                DemoHint(text: L("Play, skip, or drag the waveform", "播放、切歌，或拖动波形"), ctx: ctx)
                     .padding(.bottom, 14)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -88,15 +94,47 @@ private struct TravelNowPlayingDemo: View {
         elapsed = fraction.clamped(to: 0...0.999) * length
     }
 
+    /// Back rewinds first if the song is more than 3 s in; otherwise both buttons change track.
+    private func skip(_ delta: Int) {
+        if !ctx.isPreview { Haptics.tap(.light) }
+        if delta < 0 && position(at: Date()) > 3 {
+            elapsed = 0
+            playStart = Date()
+            return
+        }
+        let count = TravelTrack.all.count
+        skipDirection = delta < 0 ? -1 : 1
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            trackIndex = (trackIndex + delta + count) % count
+        }
+        elapsed = 0
+        playStart = Date()
+    }
+
     private func endScrub() {
         playStart = Date()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { scrubbing = false }
     }
 }
 
+private struct TravelTrack {
+    let title: LocalizedText
+    let artist: String
+    let seed: Int
+    let length: Double
+
+    static let all: [TravelTrack] = [
+        TravelTrack(title: L("Coastal Drive", "海岸公路"), artist: "Lumen & The Tides", seed: 1, length: 214),
+        TravelTrack(title: L("Alpine Morning", "高山清晨"), artist: "North Pass", seed: 0, length: 188),
+        TravelTrack(title: L("Desert Radio", "沙漠电台"), artist: "Wadi Sound", seed: 3, length: 241),
+    ]
+}
+
 private struct TravelNowPlayingCard: View {
     let seconds: Double
     let length: Double
+    let track: TravelTrack
+    let skipDirection: Double
     let time: Double
     let playing: Bool
     let scrubbing: Bool
@@ -107,6 +145,7 @@ private struct TravelNowPlayingCard: View {
     let onToggle: () -> Void
     let onScrub: (Double) -> Void
     let onScrubEnd: () -> Void
+    let onSkip: (Int) -> Void
 
     private let waveWidth: CGFloat = 252
     private let waveHeight: CGFloat = 46
@@ -132,21 +171,34 @@ private struct TravelNowPlayingCard: View {
 
     private var header: some View {
         HStack(spacing: 14) {
-            LandscapeArt(seed: 1)
-                .frame(width: 78, height: 78)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.white.opacity(0.12)))
-                .shadow(color: Color(hex: 0xE0785A).opacity(playing ? 0.5 : 0.1), radius: playing ? 14 : 5, y: playing ? 8 : 3)
-                .scaleEffect(playing ? 1 : pausedArt)
+            // ZStack so the outgoing and incoming art overlap while they cross-fade.
+            ZStack {
+                LandscapeArt(seed: track.seed)
+                    .id(track.seed)
+                    .transition(.opacity)
+            }
+            .frame(width: 78, height: 78)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.white.opacity(0.12)))
+            .shadow(color: Color(hex: 0xE0785A).opacity(playing ? 0.5 : 0.1), radius: playing ? 14 : 5, y: playing ? 8 : 3)
+            .scaleEffect(playing ? 1 : pausedArt)
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: language == .zh ? "自驾 · 蔚蓝海岸" : "Road trip · Riviera")
                     .signatureEyebrow()
-                Text(verbatim: language == .zh ? "海岸公路" : "Coastal Drive")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.white)
-                Text(verbatim: "Lumen & The Tides")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Signature.textSecondary)
+                ZStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(track.title, language)
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.white)
+                        Text(verbatim: track.artist)
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(Signature.textSecondary)
+                    }
+                    .id(track.seed)
+                    .transition(.push(from: skipDirection < 0 ? .leading : .trailing))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .clipped()
             }
             Spacer(minLength: 0)
         }
@@ -161,7 +213,7 @@ private struct TravelNowPlayingCard: View {
                 let played = Double(index) / Double(bars) < progress
                 Capsule()
                     .fill(played ? AnyShapeStyle(Signature.accentGradient) : AnyShapeStyle(Color.white.opacity(0.18)))
-                    .frame(width: barWidth, height: barHeight(index))
+                    .frame(width: barWidth, height: barHeight(index) * lens(index, progress: progress))
             }
         }
         .frame(width: waveWidth, height: waveHeight)
@@ -172,7 +224,6 @@ private struct TravelNowPlayingCard: View {
                 .shadow(color: .white.opacity(0.6), radius: 3)
                 .offset(x: waveWidth * CGFloat(progress) - 1)
         }
-        .scaleEffect(x: 1, y: scrubbing ? 1.15 : 1)
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -189,6 +240,14 @@ private struct TravelNowPlayingCard: View {
         return CGFloat(max(4, Double(waveHeight) * envelope * live))
     }
 
+    /// While scrubbing, bars near the playhead swell up to 35% with a cosine falloff over ~4 bars.
+    private func lens(_ index: Int, progress: Double) -> CGFloat {
+        guard scrubbing else { return 1 }
+        let distance = abs((Double(index) + 0.5) / Double(bars) - progress) * Double(bars)
+        guard distance < 4 else { return 1 }
+        return CGFloat(1 + 0.35 * (0.5 + 0.5 * cos(distance / 4 * .pi)))
+    }
+
     private var timeRow: some View {
         HStack {
             Text(verbatim: Self.format(seconds))
@@ -201,9 +260,15 @@ private struct TravelNowPlayingCard: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 36) {
+        HStack(spacing: 24) {
             Spacer(minLength: 0)
-            Image(systemName: "backward.fill")
+            Button { onSkip(-1) } label: {
+                Image(systemName: "backward.fill")
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(SportPressStyle(scale: 0.85, dim: 0.1))
+            .accessibilityLabel(Text(L("Previous", "上一首"), language))
             Button(action: onToggle) {
                 Image(systemName: playing ? "pause.fill" : "play.fill")
                     .font(.system(size: 22, weight: .bold))
@@ -215,7 +280,13 @@ private struct TravelNowPlayingCard: View {
                     .shadow(color: Signature.accent.opacity(0.55), radius: playing ? 14 : 8, y: 4)
             }
             .buttonStyle(SportPressStyle(scale: 0.9, dim: 0.05))
-            Image(systemName: "forward.fill")
+            Button { onSkip(1) } label: {
+                Image(systemName: "forward.fill")
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(SportPressStyle(scale: 0.85, dim: 0.1))
+            .accessibilityLabel(Text(L("Next", "下一首"), language))
             Spacer(minLength: 0)
         }
         .font(.system(size: 20, weight: .semibold))

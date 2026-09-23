@@ -14,5 +14,6 @@ enum ChartEffects {
         .chartsRangeMorph,
         .chartsCandlestickLive,
         .chartsDonutToBars,
+        .chartsStackedBars,
     ]
 }

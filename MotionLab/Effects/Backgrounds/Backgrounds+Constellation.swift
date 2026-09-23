@@ -11,8 +11,8 @@ extension Effect {
             "漂浮的节点彼此靠近便自动连线，手指化身枢纽将它们聚拢。"
         ),
         prompt: L(
-            "A deep navy-to-indigo backdrop holds ~42 small star nodes (1.2–2.6 pt, gently twinkling) that drift on slow, independent sine paths. Every pair closer than the link distance (≈ 95 pt) is joined by a hairline whose opacity and weight rise with proximity ((1 − d / link)², four brightness tiers), so the web constantly knits and unknits as nodes wander. Touching the stage adds a glowing mint hub under the finger: nodes within ≈ 130 pt are drawn toward it with a quadratic falloff and connect to it with brighter mint lines, and on release the hub fades out over ~300 ms while the nodes relax back to their paths. Quiet, intelligent and quietly alive — ideal behind AI, network or onboarding screens.",
-            "深海军蓝到靛蓝的背景中，约 42 个细小的星点节点（1.2–2.6pt，轻微闪烁）各自沿缓慢的正弦路径漂移。任意两个节点距离小于连线阈值（约 95pt）时，便以一根发丝细线相连，线的透明度与粗细随距离接近而增强（(1 − d / 阈值)²，分四档亮度），节点游走时网络随之不断编织、拆解。按住舞台，指尖下出现一个发光的薄荷绿枢纽：约 130pt 内的节点按二次衰减被吸向它，并以更亮的薄荷绿线条与之相连；松手后枢纽在约 300ms 内淡出，节点缓缓回到原本的轨迹。安静、智慧、暗含生命力，适合作为 AI、网络或引导页的背景。"
+            "A deep navy-to-indigo backdrop holds ~42 small star nodes (1.2–2.6 pt, gently twinkling) that drift on slow, independent sine paths. Every pair closer than the link distance (≈ 95 pt) is joined by a hairline whose opacity and weight rise with proximity ((1 − d / link)², four brightness tiers), so the web constantly knits and unknits as nodes wander. Tapping, or dragging sideways across the stage, adds a glowing mint hub under the finger: nodes within ≈ 130 pt are drawn toward it with a quadratic falloff and connect to it with brighter mint lines, and on release the hub fades out over ~300 ms while the nodes relax back to their paths. Quiet, intelligent and quietly alive — ideal behind AI, network or onboarding screens.",
+            "深海军蓝到靛蓝的背景中，约 42 个细小的星点节点（1.2–2.6pt，轻微闪烁）各自沿缓慢的正弦路径漂移。任意两个节点距离小于连线阈值（约 95pt）时，便以一根发丝细线相连，线的透明度与粗细随距离接近而增强（(1 − d / 阈值)²，分四档亮度），节点游走时网络随之不断编织、拆解。点击或横向拖过舞台，指尖下出现一个发光的薄荷绿枢纽：约 130pt 内的节点按二次衰减被吸向它，并以更亮的薄荷绿线条与之相连；松手后枢纽在约 300ms 内淡出，节点缓缓回到原本的轨迹。安静、智慧、暗含生命力，适合作为 AI、网络或引导页的背景。"
         ),
         implementation: L(
             "A Canvas inside TimelineView computes node positions as pure functions of index and time, bins every close pair into four Paths by strength (four strokes per frame), and eases a hub point and its presence in a small reference-type model.",
@@ -84,13 +84,8 @@ private struct ConstellationDemo: View {
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.top, 36)
         }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in model.touch = value.location }
-                .onEnded { _ in model.touch = nil }
-        )
-        .backgroundsHint(L("Touch and drag to gather nodes", "按住拖动以聚拢节点"), ctx)
+        .backgroundsTouch { location in model.touch = location } onEnded: { model.touch = nil }
+        .backgroundsHint(L("Tap or drag sideways to gather nodes", "点击或横向拖动以聚拢节点"), ctx)
     }
 }
 

@@ -88,6 +88,12 @@ private final class ChromaticModel {
     private(set) var velocity: CGSize = .zero
     private var lastDate: Date?
 
+    /// Home and still, so the timeline can pause.
+    var isSettled: Bool {
+        target == .zero && abs(position.width) < 0.2 && abs(position.height) < 0.2
+            && abs(velocity.width) < 0.5 && abs(velocity.height) < 0.5
+    }
+
     func step(to date: Date, response: Double, damping: Double) {
         let raw = lastDate.map { date.timeIntervalSince($0) } ?? 0
         lastDate = date
@@ -111,13 +117,15 @@ private struct ChromaticDemo: View {
     let ctx: DemoContext
     @State private var model = ChromaticModel()
     @State private var flip = false
+    @State private var awake = true
+    @State private var sleepWatcher: Task<Void, Never>?
 
     var body: some View {
         let strength = ctx["strength"]
         let fringe = ctx["fringe"]
         let response = ctx["response"]
         VStack(spacing: 12) {
-            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
                 let _ = model.step(to: timeline.date, response: response, damping: 0.6)
                 ChromaticCard(
                     position: model.position,
@@ -130,7 +138,10 @@ private struct ChromaticDemo: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { value in model.target = value.translation }
+                    .onChanged { value in
+                        wake()
+                        model.target = value.translation
+                    }
                     .onEnded { _ in
                         model.target = .zero
                         if !ctx.isPreview { Haptics.tap(.soft) }
@@ -140,10 +151,28 @@ private struct ChromaticDemo: View {
         }
         .padding(.bottom, 8)
         .autoplay(ctx.isPreview, every: 1.2, delay: 0.3) { autoSwipe() }
+        .onAppear { wake() }
+        .onDisappear { sleepWatcher?.cancel() }
+    }
+
+    /// Runs the spring only while the card moves; a watcher pauses the timeline at rest.
+    private func wake() {
+        if !awake { awake = true }
+        sleepWatcher?.cancel()
+        sleepWatcher = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(0.3))
+                if model.isSettled {
+                    awake = false
+                    return
+                }
+            }
+        }
     }
 
     /// Simulated flick: throw the card out, then let the spring pull it home so the split blooms and closes.
     private func autoSwipe() {
+        wake()
         flip.toggle()
         let side: CGFloat = flip ? 1 : -1
         model.target = CGSize(width: side * CGFloat.random(in: 70...100), height: CGFloat.random(in: -50...50))

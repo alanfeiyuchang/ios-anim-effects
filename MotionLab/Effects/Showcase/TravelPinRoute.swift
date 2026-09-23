@@ -75,13 +75,19 @@ private struct TravelPinRouteDemo: View {
 
     var body: some View {
         SignatureStage {
-            VStack(alignment: .leading, spacing: 12) {
-                header
-                map
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                VStack(alignment: .leading, spacing: 12) {
+                    header
+                    map
+                }
+                .padding(14)
+                .frame(width: Self.mapSize.width + 28)
+                .signatureCard()
+                Spacer(minLength: 0)
+                DemoHint(text: L("Tap the map to drop pins", "点击地图放置图钉"), ctx: ctx)
+                    .padding(.bottom, 14)
             }
-            .padding(14)
-            .frame(width: Self.mapSize.width + 28)
-            .signatureCard()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 1.4) {

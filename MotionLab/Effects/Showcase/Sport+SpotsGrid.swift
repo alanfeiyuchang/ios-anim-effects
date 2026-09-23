@@ -64,6 +64,11 @@ private struct SportSpotsDemo: View {
                 detail
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .bottom) {
+                DemoHint(text: L("Tap a photo; tap the card to close", "点击照片展开，点击卡片收起"), ctx: ctx)
+                    .padding(.bottom, 14)
+                    .allowsHitTesting(false)
+            }
         }
         .autoplay(ctx.isPreview, every: 1.9, delay: 0.8) { autoStep() }
     }

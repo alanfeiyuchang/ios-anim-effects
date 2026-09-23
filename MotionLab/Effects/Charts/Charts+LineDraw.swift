@@ -8,8 +8,8 @@ extension Effect {
         name: L("Line Draw-On with Area", "折线绘制与面积渐显"),
         summary: L("A smooth line sweeps in left to right, trailed by its gradient area and a glowing tip.", "平滑折线从左至右绘出，渐变面积与发光端点紧随其后。"),
         prompt: L(
-            "A 290 × 170 pt line chart with faint horizontal guides: a Catmull-Rom-smoothed line (3 pt, round caps and joins, indigo → violet → pink gradient) over an area fill that fades from 35% indigo at the line to transparent at the baseline. On appear and on tap the chart is revealed by a clip edge sweeping left to right over 1.6 s on an ease-in-out curve (0.65, 0, 0.35, 1); line and area share the same edge so they stay perfectly in sync. A 10 pt white-rimmed dot with a soft coloured halo rides the exact curve position at the edge, carrying a small value pill that counts along. Replaying first rewinds the sweep in 250 ms, swaps in a new dataset, then draws again. Elegant and narrative, like a stock chart telling its story.",
-            "一张 290 × 170pt 的折线图，带淡淡的水平参考线：经 Catmull-Rom 平滑的曲线（3pt，圆角端点与连接，靛蓝 → 紫 → 粉渐变），下方面积填充从曲线处 35% 靛蓝渐隐到基线透明。出现时与点击时，图表由一条从左向右扫过的裁切边揭示，历时 1.6 秒，曲线为 ease-in-out（0.65, 0, 0.35, 1）；曲线与面积共用同一裁切边，始终严丝合缝。一个 10pt 白边圆点带着柔和彩色光晕，精确贴合裁切边处的曲线位置移动，并携带一个数值胶囊实时滚动。重播时先在 250ms 内倒带收回，换入新数据后再次绘制。优雅而有叙事感，像一张讲述走势的股票图。"
+            "A 290 × 170 pt revenue chart with four faint horizontal guides labeled $8k–$26k and month labels (Jan–Sep, every other month) beneath: a Catmull-Rom-smoothed line (3 pt, round caps and joins, indigo → violet → pink gradient) over an area fill that fades from 35% indigo at the line to transparent at the baseline. On appear and on tap the chart is revealed by a clip edge sweeping left to right over 1.6 s on an ease-in-out curve (0.65, 0, 0.35, 1); line and area share the same edge so they stay perfectly in sync. A 10 pt white-rimmed dot with a soft colored halo rides the exact curve position at the edge, carrying a small value pill that counts along. Replaying first rewinds the sweep in 250 ms, swaps in a new dataset, then draws again. Elegant and narrative, like a stock chart telling its story.",
+            "一张 290 × 170pt 的营收折线图，带四条标注 $8k～$26k 的淡色水平参考线，下方隔月标注月份（1 月～9 月）：经 Catmull-Rom 平滑的曲线（3pt，圆角端点与连接，靛蓝 → 紫 → 粉渐变），下方面积填充从曲线处 35% 靛蓝渐隐到基线透明。出现时与点击时，图表由一条从左向右扫过的裁切边揭示，历时 1.6 秒，曲线为 ease-in-out（0.65, 0, 0.35, 1）；曲线与面积共用同一裁切边，始终严丝合缝。一个 10pt 白边圆点带着柔和彩色光晕，精确贴合裁切边处的曲线位置移动，并携带一个数值胶囊实时滚动。重播时先在 250ms 内倒带收回，换入新数据后再次绘制。优雅而有叙事感，像一张讲述走势的股票图。"
         ),
         implementation: L(
             "An Animatable view interpolates progress; both line and area are masked by a rectangle of width progress × width, and the tip’s y is evaluated from the same cubic Bézier segments used to build the path.",
@@ -115,6 +115,7 @@ private struct LineDrawDemo: View {
                 smooth: ctx.bool("smooth"),
                 showArea: ctx.bool("area")
             )
+            monthAxis
         }
         .padding(16)
         .demoCard()
@@ -127,6 +128,26 @@ private struct LineDrawDemo: View {
         }
         .onAppear { draw() }
         .autoplay(ctx.isPreview, every: ctx["duration"] + 1.6, delay: ctx["duration"] + 1.2) { replay() }
+    }
+
+    /// Every other month under its data point (9 points: Jan…Sep).
+    private var monthAxis: some View {
+        let en = ["Jan", "Mar", "May", "Jul", "Sep"]
+        let zh = ["1月", "3月", "5月", "7月", "9月"]
+        let labels = ctx.language == .zh ? zh : en
+        let step = LineGeometry.size.width / 8
+        return ZStack(alignment: .topLeading) {
+            ForEach(labels.indices, id: \.self) { index in
+                Text(verbatim: labels[index])
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .fixedSize()
+                    .frame(width: 40)
+                    .position(x: (step * CGFloat(index * 2)).clamped(to: 12...(LineGeometry.size.width - 12)), y: 6)
+            }
+        }
+        .frame(width: LineGeometry.size.width, height: 12)
+        .padding(.top, -6)
     }
 
     private func draw() {
@@ -181,12 +202,19 @@ private struct LineChartCanvas: View, Animatable {
         .frame(width: size.width, height: size.height)
     }
 
+    /// Four guides from the top (value 26k) to the bottom (8k) of the plot, each labeled just above its line.
     private var guides: some View {
         VStack(spacing: 0) {
             ForEach(0..<4, id: \.self) { index in
                 Rectangle()
                     .fill(Color.primary.opacity(0.07))
                     .frame(height: 1)
+                    .overlay(alignment: .bottomTrailing) {
+                        Text(verbatim: "$\(26 - index * 6)k")
+                            .font(.system(size: 9, weight: .semibold, design: .rounded).monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                            .offset(y: -2)
+                    }
                 if index < 3 { Spacer(minLength: 0) }
             }
         }
@@ -195,7 +223,7 @@ private struct LineChartCanvas: View, Animatable {
 
     private func tip(x: CGFloat, y: CGFloat) -> some View {
         let normalized = 1 - (y - LineGeometry.inset) / (LineGeometry.size.height - LineGeometry.inset * 2)
-        let value = 8 + normalized * 16
+        let value = 8 + normalized * 18
         // Keep the value pill (~52 pt wide) inside the chart so it never spills past the card edge.
         let pillHalf: CGFloat = 26
         let pillShift = max(0, pillHalf - x) + min(0, LineGeometry.size.width - pillHalf - x)

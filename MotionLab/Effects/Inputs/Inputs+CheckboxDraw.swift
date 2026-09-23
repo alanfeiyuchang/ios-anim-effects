@@ -60,6 +60,8 @@ private struct InputCheckboxDemo: View {
             .frame(width: 290)
             .demoCard()
             Spacer()
+            DemoHint(text: L("Tap a task to check it off", "点击任务即可勾选"), ctx: ctx)
+                .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.0, delay: 0.4) { previewTick() }

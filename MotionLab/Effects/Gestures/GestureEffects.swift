@@ -15,5 +15,6 @@ enum GestureEffects {
         .gesturesGooeyBlobs,
         .gesturesVerletRope,
         .gesturesNewtonsCradle,
+        .gesturesPhotoViewer,
     ]
 }

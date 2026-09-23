@@ -19,7 +19,9 @@ extension Effect {
         tags: ["text field", "floating label", "form", "focus", "输入框", "浮动标签", "表单", "聚焦"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.15...0.8, default: 0.35, unit: "s"),
+            .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.8),
             .slider("lift", L("Label scale", "标签缩放"), 0.6...0.95, default: 0.78),
+            .slider("rise", L("Label rise", "标签上移"), 16...32, default: 24, decimals: 0, unit: "pt"),
         ]
     ) { ctx in
         InputFloatingLabelDemo(ctx: ctx)
@@ -39,7 +41,7 @@ private struct InputFloatingLabelDemo: View {
     @State private var previewFocus: InputFloatingFieldID?
     @State private var previewStep = 0
 
-    private var spring: Animation { .spring(response: ctx["response"], dampingFraction: 0.8) }
+    private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,6 +55,7 @@ private struct InputFloatingLabelDemo: View {
                     forcedFocus: previewFocus == .name,
                     isValid: false,
                     scale: ctx.cg("lift"),
+                    rise: ctx.cg("rise"),
                     spring: spring
                 )
                 InputFloatingField(
@@ -63,6 +66,7 @@ private struct InputFloatingLabelDemo: View {
                     forcedFocus: previewFocus == .email,
                     isValid: email.contains("@") && email.contains("."),
                     scale: ctx.cg("lift"),
+                    rise: ctx.cg("rise"),
                     spring: spring
                 )
             }
@@ -70,6 +74,8 @@ private struct InputFloatingLabelDemo: View {
             .frame(width: 300)
             .demoCard()
             Spacer()
+            DemoHint(text: L("Tap a field and start typing", "点击输入框开始输入"), ctx: ctx)
+                .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
@@ -106,6 +112,7 @@ private struct InputFloatingField: View {
     let forcedFocus: Bool
     let isValid: Bool
     let scale: CGFloat
+    let rise: CGFloat
     let spring: Animation
 
     private var focused: Bool { focus.wrappedValue == id || forcedFocus }
@@ -117,7 +124,7 @@ private struct InputFloatingField: View {
                 .font(.system(size: 17))
                 .foregroundStyle(focused ? Palette.indigo : Color.secondary)
                 .scaleEffect(floated ? scale : 1, anchor: .leading)
-                .offset(y: floated ? -24 : 0)
+                .offset(y: floated ? -rise : 0)
                 .allowsHitTesting(false)
             HStack {
                 TextField("", text: $text)

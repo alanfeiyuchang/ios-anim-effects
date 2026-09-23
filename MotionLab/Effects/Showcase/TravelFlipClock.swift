@@ -57,16 +57,22 @@ private struct TravelFlipClockDemo: View {
 
     var body: some View {
         SignatureStage {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                TimelineView(.everyMinute) { timeline in
-                    clockFace(for: timeline.date)
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                VStack(alignment: .leading, spacing: 16) {
+                    header
+                    TimelineView(.everyMinute) { timeline in
+                        clockFace(for: timeline.date)
+                    }
+                    picker
                 }
-                picker
+                .padding(18)
+                .frame(width: 310)
+                .signatureCard()
+                Spacer(minLength: 0)
+                DemoHint(text: L("Tap a city to flip the clock", "点击城市切换时钟"), ctx: ctx)
+                    .padding(.bottom, 14)
             }
-            .padding(18)
-            .frame(width: 310)
-            .signatureCard()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 2.0, delay: 0.8) {

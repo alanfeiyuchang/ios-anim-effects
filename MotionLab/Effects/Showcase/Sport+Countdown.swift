@@ -42,6 +42,8 @@ private struct SportCountdownDemo: View {
                 Spacer()
                 card
                 Spacer()
+                DemoHint(text: L("Tap the card to start the countdown", "点击卡片开始倒计时"), ctx: ctx)
+                    .padding(.bottom, 14)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

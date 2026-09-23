@@ -90,3 +90,53 @@ extension View {
         }
     }
 }
+
+/// Stage-wide touch tracking for ambient backgrounds that never traps the page's vertical scroll:
+/// a drag engages only after 10 pt of mostly horizontal travel, then follows the finger in any direction.
+/// A plain tap "pokes" the stage: the touch is reported for a moment, then released.
+private struct BackgroundsTouchModifier: ViewModifier {
+    let onChanged: (CGPoint) -> Void
+    let onEnded: () -> Void
+    @State private var engaged = false
+    @State private var pokeToken = 0
+
+    func body(content: Content) -> some View {
+        content
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 10)
+                    .onChanged { value in
+                        if !engaged {
+                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                            engaged = true
+                        }
+                        pokeToken += 1
+                        onChanged(value.location)
+                    }
+                    .onEnded { _ in
+                        guard engaged else { return }
+                        engaged = false
+                        onEnded()
+                    }
+            )
+            .simultaneousGesture(
+                SpatialTapGesture()
+                    .onEnded { value in
+                        pokeToken += 1
+                        let token = pokeToken
+                        onChanged(value.location)
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(0.45))
+                            if token == pokeToken && !engaged { onEnded() }
+                        }
+                    }
+            )
+    }
+}
+
+extension View {
+    /// See `BackgroundsTouchModifier`: horizontal-first drag plus tap-to-poke, scroll-friendly.
+    func backgroundsTouch(onChanged: @escaping (CGPoint) -> Void, onEnded: @escaping () -> Void = {}) -> some View {
+        modifier(BackgroundsTouchModifier(onChanged: onChanged, onEnded: onEnded))
+    }
+}

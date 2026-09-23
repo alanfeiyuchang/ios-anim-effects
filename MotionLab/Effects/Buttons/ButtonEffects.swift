@@ -17,5 +17,6 @@ enum ButtonEffects {
         .buttonsFollowMorph,
         .buttonsLabelRoll,
         .buttonsGooeySplit,
+        .buttonsLiquidGlass,
     ]
 }

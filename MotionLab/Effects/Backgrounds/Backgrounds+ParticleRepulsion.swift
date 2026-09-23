@@ -11,14 +11,14 @@ extension Effect {
             "平静的粒子网格在手指周围散开，又弹性回归原位。"
         ),
         prompt: L(
-            "A dark midnight canvas holding a precise grid of ~500 tiny particles, each tethered to its home position by an underdamped spring (damping ratio ≈ 0.45). Moving a finger across the field pushes particles radially away with a force that falls off quadratically toward the edge of an 80 pt influence radius, carving a clean moving void ringed by compressed particles. Displaced particles brighten and grow with their offset — resting dots are faint white, moderately displaced ones turn sky blue, strongly displaced ones glow pink — and a soft halo marks the touch point. On release, everything springs home with a small overshoot and settles in about a second. Responsive, physical and quietly delightful.",
-            "午夜深色画布上整齐排列着约 500 个细小粒子，每个粒子都由一根欠阻尼弹簧（阻尼比约 0.45）拴在自己的原点。手指划过粒子场时，粒子被沿径向推开，推力在 80pt 影响半径内随距离呈二次方衰减，于是形成一块干净、随手移动的空洞，四周环绕被挤压的粒子。粒子越偏离原位就越亮、越大——静止时为淡白色，中度位移变为天蓝，大幅位移则发出粉色光芒——触点处还有一圈柔和光晕。松手后所有粒子带着轻微过冲弹回原位，约一秒内完全平静。灵敏、富有物理感，令人会心一笑。"
+            "A dark midnight canvas holding a precise grid of ~500 tiny particles, each tethered to its home position by an underdamped spring (damping ratio ≈ 0.45). Tapping, or swiping sideways across the field, pushes particles radially away with a force that falls off quadratically toward the edge of an 80 pt influence radius, carving a clean moving void ringed by compressed particles. Displaced particles brighten and grow continuously with their offset — size eases from 2.2 to 4.2 pt while color blends from faint white through sky blue to glowing pink over the first 18 pt of travel — and a soft halo marks the touch point. On release, everything springs home with a small overshoot and settles in about a second. Responsive, physical and quietly delightful.",
+            "午夜深色画布上整齐排列着约 500 个细小粒子，每个粒子都由一根欠阻尼弹簧（阻尼比约 0.45）拴在自己的原点。点击或横向划过粒子场时，粒子被沿径向推开，推力在 80pt 影响半径内随距离呈二次方衰减，于是形成一块干净、随手移动的空洞，四周环绕被挤压的粒子。粒子越偏离原位就越亮、越大，且过渡连续——在前 18pt 的位移内，直径由 2.2pt 平滑增大到 4.2pt，颜色由淡白经天蓝渐变为发光的粉色——触点处还有一圈柔和光晕。松手后所有粒子带着轻微过冲弹回原位，约一秒内完全平静。灵敏、富有物理感，令人会心一笑。"
         ),
         implementation: L(
-            "A reference-type model held in @State integrates spring + repulsion forces with semi-implicit Euler inside the Canvas renderer each TimelineView frame; particles are batched into three Paths by displacement.",
-            "保存在 @State 中的引用类型模型，在每个 TimelineView 帧的 Canvas 渲染闭包里以半隐式欧拉法积分弹簧力与排斥力；粒子按位移分成三条 Path 批量绘制。"
+            "A reference-type model held in @State integrates spring + repulsion forces with semi-implicit Euler inside the Canvas renderer each TimelineView frame; particles are batched into eight Paths by displacement, each with an interpolated size and color, so the blend looks continuous at the cost of only eight fills.",
+            "保存在 @State 中的引用类型模型，在每个 TimelineView 帧的 Canvas 渲染闭包里以半隐式欧拉法积分弹簧力与排斥力；粒子按位移分成八条 Path 批量绘制，每档尺寸与颜色均为插值结果，只需八次填充即可呈现连续过渡。"
         ),
-        apis: ["Canvas", "TimelineView(.animation)", "DragGesture(minimumDistance: 0)", "@State reference model"],
+        apis: ["Canvas", "TimelineView(.animation)", "DragGesture", "@State reference model"],
         tags: ["particles", "repel", "physics", "interactive", "粒子", "排斥", "物理", "交互"],
         params: [
             .slider("radius", L("Influence radius", "影响半径"), 40...150, default: 80, decimals: 0, unit: "pt"),
@@ -95,22 +95,35 @@ private final class SwarmModel {
         }
     }
 
+    /// Eight displacement levels: size and color blend smoothly from a dim white dot (at home)
+    /// through sky to hot pink (≥ 18 pt away). Batching per level keeps it to eight fills.
+    private static let levels = 8
+    private static let levelStyles: [(radius: CGFloat, color: Color)] = (0..<levels).map { k in
+        let t = Double(k) / Double(levels - 1)
+        let calm = (r: 1.0, g: 1.0, b: 1.0, a: 0.36)
+        let sky = (r: 0x3A / 255.0, g: 0xC4 / 255.0, b: 0xFF / 255.0, a: 1.0)
+        let pink = (r: 0xFF / 255.0, g: 0x5F / 255.0, b: 0xA2 / 255.0, a: 1.0)
+        let (from, to, u) = t < 0.5 ? (calm, sky, t / 0.5) : (sky, pink, (t - 0.5) / 0.5)
+        let color = Color(
+            .sRGB,
+            red: from.r + (to.r - from.r) * u,
+            green: from.g + (to.g - from.g) * u,
+            blue: from.b + (to.b - from.b) * u,
+            opacity: from.a + (to.a - from.a) * u
+        )
+        return (radius: CGFloat(1.1 + 1.0 * t), color: color)
+    }
+
     func draw(in context: inout GraphicsContext) {
-        var calm = Path()
-        var moved = Path()
-        var excited = Path()
+        var bins = [Path](repeating: Path(), count: Self.levels)
         for i in position.indices {
             let dx = position[i].x - home[i].x
             let dy = position[i].y - home[i].y
             let offset = (dx * dx + dy * dy).squareRoot()
             let p = position[i]
-            if offset < 3 {
-                calm.addEllipse(in: CGRect(x: p.x - 1.1, y: p.y - 1.1, width: 2.2, height: 2.2))
-            } else if offset < 14 {
-                moved.addEllipse(in: CGRect(x: p.x - 1.6, y: p.y - 1.6, width: 3.2, height: 3.2))
-            } else {
-                excited.addEllipse(in: CGRect(x: p.x - 2.1, y: p.y - 2.1, width: 4.2, height: 4.2))
-            }
+            let level = Int((min(offset / 18, 1) * CGFloat(Self.levels - 1)).rounded())
+            let r = Self.levelStyles[level].radius
+            bins[level].addEllipse(in: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2))
         }
         if let p = pointer {
             let r: CGFloat = 70
@@ -120,9 +133,9 @@ private final class SwarmModel {
                 with: .radialGradient(halo, center: p, startRadius: 0, endRadius: r)
             )
         }
-        context.fill(calm, with: .color(.white.opacity(0.36)))
-        context.fill(moved, with: .color(Palette.sky))
-        context.fill(excited, with: .color(Palette.pink))
+        for level in 0..<Self.levels {
+            context.fill(bins[level], with: .color(Self.levelStyles[level].color))
+        }
     }
 }
 
@@ -155,17 +168,13 @@ private struct ParticleRepulsionDemo: View {
                 }
             }
         }
-        .contentShape(Rectangle())
-        .gesture(drag)
-        .backgroundsHint(L("Drag through the particles", "在粒子中拖动手指"), ctx)
+        .backgroundsTouch { location in
+            model.userTouched = true
+            model.touch = location
+        } onEnded: {
+            model.touch = nil
+        }
+        .backgroundsHint(L("Tap or swipe sideways through the particles", "点击或横向划过粒子"), ctx)
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { value in
-                model.userTouched = true
-                model.touch = value.location
-            }
-            .onEnded { _ in model.touch = nil }
-    }
 }

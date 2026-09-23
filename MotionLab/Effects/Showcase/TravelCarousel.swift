@@ -63,6 +63,8 @@ private struct TravelCarouselDemo: View {
                 header
                 carousel
                 dots
+                DemoHint(text: L("Swipe the cards", "左右滑动卡片"), ctx: ctx)
+                    .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

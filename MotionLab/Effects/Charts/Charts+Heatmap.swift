@@ -20,6 +20,7 @@ extension Effect {
         params: [
             .slider("stagger", L("Ripple speed", "涟漪间隔"), 0.01...0.08, default: 0.035, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.6),
+            .slider("response", L("Spring response", "弹簧响应"), 0.25...0.9, default: 0.45, unit: "s"),
             .choice("shape", L("Cell shape", "格子形状"), [L("Square", "方形"), L("Circle", "圆形")]),
         ]
     ) { ctx in
@@ -104,7 +105,7 @@ private struct HeatmapDemo: View {
         let isOrigin = column == origin.column && row == origin.row
         let radius: CGFloat = ctx.int("shape") == 1 ? 8 : 4
         let animation: Animation = revealed
-            ? .spring(response: 0.45, dampingFraction: ctx["damping"]).delay(delay)
+            ? .spring(response: ctx["response"], dampingFraction: ctx["damping"]).delay(delay)
             : .easeOut(duration: 0.18)
 
         return RoundedRectangle(cornerRadius: radius, style: .continuous)

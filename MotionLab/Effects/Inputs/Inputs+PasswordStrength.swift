@@ -71,6 +71,8 @@ private struct InputPasswordStrengthDemo: View {
             .frame(width: 300)
             .demoCard()
             Spacer()
+            DemoHint(text: L("Type a password — try adding A, 7 and !", "输入密码——试着加上大写、数字和符号"), ctx: ctx)
+                .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: password) { _, newValue in

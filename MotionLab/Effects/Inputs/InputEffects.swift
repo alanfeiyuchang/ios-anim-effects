@@ -17,5 +17,7 @@ enum InputEffects {
         .inputsElasticSlider,
         .inputsSwatchPicker,
         .inputsPasscodePad,
+        .inputsRangeSlider,
+        .inputsWheelPicker,
     ]
 }

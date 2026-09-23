@@ -11,14 +11,14 @@ extension Effect {
             "三维星空迎面流动，长按即可跃迁至光速。"
         ),
         prompt: L(
-            "A deep-space backdrop — near-black fading to indigo at the centre — filled with a few hundred stars projected in perspective from a central vanishing point. Each star travels along its own radial ray; its distance, brightness and line width grow as it approaches, and it is drawn as a streak whose length is proportional to current velocity, with a subtle cyan or violet tint on a minority of stars. Pressing and holding eases velocity up to about 7× over ~0.5 s (exponential approach), stretching stars into long light-speed trails and blooming a soft blue glow at the core; releasing eases back to a leisurely cruise with no discontinuity. A medium haptic marks the engage. It feels immersive, kinetic and cinematic.",
-            "深空背景由近乎纯黑向中心的靛蓝渐变，数百颗星星以中心灭点做透视投影。每颗星沿各自的径向射线飞来，越靠近则越亮、越粗，并以与当前速度成正比的拖尾线段绘制，少数星星带有青色或紫色色调。长按时速度以指数趋近方式在约 0.5 秒内加速到约 7 倍，星点被拉成长长的光速轨迹，中心泛起柔和蓝色辉光；松手后平滑减速回巡航状态，全程无跳变。按下时伴随中等强度的触觉反馈。整体沉浸、充满速度感与电影感。"
+            "A deep-space backdrop — near-black fading to indigo at the centre — filled with a few hundred stars projected in perspective from a central vanishing point. Each star travels along its own radial ray; its distance, brightness and line width grow as it approaches, and it is drawn as a streak whose length is proportional to current velocity, with a gradient that fades from transparent at the tail to full brightness at the head, and a subtle cyan or violet tint on a minority of stars. Pressing and holding (without moving, so page scrolling is never trapped) eases velocity up to about 7× over ~0.5 s (exponential approach), stretching stars into long light-speed trails and blooming a soft blue glow at the core; releasing eases back to a leisurely cruise with no discontinuity. A medium haptic marks the engage. It feels immersive, kinetic and cinematic.",
+            "深空背景由近乎纯黑向中心的靛蓝渐变，数百颗星星以中心灭点做透视投影。每颗星沿各自的径向射线飞来，越靠近则越亮、越粗，并以与当前速度成正比的拖尾线段绘制，拖尾由尾端透明渐变到头部全亮，少数星星带有青色或紫色色调。长按（手指不移动，因此不会拦截页面滚动）时速度以指数趋近方式在约 0.5 秒内加速到约 7 倍，星点被拉成长长的光速轨迹，中心泛起柔和蓝色辉光；松手后平滑减速回巡航状态，全程无跳变。按下时伴随中等强度的触觉反馈。整体沉浸、充满速度感与电影感。"
         ),
         implementation: L(
             "A small reference model eases velocity toward a target and integrates a depth phase; Canvas projects each star's z = fract(seed − phase) and strokes head-to-tail segments.",
             "一个小型引用类型模型将速度缓动至目标值并积分深度相位；Canvas 以 z = fract(seed − phase) 做透视投影，描边从星头到星尾的线段。"
         ),
-        apis: ["Canvas", "TimelineView(.animation)", "DragGesture(minimumDistance: 0)", "GraphicsContext.stroke"],
+        apis: ["Canvas", "TimelineView(.animation)", "onLongPressGesture(onPressingChanged:)", "GraphicsContext.stroke"],
         tags: ["starfield", "warp", "hyperspace", "space", "星空", "跃迁", "光速", "宇宙"],
         params: [
             .slider("count", L("Stars", "星星数量"), 80...420, default: 240, step: 10, decimals: 0),
@@ -71,19 +71,13 @@ private struct WarpDemo: View {
         }
         .background(Color(hex: 0x020208))
         .contentShape(Rectangle())
-        .gesture(hold)
+        // A long press that never "completes" reports pressing for as long as the finger stays down,
+        // and fails (releasing the boost) as soon as the finger moves, so the page can still scroll.
+        .onLongPressGesture(minimumDuration: 60, maximumDistance: 10, perform: {}, onPressingChanged: { pressing in
+            if pressing && !model.boosting { Haptics.tap(.medium) }
+            model.boosting = pressing
+        })
         .backgroundsHint(L("Press and hold to warp", "长按进入跃迁"), ctx)
-    }
-
-    private var hold: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { _ in
-                if !model.boosting {
-                    model.boosting = true
-                    Haptics.tap(.medium)
-                }
-            }
-            .onEnded { _ in model.boosting = false }
     }
 }
 
@@ -125,9 +119,11 @@ private struct WarpCanvas: View {
         let head = reach * CGFloat(spread * 0.16 / z)
         let tail = reach * CGFloat(spread * 0.16 / tailZ)
 
+        let tailPoint = CGPoint(x: center.x + dir.x * tail, y: center.y + dir.y * tail)
+        let headPoint = CGPoint(x: center.x + dir.x * head, y: center.y + dir.y * head)
         var path = Path()
-        path.move(to: CGPoint(x: center.x + dir.x * tail, y: center.y + dir.y * tail))
-        path.addLine(to: CGPoint(x: center.x + dir.x * head, y: center.y + dir.y * head))
+        path.move(to: tailPoint)
+        path.addLine(to: headPoint)
 
         let closeness = 1 - z
         let alpha = min(1, closeness * 1.5)
@@ -139,9 +135,14 @@ private struct WarpCanvas: View {
         } else {
             color = .white
         }
+        // Gradient tail: transparent at the far end, full brightness at the head, so streaks read as motion.
         context.stroke(
             path,
-            with: .color(color.opacity(alpha)),
+            with: .linearGradient(
+                Gradient(colors: [color.opacity(0), color.opacity(alpha * 0.55), color.opacity(alpha)]),
+                startPoint: tailPoint,
+                endPoint: headPoint
+            ),
             style: StrokeStyle(lineWidth: CGFloat(0.4 + closeness * 2.2), lineCap: .round)
         )
     }

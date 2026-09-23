@@ -8,12 +8,12 @@ extension Effect {
         name: L("Donut ⇄ Bars Morph", "环形图 ⇄ 柱状图形变"),
         summary: L("Each donut segment unrolls into its own bar — and curls back — on a staggered spring.", "每段圆环依次舒展成对应的柱子，再卷回圆环，错峰弹性形变。"),
         prompt: L(
-            "A card with five data segments (indigo, pink, amber, mint, sky) that switches chart type in place. As a donut (outer radius ≈ 42% of the plot, 16 pt gaps in angle-space) each segment is an arc; as bars each is a column whose height is its value. On tap, every segment morphs along its own outline — the outer arc straightens into the bar's top edge while the inner arc becomes its base — so the viewer can follow each value from slice to column. Segments start 60 ms apart and ride a spring (response ≈ 0.7 s, damping ≈ 0.78) with a hint of overshoot; the centre total fades out as the value labels and a baseline fade in above the bars, and the reverse curls them back. Clear, clever and continuous.",
-            "一张包含五个数据分段（靛蓝、粉、琥珀、薄荷、天蓝）的卡片，可在原位切换图表类型。环形图状态下每段是一段圆弧（外半径约为绘图区的 42%，分段之间留有间隙）；柱状图状态下每段是一根高度等于数值的柱子。点击后，每段沿自身轮廓形变——外弧拉直成柱顶，内弧展开成柱底——观众能一眼追踪每个数值从扇段到柱子的去向。各段依次间隔 60ms 启动，乘着弹簧（响应约 0.7 秒、阻尼约 0.78）并带轻微过冲；中心总数淡出，柱顶数值标签与基线随之淡入；反向操作则把柱子卷回圆环。清晰、巧妙、连贯。"
+            "A “Sessions by platform” card with five segments (indigo, pink, amber, mint, sky) that switches chart type in place. As a donut (outer radius 46% of the plot's short side, inner radius 60% of that, ≈ 6° gaps between slices) each segment is an arc, and the center shows the real weekly total, 11.1k sessions; as bars each is a column with 6 pt rounded top corners whose height is its value. On tap, every segment morphs along its own outline — the outer arc straightens into the bar's rounded top while the inner arc becomes its base — so the viewer can follow each value from slice to column. Segments start 60 ms apart and ride a spring (response ≈ 0.7 s, damping ≈ 0.78) with a hint of overshoot; the total fades out as per-bar values (4.2k, 2.7k…) and a baseline fade in, and the reverse curls them back. Clear, clever and continuous.",
+            "一张“各平台会话”卡片，包含五个数据分段（靛蓝、粉、琥珀、薄荷、天蓝），可在原位切换图表类型。环形图状态下每段是一段圆弧（外半径为绘图区短边的 46%，内半径为外半径的 60%，扇段之间约 6° 间隙），中心显示真实的本周总数“11.1k 次会话”；柱状图状态下每段是一根顶部带 6pt 圆角、高度等于数值的柱子。点击后，每段沿自身轮廓形变——外弧拉直成圆角柱顶，内弧展开成柱底——观众能一眼追踪每个数值从扇段到柱子的去向。各段依次间隔 60ms 启动，乘着弹簧（响应约 0.7 秒、阻尼约 0.78）并带轻微过冲；总数淡出，各柱数值（4.2k、2.7k……）与基线随之淡入；反向操作则把柱子卷回圆环。清晰、巧妙、连贯。"
         ),
         implementation: L(
-            "Each segment is an Animatable Shape that samples 24 points along the arc outline and along the bar outline and linearly interpolates them by an animatable progress; per-segment .animation(spring.delay(i × stagger), value:) creates the cascade.",
-            "每个分段是一个 Animatable Shape：分别沿圆弧轮廓与柱形轮廓采样 24 个点，并按可动画的进度线性插值；每段使用 .animation(spring.delay(序号 × 间隔), value:) 形成错峰级联。"
+            "Each segment is an Animatable Shape that samples 24 points along the arc outline and along the bar outline (its top edge bent into rounded corners) and linearly interpolates them by an animatable progress; per-segment .animation(spring.delay(i × stagger), value:) creates the cascade.",
+            "每个分段是一个 Animatable Shape：分别沿圆弧轮廓与柱形轮廓（柱顶采样点弯成圆角）采样 24 个点，并按可动画的进度线性插值；每段使用 .animation(spring.delay(序号 × 间隔), value:) 形成错峰级联。"
         ),
         apis: ["Shape", "Animatable", "animation(_:value:)", "Path.addLines", "contentTransition(.numericText)"],
         tags: ["donut", "bar chart", "morph", "chart type", "transition", "环形图", "柱状图", "形变", "图表切换"],
@@ -33,12 +33,13 @@ private struct MorphDatum {
     let color: Color
 }
 
+/// Weekly sessions, in thousands.
 private let morphData: [MorphDatum] = [
-    MorphDatum(name: L("iOS", "iOS"), value: 38, color: Palette.indigo),
-    MorphDatum(name: L("Web", "网页"), value: 24, color: Palette.pink),
-    MorphDatum(name: L("Android", "安卓"), value: 17, color: Palette.amber),
-    MorphDatum(name: L("Mac", "Mac"), value: 13, color: Palette.mint),
-    MorphDatum(name: L("Other", "其他"), value: 8, color: Palette.sky),
+    MorphDatum(name: L("iOS", "iOS"), value: 4.2, color: Palette.indigo),
+    MorphDatum(name: L("Web", "网页"), value: 2.7, color: Palette.pink),
+    MorphDatum(name: L("Android", "安卓"), value: 1.9, color: Palette.amber),
+    MorphDatum(name: L("Mac", "Mac"), value: 1.4, color: Palette.mint),
+    MorphDatum(name: L("Other", "其他"), value: 0.9, color: Palette.sky),
 ]
 
 private struct DonutBarsDemo: View {
@@ -77,7 +78,7 @@ private struct DonutBarsDemo: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(ctx.language == .zh ? "平台占比" : "Platform share")
+                Text(ctx.language == .zh ? "各平台会话" : "Sessions by platform")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(ctx.language == .zh ? (isBars ? "柱状图" : "环形图") : (isBars ? "Bars" : "Donut"))
@@ -124,10 +125,10 @@ private struct DonutBarsDemo: View {
 
     private func centerTotal(_ total: Double) -> some View {
         VStack(spacing: 0) {
-            Text("\(Int(total))%")
+            Text(String(format: "%.1fk", total))
                 .font(.system(size: 26, weight: .bold, design: .rounded))
                 .monospacedDigit()
-            Text(ctx.language == .zh ? "全部平台" : "All platforms")
+            Text(ctx.language == .zh ? "本周会话" : "sessions this week")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
         }
@@ -142,7 +143,7 @@ private struct DonutBarsDemo: View {
             ForEach(morphData.indices, id: \.self) { index in
                 let top = MorphSegment.barTop(height: morphData[index].value / maxValue, in: plot.height)
                 VStack(spacing: 1) {
-                    Text("\(Int(morphData[index].value))%")
+                    Text(String(format: "%.1fk", morphData[index].value))
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .monospacedDigit()
                     Text(morphData[index].name, ctx.language)
@@ -176,6 +177,7 @@ private struct MorphSegment: Shape {
     let height: Double
 
     static let baselineRatio: CGFloat = 0.94
+    static let cornerRadius: CGFloat = 6
     private static let samples = 24
 
     var animatableData: Double {
@@ -205,13 +207,19 @@ private struct MorphSegment: Shape {
         let bottom = rect.minY + rect.height * MorphSegment.baselineRatio
         let top = rect.minY + MorphSegment.barTop(height: height, in: rect.height)
 
+        // Rounded top corners: points near either side of the top edge drop onto a quarter circle.
+        let corner = min(MorphSegment.cornerRadius, barWidth / 2, max(bottom - top, 0))
+
         var points: [CGPoint] = []
         points.reserveCapacity((n + 1) * 2)
         for k in 0...n {
             let u = Double(k) / Double(n)
             let angle = a0 + (a1 - a0) * u
             let arc = CGPoint(x: center.x + outerR * CGFloat(cos(angle)), y: center.y + outerR * CGFloat(sin(angle)))
-            let bar = CGPoint(x: x0 + barWidth * CGFloat(u), y: top)
+            let x = barWidth * CGFloat(u)
+            let edge = min(x, barWidth - x)
+            let drop = edge < corner ? corner - (corner * corner - (corner - edge) * (corner - edge)).squareRoot() : 0
+            let bar = CGPoint(x: x0 + x, y: top + drop)
             points.append(MorphSegment.lerp(arc, bar, t))
         }
         for k in stride(from: n, through: 0, by: -1) {

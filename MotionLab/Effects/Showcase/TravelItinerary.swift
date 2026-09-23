@@ -60,10 +60,12 @@ private struct TravelItineraryDemo: View {
     var body: some View {
         SignatureStage {
             VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 14) {
+                // Spacing lives inside the summary and the timeline, so a collapsed card has no dangling gap.
+                VStack(alignment: .leading, spacing: 0) {
                     header
                     if !open {
                         summary
+                            .padding(.top, 14)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                     rows
@@ -137,6 +139,7 @@ private struct TravelItineraryDemo: View {
 
     private var rows: some View {
         rowStack
+            .padding(.top, 14)
             .fixedSize(horizontal: false, vertical: true)
             .onGeometryChange(for: CGFloat.self) { proxy in
                 proxy.size.height

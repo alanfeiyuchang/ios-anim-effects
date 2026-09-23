@@ -12,8 +12,8 @@ extension Effect {
             "中央是一个 112pt 的液态团块，右侧融合着一颗 72pt 的液滴，液滴内还藏着一颗 34pt 的小卫星滴，三者作为同一块极光渐变表面（薄荷绿 → 天蓝 → 紫）渲染，并带柔和光晕。表面采用“元球”效果：图形先模糊约 14pt，再以 50% 透明度阈值裁切，因此只要彼此靠近就会自然生出平滑、带颈缩的液桥。拖动时，液滴通过物理模拟的弹簧（响应约 0.5 秒、阻尼约 0.45）被拉向手指，液桥逐渐变细直至断开，小卫星则从液滴中分离，以更软、更滞后的弹簧拖在其后。松手后液滴被弹回原位，过冲、融合并晃动后才稳定。黏稠、可触，充满液体的趣味。"
         ),
         implementation: L(
-            "A TimelineView(.animation) steps a small spring integrator stored in a reference-type model; a Canvas blurs and alpha-thresholds the circles into metaballs, and the result masks an aurora gradient.",
-            "TimelineView(.animation) 每帧推进存放在引用类型模型中的弹簧积分器；Canvas 对圆形进行模糊与透明度阈值处理形成元球，再用结果遮罩极光渐变。"
+            "A TimelineView(.animation) steps a small spring integrator stored in a reference-type model and pauses once it settles; a Canvas blurs and alpha-thresholds the circles into metaballs that mask an aurora gradient, while a second blurred Canvas draws the glow, all flattened with drawingGroup() instead of a costly view shadow.",
+            "TimelineView(.animation) 每帧推进存放在引用类型模型中的弹簧积分器，静止后自动暂停；Canvas 对圆形进行模糊与透明度阈值处理形成元球并遮罩极光渐变，另一个模糊 Canvas 绘制光晕，整体用 drawingGroup() 合成，取代昂贵的视图阴影。"
         ),
         apis: ["Canvas", "GraphicsContext.Filter.alphaThreshold", "GraphicsContext.Filter.blur", "TimelineView", "mask"],
         tags: ["gooey", "metaball", "liquid", "blob", "merge", "黏液", "元球", "液态", "融合"],
@@ -36,6 +36,14 @@ private final class GooModel {
     var target: CGPoint
     let home: CGPoint
     private var lastDate: Date?
+
+    /// Everything is home and still, so the timeline can pause.
+    var isSettled: Bool {
+        func still(_ p: CGPoint, _ v: CGVector, _ goal: CGPoint) -> Bool {
+            abs(p.x - goal.x) < 0.3 && abs(p.y - goal.y) < 0.3 && abs(v.dx) < 0.5 && abs(v.dy) < 0.5
+        }
+        return target == home && still(droplet, dropletVelocity, home) && still(satellite, satelliteVelocity, home)
+    }
 
     init(home: CGPoint) {
         self.home = home
@@ -73,6 +81,8 @@ private final class GooModel {
 private struct GooeyDemo: View {
     let ctx: DemoContext
     @State private var model = GooModel(home: CGPoint(x: 62, y: 0))
+    @State private var awake = true
+    @State private var sleepWatcher: Task<Void, Never>?
 
     private let area: CGFloat = 300
 
@@ -80,34 +90,35 @@ private struct GooeyDemo: View {
         let goo = ctx.cg("goo")
         let response = ctx["response"]
         let damping = ctx["damping"]
-        let isPreview = ctx.isPreview
 
-        LinearGradient(colors: [Palette.mint, Palette.sky, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
-            .mask {
-                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-                    Canvas { context, size in
-                        if isPreview {
-                            let t = timeline.date.timeIntervalSinceReferenceDate
-                            let pull = max(0, sin(t * 1.4))
-                            model.target = CGPoint(
-                                x: model.home.x + CGFloat(pull * 44 + 6 * cos(t * 2.3)),
-                                y: CGFloat(sin(t * 0.9) * 70 * pull)
-                            )
-                        }
-                        model.step(to: timeline.date, response: response, damping: damping)
-                        draw(in: context, size: size, goo: goo)
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
+            let _ = model.step(to: timeline.date, response: response, damping: damping)
+            ZStack {
+                // Bloom drawn in a Canvas and flattened with drawingGroup(): far cheaper than a view shadow
+                // on a mask that changes every frame.
+                Canvas { context, size in drawGlow(in: context, size: size) }
+                LinearGradient(colors: [Palette.mint, Palette.sky, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .mask {
+                        Canvas { context, size in draw(in: context, size: size, goo: goo) }
                     }
-                }
             }
-            .frame(width: area, height: area)
-            .shadow(color: Palette.sky.opacity(0.35), radius: 18, y: 8)
-            .contentShape(Rectangle())
-            .gesture(dragGesture)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(alignment: .bottom) {
-                DemoHint(text: L("Pull the droplet away", "把液滴拉出来"), ctx: ctx)
-                    .padding(.bottom, 14)
-            }
+            .drawingGroup()
+        }
+        .frame(width: area, height: area)
+        .contentShape(Rectangle())
+        .gesture(dragGesture)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Pull the droplet away", "把液滴拉出来"), ctx: ctx)
+                .padding(.bottom, 14)
+        }
+        .autoplay(ctx.isPreview, every: 2.2, delay: 0.3) { simulatePull() }
+        .onAppear { wake() }
+        .onDisappear { sleepWatcher?.cancel() }
+    }
+
+    private var blobs: [(CGPoint, CGFloat)] {
+        [(.zero, 56), (model.droplet, 36), (model.satellite, 17)]
     }
 
     private func draw(in context: GraphicsContext, size: CGSize, goo: CGFloat) {
@@ -116,26 +127,28 @@ private struct GooeyDemo: View {
         context.addFilter(.alphaThreshold(min: 0.5, color: .white))
         context.addFilter(.blur(radius: goo))
         context.drawLayer { layer in
-            let blobs: [(CGPoint, CGFloat)] = [
-                (.zero, 56),
-                (model.droplet, 36),
-                (model.satellite, 17),
-            ]
             for (offset, radius) in blobs {
-                let rect = CGRect(
-                    x: center.x + offset.x - radius,
-                    y: center.y + offset.y - radius,
-                    width: radius * 2,
-                    height: radius * 2
-                )
+                let rect = CGRect(x: center.x + offset.x - radius, y: center.y + offset.y - radius, width: radius * 2, height: radius * 2)
                 layer.fill(Path(ellipseIn: rect), with: .color(.white))
             }
+        }
+    }
+
+    private func drawGlow(in context: GraphicsContext, size: CGSize) {
+        var context = context
+        let center = CGPoint(x: size.width / 2, y: size.height / 2 + 8)
+        context.addFilter(.blur(radius: 18))
+        for (offset, radius) in blobs {
+            let r = radius + 4
+            let rect = CGRect(x: center.x + offset.x - r, y: center.y + offset.y - r, width: r * 2, height: r * 2)
+            context.fill(Path(ellipseIn: rect), with: .color(Palette.sky.opacity(0.35)))
         }
     }
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                wake()
                 let dx = value.location.x - area / 2
                 let dy = value.location.y - area / 2
                 let distance = (dx * dx + dy * dy).squareRoot()
@@ -147,5 +160,31 @@ private struct GooeyDemo: View {
                 model.target = model.home
                 if !ctx.isPreview { Haptics.tap(.soft) }
             }
+    }
+
+    /// Simulated pull (previews and the arrival intro): tug the droplet out until the bridge snaps, then let go.
+    private func simulatePull() {
+        wake()
+        let angle = Double.random(in: -0.8...0.8)
+        model.target = CGPoint(x: CGFloat(cos(angle) * 100), y: CGFloat(sin(angle) * 100))
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.75))
+            model.target = model.home
+        }
+    }
+
+    /// Runs the timeline while anything moves; a watcher pauses it once the goo has settled.
+    private func wake() {
+        if !awake { awake = true }
+        sleepWatcher?.cancel()
+        sleepWatcher = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(0.3))
+                if model.isSettled {
+                    awake = false
+                    return
+                }
+            }
+        }
     }
 }

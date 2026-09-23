@@ -213,16 +213,17 @@ private struct TravelWeekRow: View {
     /// Ends that continue into the previous/next week are squared off, so the band reads as one run.
     private var band: some View {
         let range = span ?? (lo: 0, hi: 0)
-        let round = (cell - 4) / 2
+        let full = (cell - 4) / 2
         let continuesIn = start < week * 7
         let continuesOut = end > week * 7 + 6
-        return UnevenRoundedRectangle(
-            topLeadingRadius: continuesIn ? 3 : round,
-            bottomLeadingRadius: continuesIn ? 3 : round,
-            bottomTrailingRadius: continuesOut ? 3 : round,
-            topTrailingRadius: continuesOut ? 3 : round,
+        let shape = UnevenRoundedRectangle(
+            topLeadingRadius: continuesIn ? 3 : full,
+            bottomLeadingRadius: continuesIn ? 3 : full,
+            bottomTrailingRadius: continuesOut ? 3 : full,
+            topTrailingRadius: continuesOut ? 3 : full,
             style: .continuous
         )
+        return shape
             .fill(Signature.accent.opacity(0.2))
             .frame(width: CGFloat(range.hi - range.lo + 1) * cell, height: cell - 4)
             .offset(x: CGFloat(range.lo) * cell)

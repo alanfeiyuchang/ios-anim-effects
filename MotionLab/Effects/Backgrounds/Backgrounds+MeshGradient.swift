@@ -11,8 +11,8 @@ extension Effect {
             "iOS 18 网格渐变，控制点如丝绸般缓慢漂移，拖动即可牵引色彩。"
         ),
         prompt: L(
-            "A full-bleed 3×3 mesh gradient in nine harmonised hues. The four corners stay pinned while the four edge midpoints glide along their edges and the centre point wanders on an incommensurate sine/cosine Lissajous path (periods of roughly 8–12 s, never visibly repeating), so colour pools swell, fold and bleed into one another like light moving through silk. Touching the canvas pulls the centre vertex toward the finger with an exponential ease (time constant ≈ 160 ms) and releases it back to rest just as softly. A bold, soft-shadowed title floats on top. The mood is calm, expensive and alive — an ambient hero backdrop in the spirit of Apple's wallpapers and Stripe's landing pages.",
-            "全屏 3×3 网格渐变，由九种相互协调的颜色构成。四个角点固定，四条边的中点沿边缘滑动，中心点沿互不整除的正弦/余弦李萨如轨迹游走（周期约 8–12 秒，肉眼看不出循环），色块因此不断膨胀、折叠、相互晕染，如同光线穿过丝绸。手指按住画面时，中心顶点以指数缓动（时间常数约 160 毫秒）被牵向手指，松手后同样柔和地回到原位。上方悬浮一行带柔和投影的粗体标题。整体安静、高级、富有生命力，适合作为 Apple 壁纸或 Stripe 官网式的氛围主视觉。"
+            "A full-bleed 3×3 mesh gradient in nine harmonised hues. The four corners stay pinned while the four edge midpoints glide along their edges and the centre point wanders on an incommensurate sine/cosine Lissajous path (periods of roughly 8–12 s, never visibly repeating), so colour pools swell, fold and bleed into one another like light moving through silk. Tapping or dragging sideways pulls the center vertex toward the finger with an exponential ease (time constant ≈ 160 ms) and releases it back to rest just as softly. A bold, soft-shadowed title floats on top. The mood is calm, expensive and alive — an ambient hero backdrop in the spirit of Apple's wallpapers and Stripe's landing pages.",
+            "全屏 3×3 网格渐变，由九种相互协调的颜色构成。四个角点固定，四条边的中点沿边缘滑动，中心点沿互不整除的正弦/余弦李萨如轨迹游走（周期约 8–12 秒，肉眼看不出循环），色块因此不断膨胀、折叠、相互晕染，如同光线穿过丝绸。点击或横向拖动画面时，中心顶点以指数缓动（时间常数约 160 毫秒）被牵向手指，松手后同样柔和地回到原位。上方悬浮一行带柔和投影的粗体标题。整体安静、高级、富有生命力，适合作为 Apple 壁纸或 Stripe 官网式的氛围主视觉。"
         ),
         implementation: L(
             "TimelineView(.animation) recomputes the nine SIMD2<Float> mesh points every frame from accumulated, speed-scaled time; a DragGesture feeds a smoothed target for the centre vertex.",
@@ -103,19 +103,13 @@ private struct MeshGradientDemo: View {
                 color: ctx.int("palette") == 3 ? Color.black.opacity(0.72) : .white
             )
         }
-        .contentShape(Rectangle())
-        .gesture(drag)
+        .backgroundsTouch { location in model.touch = location } onEnded: { model.touch = nil }
         .onGeometryChange(for: CGSize.self) { proxy in
             proxy.size
         } action: { newSize in
             model.size = newSize
         }
-        .backgroundsHint(L("Drag to pull the gradient", "拖动以牵引渐变"), ctx)
+        .backgroundsHint(L("Tap or drag sideways to pull the gradient", "点击或横向拖动以牵引渐变"), ctx)
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { value in model.touch = value.location }
-            .onEnded { _ in model.touch = nil }
-    }
 }

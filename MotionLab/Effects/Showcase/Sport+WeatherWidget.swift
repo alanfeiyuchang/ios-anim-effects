@@ -20,6 +20,7 @@ extension Effect {
         params: [
             .slider("density", L("Snow density", "降雪密度"), 10...90, default: 45, step: 1, decimals: 0),
             .slider("response", L("Spring response", "弹簧响应"), 0.2...0.9, default: 0.45, unit: "s"),
+            .slider("damping", L("Damping", "阻尼"), 0.5...1.0, default: 0.8),
             .choice("unit", L("Units", "单位"), [L("°C", "°C"), L("°F", "°F")], default: 0),
         ]
     ) { ctx in
@@ -226,7 +227,7 @@ private struct SportWeatherDemo: View {
     private func select(_ index: Int) {
         guard index != selected else { return }
         if !ctx.isPreview { Haptics.selection() }
-        withAnimation(.spring(response: ctx["response"], dampingFraction: 0.8)) {
+        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             selected = index
         }
     }

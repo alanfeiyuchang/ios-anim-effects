@@ -54,6 +54,11 @@ private final class RopeModel {
 
     var end: CGPoint { points.last ?? RopeMetrics.anchor }
 
+    /// Hanging still (sub-pixel motion per step) and not held, so the timeline can pause.
+    var isSettled: Bool {
+        grab == nil && zip(points, previous).allSatisfy { abs($0.x - $1.x) < 0.025 && abs($0.y - $1.y) < 0.025 }
+    }
+
     var endDirection: CGVector {
         guard points.count > 1 else { return CGVector(dx: 0, dy: 1) }
         let a = points[points.count - 2]
@@ -142,13 +147,15 @@ private struct VerletRopeDemo: View {
     @State private var model = RopeModel()
     @State private var grabOffset: CGSize?
     @State private var isHeld = false
+    @State private var awake = true
+    @State private var sleepWatcher: Task<Void, Never>?
 
     var body: some View {
         let length = ctx.cg("length")
         let gravity = ctx["gravity"]
         let iterations = ctx.int("stiffness")
         ZStack {
-            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
                 let _ = model.step(to: timeline.date, length: length, gravity: gravity, iterations: iterations)
                 RopeLayer(points: model.points, direction: model.endDirection, isHeld: isHeld)
             }
@@ -162,13 +169,29 @@ private struct VerletRopeDemo: View {
             DemoHint(text: L("Grab the charm and fling it", "抓住吊坠甩出去"), ctx: ctx)
                 .padding(.bottom, 10)
         }
+        // In the detail stage the shell's arrival intro fires this once.
         .autoplay(ctx.isPreview, every: 1.8, delay: 0.2) {
+            wake()
             model.kick(CGSize(width: (Bool.random() ? 1 : -1) * CGFloat.random(in: 900...1500), height: -CGFloat.random(in: 0...300)))
         }
-        .task {
-            guard !ctx.isPreview else { return }
-            try? await Task.sleep(for: .seconds(0.4))
-            model.kick(CGSize(width: 1100, height: -200))
+        .onAppear { wake() }
+        .onDisappear { sleepWatcher?.cancel() }
+        .onChange(of: length) { wake() }
+        .onChange(of: gravity) { wake() }
+    }
+
+    /// Runs the timeline while the cord moves; a watcher pauses it once it hangs still.
+    private func wake() {
+        if !awake { awake = true }
+        sleepWatcher?.cancel()
+        sleepWatcher = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(0.4))
+                if model.isSettled {
+                    awake = false
+                    return
+                }
+            }
         }
     }
 
@@ -183,6 +206,7 @@ private struct VerletRopeDemo: View {
                     // Remember where on the charm the finger landed, relative to the cord's end point.
                     grabOffset = CGSize(width: value.startLocation.x - model.end.x, height: value.startLocation.y - model.end.y)
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { isHeld = true }
+                    wake()
                     if !ctx.isPreview { Haptics.tap(.light) }
                 }
                 guard let offset = grabOffset else { return }

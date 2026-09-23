@@ -8,8 +8,8 @@ extension Effect {
         name: L("Magnifier Loupe", "放大镜取色"),
         summary: L("A floating loupe that follows your finger and renders the swatches beneath at 3×.", "跟随手指的悬浮放大镜，以 3 倍清晰呈现下方色块。"),
         prompt: L(
-            "A 12 × 9 grid of tiny colour swatches (hue across, brightness down, each labelled with a 3 pt hex code too small to read) fills a 300 × 225 pt panel. Touching the panel pops a 100 pt circular loupe 78 pt above the finger — it springs from 40% to 100% scale with its bottom as the anchor (response 0.3 s, damping 0.7) — and flips below the finger near the top edge. Inside, the content is re-rendered (not upscaled) at 3× around the touch point, so the hex labels become crisp and legible; a thin crosshair marks the sampled pixel, a 3 pt white rim and soft shadow lift the lens, and a capsule under it shows the swatch and hex value. Dragging moves the loupe with zero latency; lifting the finger shrinks it away. Precise, tool-like and a little magical.",
-            "一个 300 × 225pt 的面板上铺满 12 × 9 的迷你色块（横向变换色相、纵向变换明度，每块都标着 3pt 大小、肉眼难辨的十六进制色值）。按下面板时，一个 100pt 的圆形放大镜在手指上方 78pt 处弹出——以底部为锚点从 40% 弹簧放大到 100%（响应 0.3 秒、阻尼 0.7），靠近顶部时自动翻到手指下方。镜内内容以触点为中心按 3 倍重新绘制（而非位图放大），色值文字清晰可读；细十字准星标示取样点，3pt 白色描边与柔和投影让镜片浮起，下方胶囊显示当前色块与色值。拖动时放大镜零延迟跟随，抬起手指即缩小消失。精准、专业，又带点魔法感。"
+            "A 12 × 9 grid of tiny colour swatches (hue across, brightness down, each labelled with a 3 pt hex code too small to read) fills a 300 × 225 pt panel. Touching the panel pops a 100 pt circular loupe 78 pt above the finger — it springs from 40% to 100% scale with its bottom as the anchor (response 0.3 s, damping 0.7) — flips below the finger near the top edge and, near the sides, slides inward so the lens never leaves the panel. Inside, the content is re-rendered (not upscaled) at 3× around the touch point, so the hex labels become crisp and legible; a thin crosshair marks the sampled pixel, a 3 pt white rim and soft shadow lift the lens, and a capsule under it shows the swatch and hex value. Dragging moves the loupe with zero latency; lifting the finger shrinks it away. Precise, tool-like and a little magical.",
+            "一个 300 × 225pt 的面板上铺满 12 × 9 的迷你色块（横向变换色相、纵向变换明度，每块都标着 3pt 大小、肉眼难辨的十六进制色值）。按下面板时，一个 100pt 的圆形放大镜在手指上方 78pt 处弹出——以底部为锚点从 40% 弹簧放大到 100%（响应 0.3 秒、阻尼 0.7），靠近顶部时自动翻到手指下方，靠近左右边缘时向内平移，镜片始终留在面板之内。镜内内容以触点为中心按 3 倍重新绘制（而非位图放大），色值文字清晰可读；细十字准星标示取样点，3pt 白色描边与柔和投影让镜片浮起，下方胶囊显示当前色块与色值。拖动时放大镜零延迟跟随，抬起手指即缩小消失。精准、专业，又带点魔法感。"
         ),
         implementation: L(
             "The swatch scene is a GraphicsContext drawing function; the loupe is a second Canvas that translates and scales its context around the touch point before drawing the same scene, clipped to a circle. The loupe view is Animatable so programmatic moves stay in sync.",
@@ -92,6 +92,7 @@ private struct MagnifierDemo: View {
     let ctx: DemoContext
     @State private var point = CGPoint(x: 150, y: 110)
     @State private var isActive = false
+    @State private var touching = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -121,6 +122,7 @@ private struct MagnifierDemo: View {
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                touching = true
                 point = CGPoint(
                     x: value.location.x.clamped(to: 0...SwatchScene.size.width),
                     y: value.location.y.clamped(to: 0...SwatchScene.size.height)
@@ -131,17 +133,28 @@ private struct MagnifierDemo: View {
                 }
             }
             .onEnded { _ in
+                touching = false
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isActive = false }
             }
     }
 
     private func wander() {
-        isActive = true
+        guard !touching else { return }
+        if !isActive {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isActive = true }
+        }
         let target = CGPoint(
             x: CGFloat.random(in: 30...(SwatchScene.size.width - 30)),
             y: CGFloat.random(in: 40...(SwatchScene.size.height - 20))
         )
         withAnimation(.spring(response: 0.7, dampingFraction: 0.82)) { point = target }
+        guard !ctx.isPreview else { return }
+        // Arrival intro in the detail stage: show the loupe gliding once, then tuck it away.
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.2))
+            guard !touching else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isActive = false }
+        }
     }
 }
 
@@ -166,6 +179,9 @@ private struct LoupeView: View, Animatable {
         let above = y - lift
         let flipped = above < diameter / 2 - 30
         let centerY = flipped ? y + lift : above
+        // Keep the whole lens inside the panel horizontally; the crosshair still shows the touched point.
+        let half = diameter / 2
+        let lensX = x.clamped(to: min(half - 4, SwatchScene.size.width / 2)...max(SwatchScene.size.width - half + 4, SwatchScene.size.width / 2))
         let cell = SwatchScene.cellIndex(at: CGPoint(x: x, y: y))
 
         VStack(spacing: 8) {
@@ -183,7 +199,7 @@ private struct LoupeView: View, Animatable {
         }
         .scaleEffect(visible ? 1 : 0.4, anchor: flipped ? .top : .bottom)
         .opacity(visible ? 1 : 0)
-        .position(x: x, y: centerY + 16)
+        .position(x: lensX, y: centerY + 16)
     }
 
     private var lens: some View {

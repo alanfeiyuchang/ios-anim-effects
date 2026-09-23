@@ -46,7 +46,7 @@ private enum BestLineRoute {
 
     /// (fraction, x) samples along the route, used to scrub by horizontal position.
     static let samples: [(fraction: CGFloat, x: CGFloat)] = {
-        let full = path(in: size)
+        let full = BestLineRoute.path(in: BestLineRoute.size)
         let count = 160
         return (0...count).map { i in
             let f = CGFloat(i) / CGFloat(count)

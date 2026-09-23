@@ -52,6 +52,12 @@ private final class CradleModel {
     private var lastHaptic: Date = .distantPast
     private let h: Double = 1.0 / 240.0
 
+    /// Hanging still with nothing scripted or held, so the timeline can pause.
+    var isSettled: Bool {
+        held == nil && pendingLift == nil && scriptRelease == nil
+            && omega.allSatisfy { abs($0) < 0.02 } && theta.allSatisfy { abs($0) < 0.003 }
+    }
+
     func configure(count: Int) {
         guard theta.count != count else { return }
         theta = Array(repeating: 0, count: count)
@@ -172,13 +178,15 @@ private struct NewtonsCradleDemo: View {
     let ctx: DemoContext
     @State private var model = CradleModel()
     @State private var grabbed: Int?
+    @State private var awake = true
+    @State private var sleepWatcher: Task<Void, Never>?
 
     var body: some View {
         let count = ctx.int("balls").clamped(to: 3...7)
         let length = ctx["length"]
         let restitution = ctx["restitution"]
         let haptics = !ctx.isPreview
-        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
             let _ = model.configure(count: count)
             let _ = model.step(to: timeline.date, length: length, restitution: restitution, haptics: haptics)
             CradleCanvas(theta: model.theta, length: CGFloat(length))
@@ -191,13 +199,29 @@ private struct NewtonsCradleDemo: View {
             DemoHint(text: L("Pull an end ball aside and let go", "把一端的球拉开再松手"), ctx: ctx)
                 .padding(.bottom, 10)
         }
+        // In the detail stage the shell's arrival intro fires this once.
         .autoplay(ctx.isPreview, every: 3.4, delay: 0.3) {
-            model.lift(index: Bool.random() ? 0 : count - 1, angle: Bool.random() ? -0.75 : 0.75)
+            wake()
+            let index = Bool.random() ? 0 : count - 1
+            model.lift(index: index, angle: index == 0 ? -0.75 : 0.75)
         }
-        .task {
-            guard !ctx.isPreview else { return }
-            try? await Task.sleep(for: .seconds(0.4))
-            model.lift(index: 0, angle: -0.7)
+        .onAppear { wake() }
+        .onDisappear { sleepWatcher?.cancel() }
+        .onChange(of: count) { wake() }
+    }
+
+    /// Runs the timeline while anything swings; a watcher pauses it once the row hangs still.
+    private func wake() {
+        if !awake { awake = true }
+        sleepWatcher?.cancel()
+        sleepWatcher = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(0.4))
+                if model.isSettled {
+                    awake = false
+                    return
+                }
+            }
         }
     }
 
@@ -207,6 +231,7 @@ private struct NewtonsCradleDemo: View {
                 if grabbed == nil {
                     guard let index = ballIndex(at: value.startLocation, count: count, length: length) else { return }
                     grabbed = index
+                    wake()
                     if !ctx.isPreview { Haptics.tap(.light) }
                 }
                 guard let index = grabbed else { return }

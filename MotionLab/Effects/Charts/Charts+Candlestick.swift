@@ -8,8 +8,8 @@ extension Effect {
         name: L("Live Candlesticks", "实时 K 线"),
         summary: L("A trading chart whose live candle breathes with every tick while history glides left and the scale re-fits smoothly.", "实时 K 线随每次报价伸缩，历史蜡烛平滑左移，纵轴刻度柔和自适应。"),
         prompt: L(
-            "A dark-friendly trading card: pair name and last price on top (tinted green or red by the live candle's direction), and below it 18 candlesticks plus one live candle. The live candle's close eases toward a new random-walk target every 140 ms (exponential follow ≈ 70 ms), so its body and wick stretch organically rather than jumping; a dashed price line and a coloured price tag on the right track it. When the candle's period ends it is committed and the whole series glides one slot left continuously — no step — while the vertical scale eases (≈ 200 ms) to fit the visible high/low with 12% headroom. The live candle carries a soft glow. Tap to inject a volatility spike. Precise, alive and professional.",
-            "一张适配深浅色的交易卡片：顶部是交易对名称与最新价（按实时蜡烛涨跌染成绿色或红色），下方是 18 根历史 K 线与 1 根实时 K 线。实时蜡烛的收盘价每 140ms 获得一个新的随机游走目标，并以约 70ms 的指数跟随缓动过去，因此实体与影线自然伸缩而非跳变；右侧的虚线价格线与彩色价格标签同步跟随。当前周期结束时蜡烛被固定，整组序列连续平滑地左移一格——没有任何阶跃——纵轴刻度也在约 200ms 内缓动，以 12% 的余量适配可见区间的最高与最低价。实时蜡烛带有柔和辉光。点击可注入一次剧烈波动。精准、鲜活、专业。"
+            "A dark-friendly trading card: pair name and last price on top (tinted green or red by the live candle's direction), and below it 18 candlesticks plus one live candle. The live candle's close eases toward a new random-walk target every 140 ms (exponential follow ≈ 70 ms), so its body and wick stretch organically rather than jumping; a dashed price line and a colored price tag on the right track it, in a price-axis column that also labels the three horizontal guides. The live candle always has a full slot of room at the right edge, so it is never clipped. When the candle's period ends it is committed and the whole series glides one slot left continuously — no step — while the vertical scale eases (≈ 200 ms) to fit the visible high/low with 12% headroom. The live candle carries a soft glow. Tap to inject a volatility spike. Precise, alive and professional.",
+            "一张适配深浅色的交易卡片：顶部是交易对名称与最新价（按实时蜡烛涨跌染成绿色或红色），下方是 18 根历史 K 线与 1 根实时 K 线。实时蜡烛的收盘价每 140ms 获得一个新的随机游走目标，并以约 70ms 的指数跟随缓动过去，因此实体与影线自然伸缩而非跳变；右侧的虚线价格线与彩色价格标签同步跟随；右侧价格轴一栏同时标注三条水平参考线的价格。最右侧始终为实时蜡烛预留完整一格，绝不会被裁切。当前周期结束时蜡烛被固定，整组序列连续平滑地左移一格——没有任何阶跃——纵轴刻度也在约 200ms 内缓动，以 12% 的余量适配可见区间的最高与最低价。实时蜡烛带有柔和辉光。点击可注入一次剧烈波动。精准、鲜活、专业。"
         ),
         implementation: L(
             "A reference-type model advanced by TimelineView eases the live close, commits candles on a timer and smooths the y-range; the fractional progress of the current period offsets every x, and a Canvas draws wicks, bodies, the price line and tag.",
@@ -192,7 +192,8 @@ private struct CandleCanvas: View {
         Canvas { context, size in
             guard size.width > CandleCanvas.tagWidth + 20, size.height > 20 else { return }
             let plotWidth = size.width - CandleCanvas.tagWidth - 6
-            let step = plotWidth / (CGFloat(CandleModel.visible) + 0.6)
+            // 1.2 extra slots leave room for the live candle's body and glow at phase 0, so it is never clipped.
+            let step = plotWidth / (CGFloat(CandleModel.visible) + 1.2)
             let span = max(high - low, 0.0001)
             let y = { (value: Double) -> CGFloat in size.height * CGFloat(1 - (value - low) / span) }
 
@@ -219,6 +220,19 @@ private struct CandleCanvas: View {
             line.move(to: CGPoint(x: 0, y: priceY))
             line.addLine(to: CGPoint(x: plotWidth + 6, y: priceY))
             context.stroke(line, with: .color(tint.opacity(0.7)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+
+            // Price axis: the value at each guide, in the tag column, skipped where the live tag would cover it.
+            for fraction: CGFloat in [0.25, 0.5, 0.75] {
+                let guideY = size.height * fraction
+                guard abs(guideY - priceY) > 14 else { continue }
+                let value = low + Double(1 - fraction) * span
+                context.draw(
+                    Text(String(format: "%.2f", value))
+                        .font(.system(size: 9, weight: .semibold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(Color.secondary),
+                    at: CGPoint(x: size.width - CandleCanvas.tagWidth / 2, y: guideY)
+                )
+            }
 
             let tag = CGRect(x: size.width - CandleCanvas.tagWidth, y: priceY - 9, width: CandleCanvas.tagWidth, height: 18)
             context.fill(Path(roundedRect: tag, cornerRadius: 5, style: .continuous), with: .color(tint))

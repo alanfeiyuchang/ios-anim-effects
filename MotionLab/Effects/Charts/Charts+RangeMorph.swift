@@ -221,11 +221,13 @@ private struct RangeChart: View, Animatable {
         let baseline = showBaseline
         Canvas { context, size in
             guard values.count > 1 else { return }
-            let points = RangeChart.points(values, size: size)
+            // Plot inside an inset so the end dot's halo is drawn fully within the Canvas (a Canvas clips to its bounds).
+            let plot = CGRect(x: 0, y: RangeChart.inset, width: size.width - RangeChart.inset, height: size.height - RangeChart.inset * 2)
+            let points = RangeChart.points(values, in: plot)
             let line = RangeChart.smoothPath(points)
 
             var area = line
-            area.addLine(to: CGPoint(x: size.width, y: size.height))
+            area.addLine(to: CGPoint(x: plot.maxX, y: size.height))
             area.addLine(to: CGPoint(x: 0, y: size.height))
             area.closeSubpath()
             context.fill(
@@ -253,15 +255,15 @@ private struct RangeChart: View, Animatable {
                 context.fill(Path(ellipseIn: CGRect(x: last.x - dot, y: last.y - dot, width: dot * 2, height: dot * 2)), with: .color(tint))
             }
         }
-        // Keep the end dot's halo inside the card.
-        .padding(.trailing, 10)
-        .padding(.vertical, 6)
     }
 
-    private static func points(_ values: [Double], size: CGSize) -> [CGPoint] {
-        let step = size.width / CGFloat(max(values.count - 1, 1))
+    /// Room for the 9 pt halo around the end dot.
+    private static let inset: CGFloat = 10
+
+    private static func points(_ values: [Double], in plot: CGRect) -> [CGPoint] {
+        let step = plot.width / CGFloat(max(values.count - 1, 1))
         return values.enumerated().map { index, value in
-            CGPoint(x: CGFloat(index) * step, y: size.height * CGFloat(1 - value))
+            CGPoint(x: plot.minX + CGFloat(index) * step, y: plot.minY + plot.height * CGFloat(1 - value))
         }
     }
 

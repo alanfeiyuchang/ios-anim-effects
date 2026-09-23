@@ -8,8 +8,8 @@ extension Effect {
         name: L("Donut Sweep & Explode", "环形图展开与弹出"),
         summary: L("Rounded donut segments sweep in one by one; tap a slice to pop it out.", "圆角环形分段依次扫入，点击某段即可弹出高亮。"),
         prompt: L(
-            "A 190 pt donut chart built from five round-capped arc segments (26 pt stroke, small angular gaps, palette of indigo, pink, amber, mint and sky). On appear the whole ring rotates from −150° to −90° while each segment sweeps from its start angle to its full length on a spring (response 0.7 s, damping 0.8), staggered 100 ms apart, so the colours unfurl clockwise like a fan. Tapping a segment explodes it: it slides 12 pt outward along its bisector and thickens to 34 pt, the other segments dim to 35% opacity, and the center label switches from the total to that category’s name and percentage with a numeric roll; tapping it again or the hole restores everything on a snappy spring. A selection haptic marks each change. Tactile, legible and joyful.",
-            "一个 190pt 的环形图，由五段圆角端点的弧线组成（描边 26pt，段间留有细小角度间隙，配色为靛蓝、粉、琥珀、薄荷绿与天蓝）。出现时整环从 −150° 旋转到 −90°，同时每段以弹簧（响应 0.7 秒、阻尼 0.8）从起点扫到完整长度，逐段错开 100ms，色彩如折扇般顺时针展开。点击某段即“弹出”：沿其角平分线向外移动 12pt、描边加粗至 34pt，其余分段降至 35% 透明度，中心标签从总量切换为该类别名称与百分比，数字滚动过渡；再次点击该段或点击中空处，一切以利落的弹簧恢复。每次切换伴随选择触感。可触、清晰、令人愉悦。"
+            "A 190 pt donut chart built from five round-capped arc segments (26 pt stroke, small angular gaps, palette of indigo, pink, amber, mint and sky). On appear the whole ring rotates from −150° to −90° while each segment sweeps from its start angle to its full length on a spring (response 0.7 s, damping 0.8), staggered 100 ms apart, so the colours unfurl clockwise like a fan. Tapping a segment explodes it: it slides 12 pt outward along its bisector and thickens to 34 pt, the other segments dim to 35% opacity, and the center label switches from the total to that category’s name and percentage with a numeric roll. A three-column legend below (color dot, name, share) mirrors the selection — its other rows dim too — and tapping a legend row selects that slice; tapping it again or the hole restores everything on a snappy spring. A selection haptic marks each change. Tactile, legible and joyful.",
+            "一个 190pt 的环形图，由五段圆角端点的弧线组成（描边 26pt，段间留有细小角度间隙，配色为靛蓝、粉、琥珀、薄荷绿与天蓝）。出现时整环从 −150° 旋转到 −90°，同时每段以弹簧（响应 0.7 秒、阻尼 0.8）从起点扫到完整长度，逐段错开 100ms，色彩如折扇般顺时针展开。点击某段即“弹出”：沿其角平分线向外移动 12pt、描边加粗至 34pt，其余分段降至 35% 透明度，中心标签从总量切换为该类别名称与百分比，数字滚动过渡。下方三列图例（色点、名称、占比）同步反映选中状态，其余行同样变暗；点击图例行也能选中对应分段。再次点击该段或点击中空处，一切以利落的弹簧恢复。每次切换伴随选择触感。可触、清晰、令人愉悦。"
         ),
         implementation: L(
             "Each slice is a trimmed Circle stroked with round caps; a per-slice grow value animates with a staggered spring, and taps are mapped to slices by converting the touch location to an angle with onTapGesture’s location.",
@@ -21,6 +21,7 @@ extension Effect {
             .slider("thickness", L("Thickness", "环宽"), 14...40, default: 26, step: 1, decimals: 0, unit: "pt"),
             .slider("explode", L("Explode distance", "弹出距离"), 0...24, default: 12, step: 1, decimals: 0, unit: "pt"),
             .slider("stagger", L("Stagger", "错峰间隔"), 0...0.3, default: 0.1, unit: "s"),
+            .slider("response", L("Sweep response", "扫入弹簧响应"), 0.3...1.2, default: 0.7, unit: "s"),
         ]
     ) { ctx in
         DonutDemo(ctx: ctx)
@@ -51,19 +52,22 @@ private struct DonutDemo: View {
     private let diameter: CGFloat = 190
     private var total: Double { donutSlices.reduce(0) { $0 + $1.value } }
 
+    private let side: CGFloat = 250
+
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 10) {
             ZStack {
                 ForEach(donutSlices.indices, id: \.self) { index in
                     slice(index)
                 }
                 centerLabel
             }
-            .frame(width: diameter + 70, height: diameter + 70)
+            .frame(width: side, height: side)
             .contentShape(Rectangle())
             .onTapGesture { location in
                 handleTap(location)
             }
+            legend
             DemoHint(text: L("Tap a segment", "点击某一分段"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -99,6 +103,34 @@ private struct DonutDemo: View {
             .shadow(color: donutSlices[index].color.opacity(isSelected ? 0.45 : 0), radius: 12, y: 6)
     }
 
+    private var legend: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .leading), count: 3), alignment: .leading, spacing: 6) {
+            ForEach(donutSlices.indices, id: \.self) { index in
+                Button {
+                    select(selected == index ? nil : index)
+                } label: {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(donutSlices[index].color)
+                            .frame(width: 8, height: 8)
+                        Text(donutSlices[index].name, ctx.language)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Text("\(Int((donutSlices[index].value / total * 100).rounded()))%")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .opacity(selected == nil || selected == index ? 1 : 0.4)
+            }
+        }
+        .frame(width: 300)
+    }
+
     private var centerLabel: some View {
         let name = selected.map { donutSlices[$0].name(ctx.language) } ?? (ctx.language == .zh ? "总预算" : "Total budget")
         let number = selected.map { donutSlices[$0].value / total * 100 } ?? total
@@ -117,7 +149,6 @@ private struct DonutDemo: View {
     }
 
     private func handleTap(_ location: CGPoint) {
-        let side = diameter + 70
         let dx = location.x - side / 2
         let dy = location.y - side / 2
         let radius = (dx * dx + dy * dy).squareRoot()
@@ -142,7 +173,7 @@ private struct DonutDemo: View {
     private func sweepIn() {
         withAnimation(.spring(response: 0.9, dampingFraction: 0.85)) { intro = 1 }
         for index in donutSlices.indices {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8).delay(Double(index) * ctx["stagger"])) {
+            withAnimation(.spring(response: ctx["response"], dampingFraction: 0.8).delay(Double(index) * ctx["stagger"])) {
                 grow[index] = 1
             }
         }

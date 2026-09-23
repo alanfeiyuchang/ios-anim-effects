@@ -15,8 +15,8 @@ extension Effect {
             "近乎全黑的屏幕，四周环绕一圈连续圆角、色彩不断流转的发光边框——薰衣草紫、腮红粉、长春花蓝、珊瑚红与杏色。边框由四层角向渐变描边叠加：从锐利细线到 5pt、14pt、28pt 模糊，逐层加宽加柔；每层以不同速率旋转，其中一层反向，使色彩沿边缘有机流动而非整体转圈，线宽按约 3 秒的正弦节奏呼吸。点击进入聆听/思考状态：光晕在约 300 毫秒内缓动到接近两倍粗细、流速提升至 2.5 倍，中央提示文字交叉淡入淡出，并伴随轻触觉反馈。整体聪慧、温暖、富有生命感，正是 Apple 智能的标志性存在感。"
         ),
         implementation: L(
-            "TimelineView drives four RoundedRectangle.strokeBorder layers filled with rotating AngularGradients and progressively larger blurs; a tiny model eases an energy value that scales width and speed.",
-            "TimelineView 驱动四层 RoundedRectangle.strokeBorder，分别填充旋转的 AngularGradient 并施加逐级增大的模糊；小型模型缓动能量值，用于放大线宽与流速。"
+            "TimelineView drives four RoundedRectangle.strokeBorder layers filled with rotating AngularGradients and progressively larger blurs, flattened with drawingGroup() so the blur passes run in one Metal render; a tiny model eases an energy value that scales width and speed.",
+            "TimelineView 驱动四层 RoundedRectangle.strokeBorder，分别填充旋转的 AngularGradient 并施加逐级增大的模糊，再以 drawingGroup() 合并为一次 Metal 渲染；小型模型缓动能量值，用于放大线宽与流速。"
         ),
         apis: ["AngularGradient", "strokeBorder", "blur(radius:)", "TimelineView(.animation)", "contentTransition"],
         tags: ["siri", "apple intelligence", "glow", "edge", "光晕", "边缘光", "智能", "流光"],
@@ -113,6 +113,8 @@ private struct GlowRing: View {
             layer(lineWidth: w * 1.4, blur: 5, degrees: t * 70 + 40, opacity: 0.9)
             layer(lineWidth: max(w * 0.5, 1.5), blur: 0, degrees: t * 90, opacity: 1)
         }
+        // Flatten the four blurred strokes into one Metal-rendered layer each frame.
+        .drawingGroup()
     }
 
     private func layer(lineWidth: CGFloat, blur: CGFloat, degrees: Double, opacity: Double) -> some View {

@@ -113,6 +113,8 @@ private struct FlingDemo: View {
     @State private var isDragging = false
     /// The timeline only runs while something moves; a watcher task puts it to sleep once settled.
     @State private var awake = true
+    /// Wall haptics start only once the user has handled the puck (never for the intro toss).
+    @State private var userTouched = false
     @State private var sleepWatcher: Task<Void, Never>?
 
     private let arena: CGFloat = 290
@@ -122,7 +124,7 @@ private struct FlingDemo: View {
         let bounds = CGSize(width: arena - puck, height: arena - puck)
         let glide = ctx["glide"]
         let restitution = ctx["bounce"]
-        let haptics = !ctx.isPreview
+        let haptics = !ctx.isPreview && userTouched
 
         VStack(spacing: 14) {
             ZStack(alignment: .topLeading) {
@@ -172,6 +174,7 @@ private struct FlingDemo: View {
                     grabOffset = CGSize(width: value.startLocation.x - live.x, height: value.startLocation.y - live.y)
                     model.isHeld = true
                     model.velocity = .zero
+                    userTouched = true
                     wake()
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { isDragging = true }
                     if !ctx.isPreview { Haptics.tap(wasMoving ? .medium : .light) }

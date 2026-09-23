@@ -34,6 +34,10 @@ private struct ChargeBurstDemo: View {
     @State private var pressStart = Date()
     @State private var pressID = 0
     @State private var burstCount = 0
+    /// True during a scripted charge (previews, arrival intro), whose delayed haptics must stay silent.
+    @State private var simulated = false
+
+    private var quiet: Bool { ctx.isPreview || simulated }
 
     var body: some View {
         VStack(spacing: 22) {
@@ -65,7 +69,10 @@ private struct ChargeBurstDemo: View {
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
-                    if !isPressing { beginPress() }
+                    if !isPressing {
+                        simulated = false
+                        beginPress()
+                    }
                 }
                 .onEnded { _ in endPress() }
         )
@@ -78,12 +85,12 @@ private struct ChargeBurstDemo: View {
         let id = pressID
         let duration = ctx["duration"]
         withAnimation(.linear(duration: duration)) { charge = 1 }
-        if !ctx.isPreview { Haptics.tap(.soft) }
+        if !quiet { Haptics.tap(.soft) }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(duration))
             guard isPressing, pressID == id else { return }
             isFull = true
-            if !ctx.isPreview { Haptics.tap(.heavy) }
+            if !quiet { Haptics.tap(.heavy) }
         }
     }
 
@@ -94,7 +101,7 @@ private struct ChargeBurstDemo: View {
         isFull = false
         if elapsed >= ctx["duration"] - 0.02 {
             burstCount += 1
-            if !ctx.isPreview { Haptics.success() }
+            if !quiet { Haptics.success() }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.45)) { charge = 0 }
         } else {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { charge = 0 }
@@ -102,6 +109,8 @@ private struct ChargeBurstDemo: View {
     }
 
     private func autoCharge() {
+        guard !isPressing else { return }
+        simulated = true
         beginPress()
         let hold = ctx["duration"] + 0.35
         Task { @MainActor in

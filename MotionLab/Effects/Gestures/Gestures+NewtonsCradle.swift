@@ -179,13 +179,15 @@ private struct NewtonsCradleDemo: View {
     @State private var model = CradleModel()
     @State private var grabbed: Int?
     @State private var awake = true
+    /// Click haptics start only once the user has handled a ball (never for the intro swing).
+    @State private var userTouched = false
     @State private var sleepWatcher: Task<Void, Never>?
 
     var body: some View {
         let count = ctx.int("balls").clamped(to: 3...7)
         let length = ctx["length"]
         let restitution = ctx["restitution"]
-        let haptics = !ctx.isPreview
+        let haptics = !ctx.isPreview && userTouched
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
             let _ = model.configure(count: count)
             let _ = model.step(to: timeline.date, length: length, restitution: restitution, haptics: haptics)
@@ -231,6 +233,7 @@ private struct NewtonsCradleDemo: View {
                 if grabbed == nil {
                     guard let index = ballIndex(at: value.startLocation, count: count, length: length) else { return }
                     grabbed = index
+                    userTouched = true
                     wake()
                     if !ctx.isPreview { Haptics.tap(.light) }
                 }

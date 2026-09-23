@@ -119,12 +119,13 @@ private struct SlideToConfirmDemo: View {
             }
     }
 
-    private func confirm() {
+    /// Simulated slides confirm from a Task (outside the muted autoplay call), so they pass `haptic: false`.
+    private func confirm(haptic: Bool = true) {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             x = maxX
             confirmed = true
         }
-        if !ctx.isPreview { Haptics.success() }
+        if haptic && !ctx.isPreview { Haptics.success() }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.8))
             withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) {
@@ -139,7 +140,7 @@ private struct SlideToConfirmDemo: View {
         withAnimation(.easeInOut(duration: 0.8)) { x = maxX * 0.92 }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.85))
-            confirm()
+            confirm(haptic: false)
         }
     }
 }

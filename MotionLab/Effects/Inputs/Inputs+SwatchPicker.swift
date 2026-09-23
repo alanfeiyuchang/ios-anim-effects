@@ -53,9 +53,13 @@ private struct InputSwatchPickerDemo: View {
 
     var body: some View {
         VStack(spacing: 22) {
+            Spacer(minLength: 0)
             card
             swatchRow
             nameLabel
+            Spacer(minLength: 0)
+            DemoHint(text: L("Tap a swatch to recolor the card", "点击色块为卡片换色"), ctx: ctx)
+                .padding(.bottom, 14)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sensoryFeedback(.selection, trigger: ctx.isPreview ? 0 : selected)

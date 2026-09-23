@@ -39,7 +39,7 @@ private struct DragDismissDemo: View {
 
         ZStack {
             ThumbnailGrid()
-                .overlay(Color.black.opacity(dismissed ? 0 : 0.28 * (1 - progress)))
+                .overlay(Color.black.opacity(dismissed ? 0 : 0.28 * Double(1 - progress)))
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
             DetailCard(language: ctx.language)
                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))

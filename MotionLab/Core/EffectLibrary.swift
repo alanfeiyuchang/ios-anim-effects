@@ -4,6 +4,7 @@ import SwiftUI
 enum EffectLibrary {
     static let all: [Effect] = {
         let groups: [[Effect]] = [
+            ShowcaseEffects.all,
             ButtonEffects.all,
             InputEffects.all,
             LoadingEffects.all,
@@ -40,6 +41,7 @@ enum EffectLibrary {
     /// A small hand-picked set for the Browse header; falls back gracefully if ids change.
     static var featured: [Effect] {
         let ids = [
+            "showcase.slide-to-start", "showcase.fog-wipe", "showcase.speed-line",
             "morph.button-to-card", "loading.load-button", "shader.ripple", "cards.tilt-3d",
             "backgrounds.mesh-gradient", "text.numeric-counter", "buttons.magnetic", "navigation.tab-indicator",
         ]

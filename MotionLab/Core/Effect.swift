@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - Category
 
 enum EffectCategory: String, CaseIterable, Identifiable {
+    case showcase
     case buttons
     case inputs
     case loading
@@ -22,6 +23,7 @@ enum EffectCategory: String, CaseIterable, Identifiable {
 
     var title: LocalizedText {
         switch self {
+        case .showcase: return L("Signature Interactions", "质感交互精选")
         case .buttons: return L("Buttons", "按钮")
         case .inputs: return L("Inputs & Controls", "输入与控件")
         case .loading: return L("Loading & Progress", "加载与进度")
@@ -41,6 +43,7 @@ enum EffectCategory: String, CaseIterable, Identifiable {
 
     var subtitle: LocalizedText {
         switch self {
+        case .showcase: return L("Dark, tactile widget cards with rich micro-interactions", "暗黑高级质感卡片与细腻微交互")
         case .buttons: return L("Press, glow, magnetic, ripple and state buttons", "按压、辉光、磁吸、涟漪与状态按钮")
         case .inputs: return L("Toggles, sliders, fields, pickers and steppers", "开关、滑块、输入框、选择器与步进器")
         case .loading: return L("Spinners, skeletons, progress and load buttons", "旋转器、骨架屏、进度条与加载按钮")
@@ -60,6 +63,7 @@ enum EffectCategory: String, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
+        case .showcase: return "wand.and.stars"
         case .buttons: return "hand.tap.fill"
         case .inputs: return "slider.horizontal.3"
         case .loading: return "hourglass"
@@ -79,6 +83,7 @@ enum EffectCategory: String, CaseIterable, Identifiable {
 
     var gradient: [Color] {
         switch self {
+        case .showcase: return [Color(hex: 0xFFB02E), Color(hex: 0xFF5A1F)]
         case .buttons: return [Color(hex: 0x6E7BFF), Color(hex: 0xA46BFF)]
         case .inputs: return [Color(hex: 0x3AC4FF), Color(hex: 0x4F7CFF)]
         case .loading: return [Color(hex: 0x21D4A8), Color(hex: 0x2A9DF4)]

@@ -1,0 +1,173 @@
+import SwiftUI
+
+extension Effect {
+    static let chartsActivityRings = Effect(
+        id: "charts.activity-rings",
+        category: .charts,
+        interaction: .tap,
+        name: L("Activity Rings", "健身圆环"),
+        summary: L("Three concentric gradient rings that close with springs and lap past 100% with a shadowed cap.", "三条同心渐变圆环以弹簧闭合，超额时带投影端帽继续绕圈。"),
+        prompt: L(
+            "Three concentric rings (22 pt stroke, 4 pt gaps, outer diameter 210 pt) in Move red-pink, Exercise lime and Stand cyan, each over a 20%-opacity track of its own colour, with a small bold glyph at 12 o’clock. On appear and on tap the rings drain in 250 ms, then fill clockwise from the top in outer-to-inner order, 150 ms apart, on a smooth spring (response ≈ 1.2 s, damping 0.82). Each arc carries an angular gradient from its darker start to its brighter tip. When a goal passes 100%, the ring keeps travelling: the full gradient rotates so the bright end stays at the tip, and a round end cap casts a soft 3 pt shadow in the direction of travel so the overlap reads as a physical strap. Percentages beneath count up in step. Rewarding, iconic, unmistakably Apple Watch.",
+            "三条同心圆环（描边 22pt、间距 4pt、外径 210pt），分别为“活动”红粉、“锻炼”青柠与“站立”青蓝，每条下方是 20% 透明度的同色轨道，12 点方向带一个小巧的粗体图标。出现与点击时，圆环先在 250ms 内清空，再从顶部顺时针填充，由外到内依次错开 150ms，使用平滑弹簧（响应约 1.2 秒、阻尼 0.82）。每条弧线都带角向渐变：起点偏深、末端更亮。当目标超过 100% 时圆环继续前进：整圈渐变随之旋转，使亮端始终位于末端，圆形端帽沿前进方向投下 3pt 的柔和阴影，让重叠处看起来像一条真实的表带。下方百分比同步递增。富有成就感，经典的 Apple Watch 味道。"
+        ),
+        implementation: L(
+            "Each ring is an Animatable view: up to 100% it trims a Circle stroked with an AngularGradient; beyond 100% it draws the full ring rotated by the excess and adds a shadowed end-cap circle rotated to the tip angle.",
+            "每条圆环都是 Animatable 视图：100% 以内用 AngularGradient 描边并 trim 的 Circle；超过 100% 时绘制整圈并按超出量旋转，再在末端角度叠加带阴影的端帽圆点。"
+        ),
+        apis: ["Animatable", "AngularGradient", "trim(from:to:)", "rotationEffect", "spring(response:dampingFraction:)"],
+        tags: ["activity rings", "progress ring", "fitness", "apple watch", "goal", "健身圆环", "进度环", "目标", "运动"],
+        params: [
+            .slider("thickness", L("Ring thickness", "环宽"), 12...30, default: 22, step: 1, decimals: 0, unit: "pt"),
+            .slider("response", L("Spring response", "弹簧响应"), 0.5...2.0, default: 1.2, unit: "s"),
+            .slider("stagger", L("Stagger", "错峰间隔"), 0...0.4, default: 0.15, unit: "s"),
+        ]
+    ) { ctx in
+        ActivityRingsDemo(ctx: ctx)
+    }
+}
+
+private struct RingStyle {
+    let name: LocalizedText
+    let symbol: String
+    let start: Color
+    let end: Color
+}
+
+private let ringStyles: [RingStyle] = [
+    RingStyle(name: L("Move", "活动"), symbol: "arrow.right", start: Color(hex: 0xE0004B), end: Color(hex: 0xFF4F9A)),
+    RingStyle(name: L("Exercise", "锻炼"), symbol: "chevron.right.2", start: Color(hex: 0x6BD100), end: Color(hex: 0xC6FF3D)),
+    RingStyle(name: L("Stand", "站立"), symbol: "arrow.up", start: Color(hex: 0x00B4D8), end: Color(hex: 0x3DF2F2)),
+]
+
+private struct ActivityRingsDemo: View {
+    let ctx: DemoContext
+    @State private var progress: [Double] = [0, 0, 0]
+
+    private let outer: CGFloat = 210
+
+    var body: some View {
+        let thickness = ctx.cg("thickness")
+        VStack(spacing: 18) {
+            ZStack {
+                ForEach(ringStyles.indices, id: \.self) { index in
+                    ActivityRing(
+                        progress: progress[index],
+                        style: ringStyles[index],
+                        lineWidth: thickness,
+                        diameter: outer - CGFloat(index) * 2 * (thickness + 4)
+                    )
+                }
+            }
+            .frame(width: outer + thickness, height: outer + thickness)
+            HStack(spacing: 18) {
+                ForEach(ringStyles.indices, id: \.self) { index in
+                    RingLegend(value: progress[index], style: ringStyles[index], language: ctx.language)
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { play() }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { play() }
+        .autoplay(ctx.isPreview, every: 3.6, delay: 3.6) { play() }
+    }
+
+    private func play() {
+        withAnimation(.easeIn(duration: 0.25)) { progress = [0, 0, 0] }
+        let targets = [Double.random(in: 0.7...1.35), Double.random(in: 0.55...1.2), Double.random(in: 0.4...1.0)]
+        let spring = Animation.spring(response: ctx["response"], dampingFraction: 0.82)
+        let stagger = ctx["stagger"]
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.28))
+            for index in targets.indices {
+                withAnimation(spring.delay(Double(index) * stagger)) {
+                    progress[index] = targets[index]
+                }
+            }
+            if !ctx.isPreview { Haptics.tap(.soft) }
+        }
+    }
+}
+
+private struct ActivityRing: View, Animatable {
+    var progress: Double
+    let style: RingStyle
+    let lineWidth: CGFloat
+    let diameter: CGFloat
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        let p = max(progress, 0)
+        ZStack {
+            Circle()
+                .stroke(style.start.opacity(0.2), lineWidth: lineWidth)
+            arc(p)
+            endCap(p)
+            Image(systemName: style.symbol)
+                .font(.system(size: lineWidth * 0.55, weight: .black))
+                .foregroundStyle(.black.opacity(0.75))
+                .offset(y: -diameter / 2)
+        }
+        .frame(width: diameter, height: diameter)
+    }
+
+    @ViewBuilder
+    private func arc(_ p: Double) -> some View {
+        if p <= 1 {
+            Circle()
+                .trim(from: 0, to: p)
+                .stroke(
+                    AngularGradient(colors: [style.start, style.end], center: .center, startAngle: .degrees(0), endAngle: .degrees(max(360 * p, 1))),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+        } else {
+            Circle()
+                .stroke(
+                    AngularGradient(colors: [style.start, style.end], center: .center, startAngle: .degrees(0), endAngle: .degrees(360)),
+                    lineWidth: lineWidth
+                )
+                .rotationEffect(.degrees(-90 + 360 * (p - 1)))
+        }
+    }
+
+    private func endCap(_ p: Double) -> some View {
+        Circle()
+            .fill(style.end)
+            .frame(width: lineWidth, height: lineWidth)
+            .shadow(color: .black.opacity(p > 0.95 ? 0.4 : 0), radius: 3, x: 0, y: 3)
+            .offset(x: diameter / 2)
+            .frame(width: diameter, height: diameter)
+            .rotationEffect(.degrees(-90 + 360 * p))
+            .opacity(p > 0.01 ? 1 : 0)
+    }
+}
+
+private struct RingLegend: View, Animatable {
+    var value: Double
+    let style: RingStyle
+    let language: AppLanguage
+
+    var animatableData: Double {
+        get { value }
+        set { value = newValue }
+    }
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(style.name, language)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text("\(Int((max(value, 0) * 100).rounded()))%")
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(style.start)
+        }
+        .frame(width: 70)
+    }
+}

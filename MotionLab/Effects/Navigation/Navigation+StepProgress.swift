@@ -11,8 +11,8 @@ extension Effect {
             "结账步骤条：连接线填充、对勾描绘，页面按方向推入。"
         ),
         prompt: L(
-            "A four-step checkout indicator (Cart → Address → Payment → Done): numbered 28 pt circles joined by 3 pt connector tracks, with the active step wrapped in a softly pulsing halo. Advancing fills the connector left-to-right with the brand gradient over ~350 ms, then — 150 ms later — the finished circle flips to a gradient fill while a checkmark draws itself with an animated stroke trim, and the next circle's halo starts breathing. The step content below pushes in from the trailing edge with a blur-fade while the old page exits to the leading edge; going back reverses both the fill and the push direction. Precise, reassuring and clearly directional.",
-            "一个四步结账进度条（购物车 → 地址 → 支付 → 完成）：28pt 的数字圆点由 3pt 连接轨道相连，当前步骤外圈有柔和呼吸的光晕。前进时，连接线在约 350 毫秒内以品牌渐变从左向右填满；150 毫秒后，完成的圆点切换为渐变填充，对勾通过描边裁剪动画「画」出来，下一个圆点的光晕开始呼吸。下方的步骤内容从右侧带着模糊淡入推入，旧页面向左侧退出；后退时连接线回收、推入方向同样反转。精确、令人安心，并具有清晰的方向感。"
+            "A four-step checkout indicator (Cart → Address → Payment → Done): numbered 28 pt circles joined by 3 pt connector tracks, with the active step wrapped in a softly pulsing halo. Advancing fills the connector left-to-right with the brand gradient over ~350 ms, then — 150 ms later — the finished circle flips to a gradient fill while a checkmark draws itself with an animated stroke trim, and the next circle's halo starts breathing. The step content below pushes in from the trailing edge with a fade while the old page exits to the leading edge; going back reverses both the fill and the push direction. Precise, reassuring and clearly directional.",
+            "一个四步结账进度条（购物车 → 地址 → 支付 → 完成）：28pt 的数字圆点由 3pt 连接轨道相连，当前步骤外圈有柔和呼吸的光晕。前进时，连接线在约 350 毫秒内以品牌渐变从左向右填满；150 毫秒后，完成的圆点切换为渐变填充，对勾通过描边裁剪动画「画」出来，下一个圆点的光晕开始呼吸。下方的步骤内容从右侧淡入推入，旧页面向左侧退出；后退时连接线回收、推入方向同样反转。精确、令人安心，并具有清晰的方向感。"
         ),
         implementation: L(
             "Connectors are capsules whose gradient fill scales on x from a leading anchor; the checkmark is a custom Shape animated with trim(from:to:), the halo uses phaseAnimator, and page content uses a direction-aware .push(from:) transition keyed with .id.",
@@ -55,7 +55,7 @@ private struct StepProgressDemo: View {
                             .combined(with: .opacity)
                     )
             }
-            .frame(width: 280, height: 120)
+            .frame(width: 300, height: 136)
             .clipped()
             controls
         }
@@ -112,7 +112,7 @@ private struct StepIndicator: View {
     let language: AppLanguage
 
     var body: some View {
-        HStack(alignment: .top, spacing: 6) {
+        HStack(alignment: .top, spacing: 4) {
             ForEach(0..<checkoutSteps.count, id: \.self) { index in
                 node(index)
                 if index < checkoutSteps.count - 1 {
@@ -141,18 +141,16 @@ private struct StepIndicator: View {
                     .fill(done || current ? AnyShapeStyle(Palette.primary) : AnyShapeStyle(Color.primary.opacity(0.08)))
                     .frame(width: 28, height: 28)
                     .animation(.easeOut(duration: 0.25).delay(done ? fillDuration * 0.6 : 0), value: done)
-                if done {
-                    StepCheck()
-                        .trim(from: 0, to: done ? 1 : 0)
-                        .stroke(.white, style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
-                        .frame(width: 12, height: 10)
-                        .transition(.modifier(active: CheckDraw(progress: 0), identity: CheckDraw(progress: 1)))
-                } else {
-                    Text("\(index + 1)")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(current ? Color.white : Color.secondary)
-                        .transition(.opacity)
-                }
+                Text("\(index + 1)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(current ? Color.white : Color.secondary)
+                    .opacity(done ? 0 : 1)
+                    .animation(.easeOut(duration: 0.15).delay(done ? fillDuration * 0.6 : 0), value: done)
+                StepCheck()
+                    .trim(from: 0, to: done ? 1 : 0)
+                    .stroke(.white, style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+                    .frame(width: 12, height: 10)
+                    .animation(done ? .easeOut(duration: 0.3).delay(fillDuration * 0.6 + 0.1) : .easeOut(duration: 0.12), value: done)
             }
             .frame(width: 28, height: 28)
             Text(checkoutSteps[index].1, language)
@@ -160,7 +158,7 @@ private struct StepIndicator: View {
                 .foregroundStyle(current || done ? Color.primary : Color.secondary)
                 .fixedSize()
         }
-        .frame(width: 52)
+        .frame(width: 48)
     }
 
     private func connector(filled: Bool) -> some View {
@@ -175,22 +173,6 @@ private struct StepIndicator: View {
             .frame(height: 3)
             .frame(maxWidth: .infinity)
             .padding(.top, 12.5)
-    }
-}
-
-/// Animates the checkmark stroke from 0 to 1 when inserted.
-private struct CheckDraw: ViewModifier, Animatable {
-    var progress: CGFloat
-
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
-    }
-
-    func body(content: Content) -> some View {
-        content.mask(alignment: .leading) {
-            Rectangle().scaleEffect(x: progress, y: 1, anchor: .leading)
-        }
     }
 }
 

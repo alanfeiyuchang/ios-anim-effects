@@ -65,17 +65,22 @@ private struct SideDrawerDemo: View {
     }
 
     private func page(ghost: Bool) -> some View {
-        let p = progress.clamped(to: -0.1...1.1)
+        let p: CGFloat = progress.clamped(to: -0.1...1.1)
         let depth: CGFloat = ghost ? 0.7 : 1
-        let scale = 1 - (1 - ctx.cg("scale")) * p * (ghost ? 1.18 : 1)
+        let scale: CGFloat = 1 - (1 - ctx.cg("scale")) * p * (ghost ? 1.18 : 1)
+        let shown: CGFloat = p.clamped(to: 0...1)
+        let radius: CGFloat = 26 * shown + 1
+        let alpha: Double = ghost ? 0.35 * Double(shown) : 1
+        let shadowAlpha: Double = ghost ? 0 : 0.3 * Double(shown)
+        let degrees: Double = ctx["angle"] * Double(p) * Double(depth)
         return DrawerPage(ctx: ctx, onMenu: toggle)
             .allowsHitTesting(!ghost)
-            .clipShape(RoundedRectangle(cornerRadius: 26 * min(max(p, 0), 1) + 1, style: .continuous))
-            .opacity(ghost ? Double(0.35 * min(max(p, 0), 1)) : 1)
-            .shadow(color: .black.opacity(ghost ? 0 : 0.3 * Double(min(max(p, 0), 1))), radius: 24, x: -6, y: 10)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .opacity(alpha)
+            .shadow(color: .black.opacity(shadowAlpha), radius: 24, x: -6, y: 10)
             .scaleEffect(scale)
             .rotation3DEffect(
-                .degrees(ctx["angle"] * Double(p) * Double(depth)),
+                .degrees(degrees),
                 axis: (x: 0, y: 1, z: 0),
                 anchor: .leading,
                 perspective: 0.6

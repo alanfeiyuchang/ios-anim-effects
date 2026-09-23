@@ -49,7 +49,7 @@ File: `MotionLab/Families/ShowcaseFamilies.swift` · list: `ShowcaseSportEffects
 | `showcase.chart-widgets` | Chart Widgets · 图表小组件 | 5 | `showcase.speed-line`, `showcase.fresh-snow`, `showcase.heart-zone`, `showcase.finance-card`, `showcase.sleep-timeline` |
 | `showcase.live-stats` | Stat Cards · 数据卡片 | 5 | `showcase.lift-status`, `showcase.run-summary`, `showcase.weather-widget`, `showcase.flip-clock`, `showcase.ev-charge` |
 | `showcase.media-cards` | Photo & Media Cards · 照片与媒体卡片 | 7 | `showcase.board-card`, `showcase.photo-play`, `showcase.spots-grid`, `showcase.fog-wipe`, `showcase.destination-carousel`, `showcase.polaroid-fan`, `showcase.now-playing` |
-| `showcase.controls` | Pickers & Sliders · 选择与滑动控件 | 5 | `showcase.slide-to-start`, `showcase.altitude-ruler`, `showcase.gear-checklist`, `showcase.trip-chips`, `showcase.date-range` |
+| `showcase.controls` | Pickers, Sliders & Checklists · 选择、滑动与清单控件 | 5 | `showcase.slide-to-start`, `showcase.altitude-ruler`, `showcase.gear-checklist`, `showcase.trip-chips`, `showcase.date-range` |
 | `showcase.routes` | Routes & Timelines · 路线与时间轴 | 5 | `showcase.best-line`, `showcase.flight-path`, `showcase.pin-route`, `showcase.itinerary`, `showcase.transit-line` |
 | `showcase.moments` | Moments & CTAs · 行动与高光时刻 | 5 | `showcase.go-countdown`, `showcase.get-started`, `showcase.boarding-pass`, `showcase.save-burst`, `showcase.summit-badge` |
 

@@ -38,7 +38,7 @@ private struct SportLiftDemo: View {
     let ctx: DemoContext
     @State private var lifts: [LiftRow] = [
         LiftRow(id: 0, name: "Hungerburg", status: 0, wait: 4),
-        LiftRow(id: 1, name: "Seegrubenbahn", status: 0, wait: 9),
+        LiftRow(id: 1, name: "Seegrube", status: 0, wait: 9),
         LiftRow(id: 2, name: "Hafelekar", status: 1, wait: 15),
         LiftRow(id: 3, name: "Frau Hitt", status: 2, wait: 0),
     ]
@@ -174,7 +174,7 @@ private struct LiftRowView: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: "cablecar.fill")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.8))

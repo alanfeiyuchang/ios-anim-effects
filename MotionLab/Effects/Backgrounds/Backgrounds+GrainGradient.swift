@@ -7,11 +7,11 @@ extension Effect {
         interaction: .gesture,
         name: L("Grain Gradient", "颗粒质感渐变"),
         summary: L(
-            "Silky colour fields drift beneath fine film grain; one glow follows your finger.",
+            "Silky color fields drift beneath fine film grain; one glow follows your finger.",
             "丝滑色域在细腻胶片颗粒下缓缓流动，其中一团光晕追随手指。"
         ),
         prompt: L(
-            "A full-bleed editorial gradient: a deep base colour with three soft Gaussian colour fields (e.g. pink, indigo, peach) that drift on slow Lissajous paths (≈ 18–33 s periods). The coordinates are domain-warped by two octaves of fractal noise, so the edges between fields bend and breathe like silk instead of sliding. A static film grain (±8% luminance) sits on top, hashed per device pixel using the screen's display scale (so it stays equally fine at 2× and 3×), giving the matte, printed texture of premium landing pages. The third field is the “focus”: it orbits on its own, and while you drag (or after a tap) it eases toward your finger (exponential follow ≈ 160 ms) and drifts back to its orbit on release. Calm, tactile and expensive-looking.",
+            "A full-bleed editorial gradient: a deep base color with three soft Gaussian color fields (e.g. pink, indigo, peach) that drift on slow Lissajous paths (≈ 18–33 s periods). The coordinates are domain-warped by two octaves of fractal noise, so the edges between fields bend and breathe like silk instead of sliding. A static film grain (±8% luminance) sits on top, hashed per device pixel using the screen's display scale (so it stays equally fine at 2× and 3×), giving the matte, printed texture of premium landing pages. The third field is the “focus”: it orbits on its own, and while you drag (or after a tap) it eases toward your finger (exponential follow ≈ 160 ms) and drifts back to its orbit on release. Calm, tactile and expensive-looking.",
             "一张满版的杂志感渐变：深色底上叠加三团柔和的高斯色域（如粉、靛蓝、蜜桃），各自沿缓慢的李萨如轨迹漂移（周期约 18–33 秒）。坐标先经两层分形噪声做域扭曲，色域之间的边界因此像丝绸一样弯折、呼吸，而不是生硬平移。最上层是静态胶片颗粒（亮度 ±8%），按屏幕的 displayScale 逐个物理像素哈希生成（2× 与 3× 屏上同样细腻），带来高端落地页那种哑光、印刷般的质感。第三团色域是“焦点”：平时自行环绕，拖动时以约 160ms 的指数跟随缓缓靠向手指，松手后再漂回原轨道。安静、可触，且质感高级。"
         ),
         implementation: L(

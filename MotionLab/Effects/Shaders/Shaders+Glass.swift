@@ -83,16 +83,27 @@ private struct GlassmorphismDemo: View {
                 .rotation3DEffect(.degrees(-ny * maxTilt), axis: (x: 1, y: 0, z: 0), perspective: 0.6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 6)
-                .onChanged { value in
-                    withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.8)) { drag = value.translation }
-                }
-                .onEnded { _ in
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { drag = .zero }
-                }
-        )
+        // Only the card tilts, so swipes on the backdrop still scroll the page.
+        .overlay {
+            Color.clear
+                .frame(width: 250, height: 160)
+                .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.8)) { drag = value.translation }
+                        }
+                        .onEnded { _ in
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { drag = .zero }
+                        }
+                )
+        }
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Drag the card to tilt it", "拖动卡片使其倾斜"), ctx: ctx)
+                .padding(.bottom, 22)
+                .environment(\.colorScheme, .dark)
+                .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 1.8, delay: 0.2) { tiltAndSettle() }
     }
 
@@ -158,7 +169,7 @@ private struct GlassOrbs: View {
             orb(Palette.amber, size: 120, x: cos(time / 1.1 + 2) * 90, y: sin(time / 1.5 + 1) * 80)
         }
         // Offsets don't grow layout bounds, so without a full-size frame the drawingGroup
-        // rasterizes (and the blur clips) to a ~200 pt box, leaving hard-edged colour slabs.
+        // rasterizes (and the blur clips) to a ~200 pt box, leaving hard-edged color slabs.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .offset(parallax)
         .blur(radius: 30)

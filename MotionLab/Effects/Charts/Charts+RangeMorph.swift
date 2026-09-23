@@ -6,13 +6,13 @@ extension Effect {
         category: .charts,
         interaction: .tap,
         name: L("Range Switch Morph", "区间切换形变"),
-        summary: L("Switching 1D / 1W / 1M / 1Y springs the price line into its new shape, colour and baseline.", "切换 1天/1周/1月/1年时，价格折线连同颜色与基准线弹性形变为新形状。"),
+        summary: L("Switching 1D / 1W / 1M / 1Y springs the price line into its new shape, color and baseline.", "切换 1天/1周/1月/1年时，价格折线连同颜色与基准线弹性形变为新形状。"),
         prompt: L(
-            "A stock card: ticker and price on top, a pill showing the period change (▲ green / ▼ red), a 150 pt smooth line chart with a gradient area fill, a dashed previous-close baseline and a glowing end dot, and a segmented control (1D · 1W · 1M · 1Y) whose thumb slides between options with matched geometry. Choosing a range morphs every one of the 36 points from the old series to the new one on a single spring (response ≈ 0.6 s, damping ≈ 0.8) — the line, area, baseline and end dot are all computed from the same interpolated values, so nothing drifts apart, and re-tapping mid-flight redirects smoothly. The stroke colour blends green ⇄ red in the same spring, and the change figure rolls with a numeric transition and a selection haptic. Confident, fluid and data-honest.",
+            "A stock card: ticker and price on top, a pill showing the period change (▲ green / ▼ red), a 150 pt smooth line chart with a gradient area fill, a dashed previous-close baseline and a glowing end dot, and a segmented control (1D · 1W · 1M · 1Y) whose thumb slides between options with matched geometry. Choosing a range morphs every one of the 36 points from the old series to the new one on a single spring (response ≈ 0.6 s, damping ≈ 0.8) — the line, area, baseline and end dot are all computed from the same interpolated values, so nothing drifts apart, and re-tapping mid-flight redirects smoothly. The stroke color blends green ⇄ red in the same spring, and the change figure rolls with a numeric transition and a selection haptic. Confident, fluid and data-honest.",
             "一张股票卡片：顶部为代码与价格，胶囊标签显示区间涨跌（▲ 绿 / ▼ 红），下方是 150pt 高的平滑折线图——渐变面积填充、虚线昨收基准线与发光端点，最底部是分段控件（1天 · 1周 · 1月 · 1年），滑块借助几何匹配在选项间滑动。切换区间时，36 个数据点在同一个弹簧（响应约 0.6 秒、阻尼约 0.8）中由旧序列形变为新序列——折线、面积、基准线与端点都由同一组插值数值计算，彼此绝不脱节；动画途中再次点击也会平滑转向。线条颜色在同一弹簧中于绿 ⇄ 红之间过渡，涨跌数字以数字转场滚动，并伴随选择触感。自信、流畅，忠于数据。"
         ),
         implementation: L(
-            "The chart is an Animatable view whose animatableData pairs a custom VectorArithmetic series (an array of Doubles) with a colour tone, so SwiftUI interpolates every point in one interruptible spring; a Canvas draws line, area, baseline and dot.",
+            "The chart is an Animatable view whose animatableData pairs a custom VectorArithmetic series (an array of Doubles) with a color tone, so SwiftUI interpolates every point in one interruptible spring; a Canvas draws line, area, baseline and dot.",
             "图表是一个 Animatable 视图，其 animatableData 将自定义 VectorArithmetic 序列（Double 数组）与颜色色调组合在一起，SwiftUI 因此在同一个可打断的弹簧中插值所有数据点；Canvas 负责绘制折线、面积、基准线与端点。"
         ),
         apis: ["VectorArithmetic", "Animatable", "Canvas", "matchedGeometryEffect", "contentTransition(.numericText)"],
@@ -201,7 +201,7 @@ private struct RangeChart: View, Animatable {
         }
     }
 
-    /// Green (1) ⇄ red (0), blended in sRGB so the colour travels with the spring.
+    /// Green (1) ⇄ red (0), blended in sRGB so the color travels with the spring.
     private var color: Color {
         let t = min(max(tone, 0), 1)
         let up = (r: 0x34 / 255.0, g: 0xC7 / 255.0, b: 0x7B / 255.0)

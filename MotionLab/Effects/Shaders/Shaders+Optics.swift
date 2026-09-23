@@ -60,11 +60,11 @@ extension Effect {
         name: L("Neon Edge Scan", "霓虹边缘扫描"),
         summary: L("A glowing scan line sweeps the card, turning everything it passes into a neon wireframe.", "一道发光扫描线掠过卡片，所经之处化为霓虹线框。"),
         prompt: L(
-            "A colourful artwork card is scanned like an AR capture. On tap, a luminous horizontal scan line (cyan, with an exponential glow ≈ 12 pt tall) sweeps from top to bottom over 1.4 s on an ease-in-out curve. Everything above the line is re-rendered by a Metal Sobel filter: luminance edges glow in the tint colour over a near-black navy base that keeps 8% of the original colour, so shapes, glyphs and the rounded border become a crisp neon wireframe, while everything below stays untouched. Tapping again sweeps back up and restores the artwork. A rigid haptic marks each pass. Technical, futuristic and satisfying.",
-            "一张彩色插画卡片像 AR 扫描一样被“捕获”。点击后，一道明亮的水平扫描线（青色，指数衰减光晕约 12pt 高）以 ease-in-out 曲线在 1.4 秒内自上而下扫过。扫描线上方的内容由 Metal Sobel 滤镜重新渲染：亮度边缘以主题色发光，底色压成近黑的藏青并保留 8% 原色，图形、文字与圆角边框都变成清晰的霓虹线框；扫描线下方则保持原样。再次点击，扫描线自下而上扫回并还原插画。每次扫描伴随清脆触感。科技、未来感十足，令人满足。"
+            "A colorful artwork card is scanned like an AR capture. On tap, a luminous horizontal scan line (cyan, with an exponential glow ≈ 12 pt tall) sweeps from top to bottom over 1.4 s on an ease-in-out curve. Everything above the line is re-rendered by a Metal Sobel filter: luminance edges glow in the tint color over a near-black navy base that keeps 8% of the original color, so shapes, glyphs and the rounded border become a crisp neon wireframe, while everything below stays untouched. Tapping again sweeps back up and restores the artwork; at both ends the line parks three glow-heights beyond the card, so no stray glow lingers at rest. A rigid haptic marks each pass. Technical, futuristic and satisfying.",
+            "一张彩色插画卡片像 AR 扫描一样被“捕获”。点击后，一道明亮的水平扫描线（青色，指数衰减光晕约 12pt 高）以 ease-in-out 曲线在 1.4 秒内自上而下扫过。扫描线上方的内容由 Metal Sobel 滤镜重新渲染：亮度边缘以主题色发光，底色压成近黑的藏青并保留 8% 原色，图形、文字与圆角边框都变成清晰的霓虹线框；扫描线下方则保持原样。再次点击，扫描线自下而上扫回并还原插画；两端停靠位置都在卡片外三倍光晕高度处，静止时不会残留光晕。每次扫描伴随清脆触感。科技、未来感十足，令人满足。"
         ),
         implementation: L(
-            "A [[stitchable]] layer shader takes eight neighbouring samples for a Sobel gradient and blends neon edges above an animatable scan position; an Animatable modifier interpolates that position so the line moves smoothly.",
+            "A [[stitchable]] layer shader takes eight neighboring samples for a Sobel gradient and blends neon edges above an animatable scan position; an Animatable modifier interpolates that position so the line moves smoothly.",
             "[[stitchable]] layerEffect 着色器取八个相邻采样计算 Sobel 梯度，在可动画的扫描位置之上混合霓虹边缘；Animatable 修饰器插值扫描位置，让扫描线平滑移动。"
         ),
         apis: ["layerEffect", "Animatable", "ShaderLibrary", "Sobel", "withAnimation"],
@@ -143,7 +143,8 @@ private struct ChromaticDemo: View {
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
-                                wake()
+                                // While awake the watcher is alive and a held card never settles.
+                                if !awake { wake() }
                                 model.target = value.translation
                             }
                             .onEnded { _ in
@@ -223,13 +224,16 @@ private struct KaleidoscopeDemo: View {
     @State private var spinOffset: Double = 0
     @State private var dragSpin: Double = 0
     @State private var dragging = false
+    /// Scripted quarter-turn flourishes (arrival intro / previews), eased per frame in the clock.
+    @State private var twistCount = 0
+    @State private var twistStart = Date.distantPast
 
     var body: some View {
         let segments = ctx["segments"]
         let zoom = ctx["zoom"]
-        let manual = spinOffset + dragSpin
         VStack(spacing: 12) {
             ShaderClock(preview: ctx.isPreview, speed: ctx["speed"]) { time in
+                let manual = spinOffset + dragSpin + scriptedTwist(now: Date())
                 KaleidoSource(time: time)
                     .visualEffect { content, proxy in
                         content.layerEffect(
@@ -272,9 +276,18 @@ private struct KaleidoscopeDemo: View {
         .autoplay(ctx.isPreview, every: 4, delay: 0.2) { introTwist() }
     }
 
-    /// A quarter-turn flourish on arrival shows the tube can be twisted.
+    /// A flourish on arrival shows the tube can be twisted: each one adds 0.9 rad with an ease-out over 1.2 s.
+    /// (Shader arguments don't animate, so the easing is evaluated per frame.)
     private func introTwist() {
-        withAnimation(.spring(response: 1.1, dampingFraction: 0.8)) { spinOffset += 0.9 }
+        twistCount += 1
+        twistStart = Date()
+    }
+
+    private func scriptedTwist(now: Date) -> Double {
+        guard twistCount > 0 else { return 0 }
+        let p = min(max(now.timeIntervalSince(twistStart) / 1.2, 0), 1)
+        let eased = 1 - pow(1 - p, 3)
+        return 0.9 * (Double(twistCount - 1) + eased)
     }
 }
 
@@ -304,7 +317,7 @@ private struct KaleidoSource: View {
         .frame(width: 280, height: 280)
     }
 
-    /// style 0: dots, 1: petals, 2: rotated bars. Colors cycle per motif so neighbours differ.
+    /// style 0: dots, 1: petals, 2: rotated bars. Colors cycle per motif so neighbors differ.
     private func drawRing(_ context: inout GraphicsContext, center: CGPoint, radius: Double, count: Int, size: CGFloat, style: Int, phase: Double) {
         for index in 0..<count {
             let angle = Double(index) / Double(count) * 2 * .pi + phase

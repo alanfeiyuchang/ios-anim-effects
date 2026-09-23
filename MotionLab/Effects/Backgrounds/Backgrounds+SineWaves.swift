@@ -15,7 +15,7 @@ extension Effect {
             "宁静的地平线：天空为桃色 → 淡紫 → 长春花蓝的柔和渐变（深色模式下为深海军蓝与靛蓝），带一团柔和模糊的太阳光晕；下半部分由五层半透明波带堆叠。每层是一条主正弦波叠加一条反向运动的细小谐波后填充而成；越靠后的波带越浅、越平、越慢，越靠前则越深（靛紫）、越高、越快（周期约 6–14 秒），彼此滑动形成柔和视差。每层自带由上至下逐渐加深的纵向渐变。运动连续而从容，氛围如呼吸或缓慢潮汐般冥想安宁。"
         ),
         implementation: L(
-            "A Canvas driven by TimelineView fills one closed wave Path per layer (sampled every 6 pt) with a vertical linear gradient; the sky adapts to the colour scheme.",
+            "A Canvas driven by TimelineView fills one closed wave Path per layer (sampled every 6 pt) with a vertical linear gradient; the sky adapts to the color scheme.",
             "由 TimelineView 驱动的 Canvas 为每层填充一条闭合波形 Path（每 6pt 采样），并施以纵向线性渐变；天空颜色随深浅色模式切换。"
         ),
         apis: ["Canvas", "TimelineView(.animation)", "Path", "GraphicsContext.Shading.linearGradient", "colorScheme"],

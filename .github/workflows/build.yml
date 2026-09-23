@@ -11,23 +11,61 @@ on:
         default: true
 
 jobs:
+  # Xcode 26 builds on every push. The Xcode 16 compatibility build only runs on demand
+  # ("[compat]" in the commit message or a manual run) to save macOS Actions minutes.
   build:
+    name: Xcode 26
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: scripts/ci-build.sh Xcode_26
+
+  build-xcode16:
+    name: Xcode 16
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[compat]')
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: scripts/ci-build.sh Xcode_16
+
+  screenshots:
+        description: "Capture simulator screenshots of every screen and effect"
+        type: boolean
+        default: true
+
+jobs:
+  # Xcode 26 builds on every push. The Xcode 16 compatibility build only runs on demand
+  # ("[compat]" in the commit message or a manual run) to save macOS Actions minutes.
+  build:
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip build]')
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-15
-            name: Xcode 16
-            xcode: "Xcode_16"
           - runner: macos-26
             name: Xcode 26
             xcode: "Xcode_26"
+            always: true
+          - runner: macos-15
+            name: Xcode 16
+            xcode: "Xcode_16"
+            always: false
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
+    env:
+      RUN_THIS: ${{ matrix.always || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[compat]') }}
     steps:
+      - name: Skip note
+        if: env.RUN_THIS != 'true'
+        run: echo "Xcode 16 compatibility build skipped (add [compat] to the commit message to run it)."
+
       - uses: actions/checkout@v4
+        if: env.RUN_THIS == 'true'
 
       - name: Select Xcode
+        if: env.RUN_THIS == 'true'
         run: |
           PICK=$(ls -d /Applications/${{ matrix.xcode }}*.app | grep -v -i beta | sort -V | tail -n 1)
           echo "Using $PICK"
@@ -35,6 +73,7 @@ jobs:
           xcodebuild -version
 
       - name: Build for iOS Simulator
+        if: env.RUN_THIS == 'true'
         run: |
           set -o pipefail
           xcodebuild \

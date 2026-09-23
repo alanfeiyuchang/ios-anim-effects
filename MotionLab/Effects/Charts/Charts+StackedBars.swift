@@ -123,9 +123,9 @@ private struct StackedBarsDemo: View {
         }
         .chartForegroundStyleScale(domain: names, range: stackSeries.map(\.color))
         .chartLegend(.hidden)
-        .chartYScale(domain: 0...25)
+        .chartYScale(domain: 0.0...25.0)
         .chartYAxis {
-            AxisMarks(position: .trailing, values: [0, 5, 10, 15, 20, 25]) { value in
+            AxisMarks(position: .trailing, values: [0.0, 5.0, 10.0, 15.0, 20.0, 25.0]) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [3, 4]))
                 AxisValueLabel {
                     if let amount = value.as(Double.self) {

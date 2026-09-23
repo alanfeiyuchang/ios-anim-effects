@@ -6,7 +6,7 @@ extension Effect {
         category: .gestures,
         interaction: .gesture,
         name: L("Drag to Reorder", "拖拽排序"),
-        summary: L("Lift a row by its handle; neighbours slide aside as it passes.", "按住把手提起一行，经过时相邻行自动让位。"),
+        summary: L("Lift a row by its handle; neighbors slide aside as it passes.", "按住把手提起一行，经过时相邻行自动让位。"),
         prompt: L(
             "A vertical list of five 50 pt rows (16 pt continuous corners, tinted icon, label and a grip handle on the right) spaced 8 pt apart. Pressing the handle lifts the row: it scales to 104%, its shadow deepens from 4 pt to 18 pt blur and it rises above the others with a light haptic. The row tracks the finger vertically 1:1 while every row it passes slides one slot up or down on a spring (response 0.3 s, damping 0.8), with a selection tick each time the target slot changes. On release the lifted row glides into its slot and the model reorders in the same spring (response ≈ 0.38 s), so nothing ever jumps. Precise, calm and satisfying.",
             "一个由五行组成的竖向列表，每行高 50pt（16pt 连续圆角、彩色图标、文字与右侧拖动把手），行距 8pt。按住把手即“提起”该行：放大到 104%，投影模糊从 4pt 加深到 18pt，浮于其他行之上，并伴随轻触感。该行在竖直方向 1:1 跟手，所经过的每一行都以弹簧（响应 0.3 秒、阻尼 0.8）上移或下移一格让位，目标槽位每次变化都有一次选择触感。松手后，被提起的行滑入目标槽位，数据重排在同一弹簧（响应约 0.38 秒）中完成，全程没有任何跳变。精准、沉稳、令人满足。"

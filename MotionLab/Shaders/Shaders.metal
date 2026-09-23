@@ -91,7 +91,7 @@ half4 mlGlitch(float2 position, SwiftUI::Layer layer, float time, float intensit
 
 // MARK: - Noise dissolve (color effect)
 // The cut is anti-aliased over a tiny noise band; just inside it an ember ramp runs
-// white-hot core → edge colour → charred rim → untouched artwork.
+// white-hot core → edge color → charred rim → untouched artwork.
 
 [[ stitchable ]]
 half4 mlDissolve(float2 position, half4 color, float progress, float scale, half4 edgeColor) {
@@ -199,7 +199,7 @@ half4 mlCRT(float2 position, SwiftUI::Layer layer, float2 size, float time, floa
 }
 
 // MARK: - CMYK halftone (layer effect)
-// Four rotated dot screens (C 15°, M 75°, Y 0°, K 45°, plus `angle`), each sampled at its own cell centre.
+// Four rotated dot screens (C 15°, M 75°, Y 0°, K 45°, plus `angle`), each sampled at its own cell center.
 // Dot area follows the ink amount (× `gain`); inks multiply over paper like real process printing.
 
 [[ stitchable ]]
@@ -268,8 +268,8 @@ half4 mlChromatic(float2 position, SwiftUI::Layer layer, float2 size, float2 shi
 }
 
 // MARK: - Kaleidoscope (layer effect)
-// Folds the polar angle into n mirrored wedges: wrap into [0, 2π/n), then mirror about the wedge centre
-// so every output angle lands in [0, π/n] and neighbouring wedges meet seamlessly.
+// Folds the polar angle into n mirrored wedges: wrap into [0, 2π/n), then mirror about the wedge center
+// so every output angle lands in [0, π/n] and neighboring wedges meet seamlessly.
 // `rotation` turns the output rosette, `spin` turns the sampled slice of the source (the "tube").
 // Samples can land up to the full view size away, so the caller must pass a matching maxSampleOffset.
 
@@ -324,7 +324,7 @@ half4 mlEdgeScan(float2 position, SwiftUI::Layer layer, float scanY, float band,
 }
 
 // MARK: - Grain gradient (color effect, generative)
-// Three soft colour fields drift over a base colour on domain-warped coordinates, finished with static, per-pixel film grain.
+// Three soft color fields drift over a base color on domain-warped coordinates, finished with static, per-pixel film grain.
 
 [[ stitchable ]]
 half4 mlGrainGradient(float2 position, half4 color, float2 size, float time, float grain,
@@ -422,7 +422,7 @@ half4 mlProgressiveBlur(float2 position, SwiftUI::Layer layer, float maxRadius, 
 
 // MARK: - Caustics (layer effect)
 // A pool floor seen through moving water. A sum-of-sines height field (plus an optional ripple ring from
-// the last tap) refracts the floor via its gradient, and a tileable iterative caustic network — sharpened
+// the last tap) refracts the floor via its gradient, and an iterative caustic network — sharpened
 // with pow(·, 8) — adds dancing light, shifted by the same refraction.
 
 static float mlWaterHeight(float2 p, float t, float2 origin, float age) {

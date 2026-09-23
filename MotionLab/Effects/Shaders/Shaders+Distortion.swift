@@ -36,7 +36,7 @@ extension Effect {
         name: L("Flag Wave", "旗帜波动"),
         summary: L("Continuous sine distortion like fabric in the wind.", "如风中布料般持续起伏的正弦扭曲。"),
         prompt: L(
-            "A card undulates continuously like a flag in a gentle breeze. Every pixel is displaced vertically by a sine wave travelling along the x-axis and horizontally by a slower cosine along the y-axis at half the amplitude, so the surface ripples diagonally rather than bouncing uniformly. The slope of the wave also lights the fabric: rising faces brighten and falling faces darken by up to ~30%, so folds read as real cloth. The loop is seamless with no easing — amplitude ≈6 pt, a wavelength parameter of 30 pt (≈190 pt crest to crest, i.e. 2π × 30), a ≈2 s cycle — calm and hypnotic, ideal for hero artwork or ambient headers.",
+            "A card undulates continuously like a flag in a gentle breeze. Every pixel is displaced vertically by a sine wave traveling along the x-axis and horizontally by a slower cosine along the y-axis at half the amplitude, so the surface ripples diagonally rather than bouncing uniformly. The slope of the wave also lights the fabric: rising faces brighten and falling faces darken by up to ~30%, so folds read as real cloth. The loop is seamless with no easing — amplitude ≈6 pt, a wavelength parameter of 30 pt (≈190 pt crest to crest, i.e. 2π × 30), a ≈2 s cycle — calm and hypnotic, ideal for hero artwork or ambient headers.",
             "卡片像微风中的旗帜一样持续起伏。每个像素在竖直方向受沿 x 轴传播的正弦波推移，在水平方向受沿 y 轴、速度更慢、振幅减半的余弦波推移，使表面呈斜向涟漪而非整体上下跳动。波形斜率同时为布面打光：迎光面最多提亮约 30%，背光面相应变暗，褶皱因此具有真实布料的体积感。运动无缝循环、无缓动：振幅约 6pt，波长参数 30pt（波峰间距约 190pt，即 2π × 30），周期约 2 秒，平静而催眠，适合头图或氛围型标题区。"
         ),
         implementation: L(
@@ -212,7 +212,7 @@ private struct WaveDemo: View {
         let shade = ctx["shade"]
         // Speed scales the accumulated clock (not the shader time), so dragging the slider never jumps the wave.
         ShaderClock(preview: ctx.isPreview, speed: speed) { time in
-            ShaderArtwork(variant: 1)
+            ShaderArtwork(variant: 7)
                 .padding(20)
                 .layerEffect(
                     ShaderLibrary.mlFlagWave(.float(time), .float(amplitude), .float(wavelength), .float(shade)),

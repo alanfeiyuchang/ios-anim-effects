@@ -122,7 +122,14 @@ private struct SwipeActionsDemo: View {
 
     private func end(_ id: Int, current: CGFloat, predicted: CGFloat) {
         let full = ctx.cg("full")
-        if current < -full || predicted < -full * 1.6 {
+        if current < -full {
+            // The threshold haptic already fired while dragging.
+            delete(id)
+            return
+        }
+        if predicted < -full * 1.6 {
+            // A hard flick deletes without ever crossing the threshold, so give it its single haptic here.
+            Haptics.tap(.medium)
             delete(id)
             return
         }

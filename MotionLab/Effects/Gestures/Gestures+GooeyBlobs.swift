@@ -148,7 +148,8 @@ private struct GooeyDemo: View {
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                wake()
+                // While awake the watcher is alive, and a pulled droplet never counts as settled.
+                if !awake { wake() }
                 let dx = value.location.x - area / 2
                 let dy = value.location.y - area / 2
                 let distance = (dx * dx + dy * dy).squareRoot()

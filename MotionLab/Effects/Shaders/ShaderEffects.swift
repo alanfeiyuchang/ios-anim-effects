@@ -22,7 +22,7 @@ enum ShaderEffects {
     ]
 }
 
-/// Colourful sample artwork that the shader demos distort.
+/// Colorful sample artwork that the shader demos distort.
 /// Each demo picks its own variant (palette, glyph, word and motif layout) so no two stages look alike.
 struct ShaderArtwork: View {
     var variant: Int = 0
@@ -57,6 +57,9 @@ struct ShaderArtwork: View {
         case 6:
             return Look(colors: [Color(hex: 0x14B8A6), Palette.blue, Color(hex: 0x312E81)], accent: Palette.amber, symbol: "viewfinder", word: "SCAN",
                         disc: CGSize(width: -84, height: -96), dot: CGSize(width: 90, height: 90))
+        case 7:
+            return Look(colors: [Palette.coral, Palette.amber, Palette.pink], accent: Palette.sky, symbol: "flag.fill", word: "BREEZE",
+                        disc: CGSize(width: -76, height: 104), dot: CGSize(width: 94, height: -92))
         default:
             return Look(colors: [Palette.indigo, Palette.violet, Palette.pink], accent: Palette.amber, symbol: "sparkles", word: "MOTION",
                         disc: CGSize(width: 80, height: -100), dot: CGSize(width: -86, height: 84))
@@ -64,7 +67,7 @@ struct ShaderArtwork: View {
     }
 
     var body: some View {
-        let look = look
+        let look = self.look
         ZStack {
             LinearGradient(colors: look.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
             Circle()

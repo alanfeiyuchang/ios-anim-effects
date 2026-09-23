@@ -12,7 +12,7 @@ extension Effect {
             "五颗 36pt 的铬球（从白色高光经银色过渡到石墨色的径向渐变）以 140pt 的细绳并排挂在一根细横梁下，地面上各有一团柔和阴影，球升得越高阴影越小越淡。每颗球都是真实的单摆（g ≈ 2000pt/s²，周期约 1.7 秒，轻微空气阻力），以 240Hz 积分。拖动任意一颗球会让它沿绳弧摆动（最大 ±52°），松手时继承手指的切向速度。碰撞按近乎完全弹性（恢复系数约 0.97）的交替顺序求解，动量在几毫秒内穿过静止的球，最远端的球飞出、中间的球几乎不动——拉起两颗则弹出两颗。每次强碰撞都有一下清脆触感。能量缓缓耗散，直到整排球静止。精准、催眠、忠于物理。"
         ),
         implementation: L(
-            "A reference-type model steps each pendulum with symplectic Euler at a fixed 1/240 s inside TimelineView, then resolves overlapping neighbours with restitution-weighted velocity exchange and positional correction; one Canvas draws bar, strings, shadows and chrome balls.",
+            "A reference-type model steps each pendulum with symplectic Euler at a fixed 1/240 s inside TimelineView, then resolves overlapping neighbors with restitution-weighted velocity exchange and positional correction; one Canvas draws bar, strings, shadows and chrome balls.",
             "引用类型模型在 TimelineView 中以固定 1/240 秒步长用辛欧拉法推进每个单摆，再对相互重叠的相邻球按恢复系数交换速度并修正位置；由一个 Canvas 绘制横梁、摆线、阴影与铬球。"
         ),
         apis: ["TimelineView(.animation)", "Canvas", "GraphicsContext.Shading.radialGradient", "DragGesture.Value.velocity", "Haptics"],
@@ -135,7 +135,7 @@ private final class CradleModel {
         return impact
     }
 
-    /// Resolves contact between neighbours i (left) and j (right); returns the closing speed.
+    /// Resolves contact between neighbors i (left) and j (right); returns the closing speed.
     private func resolve(_ i: Int, _ j: Int, length: Double, restitution e: Double) -> Double {
         let d = Double(CradleMetrics.diameter)
         let spacing = Double(CradleMetrics.spacing)

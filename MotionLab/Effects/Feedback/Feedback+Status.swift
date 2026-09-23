@@ -289,7 +289,7 @@ private struct CopyDemo: View {
                 Image(systemName: "link")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Palette.indigo)
-                Text("motion.app/k7Qx")
+                Text(verbatim: "motion.app/k7Qx")
                     .font(.system(.subheadline, design: .monospaced))
                     .lineLimit(1)
                 Spacer(minLength: 6)

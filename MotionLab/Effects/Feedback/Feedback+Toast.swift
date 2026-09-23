@@ -185,12 +185,12 @@ private struct IslandPill: View {
             shape.fill(Color.black)
             compact
                 .opacity(expanded ? 0 : 1)
-                .animation(.easeOut(duration: expanded ? 0.1 : 0.25).delay(expanded ? 0 : 0.18), value: expanded)
+                .animation(Animation.easeOut(duration: expanded ? 0.1 : 0.25).delay(expanded ? 0 : 0.18), value: expanded)
             expandedContent
                 .opacity(expanded ? 1 : 0)
                 .blur(radius: expanded ? 0 : 6)
                 .scaleEffect(expanded ? 1 : 0.9)
-                .animation(expanded ? .smooth(duration: 0.35).delay(0.12) : .easeIn(duration: 0.12), value: expanded)
+                .animation(expanded ? Animation.smooth(duration: 0.35).delay(0.12) : Animation.easeIn(duration: 0.12), value: expanded)
         }
         .frame(width: expanded ? 300 : 124, height: expanded ? 84 : 36)
         .clipShape(shape)

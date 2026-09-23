@@ -1,0 +1,205 @@
+import SwiftUI
+
+extension Effect {
+    static let navigationBottomSheet = Effect(
+        id: "navigation.bottom-sheet",
+        category: .navigation,
+        interaction: .gesture,
+        name: L("Detent Bottom Sheet", "多档位底部面板"),
+        summary: L(
+            "A draggable sheet that snaps between peek, half and full, rubber-banding at the ends.",
+            "可拖拽的底部面板，在收起、半屏与全屏间吸附，两端带橡皮筋阻尼。"
+        ),
+        prompt: L(
+            "A Maps-style bottom sheet over a map canvas, with a grabber and three detents: peek (~22% of the screen), half (~52%) and full (~92%). The sheet follows the finger 1:1; on release it projects the gesture's momentum and snaps to the nearest detent on a spring (response ≈0.42 s, damping ≈0.82), so a quick flick can skip a detent. Dragging past the top or bottom detent rubber-bands with increasing resistance (UIScrollView-style, ~40 pt limit). As the sheet rises past half, the map behind dims up to 30% and recedes to 94% scale while the sheet's top corners tighten from 28 to 18 pt. Each detent landing triggers a light haptic.",
+            "类似「地图」的底部面板覆盖在地图画布之上，顶部有抓手，并有三个档位：收起（约 22% 屏高）、半屏（约 52%）与全屏（约 92%）。面板 1:1 跟随手指；松手时根据手势动量预测落点，并以弹簧（响应约 0.42 秒、阻尼约 0.82）吸附到最近的档位，快速甩动可以跳过一个档位。超出最高或最低档位继续拖拽时，会像 UIScrollView 一样出现逐渐增强的橡皮筋阻尼（上限约 40pt）。面板升过半屏后，背后的地图最多变暗 30% 并缩小到 94%，面板顶部圆角从 28pt 收紧到 18pt。每次落到档位都伴随轻触觉。"
+        ),
+        implementation: L(
+            "Detent heights derive from the measured stage height; a DragGesture offsets the sheet with rubberBand() beyond the extremes and uses predictedEndTranslation to choose the target detent. An UnevenRoundedRectangle shapes the sheet.",
+            "档位高度由测得的舞台高度计算；DragGesture 在两端之外使用 rubberBand() 计算阻尼位移，并用 predictedEndTranslation 选择目标档位。面板形状由 UnevenRoundedRectangle 绘制。"
+        ),
+        apis: ["DragGesture", "predictedEndTranslation", "UnevenRoundedRectangle", "onGeometryChange", "spring(response:dampingFraction:)"],
+        tags: ["bottom sheet", "detents", "drawer", "rubber band", "底部面板", "档位", "抽屉", "橡皮筋"],
+        params: [
+            .slider("response", L("Spring response", "弹簧响应"), 0.2...1.0, default: 0.42, unit: "s"),
+            .slider("damping", L("Damping", "阻尼"), 0.5...1.0, default: 0.82),
+            .slider("resistance", L("Rubber-band limit", "橡皮筋上限"), 10...100, default: 40, decimals: 0, unit: "pt"),
+        ]
+    ) { ctx in
+        BottomSheetDemo(ctx: ctx)
+    }
+}
+
+private let sheetDetents: [CGFloat] = [0.22, 0.52, 0.92]
+
+private struct BottomSheetDemo: View {
+    let ctx: DemoContext
+    @State private var detent = 0
+    @State private var drag: CGFloat = 0
+    @State private var stageHeight: CGFloat = 340
+    @State private var autoStep = 0
+
+    private func height(for index: Int) -> CGFloat { sheetDetents[index] * stageHeight }
+    private var minHeight: CGFloat { height(for: 0) }
+    private var maxHeight: CGFloat { height(for: sheetDetents.count - 1) }
+
+    /// Current visible sheet height including drag and rubber-banding.
+    private var currentHeight: CGFloat {
+        let raw = height(for: detent) - drag
+        let limit = ctx.cg("resistance")
+        if raw > maxHeight { return maxHeight + rubberBand(raw - maxHeight, limit: limit) }
+        if raw < minHeight { return minHeight - rubberBand(minHeight - raw, limit: limit) }
+        return raw
+    }
+
+    /// 0 at half detent, 1 at full.
+    private var lift: CGFloat {
+        let half = height(for: 1)
+        return ((currentHeight - half) / max(maxHeight - half, 1)).clamped(to: 0...1)
+    }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            MapCanvas()
+                .scaleEffect(1 - 0.06 * lift)
+                .overlay(Color.black.opacity(0.3 * Double(lift)))
+            sheet
+                .offset(y: stageHeight - currentHeight)
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { newHeight in
+            stageHeight = newHeight
+        }
+        .autoplay(ctx.isPreview, every: 1.5) {
+            let order = [1, 2, 1, 0]
+            snap(to: order[autoStep % order.count])
+            autoStep += 1
+        }
+    }
+
+    private var sheet: some View {
+        let corner = 28 - 10 * lift
+        return VStack(alignment: .leading, spacing: 14) {
+            Capsule()
+                .fill(Color.primary.opacity(0.2))
+                .frame(width: 38, height: 5)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 8)
+            Text(ctx.language == .zh ? "附近" : "Nearby")
+                .font(.title3.weight(.bold))
+            ForEach(0..<5, id: \.self) { index in
+                NearbyRow(index: index, language: ctx.language)
+            }
+        }
+        .padding(.horizontal, 18)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: maxHeight + 80, alignment: .top)
+        .background {
+            UnevenRoundedRectangle(
+                topLeadingRadius: corner,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: corner,
+                style: .continuous
+            )
+            .fill(Palette.elevated)
+            .shadow(color: .black.opacity(0.18), radius: 20, y: -4)
+        }
+        .contentShape(Rectangle())
+        .gesture(dragGesture)
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                drag = value.translation.height
+            }
+            .onEnded { value in
+                let projected = height(for: detent) - value.predictedEndTranslation.height
+                var best = 0
+                for index in sheetDetents.indices where abs(height(for: index) - projected) < abs(height(for: best) - projected) {
+                    best = index
+                }
+                snap(to: best)
+            }
+    }
+
+    private func snap(to index: Int) {
+        if !ctx.isPreview { Haptics.tap(.light) }
+        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+            detent = index
+            drag = 0
+        }
+    }
+}
+
+private struct NearbyRow: View {
+    let index: Int
+    let language: AppLanguage
+
+    private static let symbols = ["cup.and.saucer.fill", "fork.knife", "book.fill", "tram.fill", "leaf.fill"]
+    private static let names: [LocalizedText] = [
+        L("Blue Bottle Coffee", "蓝瓶咖啡"), L("Noodle House", "面馆"), L("City Library", "城市图书馆"),
+        L("Central Station", "中央车站"), L("Riverside Park", "滨江公园"),
+    ]
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: Self.symbols[index % Self.symbols.count])
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(Palette.spectrum[index % Palette.spectrum.count].gradient, in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Self.names[index % Self.names.count], language)
+                    .font(.subheadline.weight(.semibold))
+                Text("\(index + 2)00 m")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+    }
+}
+
+private struct MapCanvas: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        Canvas { context, size in
+            let spacing: CGFloat = 28
+            var grid = Path()
+            var x: CGFloat = 0
+            while x < size.width {
+                grid.move(to: CGPoint(x: x, y: 0))
+                grid.addLine(to: CGPoint(x: x, y: size.height))
+                x += spacing
+            }
+            var y: CGFloat = 0
+            while y < size.height {
+                grid.move(to: CGPoint(x: 0, y: y))
+                grid.addLine(to: CGPoint(x: size.width, y: y))
+                y += spacing
+            }
+            context.stroke(grid, with: .color(.primary.opacity(0.06)), lineWidth: 1)
+
+            var road = Path()
+            road.move(to: CGPoint(x: -10, y: size.height * 0.7))
+            road.addCurve(
+                to: CGPoint(x: size.width + 10, y: size.height * 0.2),
+                control1: CGPoint(x: size.width * 0.35, y: size.height * 0.75),
+                control2: CGPoint(x: size.width * 0.55, y: size.height * 0.1)
+            )
+            context.stroke(road, with: .color(Palette.amber.opacity(0.55)), lineWidth: 10)
+        }
+        .background(scheme == .dark ? Color(hex: 0x1C2330) : Color(hex: 0xE8F0E6))
+        .overlay {
+            Image(systemName: "mappin.circle.fill")
+                .font(.system(size: 34))
+                .foregroundStyle(.white, Palette.red)
+                .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
+                .offset(x: 30, y: -60)
+        }
+    }
+}

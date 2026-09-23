@@ -61,7 +61,7 @@ private struct AlertPopDemo: View {
         closing = false
         if !ctx.isPreview { Haptics.tap(.medium) }
         let pop = ctx.int("style") == 1
-        withAnimation(pop ? .spring(response: 0.42, dampingFraction: 0.62) : .spring(response: 0.35, dampingFraction: 0.82)) {
+        withAnimation(pop ? Animation.spring(response: 0.42, dampingFraction: 0.62) : Animation.spring(response: 0.35, dampingFraction: 0.82)) {
             presented = true
         }
     }

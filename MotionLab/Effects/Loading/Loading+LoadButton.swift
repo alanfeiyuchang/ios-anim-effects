@@ -131,7 +131,7 @@ private struct LoadButtonFace: View {
                 .trim(from: 0, to: phase == .success ? 1 : 0)
                 .stroke(Color.white, style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
                 .frame(width: 22, height: 17)
-                .animation(phase == .success ? .easeOut(duration: 0.35).delay(0.08) : .easeIn(duration: 0.12), value: phase)
+                .animation(phase == .success ? Animation.easeOut(duration: 0.35).delay(0.08) : Animation.easeIn(duration: 0.12), value: phase)
         }
         .frame(width: collapsed ? side : 240, height: side)
         .clipShape(Capsule())

@@ -37,12 +37,81 @@ enum Palette {
     static let surface = Color(uiColor: .secondarySystemBackground)
     static let elevated = Color(uiColor: .tertiarySystemBackground)
     static let stroke = Color.primary.opacity(0.08)
+
+    // MARK: App-shell tokens (demos keep using the colours above)
+
+    /// Brand accent for small tinted text, icons and buttons. Darker than `indigo` in light mode
+    /// (#4B57E0, 5.6:1 on white) and lighter in dark mode (#8A94FF), from the AccentColor asset.
+    static let accent = Color("AccentColor")
+    /// White text on this gradient stays above 4.5:1 (selected chips, primary buttons).
+    static let primaryStrong = LinearGradient(
+        colors: [Color(hex: 0x4B57E0), Color(hex: 0x7A45D6)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    /// Green that carries white text (e.g. the "Copied" state).
+    static let successStrong = Color(hex: 0x17803F)
+    /// Violet for small text such as the "iOS 26" badge.
+    static let violetText = Color.adaptive(light: 0x7A45D6, dark: 0xC4A0FF)
+
+    /// Grouped page background (behind cards).
+    static let pageBackground = Color(uiColor: .systemGroupedBackground)
+    /// Cards and sections sitting on the page.
+    static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    /// Chips and pills placed directly on the page background.
+    static let chipOnPage = Color(uiColor: .secondarySystemGroupedBackground)
+    /// Chips and tags placed inside a card (`cardBackground`).
+    static let chipOnCard = Color(uiColor: .tertiarySystemGroupedBackground)
+    /// Demo stage fill: a slightly recessed well in light mode so it separates from both the
+    /// grouped page and white cards; the regular secondary surface in dark mode.
+    static let stage = Color.adaptive(light: 0xEBEBF1, dark: 0x1C1C1E)
+}
+
+/// Corner radii shared by the app shell.
+enum CornerRadius {
+    static let chip: CGFloat = 14
+    static let thumbnail: CGFloat = 18
+    static let compactThumbnail: CGFloat = 16
+    static let section: CGFloat = 22
+    static let card: CGFloat = 24
+    static let featuredThumbnail: CGFloat = 22
+    static let featuredCard: CGFloat = 28
+    static let stage: CGFloat = 30
+}
+
+extension Color {
+    /// A colour that resolves to `light` or `dark` with the current appearance.
+    static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            let hex = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(
+                red: CGFloat((hex >> 16) & 0xFF) / 255,
+                green: CGFloat((hex >> 8) & 0xFF) / 255,
+                blue: CGFloat(hex & 0xFF) / 255,
+                alpha: 1
+            )
+        })
+    }
+}
+
+// MARK: - Frame rate
+
+/// Frame-rate budget for continuously animating demos (backgrounds, shaders, physics).
+/// Grid previews are small and many run side by side, so they tick at 30 fps; the detail stage runs at full rate.
+enum MotionFrameRate {
+    static func interval(preview: Bool) -> Double? {
+        preview ? 1.0 / 30.0 : nil
+    }
 }
 
 // MARK: - Autoplay
 
 private struct DemoAutoplayKey: EnvironmentKey {
     static let defaultValue = true
+}
+
+private struct DemoIntroPlayKey: EnvironmentKey {
+    static let defaultValue = false
 }
 
 extension EnvironmentValues {
@@ -52,6 +121,13 @@ extension EnvironmentValues {
         get { self[DemoAutoplayKey.self] }
         set { self[DemoAutoplayKey.self] = newValue }
     }
+
+    /// Set by the detail stage: an inactive `.autoplay` fires its action once shortly after the
+    /// demo appears, so tap-driven demos show what they do on arrival (skipped with Reduce Motion).
+    var demoIntroPlay: Bool {
+        get { self[DemoIntroPlayKey.self] }
+        set { self[DemoIntroPlayKey.self] = newValue }
+    }
 }
 
 private struct AutoplayModifier: ViewModifier {
@@ -60,25 +136,46 @@ private struct AutoplayModifier: ViewModifier {
     let initialDelay: Double
     let action: () -> Void
     @Environment(\.demoAutoplayEnabled) private var enabled
+    @Environment(\.demoIntroPlay) private var introPlay
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private struct Key: Hashable {
-        let active: Bool
-        let interval: Double
+    private enum Mode: Hashable {
+        case idle
+        case intro
+        case loop(interval: Double)
+    }
+
+    private var mode: Mode {
+        if active { return enabled ? .loop(interval: interval) : .idle }
+        return introPlay && !reduceMotion ? .intro : .idle
     }
 
     func body(content: Content) -> some View {
         // Keyed on the interval too, so interval sliders take effect immediately.
-        content.task(id: Key(active: active && enabled, interval: interval)) {
-            guard active && enabled else { return }
-            try? await Task.sleep(for: .seconds(initialDelay))
-            while !Task.isCancelled {
-                // Autoplay only runs in previews: never buzz the user for simulated taps.
-                Haptics.isMuted = true
-                action()
-                Haptics.isMuted = false
-                try? await Task.sleep(for: .seconds(interval))
+        content.task(id: mode) {
+            switch mode {
+            case .idle:
+                return
+            case .intro:
+                // Detail stage: play once on arrival. The stage is rebuilt on Reset, which replays it.
+                try? await Task.sleep(for: .seconds(0.9))
+                guard !Task.isCancelled else { return }
+                Self.silently(action)
+            case .loop(let interval):
+                try? await Task.sleep(for: .seconds(initialDelay))
+                while !Task.isCancelled {
+                    Self.silently(action)
+                    try? await Task.sleep(for: .seconds(interval))
+                }
             }
         }
+    }
+
+    /// Simulated taps never buzz the user.
+    private static func silently(_ action: () -> Void) {
+        Haptics.isMuted = true
+        action()
+        Haptics.isMuted = false
     }
 }
 

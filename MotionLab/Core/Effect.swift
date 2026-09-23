@@ -124,17 +124,6 @@ enum EffectInteraction: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Short instruction shown under the detail stage.
-    var hint: LocalizedText {
-        switch self {
-        case .tap: return L("Tap the stage to play", "点击舞台试玩")
-        case .gesture: return L("Drag or press on the stage", "在舞台上拖拽或按压")
-        case .scroll: return L("Scroll inside the stage", "在舞台内滚动")
-        case .loop: return L("Plays on its own — tune it below", "自动循环播放，可在下方调参")
-        case .state: return L("Tap to switch states", "点击切换状态")
-        }
-    }
-
     var symbol: String {
         switch self {
         case .tap: return "hand.point.up.left.fill"
@@ -300,12 +289,5 @@ struct Effect: Identifiable {
             .joined(separator: language == .zh ? "，" : ", ")
         let label = language == .zh ? "当前参数：" : "Current parameters: "
         return base + "\n\n" + label + joined + (language == .zh ? "。" : ".")
-    }
-
-    /// Lower-cased haystack for search.
-    var searchText: String {
-        ([name.all, summary.all, category.title.all, interaction.title.all, implementation.all] + apis + tags)
-            .joined(separator: " ")
-            .lowercased()
     }
 }

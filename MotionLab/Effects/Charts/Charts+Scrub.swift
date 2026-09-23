@@ -13,10 +13,10 @@ extension Effect {
             "一张 24 小时折线图（Swift Charts，2.5pt 蓝色 Catmull-Rom 曲线，下方为蓝色到透明的渐变面积，隐藏 y 轴，每 6 小时一个时间标签），置于卡片中，卡片标题以大号圆体数字显示当前数值。手指按下并水平拖动时选中最近的整点：出现一条 1pt 虚线竖向参考线，一个带 2.5pt 白色描边的 11pt 数据点贴在曲线上，上方悬浮一个紧凑的材质提示框（时间 + 数值），并自动约束在绘图区内。标题数字以数字内容转场滚动到所选数值，每跨过一个整点触发一次选择触感，所有标记以 250ms 的利落动画滑行而非跳变。抬手即取消选择，精准可触，如“股市”“健康”App。"
         ),
         implementation: L(
-            "chartXSelection(value:) binds the selected hour, while chartGesture swaps in a horizontal-first DragGesture that calls proxy.selectXValue(at:), so vertical swipes still scroll the page; a RuleMark annotation with overflowResolution(.fit(to: .chart)) renders the tooltip and a selection haptic ticks on each hour.",
-            "chartXSelection(value:) 绑定所选小时，chartGesture 换成横向优先的 DragGesture 并调用 proxy.selectXValue(at:)，竖向滑动仍可滚动页面；RuleMark 的 annotation 以 overflowResolution 的 .fit(to: .chart) 渲染提示框，每跨一个整点触发选择触感。"
+            "chartXSelection(value:) binds the selected hour, while a chartOverlay attaches a horizontal-first DragGesture simultaneously (a no-op chartGesture retires the default one) that calls proxy.selectXValue(at:), so vertical swipes still scroll the page; a RuleMark annotation with overflowResolution(.fit(to: .chart)) renders the tooltip and a selection haptic ticks on each hour.",
+            "chartXSelection(value:) 绑定所选小时，chartOverlay 以 simultaneousGesture 挂上横向优先的 DragGesture（空操作的 chartGesture 替下默认手势）并调用 proxy.selectXValue(at:)，竖向滑动仍可滚动页面；RuleMark 的 annotation 以 overflowResolution 的 .fit(to: .chart) 渲染提示框，每跨一个整点触发选择触感。"
         ),
-        apis: ["chartXSelection(value:)", "chartGesture", "RuleMark", "annotation(position:overflowResolution:)", "AreaMark"],
+        apis: ["chartXSelection(value:)", "chartOverlay", "RuleMark", "annotation(position:overflowResolution:)", "AreaMark"],
         tags: ["scrub", "tooltip", "selection", "line chart", "滑动", "提示框", "数据点", "交互图表"],
         params: [
             .choice("curve", L("Interpolation", "插值方式"), [L("Smooth", "平滑"), L("Linear", "折线"), L("Step", "阶梯")]),
@@ -139,10 +139,13 @@ private struct ScrubDemo: View {
             }
         }
         .chartXSelection(value: $selected)
-        .chartGesture { proxy in
-            DragGesture(minimumDistance: 8)
-                .updating($touching) { _, state, _ in state = true }
-                .onChanged { value in scrub(value, proxy: proxy) }
+        // A no-op tap replaces Swift Charts' default selection gesture, which would claim vertical swipes too.
+        .chartGesture { _ in TapGesture() }
+        // The scrub itself is attached simultaneously, so a vertical swipe on the chart still scrolls the page.
+        .chartOverlay { proxy in
+            Color.clear
+                .contentShape(Rectangle())
+                .simultaneousGesture(scrubGesture(proxy))
         }
         .chartYScale(domain: 0...95)
         .chartYAxis(.hidden)
@@ -155,6 +158,13 @@ private struct ScrubDemo: View {
             }
         }
         .animation(.snappy(duration: 0.25), value: selected)
+    }
+
+    private func scrubGesture(_ proxy: ChartProxy) -> some Gesture {
+        DragGesture(minimumDistance: 8)
+            .updating($touching) { _, state, _ in state = true }
+            .onChanged { value in scrub(value, proxy: proxy) }
+            .onEnded { _ in endScrub() }
     }
 
     private func advance() {

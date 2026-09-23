@@ -71,11 +71,13 @@ private struct DrumSliderDemo: View {
             .onChanged { gesture in
                 if !dragging {
                     dragging = true
-                    startValue = settle?.value(at: .now) ?? value
+                    // Catch a fling mid-flight: start from the value on screen, not the landing value.
+                    let onScreen: Double = settle?.value(at: .now) ?? value
                     settle = nil
+                    startValue = onScreen
                     var still = Transaction()
                     still.disablesAnimations = true
-                    withTransaction(still) { value = startValue }
+                    withTransaction(still) { value = onScreen }
                 }
                 let raw: Double = startValue - Double(gesture.translation.width / pointsPerTick)
                 let newValue = raw.clamped(to: range)

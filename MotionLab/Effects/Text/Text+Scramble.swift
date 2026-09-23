@@ -15,7 +15,7 @@ extension Effect {
             "TimelineView(.animation) computes, per frame and per character, whether it has locked; unlocked characters pick a glyph from a deterministic hash of frame index and position.",
             "TimelineView(.animation) 在每一帧计算每个字符是否已锁定；未锁定的字符根据帧序号与位置的确定性哈希从字符池中取字。"
         ),
-        apis: ["TimelineView(.animation)", "monospaced font", "HStack", "sensoryFeedback"],
+        apis: ["TimelineView(.animation)", "monospaced font", "HStack", "UINotificationFeedbackGenerator"],
         tags: ["scramble", "decode", "decrypt", "glitch", "hacker", "乱码", "解码", "解密", "黑客"],
         params: [
             .slider("duration", L("Decode duration", "解码时长"), 0.5...3, default: 1.6, unit: "s"),

@@ -39,6 +39,8 @@ private struct TravelGetStartedDemo: View {
     @State private var squeezed = false
     @State private var expanded = false
     @State private var showBody = false
+    /// Bumped by every morph and collapse, so a late completion from an older one never reopens the body.
+    @State private var morphGeneration = 0
     /// Detail intro: morphs open, then closes the sheet again so the stage doesn't stay covered.
     @State private var introTask: Task<Void, Never>?
 
@@ -100,6 +102,7 @@ private struct TravelGetStartedDemo: View {
     }
 
     private func collapse() {
+        morphGeneration += 1
         withAnimation(.easeOut(duration: 0.12)) {
             showBody = false
         } completion: {
@@ -142,10 +145,14 @@ private struct TravelGetStartedDemo: View {
     private func morph(silent: Bool) {
         guard !expanded else { return }
         if !ctx.isPreview && !silent { Haptics.tap(.medium) }
+        morphGeneration += 1
+        let generation = morphGeneration
         withAnimation(spring) {
             squeezed = false
             expanded = true
         } completion: {
+            // A ✕ tapped before the spring settles has already started the collapse.
+            guard generation == morphGeneration, expanded else { return }
             withAnimation(.easeOut(duration: 0.3)) { showBody = true }
         }
     }

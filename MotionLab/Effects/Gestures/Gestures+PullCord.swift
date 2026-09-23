@@ -12,10 +12,10 @@ extension Effect {
             "顶部悬着一盏吊灯（110 pt灯罩下是灯泡），灯罩边缘垂下90 pt细拉绳，末端挂着18 pt的拉珠。拖动拉珠，拉绳1:1伸长，越往下阻力越大并趋近120 pt，可略微摆动；拉到50 pt时开关就绪，一下硬朗的“咔哒”触感，拉珠放大到1.25倍。就绪松手即切换灯光：灯泡亮起带30 pt光晕的琥珀色，柔和光锥在350毫秒内淡入，房间图标随之点亮；拉绳以高弹性弹簧（响应0.35秒、阻尼0.35）弹回，灯罩绕挂钩摆动±4°才停稳。没拉到位则只弹回。真实又怀旧。"
         ),
         implementation: L(
-            "An animatable line Shape draws the cord to the bead's offset; the bead follows a rubber-banded DragGesture and both spring back together. The shade uses rotationEffect(anchor: .top) kicked to 4° and released into an under-damped spring.",
-            "可动画的直线 Shape 把拉绳画到拉珠的位置；拉珠跟随带橡皮筋的 DragGesture，松手后二者一起弹回。灯罩使用 rotationEffect(anchor: .top)，先被踢到 4° 再交给欠阻尼弹簧回稳。"
+            "An animatable line Shape draws the cord to the bead's offset; the bead follows a rubber-banded DragGesture and both spring back together. Shade, cord and bead share one rotationEffect anchored at the hook, kicked to 4° and released into an under-damped spring, so the cord stays attached.",
+            "可动画的直线 Shape 把拉绳画到拉珠的位置；拉珠跟随带橡皮筋的 DragGesture，松手后二者一起弹回。灯罩、拉绳与拉珠共用一个以挂钩为锚点的 rotationEffect，先被踢到 4° 再交给欠阻尼弹簧回稳，拉绳始终连在灯罩上。"
         ),
-        apis: ["DragGesture", "Shape", "animatableData", "rotationEffect(_:anchor:)", "sensoryFeedback"],
+        apis: ["DragGesture", "Shape", "animatableData", "rotationEffect(_:anchor:)", "UIImpactFeedbackGenerator"],
         tags: ["pull cord", "lamp", "switch", "toggle", "拉绳", "台灯", "开关", "拟物"],
         params: [
             .slider("threshold", L("Click distance", "触发距离"), 30...90, default: 50, step: 1, decimals: 0, unit: "pt"),
@@ -28,6 +28,8 @@ extension Effect {
 
 private let cordAnchor = CGPoint(x: 34, y: -92)
 private let cordRest: CGFloat = 90
+/// The lamp's hook, 181 pt above the centre of the 320 pt stage: shade, cord and bead swing about it together.
+private let lampHook = UnitPoint(x: 0.5, y: (160.0 - 181.0) / 320.0)
 
 private struct CordLine: Shape {
     var end: CGPoint
@@ -71,10 +73,27 @@ private struct PullCordDemo: View {
         let armed = pull.height >= ctx.cg("threshold")
         let end = CGPoint(x: cordAnchor.x + pull.width, y: cordAnchor.y + cordRest + pull.height)
         ZStack {
-            lightCone
             room
+            rig(end: end, armed: armed)
+                .rotationEffect(.degrees(sway), anchor: lampHook)
+        }
+        .frame(width: 320, height: 320)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: armed) { _, newValue in
+            if newValue && !ctx.isPreview && !scripted { Haptics.tap(.rigid) }
+        }
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Pull the bead down", "向下拉动拉珠"), ctx: ctx)
+                .padding(.bottom, 4)
+        }
+        .autoplay(ctx.isPreview, every: 2.2) { simulate() }
+    }
+
+    /// Everything that hangs from the hook, so the cord stays attached while the shade sways.
+    private func rig(end: CGPoint, armed: Bool) -> some View {
+        ZStack {
+            lightCone
             lamp
-                .rotationEffect(.degrees(sway), anchor: .top)
             CordLine(end: end)
                 .stroke(Color.primary.opacity(0.45), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
             bead(armed: armed)
@@ -82,15 +101,6 @@ private struct PullCordDemo: View {
                 .gesture(dragGesture)
         }
         .frame(width: 320, height: 320)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.impact(flexibility: .rigid, intensity: 0.8), trigger: armed) { _, newValue in
-            newValue && !ctx.isPreview && !scripted
-        }
-        .overlay(alignment: .bottom) {
-            DemoHint(text: L("Pull the bead down", "向下拉动拉珠"), ctx: ctx)
-                .padding(.bottom, 4)
-        }
-        .autoplay(ctx.isPreview, every: 2.2) { simulate() }
     }
 
     private var lamp: some View {

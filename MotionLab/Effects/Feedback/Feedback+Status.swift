@@ -209,7 +209,8 @@ private struct SuccessCheckDemo: View {
 
     private func play() {
         plays += 1
-        guard !ctx.isPreview else { return }
+        // The silent intro/autoplay mutes haptics while it runs; skip the delayed buzz for those plays too.
+        guard !ctx.isPreview && !Haptics.isMuted else { return }
         let delay = 0.6 * ctx["speed"]
         Task {
             try? await Task.sleep(for: .seconds(delay))

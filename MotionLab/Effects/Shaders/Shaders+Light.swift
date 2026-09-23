@@ -87,6 +87,8 @@ private struct ProgressiveBlurModifier: ViewModifier, Animatable {
 private struct ProgressiveBlurDemo: View {
     let ctx: DemoContext
     @State private var focus: Double?
+    /// Bumped by every tap, so a pending intro/autoplay return never resets the focus the user just chose.
+    @State private var generation = 0
 
     private static let height: CGFloat = 330
     private static let rowHeight: CGFloat = 72
@@ -114,6 +116,7 @@ private struct ProgressiveBlurDemo: View {
             .shadow(color: .black.opacity(0.12), radius: 18, y: 10)
             .contentShape(Rectangle())
             .onTapGesture(coordinateSpace: .local) { location in
+                generation += 1
                 Haptics.selection()
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { focus = Double(location.y) }
             }
@@ -125,9 +128,12 @@ private struct ProgressiveBlurDemo: View {
 
     /// Simulated tap: glide the focus line down, then back to rest.
     private func sweepFocus(rest: Double) {
+        generation += 1
+        let token = generation
         withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) { focus = rest + 90 }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.1))
+            guard token == generation else { return }
             withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) { focus = nil }
         }
     }

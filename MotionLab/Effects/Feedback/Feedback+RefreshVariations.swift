@@ -20,6 +20,18 @@ private enum RefreshVarData {
     ]
 }
 
+/// True while the current pull comes from a real finger (not the autoplay), so indicators may buzz.
+private struct RefreshUserDrivenKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private extension EnvironmentValues {
+    var refreshUserDriven: Bool {
+        get { self[RefreshUserDrivenKey.self] }
+        set { self[RefreshUserDrivenKey.self] = newValue }
+    }
+}
+
 /// A rubber-banded list with a pull area on top. The indicator gets the pull progress (1 = armed),
 /// the raw pull height and whether a refresh is running.
 private struct RefreshVarHost<Indicator: View>: View {
@@ -34,12 +46,16 @@ private struct RefreshVarHost<Indicator: View>: View {
     @State private var items: [Int] = [3, 2, 1, 0]
     @State private var nextItem = 4
     @State private var token = 0
+    /// Set by the drag gesture, cleared by the autoplay: only a real pull plays haptics.
+    @State private var userDriven = false
 
     init(ctx: DemoContext, threshold: CGFloat = 80, holdHeight: CGFloat = 70, @ViewBuilder indicator: @escaping (CGFloat, CGFloat, Bool) -> Indicator) {
         self.ctx = ctx
         self.threshold = threshold
         self.holdHeight = holdHeight
         self.indicator = indicator
+        // Still thumbnails show the indicator mid-pull, just short of the threshold.
+        _pull = State(initialValue: ctx.isStill ? threshold * 0.85 : 0)
     }
 
     var body: some View {
@@ -48,6 +64,7 @@ private struct RefreshVarHost<Indicator: View>: View {
                 indicator(min(pull / threshold, 1.2), pull, refreshing)
                     .frame(width: 300, height: max(pull, 1))
                     .clipped()
+                    .environment(\.refreshUserDriven, userDriven && !ctx.isPreview)
                 list
                     .offset(y: pull)
             }
@@ -84,6 +101,7 @@ private struct RefreshVarHost<Indicator: View>: View {
         DragGesture(minimumDistance: 4)
             .onChanged { value in
                 guard !refreshing else { return }
+                userDriven = true
                 let resisted: CGFloat = rubberBand(max(0, value.translation.height), limit: 260, coefficient: 0.8)
                 updateArmed(resisted)
                 pull = resisted
@@ -95,7 +113,7 @@ private struct RefreshVarHost<Indicator: View>: View {
         let nowArmed = value >= threshold
         guard nowArmed != armed else { return }
         armed = nowArmed
-        if nowArmed && !ctx.isPreview { Haptics.tap(.medium) }
+        if nowArmed && userDriven && !ctx.isPreview { Haptics.tap(.medium) }
     }
 
     private func release() {
@@ -110,7 +128,8 @@ private struct RefreshVarHost<Indicator: View>: View {
             pull = holdHeight
         }
         let wait = ctx["duration"]
-        let live = !ctx.isPreview
+        // Only a real pull buzzes; the autoplay's simulated pull stays silent.
+        let buzz: Bool = !ctx.isPreview && userDriven
         token += 1
         let current = token
         Task {
@@ -124,12 +143,13 @@ private struct RefreshVarHost<Indicator: View>: View {
             }
             armed = false
             nextItem += 1
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
         }
     }
 
     private func simulate() {
         guard !refreshing else { return }
+        userDriven = false
         token += 1
         let current = token
         withAnimation(.easeOut(duration: 0.6)) { pull = threshold * 0.6 }
@@ -476,6 +496,7 @@ private struct DotsRefreshIndicator: View {
     let refreshing: Bool
     let hop: CGFloat
     let live: Bool
+    @Environment(\.refreshUserDriven) private var userDriven
 
     private let colors: [Color] = [Palette.indigo, Palette.violet, Palette.pink]
 
@@ -491,7 +512,7 @@ private struct DotsRefreshIndicator: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: lit) { old, new in
-            if new > old && live && !refreshing { Haptics.selection() }
+            if new > old && live && userDriven && !refreshing { Haptics.selection() }
         }
     }
 

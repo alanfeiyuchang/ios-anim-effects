@@ -392,6 +392,8 @@ private struct SwirlDemo: View {
     @State private var angle: Double = 0
     /// Resets itself if the system cancels the gesture, so the vortex always unwinds.
     @GestureState private var stirring = false
+    /// Bumped when the user arms a stir, so a pending intro/autoplay unwind never springs the twist back mid-gesture.
+    @State private var generation = 0
 
     var body: some View {
         VStack(spacing: 14) {
@@ -415,6 +417,7 @@ private struct SwirlDemo: View {
             .onChanged { value in
                 guard case .second(true, let drag) = value else { return }
                 guard let drag else {
+                    generation += 1
                     Haptics.tap(.soft)
                     return
                 }
@@ -435,6 +438,8 @@ private struct SwirlDemo: View {
 
     /// Simulated stir: the vortex travels diagonally while twisting, then unwinds in place.
     private func stir() {
+        generation += 1
+        let token = generation
         center = CGPoint(x: 90, y: 110)
         withAnimation(.easeInOut(duration: 0.6)) {
             center = CGPoint(x: 170, y: 190)
@@ -442,6 +447,7 @@ private struct SwirlDemo: View {
         }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))
+            guard token == generation else { return }
             withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) { angle = 0 }
         }
     }

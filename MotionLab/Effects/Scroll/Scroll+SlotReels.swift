@@ -35,6 +35,8 @@ private struct ScrollSlotDemo: View {
     let ctx: DemoContext
     @State private var positions: [ScrollPosition] = Array(repeating: ScrollPosition(edge: .top), count: 3)
     @State private var targets: [Int] = [10, 13, 18]
+    /// The cell each reel actually rests on, including hand flicks (spins start from here).
+    @State private var resting: [Int] = [10, 13, 18]
     @State private var spins = 0
     @State private var spinning = false
     @State private var win = false
@@ -54,7 +56,11 @@ private struct ScrollSlotDemo: View {
     private var cabinet: some View {
         HStack(spacing: 8) {
             ForEach(0..<3, id: \.self) { k in
-                ScrollSlotReel(position: $positions[k])
+                ScrollSlotReel(
+                    position: $positions[k],
+                    onCell: { resting[k] = $0 },
+                    onSettle: { handSettled() }
+                )
             }
         }
         .padding(10)
@@ -96,7 +102,7 @@ private struct ScrollSlotDemo: View {
         let muted = Haptics.isMuted || ctx.isPreview
         let count = scrollSlotSymbols.count
         // Recenter each reel by whole symbol cycles so it never reaches the end.
-        var starts: [Int] = targets
+        var starts: [Int] = resting.map { min(max($0, 0), scrollSlotCells - 1) }
         for k in 0..<3 where starts[k] > count * 5 {
             starts[k] -= count * ((starts[k] - count * 2) / count)
         }
@@ -134,17 +140,31 @@ private struct ScrollSlotDemo: View {
 
     private func finish(haptic: Bool) {
         spinning = false
-        let count = scrollSlotSymbols.count
-        let symbols = targets.map { $0 % count }
-        if symbols.allSatisfy({ $0 == symbols[0] }) {
+        if isLine(targets) {
             win = true
             if haptic { Haptics.success() }
         }
+    }
+
+    /// A reel flicked by hand came to rest: judge the row it actually shows.
+    private func handSettled() {
+        guard !spinning else { return }
+        let lined = isLine(resting)
+        if lined && !win && !ctx.isPreview { Haptics.success() }
+        win = lined
+    }
+
+    private func isLine(_ cells: [Int]) -> Bool {
+        let count = scrollSlotSymbols.count
+        let symbols = cells.map { (($0 % count) + count) % count }
+        return symbols.allSatisfy { $0 == symbols[0] }
     }
 }
 
 private struct ScrollSlotReel: View {
     @Binding var position: ScrollPosition
+    let onCell: (Int) -> Void
+    let onSettle: () -> Void
 
     private let viewport: CGFloat = scrollSlotCell * 3
 
@@ -173,6 +193,16 @@ private struct ScrollSlotReel: View {
         .scrollIndicators(.hidden)
         .scrollTargetBehavior(ScrollStrideSnap(pitch: scrollSlotCell, axis: .vertical))
         .scrollPosition($position)
+        .onScrollGeometryChange(for: Int.self) { geometry in
+            Int((geometry.contentOffset.y / scrollSlotCell).rounded())
+        } action: { _, cell in
+            onCell(cell)
+        }
+        .onScrollPhaseChange { oldPhase, newPhase in
+            // Only a finger ends in .interacting or .decelerating; programmatic spins end from .animating.
+            let byHand = oldPhase == .interacting || oldPhase == .decelerating
+            if newPhase == .idle && byHand { onSettle() }
+        }
         .frame(width: 84, height: viewport)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .mask {

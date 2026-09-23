@@ -48,7 +48,9 @@ private struct ScrollFanDemo: View {
                 .animation(.snappy, value: current)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: current) {
+            if !ctx.isPreview && !scripted { Haptics.selection() }
+        }
         .autoplay(ctx.isPreview, every: 1.3) { advance() }
     }
 

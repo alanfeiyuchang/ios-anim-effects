@@ -144,7 +144,9 @@ private struct SparkBurstDemo: View {
         token += 1
         let current = token
         let live = !ctx.isPreview
-        if live { Haptics.tap(.medium) }
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = live && !Haptics.isMuted
+        if buzz { Haptics.tap(.medium) }
         withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { phase = .paying }
         Task {
             try? await Task.sleep(for: .seconds(0.7))
@@ -153,7 +155,7 @@ private struct SparkBurstDemo: View {
             bursts += 1
             try? await Task.sleep(for: .seconds(0.2))
             guard token == current else { return }
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
             guard !live else { return }
             try? await Task.sleep(for: .seconds(2.4))
             guard token == current else { return }
@@ -358,14 +360,15 @@ private struct LevelUpDemo: View {
     private func complete(gain: Int) {
         guard !busy else { return }
         busy = true
-        let live = !ctx.isPreview
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
         let step: Double = Double(gain) / 100
         let total: Double = xp + step
         let flipSpring = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
         gains += 1
         token += 1
         let current = token
-        if live { Haptics.tap() }
+        if buzz { Haptics.tap() }
         withAnimation(.easeInOut(duration: 0.5)) { xp = min(total, 1) }
         Task {
             try? await Task.sleep(for: .seconds(0.55))
@@ -376,11 +379,16 @@ private struct LevelUpDemo: View {
             }
             withAnimation(.easeOut(duration: 0.12)) { flash = true }
             withAnimation(flipSpring) { turns += 1 }
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
             try? await Task.sleep(for: .seconds(0.2))
             guard token == current else { return }
             withAnimation(.easeIn(duration: 0.25)) { flash = false }
-            xp = 0
+            // Snap empty without animation, let that frame render, then refill to the carried-over XP.
+            var snap = Transaction()
+            snap.disablesAnimations = true
+            withTransaction(snap) { xp = 0 }
+            try? await Task.sleep(for: .milliseconds(20))
+            guard token == current else { return }
             withAnimation(.easeOut(duration: 0.45)) { xp = total - 1 }
             try? await Task.sleep(for: .seconds(0.25))
             guard token == current else { return }

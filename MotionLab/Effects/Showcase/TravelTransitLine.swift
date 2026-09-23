@@ -47,6 +47,8 @@ private struct TravelTransitLineDemo: View {
 
     private var zh: Bool { ctx.language == .zh }
 
+    private var loopKey: String { "\(runID)-\(ctx["travel"])-\(ctx["dwell"])" }
+
     var body: some View {
         SignatureStage {
             VStack(spacing: 0) {
@@ -58,7 +60,8 @@ private struct TravelTransitLineDemo: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .task(id: runID) {
+        // Keyed on the timing sliders too: the loop captures `ctx`, so it restarts when they move.
+        .task(id: loopKey) {
             await loop()
         }
         // Shows the tap interaction too: previews (and the detail intro) send the train two stops ahead.
@@ -74,7 +77,7 @@ private struct TravelTransitLineDemo: View {
                 track
                 VStack(spacing: 0) {
                     ForEach(Self.stations.indices, id: \.self) { index in
-                        stationRow(index)
+                        stationButton(index)
                     }
                 }
                 train
@@ -178,7 +181,16 @@ private struct TravelTransitLineDemo: View {
         }
         .frame(height: Self.rowHeight)
         .contentShape(Rectangle())
-        .onTapGesture { send(to: index) }
+    }
+
+    /// Each station is a button: touch-down lights a faint row highlight (no scale, so the ring stays on the rail).
+    private func stationButton(_ index: Int) -> some View {
+        Button {
+            send(to: index)
+        } label: {
+            stationRow(index)
+        }
+        .buttonStyle(StationPressStyle())
     }
 
     private func arrive(at index: Int) {
@@ -210,5 +222,18 @@ private struct TravelTransitLineDemo: View {
             arrive(at: next)
             Haptics.isMuted = false
         }
+    }
+}
+
+/// Touch-down feedback for station rows: a soft highlight behind the row that fades in on press.
+private struct StationPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white.opacity(configuration.isPressed ? 0.07 : 0))
+                    .padding(.horizontal, -8)
+            }
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }

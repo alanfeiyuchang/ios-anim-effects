@@ -49,9 +49,17 @@ private struct PullRefreshDemo: View {
     @State private var items: [Int] = [3, 2, 1, 0]
     @State private var nextItem = 4
     @State private var token = 0
+    /// Set by the drag gesture, cleared by the autoplay: only a real pull plays haptics.
+    @State private var userDriven = false
 
     private let threshold: CGFloat = 72
     private let holdHeight: CGFloat = 60
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails show the indicator mid-pull, just short of the threshold.
+        _pull = State(initialValue: ctx.isStill ? 72 * 0.85 : 0)
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -95,6 +103,7 @@ private struct PullRefreshDemo: View {
         DragGesture(minimumDistance: 4)
             .onChanged { value in
                 guard !refreshing else { return }
+                userDriven = true
                 let resisted = rubberBand(max(0, value.translation.height), limit: 240, coefficient: ctx.cg("resistance"))
                 updateArmed(resisted)
                 pull = resisted
@@ -105,7 +114,7 @@ private struct PullRefreshDemo: View {
     private func updateArmed(_ value: CGFloat) {
         let nowArmed = value >= threshold
         guard nowArmed != armed else { return }
-        if nowArmed && !ctx.isPreview { Haptics.tap(.medium) }
+        if nowArmed && userDriven && !ctx.isPreview { Haptics.tap(.medium) }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) { armed = nowArmed }
     }
 
@@ -119,7 +128,8 @@ private struct PullRefreshDemo: View {
         refreshing = true
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { pull = holdHeight }
         let wait = ctx["duration"]
-        let live = !ctx.isPreview
+        // Only a real pull buzzes; the autoplay's simulated pull stays silent.
+        let buzz: Bool = !ctx.isPreview && userDriven
         token += 1
         let current = token
         Task {
@@ -133,12 +143,13 @@ private struct PullRefreshDemo: View {
                 armed = false
             }
             nextItem += 1
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
         }
     }
 
     private func simulate() {
         guard !refreshing else { return }
+        userDriven = false
         token += 1
         let current = token
         withAnimation(.easeOut(duration: 0.5)) { pull = threshold * 0.7 }

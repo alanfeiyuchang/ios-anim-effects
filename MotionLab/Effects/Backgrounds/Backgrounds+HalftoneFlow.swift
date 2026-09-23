@@ -33,19 +33,21 @@ extension Effect {
 private struct HalftoneFlowDemo: View {
     let ctx: DemoContext
     @State private var clock = BackgroundClock()
-    @State private var ripples: [HalftoneRipple] = []
+    /// Reference time of the last tap (the "flash-bulb" exposure).
+    @State private var exposedAt: Double = -100
+    @State private var origin = CGPoint(x: 170, y: 170)
 
     var body: some View {
         ZStack {
             Color(hex: 0x0A0A12)
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-                let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
+                let now = timeline.date.timeIntervalSinceReferenceDate
+                let t = clock.advance(to: now, speed: ctx["speed"])
                 HalftoneCanvas(
                     t: t,
                     spacing: max(ctx.cg("spacing"), 6),
                     colors: HalftoneCanvas.paletteColors(ctx.int("palette")),
-                    ripples: ripples,
-                    now: timeline.date.timeIntervalSinceReferenceDate
+                    exposure: HalftoneExposure(origin: origin, amount: HalftoneExposure.amount(age: now - exposedAt))
                 )
             }
             BackgroundSampleTitle(
@@ -56,30 +58,43 @@ private struct HalftoneFlowDemo: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { location in
-            let now = Date().timeIntervalSinceReferenceDate
-            let recent = ripples.filter { now - $0.time < HalftoneRipple.lifetime }.suffix(3)
-            ripples = Array(recent) + [HalftoneRipple(origin: location, time: now)]
             Haptics.tap(.soft)
+            expose(at: location)
         }
-        .backgroundsHint(L("Tap to drop a ripple", "点击投下涟漪"), ctx)
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+            origin = CGPoint(x: size.width / 2, y: size.height / 2)
+        }
+        .autoplay(ctx.isPreview, every: 3.4, delay: 1.2) { expose(at: origin) }
+        .backgroundsHint(L("Tap to flash the exposure", "点击闪一次曝光"), ctx)
+    }
+
+    private func expose(at location: CGPoint) {
+        origin = location
+        exposedAt = Date().timeIntervalSinceReferenceDate
     }
 }
 
-/// A tap-spawned ring of swollen dots that expands from `origin` and fades out.
-private struct HalftoneRipple {
-    static let lifetime: Double = 2.5
+/// A tap "over-exposes" the print: every dot's coverage is pushed toward full (strongest near the finger),
+/// then relaxes through a brief under-exposure, like a flash bulb on photographic paper.
+private struct HalftoneExposure {
     let origin: CGPoint
-    let time: Double
+    /// Signed exposure: > 0 swells dots, < 0 shrinks them, 0 at rest.
+    let amount: Double
 
-    /// Extra field value at (x, y): a Gaussian ring whose radius grows at ~200 pt/s.
-    func field(x: Double, y: Double, now: Double) -> Double {
-        let age = now - time
-        guard age >= 0, age < HalftoneRipple.lifetime else { return 0 }
+    /// Rise in 80 ms, then a damped swing (decay 2.6/s, 5.5 rad/s) that dips to ≈ −0.23 before settling.
+    static func amount(age: Double) -> Double {
+        guard age >= 0, age < 2.2 else { return 0 }
+        let attack = min(age / 0.08, 1)
+        return attack * exp(-2.6 * age) * cos(5.5 * age)
+    }
+
+    /// Exponent applied to the dot coverage n (0…1): below 1 swells, above 1 shrinks.
+    func gamma(x: Double, y: Double) -> Double {
+        guard amount != 0 else { return 1 }
         let dx = x - Double(origin.x)
         let dy = y - Double(origin.y)
-        let distance = (dx * dx + dy * dy).squareRoot()
-        let ring = (distance - age * 200) / 34
-        return 2.4 * exp(-ring * ring) * exp(-age * 1.2)
+        let local = 0.6 + 0.4 * exp(-(dx * dx + dy * dy) / 32_400)
+        return exp(-1.3 * amount * local)
     }
 }
 
@@ -87,8 +102,7 @@ private struct HalftoneCanvas: View {
     let t: Double
     let spacing: CGFloat
     let colors: [Color]
-    let ripples: [HalftoneRipple]
-    let now: Double
+    let exposure: HalftoneExposure
 
     static func paletteColors(_ index: Int) -> [Color] {
         switch index {
@@ -103,8 +117,7 @@ private struct HalftoneCanvas: View {
 
     var body: some View {
         Canvas { context, size in
-            let live = ripples.filter { now - $0.time < HalftoneRipple.lifetime }
-            let path = HalftoneCanvas.dots(size: size, t: t, spacing: spacing, ripples: live, now: now)
+            let path = HalftoneCanvas.dots(size: size, t: t, spacing: spacing, exposure: exposure)
             context.fill(
                 path,
                 with: .linearGradient(Gradient(colors: colors), startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height))
@@ -112,7 +125,7 @@ private struct HalftoneCanvas: View {
         }
     }
 
-    private static func dots(size: CGSize, t: Double, spacing: CGFloat, ripples: [HalftoneRipple], now: Double) -> Path {
+    private static func dots(size: CGSize, t: Double, spacing: CGFloat, exposure: HalftoneExposure) -> Path {
         var path = Path()
         let cx = Double(size.width / 2)
         let cy = Double(size.height / 2)
@@ -128,8 +141,8 @@ private struct HalftoneCanvas: View {
                 field += sin((dx - dy) * 0.021 - t * 0.8)
                 field += sin(dx * 0.012 + t * 0.6)
                 field += sin(distance * 0.035 - t * 1.5)
-                for ripple in ripples { field += ripple.field(x: dx, y: dy, now: now) }
-                let n = ((field / 3 + 1) / 2).clamped(to: 0...1)
+                let base = ((field / 3 + 1) / 2).clamped(to: 0...1)
+                let n = pow(base, exposure.gamma(x: dx, y: dy))
                 let radius = maxRadius * CGFloat(0.1 + 0.9 * n * n)
                 if radius > 0.3 {
                     path.addEllipse(in: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2))

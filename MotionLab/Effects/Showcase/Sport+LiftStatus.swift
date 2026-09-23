@@ -59,7 +59,8 @@ private struct SportLiftDemo: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .task { await stream() }
+        // Keyed on the sliders the loop reads: it captures `ctx`, so it restarts when they move.
+        .task(id: [ctx["interval"], ctx["flash"]]) { await stream() }
         // Shows the tap interaction too: previews (and the detail intro) cycle one lift's status.
         .autoplay(ctx.isPreview, every: 2.6, delay: 1.2) {
             cycle(demoStep % lifts.count)

@@ -29,7 +29,14 @@ extension Effect {
 
 private struct TextLyricsDemo: View {
     let ctx: DemoContext
-    @State private var start = Date()
+    @State private var start: Date
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // A still thumbnail starts mid-song: a line sits in focus and is about half sung.
+        let lead: Double = ctx.isStill ? max(ctx["duration"], 0.5) * 1.55 : 0
+        _start = State(initialValue: Date().addingTimeInterval(-lead))
+    }
 
     private var lines: [String] {
         ctx.language == .zh

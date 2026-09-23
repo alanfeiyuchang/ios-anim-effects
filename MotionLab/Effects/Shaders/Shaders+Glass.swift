@@ -257,17 +257,13 @@ private struct LiquidLensDemo: View {
                 .rotationEffect(.radians(heading))
                 .scaleEffect(pulse ? 1.12 : 1)
                 .position(point)
-            // Only the droplet is interactive, so swipes on the backdrop still scroll the page.
+            // Only the droplet is interactive, and only after a 0.1 s hold, so a quick swipe that starts on it
+            // (or anywhere on the backdrop) still scrolls the page.
             Color.clear
                 .frame(width: diameter, height: diameter)
                 .contentShape(Circle())
                 .position(point)
-                .gesture(
-                    DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
-                        .updating($dragging) { _, state, _ in state = true }
-                        .onChanged { value in drag(value, current: point, radius: diameter / 2) }
-                        .onEnded { _ in release() }
-                )
+                .gesture(lensGesture(current: point, radius: diameter / 2))
                 .simultaneousGesture(TapGesture().onEnded { flex() })
                 .onChange(of: dragging) { _, isDragging in
                     if !isDragging { release() }
@@ -276,7 +272,7 @@ private struct LiquidLensDemo: View {
         .coordinateSpace(.named(Self.space))
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Drag or tap the droplet", "拖动或点击水滴"), ctx: ctx)
+            DemoHint(text: L("Hold and drag, or tap the droplet", "按住拖动，或点击水滴"), ctx: ctx)
                 .padding(.bottom, 12)
                 .allowsHitTesting(false)
         }
@@ -284,6 +280,17 @@ private struct LiquidLensDemo: View {
     }
 
     private static let space = "liquidLensStage"
+
+    private func lensGesture(current: CGPoint, radius: CGFloat) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.1)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space)))
+            .updating($dragging) { _, state, _ in state = true }
+            .onChanged { value in
+                guard case .second(true, let move?) = value else { return }
+                drag(move, current: current, radius: radius)
+            }
+            .onEnded { _ in release() }
+    }
 
     private func drag(_ value: DragGesture.Value, current: CGPoint, radius: CGFloat) {
         if grab == nil {

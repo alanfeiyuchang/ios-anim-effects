@@ -12,10 +12,10 @@ extension Effect {
             "按首字母分组的联系人列表右侧有一条纤细的A–Z索引，字母为10 pt半粗圆体，每格11 pt。手指沿索引滑动，会出现程序坞式的鱼眼：指下字母放大到190%并向左凸出14 pt，相邻字母按余弦衰减依次放大，三格外恢复原样，全程由紧致弹簧（响应0.25秒、阻尼0.8）跟手。一个56 pt的渐变气泡在指旁弹出，跟着手指移动，像数字滚动一样切换字母。每换一个字母，列表都无动画地直接跳到对应分组（没有就跳到下一个），并轻轻一震；松手后气泡缩回消失，索引恢复平静。"
         ),
         implementation: L(
-            "A DragGesture on the index maps location.y to a letter; ScrollViewReader.scrollTo jumps to the section id, each letter's scaleEffect/offset is a falloff of its distance from the active index, and sensoryFeedback(.selection) ticks on every change.",
-            "索引上的 DragGesture 将 location.y 换算为字母；ScrollViewReader.scrollTo 跳转到对应分组的 id，每个字母的 scaleEffect 与 offset 由其到当前索引的距离衰减计算，sensoryFeedback(.selection) 在每次切换时触发。"
+            "A DragGesture on the index maps location.y to a letter; ScrollViewReader.scrollTo jumps to the section id, each letter's scaleEffect/offset is a falloff of its distance from the active index, and UISelectionFeedbackGenerator ticks on every change.",
+            "索引上的 DragGesture 将 location.y 换算为字母；ScrollViewReader.scrollTo 跳转到对应分组的 id，每个字母的 scaleEffect 与 offset 由其到当前索引的距离衰减计算，UISelectionFeedbackGenerator 在每次切换时触发。"
         ),
-        apis: ["DragGesture", "ScrollViewReader", "scaleEffect(_:anchor:)", "sensoryFeedback", "contentTransition(.numericText())"],
+        apis: ["DragGesture", "ScrollViewReader", "scaleEffect(_:anchor:)", "UISelectionFeedbackGenerator", "contentTransition(.numericText())"],
         tags: ["index", "scrubber", "alphabet", "contacts", "fisheye", "索引", "字母", "通讯录", "快速定位"],
         params: [
             .slider("magnify", L("Magnification", "放大倍率"), 0...1.5, default: 0.9),
@@ -105,8 +105,8 @@ private struct ScrollIndexDemo: View {
                 .padding(.trailing, 4)
             }
             .overlay(alignment: .bottom) { hint }
-            .sensoryFeedback(.selection, trigger: active) { _, newValue in
-                !ctx.isPreview && !demoing && newValue != nil
+            .onChange(of: active) { _, newValue in
+                if !ctx.isPreview && !demoing && newValue != nil { Haptics.selection() }
             }
             .autoplay(ctx.isPreview, every: 0.32, delay: 0.5) { autoScrub(proxy) }
             .onDisappear {

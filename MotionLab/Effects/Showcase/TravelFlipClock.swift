@@ -11,8 +11,8 @@ extension Effect {
             "切换城市时，只有变化的数字像机场翻牌一样翻转，落下时轻轻回弹。"
         ),
         prompt: L(
-            "A dark travel widget shows the local time of the selected city in four split-flap digit tiles (52×76 pt, rounded digits, 1.5 pt hinge gap), above a row of airport-code chips (HGH · NCE · KEF · JFK) with a sliding orange selection capsule. When the city changes, only the digits that differ flip, left to right, 60 ms apart. Over ~0.6 s the upper flap carrying the old digit folds down around the hinge with a quadratic ease-in and darkens as it turns edge-on, revealing the new digit’s top half. The new lower flap then swings from 90° to flat with an ease-in fall and lands with a small rebound (~8° lift, sine-shaped). Perspective is 0.45. A selection haptic accompanies each switch and the minute ticks live. It feels mechanical, nostalgic and precise.",
-            "暗色旅行小组件用四块翻牌数字（52 × 76pt，1.5pt 铰链缝）显示所选城市当地时间，下方是机场代码标签（HGH · NCE · KEF · JFK），橙色选中胶囊在其间滑动。切换城市时，只有变化的数字从左到右依次翻转，间隔 60 毫秒：约 0.6 秒内，旧数字的上半片以二次缓入绕铰链下翻，转到侧面时变暗；新数字的下半片再从 90° 缓入落平，着陆轻弹约 8°。透视 0.45。每次切换一次选择触感，分钟实时走动。机械、怀旧而精准。"
+            "A dark travel widget shows the local time of the selected city in four split-flap digit tiles (52×76 pt, rounded digits, 1.5 pt hinge gap), above a row of airport-code chips (HGH · NCE · DEL · JFK) with a sliding orange selection capsule. When the city changes, only the digits that differ flip, left to right, 60 ms apart. Over ~0.6 s the upper flap carrying the old digit folds down around the hinge with a quadratic ease-in and darkens as it turns edge-on, revealing the new digit’s top half. The new lower flap then swings from 90° to flat with an ease-in fall and lands with a small rebound (~8° lift, sine-shaped). Perspective is 0.45. A selection haptic accompanies each switch and the minute ticks live. It feels mechanical, nostalgic and precise.",
+            "暗色旅行小组件用四块翻牌数字（52 × 76pt，1.5pt 铰链缝）显示所选城市当地时间，下方是机场代码标签（HGH · NCE · DEL · JFK），橙色选中胶囊在其间滑动。切换城市时，只有变化的数字从左到右依次翻转，间隔 60 毫秒：约 0.6 秒内，旧数字的上半片以二次缓入绕铰链下翻，转到侧面时变暗；新数字的下半片再从 90° 缓入落平，着陆轻弹约 8°。透视 0.45。每次切换一次选择触感，分钟实时走动。机械、怀旧而精准。"
         ),
         implementation: L(
             "Each digit is an Animatable view whose animatableData is a monotonically increasing flip counter. The fractional part is mapped to the upper and lower flap angles for rotation3DEffect(axis: x, anchor: bottom/top), so no state reset is needed between flips. Halves are clipped copies of a full tile, and TimelineView(.everyMinute) keeps the time live.",
@@ -41,7 +41,8 @@ private struct TravelClockCity {
     static let all: [TravelClockCity] = [
         TravelClockCity(name: L("Hangzhou", "杭州"), zone: "Asia/Shanghai", code: "HGH"),
         TravelClockCity(name: L("Nice", "尼斯"), zone: "Europe/Paris", code: "NCE"),
-        TravelClockCity(name: L("Reykjavík", "雷克雅未克"), zone: "Atlantic/Reykjavik", code: "KEF"),
+        // A half-hour zone, so switching to or from it changes the minute digits and all four tiles cascade.
+        TravelClockCity(name: L("New Delhi", "新德里"), zone: "Asia/Kolkata", code: "DEL"),
         TravelClockCity(name: L("New York", "纽约"), zone: "America/New_York", code: "JFK"),
     ]
 }

@@ -12,10 +12,10 @@ extension Effect {
             "三条高62 pt的邮件行，各有头像、发件人和预览。向左滑动会露出一个底槽，操作取决于滑动距离：到70 pt进入“归档”（靛蓝、归档盒），之后每多64 pt依次切到“稍后”（琥珀、时钟）和“删除”（红色、垃圾桶）。每换一段，底槽颜色在200毫秒内渐变，图标以符号替换切换并弹一下，说明文字随之改变，伴随一下选择触感。在某一段松手，该行以250毫秒的缓入向左甩出，列表以弹簧（响应0.4秒、阻尼0.85）收拢，并弹出确认小标签；没到第一段就松手则弹回。精准利落。"
         ),
         implementation: L(
-            "The row's offset maps to a stage enum; the well reads it for colour, symbol and caption with animation(value:), and sensoryFeedback(.selection) fires on stage changes. Release animates the offset past the edge, then removes the item in a spring so the VStack reflows.",
-            "行偏移量映射为阶段枚举；底槽据此决定颜色、图标与文字，并用 animation(value:) 过渡；阶段变化时由 sensoryFeedback(.selection) 触发触感。松手时先把偏移动画到屏幕外，再在弹簧中移除该项，让 VStack 重新排布。"
+            "The row's offset maps to a stage enum; the well reads it for colour, symbol and caption with animation(value:), and UISelectionFeedbackGenerator fires on stage changes. Release animates the offset past the edge, then removes the item in a spring so the VStack reflows.",
+            "行偏移量映射为阶段枚举；底槽据此决定颜色、图标与文字，并用 animation(value:) 过渡；阶段变化时由 UISelectionFeedbackGenerator 触发触感。松手时先把偏移动画到屏幕外，再在弹簧中移除该项，让 VStack 重新排布。"
         ),
-        apis: ["DragGesture", "simultaneousGesture", "contentTransition(.symbolEffect(.replace))", "sensoryFeedback(.selection)", "transition(.asymmetric)"],
+        apis: ["DragGesture", "simultaneousGesture", "contentTransition(.symbolEffect(.replace))", "UISelectionFeedbackGenerator", "transition(.asymmetric)"],
         tags: ["swipe", "mail", "archive", "snooze", "滑动", "邮件", "归档", "稍后"],
         params: [
             .slider("first", L("First stage", "首段距离"), 50...110, default: 70, step: 1, decimals: 0, unit: "pt"),
@@ -80,6 +80,8 @@ private struct StagedSwipeDemo: View {
     let ctx: DemoContext
     @State private var items = stagedSeed
     @State private var offsets: [Int: CGFloat] = [:]
+    /// The stage a released row committed to; the fling off screen must not re-read it from the offset.
+    @State private var committed: [Int: SwipeStage] = [:]
     @State private var chip: SwipeStage?
     @State private var autoIndex = 0
     /// True while autoplay (or the detail intro) swipes a row, so its stage ticks and release stay silent.
@@ -91,15 +93,17 @@ private struct StagedSwipeDemo: View {
                 StagedRow(
                     mail: item,
                     offset: offsets[item.id] ?? 0,
+                    lockedStage: committed[item.id],
                     first: ctx.cg("first"),
                     step: ctx.cg("step"),
                     ctx: ctx,
                     scripted: scripted,
                     onDrag: {
+                        guard committed[item.id] == nil else { return }
                         scripted = false
                         offsets[item.id] = $0
                     },
-                    onEnd: { release(item.id) }
+                    onEnd: { if committed[item.id] == nil { release(item.id) } }
                 )
                 .transition(.asymmetric(insertion: .scale(scale: 0.92).combined(with: .opacity), removal: .opacity))
             }
@@ -143,6 +147,7 @@ private struct StagedSwipeDemo: View {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { offsets[id] = 0 }
             return
         }
+        committed[id] = current
         withAnimation(.easeIn(duration: 0.25)) { offsets[id] = -420 }
         if haptic && !ctx.isPreview { Haptics.tap(current == .delete ? .rigid : .medium) }
         Task { @MainActor in
@@ -150,6 +155,7 @@ private struct StagedSwipeDemo: View {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                 items.removeAll { $0.id == id }
                 offsets[id] = nil
+                committed[id] = nil
                 chip = current
             }
             try? await Task.sleep(for: .seconds(1.3))
@@ -164,7 +170,7 @@ private struct StagedSwipeDemo: View {
     }
 
     private func autoStep() {
-        guard let target = items.first else { return }
+        guard let target = items.first(where: { committed[$0.id] == nil }) else { return }
         let stageIndex = autoIndex % 3
         autoIndex += 1
         scripted = true
@@ -182,6 +188,8 @@ private struct StagedSwipeDemo: View {
 private struct StagedRow: View {
     let mail: StagedMail
     let offset: CGFloat
+    /// Set once the row is released on a stage: colour, glyph and caption stay put while it flies off.
+    let lockedStage: SwipeStage?
     let first: CGFloat
     let step: CGFloat
     let ctx: DemoContext
@@ -198,7 +206,7 @@ private struct StagedRow: View {
     }
 
     var body: some View {
-        let current = stage
+        let current = lockedStage ?? stage
         let revealed = max(-offset, 0)
         let progress = min(revealed / max(first, 1), 1)
         ZStack(alignment: .trailing) {
@@ -224,7 +232,9 @@ private struct StagedRow: View {
                 .simultaneousGesture(dragGesture)
         }
         .frame(height: 62)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: current) {
+            if !ctx.isPreview && !scripted && lockedStage == nil { Haptics.selection() }
+        }
     }
 
     private var content: some View {

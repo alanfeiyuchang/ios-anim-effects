@@ -12,10 +12,10 @@ extension Effect {
             "四条58 pt高的任务行（18 pt圆角），带圆形复选框、标题和彩色圆点。向右拖某行，它滑过下方绿色底槽，底槽随拉动渐显，对勾从60%放大到100%；拉到110 pt即“就绪”，图标填满并弹一下，伴随中等触感，再往后带橡皮筋阻力。就绪时松手，该行以弹簧（响应0.35秒、阻尼0.75）回位，复选框填满，一条1.5 pt的线在300毫秒内划过标题，文字淡到40%；450毫秒后该行滑到列表底部，其余行上移补位。已完成的任务滑过琥珀色底槽即恢复到顶部。完成感十足。"
         ),
         implementation: L(
-            "Rows own a horizontal DragGesture run with simultaneousGesture so vertical page scrolling still works; the parent stores offsets, flips done inside withAnimation and then reorders the array in a second spring so ForEach animates the move. sensoryFeedback fires when the armed flag flips on.",
-            "每行挂载与页面滚动并行的水平 DragGesture（simultaneousGesture），竖向滚动不受影响；父视图保存偏移量，在 withAnimation 中切换完成状态，再用第二段弹簧重排数组，让 ForEach 动画化行的移动。就绪标记变为 true 时由 sensoryFeedback 触发触感。"
+            "Rows own a horizontal DragGesture run with simultaneousGesture so vertical page scrolling still works; the parent stores offsets, flips done inside withAnimation and then reorders the array in a second spring so ForEach animates the move. UIImpactFeedbackGenerator fires when the armed flag flips on.",
+            "每行挂载与页面滚动并行的水平 DragGesture（simultaneousGesture），竖向滚动不受影响；父视图保存偏移量，在 withAnimation 中切换完成状态，再用第二段弹簧重排数组，让 ForEach 动画化行的移动。就绪标记变为 true 时由 UIImpactFeedbackGenerator 触发触感。"
         ),
-        apis: ["DragGesture", "simultaneousGesture", "sensoryFeedback", "symbolEffect(.bounce)", "scaleEffect(x:anchor:)", "ForEach"],
+        apis: ["DragGesture", "simultaneousGesture", "UIImpactFeedbackGenerator", "symbolEffect(.bounce)", "scaleEffect(x:anchor:)", "ForEach"],
         tags: ["swipe", "complete", "todo", "strikethrough", "右滑", "完成", "待办", "删除线"],
         params: [
             .slider("threshold", L("Arm distance", "就绪距离"), 70...160, default: 110, step: 1, decimals: 0, unit: "pt"),
@@ -134,8 +134,8 @@ private struct CompleteRow: View {
                 .simultaneousGesture(dragGesture)
         }
         .frame(height: 58)
-        .sensoryFeedback(.impact(weight: .medium), trigger: armed) { _, newValue in
-            newValue && !ctx.isPreview && !scripted
+        .onChange(of: armed) { _, newValue in
+            if newValue && !ctx.isPreview && !scripted { Haptics.tap(.medium) }
         }
     }
 

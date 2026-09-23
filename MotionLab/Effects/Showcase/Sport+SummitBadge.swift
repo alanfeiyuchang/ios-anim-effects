@@ -108,8 +108,7 @@ private struct SportSummitBadgeDemo: View {
         .padding(.vertical, 20)
         .frame(width: 280)
         .signatureCard()
-        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .onTapGesture {
+        .sportCardTap {
             silentRun = false
             runID += 1
         }

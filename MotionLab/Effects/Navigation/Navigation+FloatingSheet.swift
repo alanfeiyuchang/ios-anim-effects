@@ -91,7 +91,8 @@ private struct FloatingSheetDemo: View {
     }
 
     private var drag: some Gesture {
-        DragGesture(minimumDistance: 6)
+        // Global space: the sheet's top edge rises with the finger, so local translation would feed back.
+        DragGesture(minimumDistance: 6, coordinateSpace: .global)
             .onChanged { value in
                 let start = dragStart ?? height
                 if dragStart == nil { dragStart = height }

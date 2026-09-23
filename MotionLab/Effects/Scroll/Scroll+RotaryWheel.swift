@@ -15,7 +15,7 @@ extension Effect {
             "An invisible vertical ScrollView (clear content with a contentShape, three turns long) sits on top of the dial, snaps to 56 pt steps and silently re-centres on the middle turn when idle; onScrollGeometryChange converts the offset into a continuous rotation that positions each badge with cos/sin, so icons orbit but never spin.",
             "一个不可见的纵向 ScrollView（透明内容加 contentShape，长度为三圈）覆盖在转盘上方，按 56 pt 吸附，停止时无动画地回到中间一圈；onScrollGeometryChange 将偏移换算为连续的旋转角度，用 cos/sin 摆放每个徽章，因此图标只公转、不自转。"
         ),
-        apis: ["onScrollGeometryChange", "ScrollTargetBehavior", "ScrollPosition", "contentShape", "sensoryFeedback"],
+        apis: ["onScrollGeometryChange", "ScrollTargetBehavior", "ScrollPosition", "contentShape", "UISelectionFeedbackGenerator"],
         tags: ["dial", "wheel", "rotary", "click wheel", "转盘", "旋钮", "滚轮", "拨盘"],
         params: [
             .slider("pitch", L("Scroll per notch", "每档滚动距离"), 30...100, default: 56, step: 2, decimals: 0, unit: "pt"),
@@ -58,7 +58,9 @@ private struct ScrollRotaryDemo: View {
             DemoHint(text: L("Scroll up and down on the dial", "在转盘上上下滚动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: selected) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: selected) {
+            if !ctx.isPreview && !scripted { Haptics.selection() }
+        }
         .autoplay(ctx.isPreview, every: 1.3) { autoTurn() }
     }
 

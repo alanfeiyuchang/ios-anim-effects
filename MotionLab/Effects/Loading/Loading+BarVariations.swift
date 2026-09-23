@@ -118,7 +118,8 @@ private struct SegmentBarDemo: View {
         .contentShape(Rectangle())
         .onTapGesture { run += 1 }
         .onChange(of: lit) { old, new in
-            guard new > old && !ctx.isPreview else { return }
+            // Only a run the user restarted ticks; the automatic first run stays silent.
+            guard new > old && !ctx.isPreview && run > 0 else { return }
             // One tick per newly lit cell, 30 ms apart, even when a chunk lights several at once.
             Task {
                 for step in 0..<(new - old) {
@@ -131,13 +132,17 @@ private struct SegmentBarDemo: View {
     }
 
     private func play() async {
+        let live: Bool = !ctx.isPreview && run > 0
         flash = false
         let done = await barVarSimulate(speed: ctx["speed"], set: { progress = $0 }, current: { progress })
         guard done else { return }
         try? await Task.sleep(for: .seconds(0.4))
+        // A restart cancels this task; stop so the stale finale can't flash the new run.
+        guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.25)) { flash = true }
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(0.35))
+        guard !Task.isCancelled else { return }
         withAnimation(.easeIn(duration: 0.4)) { flash = false }
         try? await Task.sleep(for: .seconds(1.2))
         if ctx.isPreview && !Task.isCancelled { run += 1 }
@@ -435,10 +440,11 @@ private struct TooltipBarDemo: View {
     }
 
     private func play() async {
+        let live: Bool = !ctx.isPreview && run > 0
         steps = 0
         let done = await barVarSimulate(speed: ctx["speed"], set: { progress = $0 }, current: { progress }, onStep: { steps += 1 })
         guard done else { return }
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(1.6))
         if ctx.isPreview && !Task.isCancelled { run += 1 }
     }
@@ -602,13 +608,17 @@ private struct CandyStripesDemo: View {
     }
 
     private func play() async {
+        let live: Bool = !ctx.isPreview && run > 0
         pulse = false
         let done = await barVarSimulate(speed: ctx["speed"], set: { progress = $0 }, current: { progress })
         guard done else { return }
         try? await Task.sleep(for: .seconds(0.3))
+        // A restart cancels this task; stop so the stale finale can't pulse the new run.
+        guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) { pulse = true }
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(0.25))
+        guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { pulse = false }
         try? await Task.sleep(for: .seconds(1.6))
         if ctx.isPreview && !Task.isCancelled { run += 1 }

@@ -11,7 +11,7 @@ enum ButtonsFamilies {
             id: "buttons.press",
             category: .buttons,
             name: L("Press Feedback", "按压反馈"),
-            summary: L("How a button answers touch-down and release: sink, depth, ripple.", "按钮对按下与松开的回应：下沉、立体按压与涟漪。"),
+            summary: L("How a button answers touch-down and release: sink, depth, ripple, label roll.", "按钮对按下与松开的回应：下沉、立体按压、涟漪与文字滚动。"),
             symbol: "hand.tap.fill"
         ),
         EffectFamily(

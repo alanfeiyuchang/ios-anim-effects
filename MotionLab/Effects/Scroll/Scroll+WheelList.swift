@@ -12,10 +12,10 @@ extension Effect {
             "一列城市名（22 pt圆体，行高44 pt）被塑造成可转动的滚筒。正中一行平正、加粗、完全不透明，落在一条含蓄的圆角选中带里；越往外的行绕水平轴以透视向后倾斜，最多60°，同时最多缩小12%、淡到25%不透明度，上下各22%经渐变遮罩融化。滚动总会把一整行吸进选中带，每换一行轻轻一震；点某行则以弹簧（响应0.45秒、阻尼0.85）把它转进来。上方时区胶囊以数字滚动显示该城市的UTC偏移，以及UTC正午时的当地时间。精准而富有机械感，像iOS的时间选择器。"
         ),
         implementation: L(
-            "Each row's visualEffect maps its distance from the fixed viewport center to rotation3DEffect, scale and opacity; spacer padding centers the first and last rows, a custom ScrollTargetBehavior snaps the offset to whole rows, onScrollGeometryChange derives the selection and ScrollPosition drives programmatic scrolls, with sensoryFeedback(.selection).",
-            "每行的 visualEffect 将其到固定视口中心的距离映射为 rotation3DEffect、缩放与透明度；上下留白让首尾行也能居中，自定义 ScrollTargetBehavior 将偏移吸附到整行，onScrollGeometryChange 推算选中项，ScrollPosition 负责程序化滚动，并通过 sensoryFeedback(.selection) 提供触感。"
+            "Each row's visualEffect maps its distance from the fixed viewport center to rotation3DEffect, scale and opacity; spacer padding centers the first and last rows, a custom ScrollTargetBehavior snaps the offset to whole rows, onScrollGeometryChange derives the selection and ScrollPosition drives programmatic scrolls, with UISelectionFeedbackGenerator.",
+            "每行的 visualEffect 将其到固定视口中心的距离映射为 rotation3DEffect、缩放与透明度；上下留白让首尾行也能居中，自定义 ScrollTargetBehavior 将偏移吸附到整行，onScrollGeometryChange 推算选中项，ScrollPosition 负责程序化滚动，并通过 UISelectionFeedbackGenerator 提供触感。"
         ),
-        apis: ["visualEffect", "rotation3DEffect", "ScrollTargetBehavior", "onScrollGeometryChange", "ScrollPosition", "sensoryFeedback"],
+        apis: ["visualEffect", "rotation3DEffect", "ScrollTargetBehavior", "onScrollGeometryChange", "ScrollPosition", "UISelectionFeedbackGenerator"],
         tags: ["wheel", "picker", "drum", "3D list", "滚轮", "选择器", "滚筒", "三维列表"],
         params: [
             .slider("curve", L("Curvature", "弯曲度"), 0...80, default: 60, step: 1, decimals: 0, unit: "°"),
@@ -55,7 +55,9 @@ private struct ScrollWheelDemo: View {
             wheel
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: current) {
+            if !ctx.isPreview && !scripted { Haptics.selection() }
+        }
         .autoplay(ctx.isPreview, every: 1.3) { advance() }
     }
 

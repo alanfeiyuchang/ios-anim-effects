@@ -32,9 +32,15 @@ extension Effect {
 
 private struct ToastDemo: View {
     let ctx: DemoContext
-    @State private var shown = false
+    @State private var shown: Bool
     @State private var token = 0
     @State private var dragY: CGFloat = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails show the toast on screen.
+        _shown = State(initialValue: ctx.isStill)
+    }
 
     var body: some View {
         let fromTop = ctx.int("edge") == 0

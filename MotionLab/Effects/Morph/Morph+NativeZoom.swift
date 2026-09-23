@@ -210,9 +210,11 @@ private struct ZoomGridScreen: View {
     }
 
     private func tileButton(_ tile: ZoomTile) -> some View {
-        Button { onTap(tile.id) } label: {
+        // Two columns use landscape tiles so all three rows fit the 340 pt preview and the detail stage.
+        let ratio: CGFloat = columnCount == 2 ? 1.8 : 1
+        return Button { onTap(tile.id) } label: {
             ZoomTileArt(tile: tile, symbolSize: columnCount == 2 ? 34 : 26)
-                .aspectRatio(1, contentMode: .fit)
+                .aspectRatio(ratio, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: ctx.cg("corner"), style: .continuous))
         }
         .buttonStyle(ZoomTilePressStyle(scale: ctx.cg("press")))

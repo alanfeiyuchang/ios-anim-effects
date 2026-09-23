@@ -257,6 +257,8 @@ private struct PixelateDemo: View {
 private struct DissolveDemo: View {
     let ctx: DemoContext
     @State private var gone = false
+    /// Bumped by every tap, so a pending intro/autoplay restore never undoes the user's burn.
+    @State private var generation = 0
 
     private var edgeColor: Color {
         switch ctx.int("edge") {
@@ -279,6 +281,7 @@ private struct DissolveDemo: View {
     }
 
     private func toggle() {
+        generation += 1
         if !ctx.isPreview { Haptics.tap(.rigid) }
         withAnimation(.easeInOut(duration: ctx["duration"])) { gone.toggle() }
     }
@@ -286,9 +289,12 @@ private struct DissolveDemo: View {
     /// Preview loop: burn away, hold ~0.3 s, then re-materialize, so the card is visible most of the time.
     private func autoplayCycle() {
         let duration = ctx["duration"]
+        generation += 1
+        let token = generation
         withAnimation(.easeInOut(duration: duration)) { gone = true }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(duration + 0.3))
+            guard token == generation else { return }
             withAnimation(.easeInOut(duration: duration)) { gone = false }
         }
     }
@@ -529,48 +535,72 @@ private struct HalftonePoster: View, Animatable {
 
 private struct PlasmaDemo: View {
     let ctx: DemoContext
-    @State private var rippleOrigin = CGPoint.zero
-    @State private var rippleAt = Date.distantPast
+    /// Palette jumps so far; each one eases the ramp forward by one color stop (1/3).
+    @State private var shifts = 0
+    @State private var shiftAt = Date.distantPast
 
     var body: some View {
         let scale = ctx["scale"]
         let speed = ctx["speed"]
         ShaderClock(preview: ctx.isPreview, speed: speed) { time in
-            // Real seconds since the last tap; the shader ignores the ripple when age < 0 or ≥ 2.5 s.
-            let age = min(Date().timeIntervalSince(rippleAt), 10)
-            let origin = rippleOrigin
+            let jump = paletteJump(now: Date())
+            let palette: Double = jump.palette
+            let flash: Double = jump.flash
             Rectangle()
                 .visualEffect { content, proxy in
                     content.colorEffect(
-                        ShaderLibrary.mlPlasma(.float2(proxy.size), .float(time), .float(scale), .float2(origin), .float(age))
+                        ShaderLibrary.mlPlasma(.float2(proxy.size), .float(time), .float(scale), .float(palette), .float(flash))
                     )
                 }
-                .overlay {
-                    VStack(spacing: 6) {
-                        Text(verbatim: "Pro")
-                            .font(.system(size: 44, weight: .heavy, design: .rounded))
-                        Text(ctx.language == .zh ? "解锁全部动效" : "Unlock every effect")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 26)
-                    .padding(.vertical, 18)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .environment(\.colorScheme, .dark)
-                    .allowsHitTesting(false)
-                }
+                .overlay { PlasmaBadge(language: ctx.language) }
         }
         .contentShape(Rectangle())
-        .onTapGesture { location in
-            rippleOrigin = location
-            rippleAt = Date()
+        .onTapGesture {
             Haptics.tap(.soft)
+            shift()
         }
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Tap to send a ripple", "点击激起涟漪"), ctx: ctx)
+            DemoHint(text: L("Tap to shift the palette", "点击切换色相"), ctx: ctx)
                 .padding(.bottom, 14)
                 .environment(\.colorScheme, .dark)
                 .allowsHitTesting(false)
         }
+        .autoplay(ctx.isPreview, every: 3.2, delay: 1.0) { shift() }
+    }
+
+    private func shift() {
+        shifts += 1
+        shiftAt = Date()
+    }
+
+    /// Shader arguments don't animate, so the jump is eased per frame: the ramp moves one stop (1/3) with a
+    /// cubic ease-out over 0.9 s, while a flash rises in 120 ms and decays at ≈ 3.2/s.
+    private func paletteJump(now: Date) -> (palette: Double, flash: Double) {
+        guard shifts > 0 else { return (0, 0) }
+        let elapsed = max(now.timeIntervalSince(shiftAt), 0)
+        let p = min(elapsed / 0.9, 1)
+        let eased = 1 - pow(1 - p, 3)
+        let palette = (Double((shifts - 1) % 3) + eased) / 3
+        let flash = elapsed < 0.12 ? elapsed / 0.12 : exp(-(elapsed - 0.12) * 3.2)
+        return (palette, flash)
+    }
+}
+
+private struct PlasmaBadge: View {
+    let language: AppLanguage
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(verbatim: "Pro")
+                .font(.system(size: 44, weight: .heavy, design: .rounded))
+            Text(language == .zh ? "解锁全部动效" : "Unlock every effect")
+                .font(.subheadline.weight(.semibold))
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 26)
+        .padding(.vertical, 18)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .environment(\.colorScheme, .dark)
+        .allowsHitTesting(false)
     }
 }

@@ -26,7 +26,7 @@ enum ShadersFamilies {
             id: "shaders.glass",
             category: .shaders,
             name: L("Glass & Lens", "玻璃与透镜"),
-            summary: L("Lenses, frosted panes and variable blur that refract what's beneath.", "折射下层内容的透镜、磨砂玻璃与渐进模糊。"),
+            summary: L("Lenses, frosted materials and variable blur that refract or diffuse what's beneath.", "折射或柔化下层内容的透镜、磨砂材质与渐进模糊。"),
             symbol: "magnifyingglass.circle.fill"
         ),
         EffectFamily(

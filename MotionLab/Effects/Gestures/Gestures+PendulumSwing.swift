@@ -12,8 +12,8 @@ extension Effect {
             "一张150×200 pt的工牌（22 pt连续圆角、浮起表面、紫色顶栏、头像与占位文字）被顶部的挂绳孔“捏”住。拖动时挂孔1:1跟手，工牌绕它摆动：手指的水平速度映射为最多±28°的滞后角，经欠阻尼弹簧（响应0.45秒、阻尼0.4）作用，于是工牌拖在手指后面，停下时越过竖直位置再摆回；手指静止90毫秒，角度便回到零。松手后工牌以弹簧（响应0.5秒、阻尼0.7）飞回原位，回程速度带来一记反向摆动，来回荡两三下才静静垂下，并伴随柔和触感。有分量又讨喜。"
         ),
         implementation: L(
-            "rotationEffect(anchor: .top) is driven by DragGesture.Value.velocity through an under-damped spring on every change; a tokenised Task relaxes the angle when movement stops, and release adds a counter-swing proportional to the return distance.",
-            "rotationEffect(anchor: .top) 在每次拖动变化时由 DragGesture.Value.velocity 经欠阻尼弹簧驱动；带令牌的 Task 在停止移动时让角度回零，松手时再按回程距离施加一个反向摆动。"
+            "rotationEffect(anchor: .top) is driven by DragGesture.Value.velocity through an under-damped spring on every change; a single cancellable relax Task resets the angle when movement stops, and release adds a counter-swing proportional to the return distance.",
+            "rotationEffect(anchor: .top) 在每次拖动变化时由 DragGesture.Value.velocity 经欠阻尼弹簧驱动；单个可取消的 Task 在停止移动时让角度回零，松手时再按回程距离施加一个反向摆动。"
         ),
         apis: ["DragGesture.Value.velocity", "rotationEffect(_:anchor:)", "spring(response:dampingFraction:)", "Task.sleep"],
         tags: ["pendulum", "swing", "lanyard", "badge", "钟摆", "摆动", "工牌", "惯性"],
@@ -32,7 +32,8 @@ private struct PendulumSwingDemo: View {
     @State private var drag: CGSize = .zero
     @State private var angle: Double = 0
     @State private var dragging = false
-    @State private var moveToken = 0
+    /// The one pending relax; each drag change cancels and replaces it.
+    @State private var relaxTask: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,6 +56,7 @@ private struct PendulumSwingDemo: View {
                 .padding(.bottom, 8)
         }
         .autoplay(ctx.isPreview, every: 2.4) { simulate() }
+        .onDisappear { relaxTask?.cancel() }
     }
 
     private var swing: Animation {
@@ -81,17 +83,16 @@ private struct PendulumSwingDemo: View {
     }
 
     private func relaxWhenStill() {
-        moveToken += 1
-        let token = moveToken
-        Task { @MainActor in
+        relaxTask?.cancel()
+        relaxTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.09))
-            guard token == moveToken, dragging else { return }
+            guard !Task.isCancelled, dragging else { return }
             withAnimation(swing) { angle = 0 }
         }
     }
 
     private func release(haptic: Bool) {
-        moveToken += 1
+        relaxTask?.cancel()
         // Flying home to the left means the badge lags to the right, and vice versa.
         let kick = lagAngle(forVelocity: -drag.width * 6)
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {

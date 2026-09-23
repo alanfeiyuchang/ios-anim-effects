@@ -117,12 +117,16 @@ private struct LifeSleepDemo: View {
     @State private var sweeping = false
     /// Only a real finger on the chart ticks the selection haptic; the preview scrub stays silent.
     @State private var userScrubbing = false
+    /// Set halfway through the sweep, so the legend bars grow as the reveal reaches mid-chart
+    /// (the model value of `reveal` is already 1 when the sweep starts).
+    @State private var legendShown = false
 
     init(ctx: DemoContext) {
         self.ctx = ctx
         // Still snapshots never run `task`, so they show the fully revealed night.
         _reveal = State(initialValue: ctx.isStill ? 1 : 0)
         _counted = State(initialValue: ctx.isStill ? LifeSleepData.total : 0)
+        _legendShown = State(initialValue: ctx.isStill)
     }
 
     private static let chartSize = CGSize(width: 264, height: 108)
@@ -305,10 +309,10 @@ private struct LifeSleepDemo: View {
                         .overlay(alignment: .leading) {
                             Capsule()
                                 .fill(stage.color)
-                                .scaleEffect(x: reveal > 0.5 ? CGFloat(minutes / LifeSleepData.total) * 1.6 : 0.001, anchor: .leading)
+                                .scaleEffect(x: legendShown ? CGFloat(minutes / LifeSleepData.total) * 1.6 : 0.001, anchor: .leading)
                                 .animation(
                                     .spring(response: 0.5, dampingFraction: 0.8).delay(Double(stage.rawValue) * 0.06),
-                                    value: reveal > 0.5
+                                    value: legendShown
                                 )
                         }
                 }
@@ -344,6 +348,7 @@ private struct LifeSleepDemo: View {
             counted = 0
             scrub = nil
             sweeping = false
+            legendShown = false
         }
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
@@ -356,6 +361,8 @@ private struct LifeSleepDemo: View {
             let t = Double(index) / Double(steps)
             let eased = 1 - pow(1 - t, 3)
             withAnimation(.snappy(duration: 0.2)) { counted = LifeSleepData.total * eased }
+            // Step 8 of 14 lands at exactly half the sweep's duration.
+            if index == steps / 2 + 1 { legendShown = true }
             try? await Task.sleep(for: .seconds(duration / Double(steps)))
         }
         guard !Task.isCancelled else { return }

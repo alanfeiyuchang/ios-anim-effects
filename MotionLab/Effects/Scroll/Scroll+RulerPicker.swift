@@ -12,10 +12,10 @@ extension Effect {
             "一个体重选择器：横向刻度尺每12 pt一格（每格1公斤，40–120公斤），每5公斤有一根下方标注数字的长刻度，在中央一根固定的3 pt渐变指针下滚动。刻度靠近指针时会膨胀——在60 pt内最高放大到1.7倍并完全不透明，远处则淡到35%——整把尺子像被放大镜扫过。滚动吸附到整公斤；每根刻度经过指针都会触发选择触感，上方的大号数值以数字滚动过渡切换。两端通过渐变遮罩淡出。精准、可触、沉静，就像健身App引导页里的选择器。"
         ),
         implementation: L(
-            "Spacer padding centers tick i at offset i × 12 pt; a stride-snapping ScrollTargetBehavior lands on whole ticks, each tick's visualEffect scales it by its distance from the center, and onScrollGeometryChange derives the value for the numericText label and sensoryFeedback.",
-            "两侧留白让第 i 根刻度在偏移为 i × 12 pt 时居中；按步长吸附的 ScrollTargetBehavior 落在整格上，每根刻度的 visualEffect 按到中心的距离缩放，onScrollGeometryChange 推算数值，驱动 numericText 标签与 sensoryFeedback。"
+            "Spacer padding centers tick i at offset i × 12 pt; a stride-snapping ScrollTargetBehavior lands on whole ticks, each tick's visualEffect scales it by its distance from the center, and onScrollGeometryChange derives the value for the numericText label and UISelectionFeedbackGenerator.",
+            "两侧留白让第 i 根刻度在偏移为 i × 12 pt 时居中；按步长吸附的 ScrollTargetBehavior 落在整格上，每根刻度的 visualEffect 按到中心的距离缩放，onScrollGeometryChange 推算数值，驱动 numericText 标签与 UISelectionFeedbackGenerator。"
         ),
-        apis: ["visualEffect", "ScrollTargetBehavior", "onScrollGeometryChange", "contentTransition(.numericText(value:))", "sensoryFeedback"],
+        apis: ["visualEffect", "ScrollTargetBehavior", "onScrollGeometryChange", "contentTransition(.numericText(value:))", "UISelectionFeedbackGenerator"],
         tags: ["ruler", "picker", "ticks", "weight", "刻度尺", "选择器", "刻度", "体重"],
         params: [
             .slider("swell", L("Tick swell", "刻度放大"), 1...2.5, default: 1.7),
@@ -46,7 +46,9 @@ private struct ScrollRulerDemo: View {
             ruler
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: index) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: index) {
+            if !ctx.isPreview && !scripted { Haptics.selection() }
+        }
         .autoplay(ctx.isPreview, every: 1.4) { autoScroll() }
     }
 

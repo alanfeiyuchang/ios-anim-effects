@@ -94,10 +94,11 @@ private struct LoadButtonDemo: View {
         guard phase == .idle else { return }
         let morph = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
         let wait = ctx["duration"]
-        let live = !ctx.isPreview
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
         token += 1
         let current = token
-        if live { Haptics.tap(.medium) }
+        if buzz { Haptics.tap(.medium) }
         withAnimation(morph) { phase = .loading }
         task?.cancel()
         task = Task { @MainActor in
@@ -105,7 +106,7 @@ private struct LoadButtonDemo: View {
             guard !Task.isCancelled, token == current else { return }
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .success }
             successCount += 1
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
             try? await Task.sleep(for: .seconds(1.3))
             guard !Task.isCancelled, token == current else { return }
             withAnimation(morph) { phase = .idle }

@@ -15,7 +15,7 @@ extension Effect {
             "Spacer-padded LazyHStack with a custom ScrollTargetBehavior that snaps to whole items; each item's visualEffect converts its offset from centre into an angle on a circle and applies the matching offset, rotation and scale; onScrollGeometryChange derives the selection.",
             "LazyHStack 两侧用留白居中，自定义 ScrollTargetBehavior 按整格吸附；每个选项的 visualEffect 把到中心的距离换算为圆周上的角度，施加对应的位移、旋转与缩放；onScrollGeometryChange 推算当前选中项。"
         ),
-        apis: ["visualEffect", "ScrollTargetBehavior", "onScrollGeometryChange", "ScrollPosition", "sensoryFeedback"],
+        apis: ["visualEffect", "ScrollTargetBehavior", "onScrollGeometryChange", "ScrollPosition", "UISelectionFeedbackGenerator"],
         tags: ["dial", "arc", "picker", "carousel", "camera filter", "转盘", "弧形", "选择器", "滤镜"],
         params: [
             .slider("curve", L("Arc per step", "每格弧度"), 0...24, default: 15, step: 1, decimals: 0, unit: "°"),
@@ -78,7 +78,9 @@ private struct ScrollArcDialDemo: View {
                 .animation(.snappy, value: current)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: current) {
+            if !ctx.isPreview && !scripted { Haptics.selection() }
+        }
         .autoplay(ctx.isPreview, every: 1.2) { advance() }
     }
 

@@ -80,8 +80,9 @@ private struct SportSnowDemo: View {
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         }
         .signatureCard()
-        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .onTapGesture { runID += 1 }
+        .sportCardTap {
+            runID += 1
+        }
     }
 
     private func refresh() async {

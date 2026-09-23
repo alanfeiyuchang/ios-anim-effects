@@ -198,24 +198,21 @@ static float3 mlPlasmaRamp(float t) {
     return mix(a, b, smoothstep(0.0, 1.0, fract(x)));
 }
 
-// `origin` / `age` (seconds, < 0 when idle) inject a tap ripple: a ring travelling at ~260 pt/s that
-// perturbs the field and fades out over ~2.5 s.
+// `palette` shifts the ramp (1/3 = one color stop; the tap eases it forward), `flash` (0…1) briefly lifts the
+// troughs and brightens the bands as the palette jumps.
 [[ stitchable ]]
-half4 mlPlasma(float2 position, half4 color, float2 size, float time, float scale, float2 origin, float age) {
+half4 mlPlasma(float2 position, half4 color, float2 size, float time, float scale, float palette, float flash) {
     float2 uv = position / max(size, float2(1.0));
     float v = sin(uv.x * 6.0 * scale + time)
             + sin(uv.y * 7.0 * scale - time * 1.3)
             + sin((uv.x + uv.y) * 5.0 * scale + time * 0.7)
             + sin(length(uv - 0.5) * 12.0 * scale - time * 2.0);
-    if (age >= 0.0 && age < 2.5) {
-        float d = length(position - origin);
-        float ring = (d - age * 260.0) / 46.0;
-        v += 1.6 * exp(-ring * ring) * exp(-age * 1.4) * sin(d * 0.07 - age * 9.0);
-    }
     v *= 0.25;
-    float3 col = mlPlasmaRamp(v * 0.8 + time * 0.03);
+    float3 col = mlPlasmaRamp(v * 0.8 + time * 0.03 + palette);
     float shade = 0.62 + 0.38 * cos(v * 6.28318);
+    shade = mix(shade, 1.0, clamp(flash, 0.0, 1.0) * 0.55);
     col = mix(float3(0.05, 0.04, 0.17), col, shade);
+    col = min(col * (1.0 + 0.25 * clamp(flash, 0.0, 1.0)), float3(1.0));
     return half4(half3(col), 1.0h) * color.a;
 }
 
@@ -713,21 +710,26 @@ half4 mlVHS(float2 position, SwiftUI::Layer layer, float2 size, float time, floa
 
 // MARK: - Voronoi cells (color effect, generative)
 // Animated Worley cells: each feature point wobbles inside its grid cell, borders (F2 − F1 ≈ 0) glow, and each
-// cell takes a hashed color. A tap sends a ring (320 pt/s, fading over ~2 s) that shoves the cells outward and
-// brightens them as it passes. `pulse` < 0 means no ring.
+// cell takes a hashed color. A tap makes the tissue around it divide: within a Gaussian footprint (σ ≈ 110 pt)
+// the lookup is magnified about the tap by up to 2×, so each cell there splits into about four smaller,
+// brighter ones (rise ≈ 0.35 s), which then merge back (decay ≈ 1.4/s, fully gone by 3 s).
+// The radial map r → r·(1 + s·e^(−(r/110)²)) stays monotonic for s ≤ 1, so the field never folds.
+// `pulse` is the time since the tap in seconds; < 0 means idle.
 
 [[ stitchable ]]
 half4 mlVoronoiCells(float2 position, half4 color, float2 size, float time, float density, float2 touch,
                      float pulse, float glow) {
     float2 fromTouch = position - touch;
     float dist = length(fromTouch);
-    float ring = 0.0;
+    float split = 0.0;
     if (pulse >= 0.0) {
-        float rd = (dist - pulse * 320.0) / 26.0;
-        ring = exp(-rd * rd) * exp(-pulse * 1.6);
+        float envelope = smoothstep(0.0, 0.35, pulse) * exp(-max(pulse - 0.6, 0.0) * 1.4);
+        envelope *= 1.0 - smoothstep(2.6, 3.0, pulse);
+        float x = dist / 110.0;
+        split = envelope * exp(-x * x);
     }
-    float2 uv = position / max(size.y, 1.0) * density;
-    uv += (dist > 0.5 ? fromTouch / dist : float2(0.0)) * ring * 0.25;
+    float2 local = touch + fromTouch * (1.0 + split);
+    float2 uv = local / max(size.y, 1.0) * density;
     float2 g = floor(uv);
     float2 f = fract(uv);
     float d1 = 8.0;
@@ -755,8 +757,8 @@ half4 mlVoronoiCells(float2 position, half4 color, float2 size, float time, floa
     float border = exp(-edge * 18.0) * glow;
     float core = (1.0 - smoothstep(0.0, 0.5, d1)) * 0.35;
     float3 col = base * (0.55 + core);
-    col += float3(0.55, 0.85, 1.0) * border * (0.55 + ring * 2.0);
-    col += base * ring * 0.8;
+    col += float3(0.55, 0.85, 1.0) * border * (0.55 + split * 1.6);
+    col += base * split * 0.5;
     col = clamp(col, float3(0.0), float3(1.0));
     return half4(half3(col), 1.0h) * color.a;
 }

@@ -37,6 +37,19 @@ struct SportPressStyle: ButtonStyle {
     }
 }
 
+extension View {
+    /// Makes a whole signature card one button with the category's touch-down sink (98 %, slight dim),
+    /// so the card answers the finger before the tap ends.
+    func sportCardTap(cornerRadius: CGFloat = 26, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            self
+                .foregroundStyle(Color.white)
+                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        }
+        .buttonStyle(SportPressStyle(scale: 0.98, dim: 0.04))
+    }
+}
+
 /// Eyebrow row: optional orange glyph, uppercase title, optional trailing caption.
 struct SportEyebrowRow: View {
     let title: String

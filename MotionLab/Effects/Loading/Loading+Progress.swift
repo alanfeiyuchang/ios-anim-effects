@@ -123,9 +123,11 @@ private struct GlowBarDemo: View {
     }
 
     private func play() async {
+        // Only a run the user restarted buzzes; the automatic first run stays silent.
+        let live: Bool = !ctx.isPreview && run > 0
         let finished = await simulateProgress(speed: ctx["speed"], set: { progress = $0 }, current: { progress })
         guard finished else { return }
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(1.4))
         if ctx.isPreview && !Task.isCancelled { run += 1 }
     }
@@ -255,9 +257,11 @@ private struct ProgressRingDemo: View {
     }
 
     private func play() async {
+        // Only a run the user restarted buzzes; the automatic first run stays silent.
+        let live: Bool = !ctx.isPreview && run > 0
         let finished = await simulateProgress(speed: ctx["speed"], set: { progress = $0 }, current: { progress })
         guard finished else { return }
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(1.4))
         if ctx.isPreview && !Task.isCancelled { run += 1 }
     }

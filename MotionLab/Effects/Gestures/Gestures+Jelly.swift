@@ -60,8 +60,8 @@ private struct JellyDemo: View {
     @State private var offset: CGSize = .zero
     @State private var strain: CGSize = .zero
     @State private var isDragging = false
-    /// Bumped on every drag change; a pending relax only fires if no newer movement arrived.
-    @State private var moveToken = 0
+    /// The one pending relax; each drag change cancels and replaces it.
+    @State private var relaxTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -83,6 +83,7 @@ private struct JellyDemo: View {
                 .padding(.bottom, 14)
         }
         .autoplay(ctx.isPreview, every: 1.9) { simulate() }
+        .onDisappear { relaxTask?.cancel() }
     }
 
     private var blob: some View {
@@ -113,16 +114,18 @@ private struct JellyDemo: View {
                 }
                 relaxWhenStill()
             }
-            .onEnded { _ in release() }
+            .onEnded { _ in
+                relaxTask?.cancel()
+                release()
+            }
     }
 
     /// DragGesture stops reporting when the finger holds still, so the last velocity would freeze the stretch.
     private func relaxWhenStill() {
-        moveToken += 1
-        let token = moveToken
-        Task { @MainActor in
+        relaxTask?.cancel()
+        relaxTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.08))
-            guard token == moveToken, isDragging else { return }
+            guard !Task.isCancelled, isDragging else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) { strain = .zero }
         }
     }

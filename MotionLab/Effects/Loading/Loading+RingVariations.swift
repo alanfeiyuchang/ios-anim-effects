@@ -116,6 +116,8 @@ private struct TickRingDemo: View {
     }
 
     private func play() async {
+        // Only a run the user restarted buzzes; the automatic first run stays silent.
+        let live: Bool = !ctx.isPreview && run > 0
         ripple = false
         level = 0
         try? await Task.sleep(for: .seconds(0.5))
@@ -125,9 +127,11 @@ private struct TickRingDemo: View {
             level = min(1, level + 0.01)
             try? await Task.sleep(for: .seconds(0.06 / rate))
         }
+        guard !Task.isCancelled else { return }
         ripple = true
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(1.2))
+        guard !Task.isCancelled else { return }
         ripple = false
         try? await Task.sleep(for: .seconds(1.0))
         if ctx.isPreview && !Task.isCancelled { run += 1 }
@@ -299,16 +303,20 @@ private struct InstallPieDemo: View {
     }
 
     private func play() async {
+        let live: Bool = !ctx.isPreview && run > 0
         installed = false
         holeRadius = 17
         let done = await ringVarSimulate(speed: ctx["speed"], set: { progress = $0 }, current: { progress })
         guard done else { return }
         try? await Task.sleep(for: .seconds(0.2))
+        // A restart cancels this task; bail out so the stale finale can't open the new run's scrim.
+        guard !Task.isCancelled else { return }
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.8)) { holeRadius = 52 }
         try? await Task.sleep(for: .seconds(0.3))
+        guard !Task.isCancelled else { return }
         installed = true
         bounce += 1
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(2.0))
         if ctx.isPreview && !Task.isCancelled { run += 1 }
     }
@@ -414,11 +422,12 @@ private struct ElasticRingDemo: View {
     }
 
     private func play() async {
+        let live: Bool = !ctx.isPreview && run > 0
         steps = 0
         let spring = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
         let done = await ringVarSimulate(speed: ctx["speed"], animation: spring, set: { progress = $0 }, current: { progress }, onStep: { steps += 1 })
         guard done else { return }
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(1.8))
         if ctx.isPreview && !Task.isCancelled { run += 1 }
     }
@@ -579,14 +588,18 @@ private struct RingToCheckDemo: View {
     }
 
     private func play() async {
+        let live: Bool = !ctx.isPreview && run > 0
         withAnimation(.smooth(duration: 0.5)) { phase = .uploading }
         let done = await ringVarSimulate(speed: ctx["speed"], set: { progress = $0 }, current: { progress })
         guard done else { return }
         try? await Task.sleep(for: .seconds(0.2))
+        // A restart cancels this task; stop so the stale finale can't paint over the new upload.
+        guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .filled }
         try? await Task.sleep(for: .seconds(0.15))
+        guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.35)) { phase = .checked }
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(ctx["hold"]))
         guard !Task.isCancelled else { return }
         if ctx.bool("dock") {
@@ -689,13 +702,16 @@ private struct DashFlowRingDemo: View {
     }
 
     private func play() async {
+        let live: Bool = !ctx.isPreview && run > 0
         done = false
         let finished = await ringVarSimulate(speed: ctx["speed"], set: { progress = $0 }, current: { progress })
         guard finished else { return }
         try? await Task.sleep(for: .seconds(0.3))
+        // A restart cancels this task; stop so the new run keeps its streaming dashes.
+        guard !Task.isCancelled else { return }
         done = true
         pops += 1
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         try? await Task.sleep(for: .seconds(1.8))
         if ctx.isPreview && !Task.isCancelled { run += 1 }
     }

@@ -47,11 +47,13 @@ private struct AIGeneratingDemo: View {
     }
 
     private func cycle() async {
+        // Only a run the user restarted buzzes; the automatic first run stays silent.
+        let live: Bool = !ctx.isPreview && run > 0
         withAnimation(.smooth(duration: 0.4)) { done = false }
         try? await Task.sleep(for: .seconds(ctx["hold"]))
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) { done = true }
-        if !ctx.isPreview { Haptics.success() }
+        if live { Haptics.success() }
         guard ctx.isPreview else { return }
         try? await Task.sleep(for: .seconds(2.2))
         guard !Task.isCancelled else { return }

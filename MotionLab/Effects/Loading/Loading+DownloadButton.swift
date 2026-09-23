@@ -104,8 +104,9 @@ private struct DownloadButtonDemo: View {
         token += 1
         let current = token
         let speed = ctx["speed"]
-        let live = !ctx.isPreview
-        if live { Haptics.tap(.medium) }
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
+        if buzz { Haptics.tap(.medium) }
         withAnimation(spring) { phase = .waiting }
         task?.cancel()
         task = Task { @MainActor in
@@ -121,7 +122,7 @@ private struct DownloadButtonDemo: View {
             try? await Task.sleep(for: .seconds(0.3))
             guard !Task.isCancelled, token == current else { return }
             withAnimation(spring) { phase = .done }
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
         }
     }
 }

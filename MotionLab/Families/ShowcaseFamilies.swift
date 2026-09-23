@@ -31,7 +31,7 @@ enum ShowcaseFamilies {
         EffectFamily(
             id: "showcase.controls",
             category: .showcase,
-            name: L("Pickers & Sliders", "选择与滑动控件"),
+            name: L("Pickers, Sliders & Checklists", "选择、滑动与清单控件"),
             summary: L("Slide-to-start knobs, rulers, date ranges, chips and checklists with tactile feedback.", "滑动开始、刻度尺、日期区间、筛选标签与清单等质感控件。"),
             symbol: "slider.horizontal.3"
         ),
@@ -72,7 +72,7 @@ enum ShowcaseFamilies {
         "showcase.destination-carousel": "showcase.media-cards",
         "showcase.polaroid-fan": "showcase.media-cards",
         "showcase.now-playing": "showcase.media-cards",
-        // Pickers & sliders
+        // Pickers, sliders & checklists
         "showcase.slide-to-start": "showcase.controls",
         "showcase.altitude-ruler": "showcase.controls",
         "showcase.gear-checklist": "showcase.controls",

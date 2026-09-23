@@ -49,12 +49,22 @@ private struct TypeCycleDemo: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(L("We sweat the", "我们死磕每一处"), ctx.language)
                 .font(.system(size: 28, weight: .bold))
-            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-                line(schedule(at: timeline.date.timeIntervalSinceReferenceDate))
+            if ctx.isStill {
+                // Still thumbnail: the first keyword fully typed, caret on.
+                line(stillFrame)
+            } else {
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+                    line(schedule(at: timeline.date.timeIntervalSinceReferenceDate))
+                }
             }
         }
         .frame(width: 280, alignment: .leading)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var stillFrame: TypeCycleFrame {
+        let chars = (words.first ?? "").map { String($0) }
+        return TypeCycleFrame(word: chars, visible: chars.count, caretOn: true)
     }
 
     private func line(_ frame: TypeCycleFrame) -> some View {

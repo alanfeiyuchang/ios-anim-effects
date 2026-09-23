@@ -102,15 +102,16 @@ private struct ConnectionBannerDemo: View {
         token += 1
         let current = token
         let hold = ctx["hold"]
-        let live = !ctx.isPreview
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
         let spring = self.spring
-        if live { Haptics.tap() }
+        if buzz { Haptics.tap() }
         withAnimation(spring) { phase = .reconnecting }
         Task {
             try? await Task.sleep(for: .seconds(1.2))
             guard token == current else { return }
             withAnimation(spring) { phase = .restored }
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
             try? await Task.sleep(for: .seconds(hold))
             guard token == current else { return }
             withAnimation(spring) { phase = .online }

@@ -12,10 +12,10 @@ extension Effect {
             "一张170×128 pt的相册卡片（极光渐变封面加标题）居中。双指张开时卡片实时放大，投影抬升，并朝锚点一侧倾斜2°，超过1.6倍后带橡皮筋阻力；越过1.3倍即“就绪”，一下轻触感，外缘亮起细光环。就绪时松手，实时缩放无缝交接为布局变化：卡片以弹簧（响应0.5秒、阻尼0.78）绽开成300×320 pt的页面，封面长成150 pt的头图，正文行错开60毫秒上移8 pt淡入。在页面上捏到0.8倍以下或双击即以同一弹簧折回；未就绪松手则弹回。直接而连贯。"
         ),
         implementation: L(
-            "MagnifyGesture sets a live scale (rubber-banded) and an armed flag; onEnded toggles the expanded state and resets the scale in one spring so the layout frame and the gesture scale blend into a single motion. sensoryFeedback marks the threshold.",
-            "MagnifyGesture 设置带橡皮筋的实时缩放与“就绪”标记；onEnded 在同一个弹簧中切换展开状态并重置缩放，让布局尺寸变化与手势缩放融合成一段连续运动。越过阈值时由 sensoryFeedback 提示。"
+            "MagnifyGesture sets a live scale (rubber-banded) and an armed flag; onEnded toggles the expanded state and resets the scale in one spring so the layout frame and the gesture scale blend into a single motion. UIImpactFeedbackGenerator marks the threshold.",
+            "MagnifyGesture 设置带橡皮筋的实时缩放与“就绪”标记；onEnded 在同一个弹簧中切换展开状态并重置缩放，让布局尺寸变化与手势缩放融合成一段连续运动。越过阈值时由 UIImpactFeedbackGenerator 提示。"
         ),
-        apis: ["MagnifyGesture", "scaleEffect", "frame(width:height:)", "sensoryFeedback", "onTapGesture(count:)"],
+        apis: ["MagnifyGesture", "scaleEffect", "frame(width:height:)", "UIImpactFeedbackGenerator", "onTapGesture(count:)"],
         tags: ["pinch", "open", "expand", "zoom", "捏合", "展开", "放大", "卡片"],
         params: [
             .slider("threshold", L("Open threshold", "展开阈值"), 1.1...1.6, default: 1.3, decimals: 2, unit: "×"),
@@ -43,8 +43,8 @@ private struct PinchOpenDemo: View {
                 .rotationEffect(.degrees(tilt))
                 .gesture(magnify)
                 .onTapGesture(count: 2) { toggle(haptic: true) }
-                .sensoryFeedback(.impact(weight: .light), trigger: armed) { _, newValue in
-                    newValue && !ctx.isPreview && !scripted
+                .onChange(of: armed) { _, newValue in
+                    if newValue && !ctx.isPreview && !scripted { Haptics.tap(.light) }
                 }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

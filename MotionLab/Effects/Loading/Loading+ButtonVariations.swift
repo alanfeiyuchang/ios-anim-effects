@@ -117,7 +117,8 @@ private struct FillButtonDemo: View {
         if !ctx.isPreview { Haptics.tap(.medium) }
         withAnimation(.smooth(duration: 0.3)) { state = .loading }
         let speed = ctx["speed"]
-        let live = !ctx.isPreview
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
         task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.3))
             while progress < 1 {
@@ -129,7 +130,7 @@ private struct FillButtonDemo: View {
             guard !Task.isCancelled else { return }
             withAnimation(.smooth(duration: 0.35)) { state = .done }
             pops += 1
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
         }
     }
 }
@@ -245,17 +246,18 @@ private struct DotsButtonDemo: View {
         guard phase == .idle else { return }
         let spring = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
         let wait = ctx["duration"]
-        let live = !ctx.isPreview
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
         token += 1
         let current = token
-        if live { Haptics.tap(.medium) }
+        if buzz { Haptics.tap(.medium) }
         withAnimation(spring) { phase = .sending }
         task?.cancel()
         task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
             guard !Task.isCancelled, token == current else { return }
             withAnimation(spring) { phase = .sent }
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
             try? await Task.sleep(for: .seconds(1.4))
             guard !Task.isCancelled, token == current else { return }
             withAnimation(spring) { phase = .idle }
@@ -419,7 +421,9 @@ private struct TraceButtonDemo: View {
         token += 1
         let current = token
         let live = !ctx.isPreview
-        if live { Haptics.tap(.medium) }
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = live && !Haptics.isMuted
+        if buzz { Haptics.tap(.medium) }
         started = .now
         closed = 0
         withAnimation(.smooth(duration: 0.3)) { phase = .working }
@@ -438,7 +442,7 @@ private struct TraceButtonDemo: View {
                 phase = .done
                 closed = 1
             }
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
             if !live {
                 try? await Task.sleep(for: .seconds(2.2))
                 guard !Task.isCancelled, token == current else { return }

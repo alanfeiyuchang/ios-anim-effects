@@ -64,7 +64,8 @@ private struct SportHeartDemo: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .task(id: sprinting) { await drift() }
+        // Keyed on max HR too: the loop captures `ctx`, so the drift target follows the slider.
+        .task(id: "\(sprinting)-\(maxHR)") { await drift() }
         .task { await beat() }
         .autoplay(ctx.isPreview, every: 4.5, delay: 1.5) {
             if ctx.isPreview { toggleSprint() } else { introSprint() }
@@ -87,8 +88,7 @@ private struct SportHeartDemo: View {
         .padding(20)
         .frame(width: 280)
         .signatureCard()
-        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .onTapGesture {
+        .sportCardTap {
             recoverTask?.cancel()
             recoverTask = nil
             toggleSprint()

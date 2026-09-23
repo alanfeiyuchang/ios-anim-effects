@@ -45,7 +45,9 @@ private struct CardsDetentDemo: View {
             DemoHint(text: L("Drag the card down", "向下拖动卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.impact(flexibility: .rigid, intensity: 0.7), trigger: detent) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: detent) {
+            if !ctx.isPreview && !scripted { Haptics.tap(.rigid) }
+        }
         .autoplay(ctx.isPreview, every: 1.4) { autoStep() }
     }
 

@@ -15,7 +15,7 @@ extension Effect {
             "Each row owns a horizontal DragGesture (run simultaneously so the page can still scroll) and reports offset and predicted end to the parent, which decides open/close/delete and owns the pinned set; action tiles are Buttons, a background tap closes open rows, and removal uses an asymmetric move transition inside withAnimation.",
             "每一行挂载与页面滚动并行的水平 DragGesture，把偏移与预测终点上报给父视图决定展开、收起或删除，父视图同时维护置顶集合；操作块是 Button，点击背景收起已展开的行，删除在 withAnimation 中配合非对称 move 转场完成。"
         ),
-        apis: ["DragGesture", "simultaneousGesture", "predictedEndTranslation", "transition(.asymmetric)", "sensoryFeedback"],
+        apis: ["DragGesture", "simultaneousGesture", "predictedEndTranslation", "transition(.asymmetric)", "UIImpactFeedbackGenerator"],
         tags: ["swipe", "delete", "list", "actions", "reveal", "左滑", "删除", "列表", "操作"],
         params: [
             .slider("full", L("Full-swipe threshold", "一滑到底阈值"), 170...260, default: 210, step: 1, decimals: 0, unit: "pt"),
@@ -47,6 +47,8 @@ private struct SwipeActionsDemo: View {
     @State private var offsets: [Int: CGFloat] = [:]
     @State private var pinned: Set<Int> = []
     @State private var step = 0
+    /// Set by a real drag, so the intro's scheduled close never snaps shut a row the user opened.
+    @State private var userTouched = false
 
     private let reveal: CGFloat = 132
 
@@ -60,7 +62,10 @@ private struct SwipeActionsDemo: View {
                     reveal: reveal,
                     fullSwipe: ctx.cg("full"),
                     pinned: pinned.contains(item.id),
-                    onDrag: { value in offsets[item.id] = value },
+                    onDrag: { value in
+                        userTouched = true
+                        offsets[item.id] = value
+                    },
                     onEnd: { current, predicted in end(item.id, current: current, predicted: predicted) },
                     onPin: { togglePin(item.id) },
                     onDelete: {
@@ -159,6 +164,15 @@ private struct SwipeActionsDemo: View {
         }
     }
 
+    private func closeAfterIntro(_ id: Int) {
+        userTouched = false
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.2))
+            guard !userTouched, offsets[id] == -reveal else { return }
+            withAnimation(spring) { offsets[id] = 0 }
+        }
+    }
+
     private func autoStep() {
         defer { step += 1 }
         guard let first = items.first else {
@@ -169,6 +183,8 @@ private struct SwipeActionsDemo: View {
         switch step % 5 {
         case 0:
             withAnimation(spring) { offsets[first.id] = -reveal }
+            // The detail intro plays once: reveal the actions, then close so the demo isn't left swiped open.
+            if !ctx.isPreview { closeAfterIntro(first.id) }
         case 1:
             togglePin(first.id)
         case 2:
@@ -206,8 +222,8 @@ private struct SwipeRow: View {
                 .simultaneousGesture(dragGesture)
         }
         .frame(height: 64)
-        .sensoryFeedback(.impact(weight: .medium), trigger: isFull) { _, newValue in
-            newValue && !ctx.isPreview
+        .onChange(of: isFull) { _, newValue in
+            if newValue && !ctx.isPreview { Haptics.tap(.medium) }
         }
     }
 

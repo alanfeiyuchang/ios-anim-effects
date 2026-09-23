@@ -123,7 +123,8 @@ private struct BottomSheetDemo: View {
     }
 
     private var dragGesture: some Gesture {
-        DragGesture()
+        // Global space: the sheet moves under the finger, so local translation would feed back and jitter.
+        DragGesture(coordinateSpace: .global)
             .onChanged { value in
                 drag = value.translation.height
             }

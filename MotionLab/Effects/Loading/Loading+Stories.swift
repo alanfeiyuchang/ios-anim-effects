@@ -287,6 +287,8 @@ private struct BlurUpDemo: View {
     }
 
     private func load() async {
+        // Only a reload the user asked for taps; the automatic first load stays silent.
+        let live: Bool = !ctx.isPreview && run > 0
         withAnimation(.easeOut(duration: 0.3)) { loadedCount = 0 }
         order = [0, 1, 2].shuffled()
         try? await Task.sleep(for: .seconds(0.7))
@@ -295,7 +297,7 @@ private struct BlurUpDemo: View {
             try? await Task.sleep(for: .seconds(wait))
             guard !Task.isCancelled else { return }
             withAnimation(.smooth(duration: ctx["fade"])) { loadedCount = count }
-            if count == 3 && !ctx.isPreview { Haptics.tap(.soft) }
+            if count == 3 && live { Haptics.tap(.soft) }
         }
         guard ctx.isPreview else { return }
         try? await Task.sleep(for: .seconds(2.0))

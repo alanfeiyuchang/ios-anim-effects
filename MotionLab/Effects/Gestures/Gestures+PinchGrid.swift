@@ -142,12 +142,15 @@ private struct PinchTile: View {
         let colors = Palette.spectrum
         let a = colors[index % colors.count]
         let b = colors[(index + 2) % colors.count]
+        // Font size does not animate; draw the glyph at a reference size and scale it so it rides the tile's spring.
+        let glyphScale: CGFloat = size / 96
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(LinearGradient(colors: [a, b], startPoint: .topLeading, endPoint: .bottomTrailing))
             .overlay {
                 Image(systemName: pinchSymbols[index % pinchSymbols.count])
-                    .font(.system(size: max(size * 0.28, 12), weight: .semibold))
+                    .font(.system(size: 27, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.9))
+                    .scaleEffect(glyphScale)
             }
     }
 }

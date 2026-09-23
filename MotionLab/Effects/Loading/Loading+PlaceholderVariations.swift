@@ -159,7 +159,7 @@ extension Effect {
         name: L("Mosaic Resolve", "马赛克渐显"),
         summary: L("An image resolves from chunky blocks to full detail in doubling steps.", "图片从粗大的色块按倍数逐级细化到完整细节。"),
         prompt: L(
-            "A social post card with an avatar row, a 264 × 168 pt image and two caption lines. The image arrives progressively like an interlaced download: it first appears as a 4-column mosaic of flat color blocks averaged from the scene, then every 0.45 s the grid doubles — 8, 16, 32 columns — each new resolution cross-fading over the previous one in 0.25 s, until a final 96-column pass lands and a 0.5 pt blur melts the last grid lines away. Each step ticks a light haptic. The scene is a sunset over layered violet mountains. Nostalgic, informative, crisp.",
+            "A social post card with an avatar row, a 264 × 168 pt image and two caption lines. The image arrives progressively like an interlaced download: it first appears as a 4-column mosaic of flat color blocks sampled from the scene, then every 0.45 s the grid doubles — 8, 16, 32 columns — each new resolution cross-fading over the previous one in 0.25 s, until a final 96-column pass lands and a 0.5 pt blur melts the last grid lines away. Each step ticks a light haptic. The scene is a sunset over layered violet mountains. Nostalgic, informative, crisp.",
             "一张社交动态卡片：头像行、一幅 264 × 168 pt 的图片和两行说明。图片像隔行扫描下载一样逐级到达：先以 4 列的纯色马赛克出现（颜色取自画面采样），随后每 0.45 秒网格加倍——8、16、32 列——每一级在 0.25 秒内交叉淡入覆盖上一级，最后 96 列的一遍落定，再以 0.5 pt 模糊抹去残余网格线。每一级伴随一次轻触感。画面是层叠紫色山峦上的日落。怀旧、信息明确、清爽利落。"
         ),
         implementation: L(
@@ -224,6 +224,8 @@ private struct MosaicResolveDemo: View {
     }
 
     private func play() async {
+        // Only a run the user restarted taps; the automatic first run stays silent.
+        let live: Bool = !ctx.isPreview && run > 0
         withAnimation(.easeOut(duration: 0.2)) { columns = 0 }
         try? await Task.sleep(for: .seconds(0.6))
         var levels: [Int] = []
@@ -236,7 +238,7 @@ private struct MosaicResolveDemo: View {
         for level in levels {
             if Task.isCancelled { return }
             withAnimation(.easeInOut(duration: 0.25)) { columns = level }
-            if !ctx.isPreview { Haptics.tap(.soft) }
+            if live { Haptics.tap(.soft) }
             try? await Task.sleep(for: .seconds(ctx["step"]))
         }
         try? await Task.sleep(for: .seconds(2.0))

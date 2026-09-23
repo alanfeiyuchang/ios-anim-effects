@@ -18,7 +18,7 @@ enum ChartsFamilies {
             id: "charts.line",
             category: .charts,
             name: L("Line Charts", "折线图"),
-            summary: L("Lines that draw on, stream, morph between ranges and follow a scrub.", "折线绘制、实时流动、区间形变与跟随拖动。"),
+            summary: L("Lines and live candlesticks that draw on, stream, morph between ranges and follow a scrub.", "折线与实时 K 线：绘制、流动、区间形变与跟随拖动。"),
             symbol: "chart.xyaxis.line"
         ),
         EffectFamily(

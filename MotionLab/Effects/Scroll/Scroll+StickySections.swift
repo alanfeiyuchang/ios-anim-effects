@@ -77,7 +77,9 @@ private struct ScrollStickyDemo: View {
         .onScrollPhaseChange { _, newPhase in
             if newPhase == .interacting { scripted = false }
         }
-        .sensoryFeedback(.selection, trigger: pinnedSection) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: pinnedSection) {
+            if !ctx.isPreview && !scripted { Haptics.selection() }
+        }
         .autoplay(ctx.isPreview, every: 2.0) { advance() }
     }
 

@@ -155,9 +155,17 @@ private struct ButtonEmberField: View {
         let radius: CGFloat = CGFloat(1 + noise(index, 4) * 1.5) * CGFloat(1.2 - 0.7 * life)
         let warmth: Double = 0.55 + 0.45 * heat
         let alpha: Double = (1 - life) * warmth * (0.7 + 0.3 * boost)
-        let color = life < 0.4 ? Palette.amber : Palette.coral
         let rect = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
-        context.fill(Path(ellipseIn: rect.insetBy(dx: -radius, dy: -radius)), with: .color(color.opacity(alpha * 0.25)))
-        context.fill(Path(ellipseIn: rect), with: .color(color.opacity(alpha)))
+        context.fill(Path(ellipseIn: rect.insetBy(dx: -radius, dy: -radius)), with: .color(Self.coolDown(life, opacity: alpha * 0.25)))
+        context.fill(Path(ellipseIn: rect), with: .color(Self.coolDown(life, opacity: alpha)))
+    }
+
+    /// Ember colour over its life: amber (#FFC247) blending smoothly to coral (#FF7A5C) between 20 % and 70 %.
+    private static func coolDown(_ life: Double, opacity: Double) -> Color {
+        let x: Double = ((life - 0.2) / 0.5).clamped(to: 0...1)
+        let t: Double = x * x * (3 - 2 * x)
+        let green: Double = (194 + (122 - 194) * t) / 255
+        let blue: Double = (71 + (92 - 71) * t) / 255
+        return Color(.sRGB, red: 1, green: green, blue: blue, opacity: opacity)
     }
 }

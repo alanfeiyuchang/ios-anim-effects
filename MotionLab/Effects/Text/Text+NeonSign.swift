@@ -78,6 +78,9 @@ private struct NeonSignDemo: View {
         }
         .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.07)))
         .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        // Flatten the panel: up to 21 glyphs × 3 glow shadows would otherwise be blurred separately every frame.
+        // The panel already clips to its shape, so the offscreen pass changes nothing visually.
+        .drawingGroup()
         .shadow(color: .black.opacity(0.3), radius: 18, y: 10)
     }
 

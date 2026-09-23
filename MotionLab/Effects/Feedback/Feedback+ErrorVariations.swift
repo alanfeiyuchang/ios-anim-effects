@@ -107,14 +107,15 @@ private struct GlitchErrorDemo: View {
         let duration: Double = max(ctx["duration"], 0.1)
         start = .now
         glitching = true
-        let live = !ctx.isPreview
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
         task?.cancel()
         task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(duration))
             guard !Task.isCancelled, token == current else { return }
             glitching = false
             invalid = true
-            if live { Haptics.error() }
+            if buzz { Haptics.error() }
             try? await Task.sleep(for: .seconds(2.2))
             guard !Task.isCancelled, token == current else { return }
             invalid = false
@@ -440,7 +441,8 @@ private struct FaceIDFailDemo: View {
     private func attempt() {
         guard state != .scanning else { return }
         let scan = max(ctx["scan"], 0.3)
-        let live = !ctx.isPreview
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
         token += 1
         let current = token
         withAnimation(.smooth(duration: 0.3)) { state = .scanning }
@@ -449,7 +451,7 @@ private struct FaceIDFailDemo: View {
             guard token == current else { return }
             withAnimation(.smooth(duration: 0.3)) { state = .failed }
             fails += 1
-            if live { Haptics.error() }
+            if buzz { Haptics.error() }
             try? await Task.sleep(for: .seconds(2.0))
             guard token == current, state == .failed else { return }
             withAnimation(.smooth(duration: 0.4)) { state = .idle }

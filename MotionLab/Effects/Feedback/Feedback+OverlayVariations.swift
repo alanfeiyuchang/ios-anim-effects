@@ -67,7 +67,20 @@ private struct RecedingSheetDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.6, delay: 0.5) {
-            if presented { confirm() } else { present() }
+            if presented { scrubThenConfirm() } else { present() }
+        }
+    }
+
+    /// Autoplay only: drags the sheet down ~80 pt so the page visibly scrubs back, releases, then confirms.
+    private func scrubThenConfirm() {
+        withAnimation(.easeInOut(duration: 0.45)) { drag = 80 }
+        Task {
+            try? await Task.sleep(for: .seconds(0.5))
+            guard presented else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
+            try? await Task.sleep(for: .seconds(0.45))
+            guard presented else { return }
+            confirm(buzz: false)
         }
     }
 
@@ -106,7 +119,8 @@ private struct RecedingSheetDemo: View {
         let gone = isSelected && deleted
         return RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(tints[index].gradient)
-            .aspectRatio(1, contentMode: .fit)
+            // Slightly landscape tiles keep header + 3 rows inside the 320 pt page with a bottom margin.
+            .aspectRatio(1.2, contentMode: .fit)
             .overlay(alignment: .bottomTrailing) {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
@@ -193,8 +207,12 @@ private struct RecedingSheetDemo: View {
     }
 
     private func confirm() {
+        confirm(buzz: true)
+    }
+
+    private func confirm(buzz: Bool) {
         guard presented else { return }
-        Haptics.tap(.rigid)
+        if buzz { Haptics.tap(.rigid) }
         dismiss()
         withAnimation(.smooth(duration: 0.3)) { deleted = true }
     }
@@ -251,7 +269,13 @@ extension Effect {
 
 private struct TipPopoverDemo: View {
     let ctx: DemoContext
-    @State private var open = false
+    @State private var open: Bool
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails show the tip open over its tool.
+        _open = State(initialValue: ctx.isStill)
+    }
 
     private let tools: [String] = ["pencil.tip", "textformat", "wand.and.stars", "square.and.arrow.up"]
     private let bubbleWidth: CGFloat = 240
@@ -398,7 +422,13 @@ private struct DropPose {
 
 private struct DropAlertDemo: View {
     let ctx: DemoContext
-    @State private var shown = false
+    @State private var shown: Bool
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails show the alert landed.
+        _shown = State(initialValue: ctx.isStill)
+    }
     @State private var leaving = false
     @State private var drops = 0
     @State private var token = 0
@@ -508,7 +538,8 @@ private struct DropAlertDemo: View {
         shown = true
         drops += 1
         let fall: Double = ctx["fall"]
-        guard !ctx.isPreview else { return }
+        // The silent intro/autoplay mutes haptics while it runs; skip the delayed thump for those plays too.
+        guard !ctx.isPreview && !Haptics.isMuted else { return }
         Task {
             try? await Task.sleep(for: .seconds(fall))
             guard token == current else { return }

@@ -72,8 +72,9 @@ private struct SportCountdownDemo: View {
         .padding(20)
         .frame(width: 272)
         .signatureCard()
-        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .onTapGesture { start() }
+        .sportCardTap {
+            start()
+        }
     }
 
     private func start() {

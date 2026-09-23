@@ -8,12 +8,12 @@ extension Effect {
         name: L("Tear-Off Calendar", "撕页日历"),
         summary: L("Pull a day-calendar sheet down: it bends on its binding, tears free and tumbles away.", "向下拉日历页：纸页沿装订处弯折，撕下后翻滚着飞走。"),
         prompt: L(
-            "A 200×220 pt day-calendar pad with a dark binding strip and punched holes shows a big date. Dragging the top sheet downward stretches it up to 10% toward the finger and bends it forward around the binding in perspective — up to 55° at 180 pt of pull — while it twists up to 6° from the top-left corner and a shade darkens its lower half, as if paper were peeling. Releasing past 90 pt tears it off with a haptic: the sheet falls 420 pt with an ease-in over 0.55 s, rotating 25° and fading out, and the next day's date is already waiting underneath. Short pulls spring back onto the binding (response 0.4 s, damping 0.6). Tactile, nostalgic and satisfying.",
-            "一本200×220 pt的日历撕页本，顶部是深色装订条和打孔，页面印着大大的日期。向下拖动最上面的纸页时，它朝手指拉长最多10%，并以装订处为轴在透视中向前弯折——拉动180 pt时最多55°——同时从左上角扭转最多6°，下半部分逐渐加深阴影，就像纸张正在被撕开。拉过90 pt松手即撕下，伴随触感：纸页以缓入曲线在0.55秒内下落420 pt，旋转25°并淡出，下面已是第二天的日期。拉动不足时则以弹簧（响应0.4秒、阻尼0.6）贴回装订处。怀旧而令人满足。"
+            "A 200×220 pt day-calendar pad with a dark binding strip and punched holes shows a big date. Dragging the top sheet downward slides it after the finger with rubber-band resistance (about 40 pt at full pull), stretches it up to 10% and bends it forward around the binding in perspective — up to 55° at 180 pt of pull — while it twists up to 6° from the top-left corner and a shade darkens its lower half, as if paper were peeling. Releasing past 90 pt tears it off with a haptic: the sheet falls 420 pt with an ease-in over 0.55 s, rotating 25° and fading out, and the next day's date is already waiting underneath. Short pulls spring back onto the binding (response 0.4 s, damping 0.6). Tactile, nostalgic and satisfying.",
+            "200×220 pt的日历撕页本，顶部是深色装订条和打孔，印着大号日期。向下拖动最上面的纸页时，它带阻尼地跟随手指下移（满拉约40 pt）、拉长最多10%，并以装订处为轴在透视中向前弯折——拉动180 pt时最多55°——同时从左上角扭转最多6°，下半部分逐渐加深阴影，就像纸张正在被撕开。拉过90 pt松手即撕下，伴随触感：纸页以缓入曲线在0.55秒内下落420 pt，旋转25°并淡出，下面已是第二天的日期。拉动不足时则以弹簧（响应0.4秒、阻尼0.6）贴回装订处。怀旧又解压。"
         ),
         implementation: L(
-            "The pull distance drives a top-anchored y-stretch, rotation3DEffect around the x-axis anchored at the top, plus a small rotationEffect anchored at the top-leading corner; a torn sheet animates a separate fall state with easeIn before the day index advances.",
-            "拉动距离驱动以顶部为锚点的纵向拉伸、绕 x 轴的 rotation3DEffect，以及以左上角为锚点的轻微 rotationEffect；撕下的纸页使用独立的下落状态做缓入动画，之后日期序号前进。"
+            "The pull distance drives a rubber-banded follow offset, a top-anchored y-stretch, rotation3DEffect around the x-axis anchored at the top, plus a small rotationEffect anchored at the top-leading corner; a torn sheet animates a separate fall state with easeIn before the day index advances.",
+            "拉动距离驱动带橡皮筋阻尼的跟随位移、以顶部为锚点的纵向拉伸、绕 x 轴的 rotation3DEffect，以及以左上角为锚点的轻微 rotationEffect；撕下的纸页使用独立的下落状态做缓入动画，之后日期序号前进。"
         ),
         apis: ["rotation3DEffect(_:axis:anchor:perspective:)", "rotationEffect(_:anchor:)", "DragGesture", "withTransaction"],
         tags: ["calendar", "tear", "peel", "page", "日历", "撕页", "翻页", "纸张"],
@@ -47,13 +47,17 @@ private struct CardsTearOffDemo: View {
         let twist = Double(progress) * 6
         // The paper gives a little toward the finger, so the grabbed edge visibly follows the pull.
         let stretch: CGFloat = falling ? 1 : 1 + progress * 0.1
+        // Damped follow: the sheet slides after the finger (≈ 40 pt at full pull) so its edge stays near the touch.
+        let follow: CGFloat = rubberBand(pull, limit: 70)
+        let fall: CGFloat = falling ? 420 : 0
         return ZStack(alignment: .top) {
             CardsCalendarSheet(day: day + 1, language: ctx.language, shade: 0)
             CardsCalendarSheet(day: day, language: ctx.language, shade: Double(progress))
+                .offset(y: follow)
                 .scaleEffect(x: 1, y: stretch, anchor: .top)
                 .rotation3DEffect(.degrees(falling ? 70 : bend), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: 0.5)
                 .rotationEffect(.degrees(falling ? 25 : twist), anchor: .topLeading)
-                .offset(y: falling ? 420 : 0)
+                .offset(y: fall)
                 .opacity(falling ? 0 : 1)
                 .gesture(drag)
             CardsCalendarBinding()

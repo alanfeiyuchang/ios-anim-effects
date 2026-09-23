@@ -122,8 +122,9 @@ private struct SportRunSummaryDemo: View {
             VStack(spacing: 0) {
                 Spacer()
                 bento
-                    .contentShape(Rectangle())
-                    .onTapGesture { runID += 1 }
+                    .sportCardTap(cornerRadius: 20) {
+                        runID += 1
+                    }
                 Spacer()
                 DemoHint(text: L("Tap to rebuild", "点击重新组装"), ctx: ctx)
                     .padding(.bottom, 14)

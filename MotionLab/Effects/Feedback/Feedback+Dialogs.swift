@@ -31,8 +31,14 @@ extension Effect {
 
 private struct AlertPopDemo: View {
     let ctx: DemoContext
-    @State private var presented = false
+    @State private var presented: Bool
     @State private var closing = false
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails show the alert presented over the blurred card.
+        _presented = State(initialValue: ctx.isStill)
+    }
 
     var body: some View {
         let pop = ctx.int("style") == 1

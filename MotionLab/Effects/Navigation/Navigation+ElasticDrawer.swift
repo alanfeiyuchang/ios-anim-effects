@@ -132,8 +132,8 @@ private struct ElasticDrawerDemo: View {
             }
     }
 
-    private func settle(open: Bool) {
-        if !ctx.isPreview { Haptics.tap(open ? .medium : .light) }
+    private func settle(open: Bool, buzz: Bool = true) {
+        if buzz && !ctx.isPreview { Haptics.tap(open ? .medium : .light) }
         withAnimation(.spring(response: 0.55, dampingFraction: ctx["damping"])) {
             width = open ? openWidth : 0
             bulge = 0
@@ -142,13 +142,15 @@ private struct ElasticDrawerDemo: View {
 
     /// Preview: pull out with a bulge, then let go; or push it closed.
     private func simulatePull() {
+        // Captured now: false inside the silent intro/autoplay, so the settle in the completion stays quiet too.
+        let buzz: Bool = !Haptics.isMuted
         if width > openWidth / 2 {
             withAnimation(.easeOut(duration: 0.2)) {
                 width = openWidth * 0.55
                 bulge = -ctx.cg("bulge") * 0.5
                 bulgeY = 200
             } completion: {
-                settle(open: false)
+                settle(open: false, buzz: buzz)
             }
         } else {
             withAnimation(.easeOut(duration: 0.28)) {
@@ -156,7 +158,7 @@ private struct ElasticDrawerDemo: View {
                 bulge = ctx.cg("bulge")
                 bulgeY = 130
             } completion: {
-                settle(open: true)
+                settle(open: true, buzz: buzz)
             }
         }
     }

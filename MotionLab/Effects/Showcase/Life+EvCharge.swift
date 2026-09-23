@@ -55,7 +55,8 @@ private struct LifeEvChargeDemo: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .task(id: paused) {
+        // Keyed on the beat too: the loop captures `ctx`, so it restarts when the slider moves.
+        .task(id: "\(paused)-\(ctx["beat"])") {
             guard !paused else { return }
             await run()
         }
@@ -83,8 +84,9 @@ private struct LifeEvChargeDemo: View {
         .padding(18)
         .frame(width: barSize.width + 44)
         .signatureCard()
-        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .onTapGesture { togglePause() }
+        .sportCardTap {
+            togglePause()
+        }
     }
 
     private var header: some View {

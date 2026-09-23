@@ -85,6 +85,7 @@ private struct SportBestLineDemo: View {
     /// Last season's best run, racing the same line a little slower.
     @State private var ghost: CGFloat = 0
     @State private var runID = 0
+    @GestureState private var pressed = false
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -110,6 +111,12 @@ private struct SportBestLineDemo: View {
                 .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                 .onTapGesture { runID += 1 }
                 .gesture(scrubGesture)
+                .simultaneousGesture(pressGesture)
+                // Touch-down sink like the category's other cards; applied outside the gestures so
+                // the scrub still maps the finger in unscaled card coordinates.
+                .scaleEffect(pressed ? 0.98 : 1)
+                .brightness(pressed ? -0.04 : 0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: pressed)
                 Spacer()
                 DemoHint(text: L("Tap to replay, drag to scrub", "点击重播，拖动查看"), ctx: ctx)
                     .padding(.bottom, 16)
@@ -119,6 +126,15 @@ private struct SportBestLineDemo: View {
         .task(id: runID) { await play() }
         // The trail already draws on appear, so the detail stage skips its one-shot intro replay.
         .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: ctx["duration"] + 1.8, intro: false) { runID += 1 }
+    }
+
+    /// Held while the finger rests on the card; a scrub (any real travel) releases the sink.
+    private var pressGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .updating($pressed) { value, state, _ in
+                let travel: CGFloat = abs(value.translation.width) + abs(value.translation.height)
+                state = travel < 8
+            }
     }
 
     private var scrubGesture: some Gesture {

@@ -53,18 +53,30 @@ private final class FlowModel {
 
     func step(now: Double, speed: Double, count: Int, scale: Double, size newSize: CGSize, simulated: CGPoint?) -> Double {
         let t = clock.advance(to: now, speed: speed)
+        let f = 0.011 / max(scale, 0.1)
         if newSize != size || particles.count != count {
             size = newSize
             particles = (0..<max(count, 0)).map { index in spawn(hue: index % 4, age: Double.random(in: 0...3)) }
+            warmUp(t: t, f: f)
         }
         let dt = clock.delta * speed
         guard dt > 0, size.width > 1, size.height > 1 else { return t }
         let vortex = touch ?? simulated
-        let f = 0.011 / max(scale, 0.1)
         for index in particles.indices {
             advance(&particles[index], t: t, dt: dt, f: f, vortex: vortex)
         }
         return t
+    }
+
+    /// Pre-integrates a full trail (at 1/30 s steps) so the first frame — and a still thumbnail, which
+    /// renders exactly one frame with zero delta — shows luminous threads instead of scattered dots.
+    private func warmUp(t: Double, f: Double) {
+        guard size.width > 1, size.height > 1 else { return }
+        for _ in 0..<(FlowModel.trailLength + 2) {
+            for index in particles.indices {
+                advance(&particles[index], t: t, dt: FlowModel.sampleInterval, f: f, vortex: nil)
+            }
+        }
     }
 
     private func advance(_ p: inout FlowParticle, t: Double, dt: Double, f: Double, vortex: CGPoint?) {

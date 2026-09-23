@@ -92,45 +92,60 @@ extension View {
 }
 
 /// Stage-wide touch tracking for ambient backgrounds that never traps the page's vertical scroll:
-/// a drag engages only after 10 pt of mostly horizontal travel, then follows the finger in any direction.
-/// A plain tap "pokes" the stage: the touch is reported for a moment, then released.
+/// the drag is attached *simultaneously*, so the page's scroll view always keeps vertical swipes, and it only
+/// engages after 10 pt of mostly horizontal travel (then follows the finger in any direction).
+/// A `@GestureState` flag resets on system cancellation too (Control Center pull, scroll takeover, multi-touch),
+/// so `onEnded` always runs and no demo is left holding a touch. A plain tap "pokes" the stage: the touch is
+/// reported for a moment, then released.
 private struct BackgroundsTouchModifier: ViewModifier {
     let onChanged: (CGPoint) -> Void
     let onEnded: () -> Void
     @State private var engaged = false
     @State private var pokeToken = 0
+    @GestureState private var touching = false
 
     func body(content: Content) -> some View {
         content
             .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 10)
-                    .onChanged { value in
-                        if !engaged {
-                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                            engaged = true
-                        }
-                        pokeToken += 1
-                        onChanged(value.location)
-                    }
-                    .onEnded { _ in
-                        guard engaged else { return }
-                        engaged = false
-                        onEnded()
-                    }
-            )
+            .simultaneousGesture(drag)
             .simultaneousGesture(
                 SpatialTapGesture()
-                    .onEnded { value in
-                        pokeToken += 1
-                        let token = pokeToken
-                        onChanged(value.location)
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .seconds(0.45))
-                            if token == pokeToken && !engaged { onEnded() }
-                        }
-                    }
+                    .onEnded { value in poke(at: value.location) }
             )
+            .onChange(of: touching) { _, isTouching in
+                if !isTouching { release() }
+            }
+    }
+
+    private var drag: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .updating($touching) { _, state, _ in state = true }
+            .onChanged { value in
+                if !engaged {
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    engaged = true
+                }
+                pokeToken += 1
+                onChanged(value.location)
+            }
+            .onEnded { _ in release() }
+    }
+
+    /// Normal end or cancellation; runs `onEnded` once per engaged drag.
+    private func release() {
+        guard engaged else { return }
+        engaged = false
+        onEnded()
+    }
+
+    private func poke(at location: CGPoint) {
+        pokeToken += 1
+        let token = pokeToken
+        onChanged(location)
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.45))
+            if token == pokeToken && !engaged { onEnded() }
+        }
     }
 }
 

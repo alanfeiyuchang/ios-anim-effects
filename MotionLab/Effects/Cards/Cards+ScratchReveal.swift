@@ -54,7 +54,7 @@ private struct CardsScratchDemo: View {
             DemoHint(text: revealed ? L("Tap the card for a new one", "点击卡片换一张") : L("Scratch the foil", "刮开涂层"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: ticks)
+        .onChange(of: ticks) { Haptics.selection() }
         .autoplay(ctx.isPreview, every: 0.05, delay: 0.3) { autoScratch() }
         .onDisappear {
             introTask?.cancel()

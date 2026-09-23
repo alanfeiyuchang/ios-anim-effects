@@ -31,9 +31,15 @@ extension Effect {
 
 private struct HingeToastDemo: View {
     let ctx: DemoContext
-    @State private var shown = false
+    @State private var shown: Bool
     @State private var token = 0
     @State private var rings = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails show the banner hinged down.
+        _shown = State(initialValue: ctx.isStill)
+    }
 
     var body: some View {
         let zh = ctx.language == .zh
@@ -150,8 +156,14 @@ private enum MorphToastStage: Int {
 
 private struct MorphToastDemo: View {
     let ctx: DemoContext
-    @State private var stage: MorphToastStage = .hidden
+    @State private var stage: MorphToastStage
     @State private var token = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails show the toast mid-upload.
+        _stage = State(initialValue: ctx.isStill ? .uploading : .hidden)
+    }
 
     private let tiles: [Color] = [Palette.coral, Palette.sky, Palette.mint, Palette.violet, Palette.amber, Palette.pink]
 
@@ -237,14 +249,15 @@ private struct MorphToastDemo: View {
         let current = token
         let spring = Animation.spring(response: ctx["response"], dampingFraction: 0.8)
         let upload = ctx["upload"]
-        let live = !ctx.isPreview
-        if live { Haptics.tap() }
+        // Captured now: false inside the silent intro/autoplay, so delayed feedback stays quiet too.
+        let buzz: Bool = !ctx.isPreview && !Haptics.isMuted
+        if buzz { Haptics.tap() }
         withAnimation(spring) { stage = .uploading }
         Task {
             try? await Task.sleep(for: .seconds(upload))
             guard token == current else { return }
             withAnimation(spring) { stage = .done }
-            if live { Haptics.success() }
+            if buzz { Haptics.success() }
             try? await Task.sleep(for: .seconds(1.6))
             guard token == current else { return }
             withAnimation(.snappy(duration: 0.35)) { stage = .dot }

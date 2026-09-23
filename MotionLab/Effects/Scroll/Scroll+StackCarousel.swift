@@ -15,7 +15,7 @@ extension Effect {
             "Spacer padding centers item i at offset i × stride; a custom ScrollTargetBehavior snaps to whole strides. Each card's visualEffect reads its signed distance from the center and, only for cards already past it, adds a counter-offset plus scale, brightness and blur.",
             "两侧留白让第 i 张卡在偏移为 i × 步长时居中；自定义 ScrollTargetBehavior 吸附到整步长。每张卡的 visualEffect 读取自身到中心的有符号距离，只对已经滚过中心的卡片施加反向偏移，以及缩放、亮度与模糊。"
         ),
-        apis: ["visualEffect", "ScrollTargetBehavior", "ScrollPosition", "onScrollGeometryChange", "sensoryFeedback"],
+        apis: ["visualEffect", "ScrollTargetBehavior", "ScrollPosition", "onScrollGeometryChange", "UISelectionFeedbackGenerator"],
         tags: ["carousel", "stack", "deck", "pile", "轮播", "堆叠", "卡堆", "滚动"],
         params: [
             .slider("peek", L("Pile peek", "堆叠露出"), 0.04...0.3, default: 0.12),
@@ -49,7 +49,9 @@ private struct ScrollStackCarouselDemo: View {
                 .animation(.snappy, value: current)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
+        .onChange(of: current) {
+            if !ctx.isPreview && !scripted { Haptics.selection() }
+        }
         .autoplay(ctx.isPreview, every: 1.3) { advance() }
     }
 

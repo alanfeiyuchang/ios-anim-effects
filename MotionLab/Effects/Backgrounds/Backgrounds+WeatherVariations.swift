@@ -11,8 +11,8 @@ extension Effect {
         interaction: .tap,
         name: L("Rain on Glass", "玻璃雨滴"),
         summary: L(
-            "Beads cling to a window over blurred city lights; runners slip down in stick-slip bursts.",
-            "雨珠附着在窗玻璃上，背后是朦胧城市灯火；较大的水滴以“停—滑”节奏断续滑落。"
+            "Beads cling to a window at dusk over blurred street lamps; runners slip down in stick-slip bursts.",
+            "黄昏的窗玻璃上挂满雨珠，背后是朦胧街灯；较大的水滴以“停—滑”节奏断续滑落。"
         ),
         prompt: L(
             "A rainy window at night: soft, heavily blurred city lights in violet, amber and teal glow behind a faintly fogged pane. About 140 tiny static beads (0.8–3.4 pt) cling to the glass, each drawn with a dark lower shadow and a pin-point highlight. A handful of larger runners (4.5–7.5 pt, slightly elongated) move with real stick-slip motion: each one holds still, then lurches 14–24 pt down within the first 30% of its cycle on a smoothstep, then waits again, meandering sideways as it goes and leaving a tapering trail of five micro-beads. Tapping the glass knocks a fresh drop loose that accelerates straight down under gravity (420 pt/s²) with a slight wobble. Quiet, intimate and cinematic.",
@@ -126,14 +126,15 @@ private struct WindowDropletsDemo: View {
         let runners = ctx.int("runners")
         let blur = ctx.cg("blur")
         ZStack {
-            LinearGradient(colors: [Color(hex: 0x0E1020), Color(hex: 0x1B1730), Color(hex: 0x241A2E)], startPoint: .top, endPoint: .bottom)
+            // Blue hour, not night: keeps this apart from the night-city Rain variation in the family strip.
+            LinearGradient(colors: [Color(hex: 0x1F2B4D), Color(hex: 0x5B4C7A), Color(hex: 0xC97B6E), Color(hex: 0xF2B27E)], startPoint: .top, endPoint: .bottom)
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = model.step(now: timeline.date.timeIntervalSinceReferenceDate)
                 GlassCanvas(t: t, drops: model.drops, beads: beads, runners: runners, blur: blur)
             }
             BackgroundSampleTitle(
-                title: L("Stay in tonight", "今晚就待在家"),
-                subtitle: L("Rain until 11 PM", "雨将持续到 23 点"),
+                title: L("Evening showers", "傍晚阵雨"),
+                subtitle: L("Clearing after 8 PM", "20 点后转晴"),
                 language: ctx.language,
                 size: 26
             )
@@ -181,7 +182,8 @@ private struct GlassCanvas: View {
     }
 
     private static func drawCity(_ context: inout GraphicsContext, size: CGSize, blur: CGFloat) {
-        let colors: [Color] = [Palette.violet, Palette.amber, Palette.mint, Palette.coral, Color(hex: 0xFFE0A3)]
+        // Warm street lamps and a few cool windows against the dusk sky.
+        let colors: [Color] = [Color(hex: 0xFFB86B), Color(hex: 0xFF8FA3), Color(hex: 0xFFE0A3), Color(hex: 0x9FD4FF), Color(hex: 0xFFD27A)]
         context.drawLayer { layer in
             layer.addFilter(.blur(radius: blur))
             for i in 0..<11 {

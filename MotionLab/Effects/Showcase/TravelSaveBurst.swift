@@ -68,6 +68,8 @@ private struct TravelSaveBurstDemo: View {
         .task(id: burstID) {
             guard burstID > 0 else { return }
             try? await Task.sleep(for: .seconds(1.6))
+            // A re-save cancels this task; its early wake-up must not hide the new toast.
+            guard !Task.isCancelled else { return }
             withAnimation(.easeInOut(duration: 0.3)) { toast = false }
         }
     }

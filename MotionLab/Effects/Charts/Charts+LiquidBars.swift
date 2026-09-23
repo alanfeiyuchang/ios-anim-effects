@@ -8,8 +8,8 @@ extension Effect {
         name: L("Liquid Fill Bars", "液态柱状图"),
         summary: L("Glass tubes that fill with a sloshing, wavy liquid and overshoot like water poured too fast.", "玻璃管柱中的液体晃荡着灌满，像倒得太急的水一样先冲过头。"),
         prompt: L(
-            "A “Water intake” card with seven 28 × 170 pt glass tubes (capsule outline, faint inner highlight), one per weekday. Each tube holds a sky-to-blue liquid whose surface is a travelling sine wave (wavelength ≈ tube width × 1.6, phase offset per tube). On appear and on every tap the levels spring to new values on an under-damped spring (response 0.9 s, damping 0.55), 60 ms apart left to right, so each column overshoots and sloshes back; at the same moment the wave amplitude kicks from 1.5 pt to 6 pt and decays exponentially over ~1 s, as if the liquid were disturbed. Litre labels above roll to their new values with a numeric transition. Refreshing, tactile and a little playful.",
-            "一张“每日饮水”卡片，包含七根 28 × 170pt 的玻璃管（胶囊描边、内侧淡淡高光），每根代表一天。管中是天蓝到蓝色的液体，液面是一道行进中的正弦波（波长约为管宽的 1.6 倍，每根管相位错开）。出现时以及每次点击时，液位以欠阻尼弹簧（响应 0.9 秒、阻尼 0.55）弹到新数值，从左到右错开 60ms，因此每根液柱都会冲过头再晃回；与此同时波幅从 1.5pt 猛增到 6pt，再在约 1 秒内指数衰减，仿佛液体被晃动过。上方的升数标签以数字转场滚动到新值。清爽、可触，又带点俏皮。"
+            "A “Water intake” card with seven 28 × 170 pt glass tubes (capsule outline, faint inner highlight), one per weekday. Each tube holds a sky-to-blue liquid whose surface is a travelling sine wave (wavelength ≈ tube width × 1.6, phase offset per tube). On appear and on every tap the levels spring to new values on an under-damped spring (response 0.9 s, damping 0.55), 60 ms apart left to right, so each column overshoots and sloshes back; at the same moment the wave amplitude kicks from its 1.5 pt rest to 6 pt and decays exponentially (time constant 0.4 s) back to rest, as if the liquid were disturbed. Litre labels above roll to their new values with a numeric transition. Refreshing, tactile and a little playful.",
+            "一张“每日饮水”卡片，包含七根 28 × 170pt 的玻璃管（胶囊描边、内侧淡淡高光），每根代表一天。管中是天蓝到蓝色的液体，液面是一道行进中的正弦波（波长约为管宽的 1.6 倍，每根管相位错开）。出现时以及每次点击时，液位以欠阻尼弹簧（响应 0.9 秒、阻尼 0.55）弹到新数值，从左到右错开 60ms，因此每根液柱都会冲过头再晃回；与此同时波幅从静止时的 1.5pt 猛增到 6pt，再以 0.4 秒时间常数指数衰减回静止，仿佛液体被晃动过。上方的升数标签以数字转场滚动到新值。清爽、可触，又带点俏皮。"
         ),
         implementation: L(
             "A Shape whose animatableData is the fill level draws the wavy surface from a phase supplied by a TimelineView; springs animate the level while the timeline keeps the wave moving, and the amplitude decays from the time of the last kick.",
@@ -111,7 +111,7 @@ private struct LiquidBarsDemo: View {
     private func tubes(date: Date) -> some View {
         let t = date.timeIntervalSinceReferenceDate
         let since = max(date.timeIntervalSince(kick), 0)
-        let amplitude = CGFloat(1.5 + ctx["wave"] * exp(-since * 2.5))
+        let amplitude = CGFloat(max(1.5, ctx["wave"] * exp(-since * 2.5)))
         let labels = ctx.language == .zh ? liquidDaysZH : liquidDaysEN
         return HStack(alignment: .bottom, spacing: 10) {
             ForEach(0..<7, id: \.self) { index in

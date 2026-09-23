@@ -112,19 +112,27 @@ private struct PinchRotateDemo: View {
         baseDegrees = 0
     }
 
+    /// A complete simulated gesture: twist in with the grid showing, hold, then spring back to rest.
     private func autoStep() {
-        if scale == 1 && degrees == 0 {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
-                scale = 1.35
-                degrees = 18
-                isActive = true
-            }
-        } else {
+        guard !isActive else { return }
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
+            scale = 1.35
+            degrees = 18
+            isActive = true
+        }
+        baseScale = 1.35
+        baseDegrees = 18
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.7))
+            // Leave it alone if a real pinch took over in the meantime.
+            guard scale == 1.35, degrees == 18 else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.62)) {
                 scale = 1
                 degrees = 0
                 isActive = false
             }
+            baseScale = 1
+            baseDegrees = 0
         }
     }
 }

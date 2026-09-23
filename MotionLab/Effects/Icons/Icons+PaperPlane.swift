@@ -8,8 +8,8 @@ extension Effect {
         name: L("Paper Plane Send", "纸飞机发送"),
         summary: L("The send glyph launches on a swooping curve with a dotted contrail, then a check lands.", "发送图标沿弧线起飞并拖出虚线尾迹，随后换成对勾。"),
         prompt: L(
-            "A round gradient send button holds a white paper-plane glyph. On tap the button dips to 90% and the plane pulls back with a −12° wind-up, then launches along a swooping quadratic curve — out to the left, then climbing to the top-right corner of the stage — banking to follow the curve's tangent, easing in and out over ~0.7 s and shrinking to 70%. A dotted contrail trails a third of the path behind it and fades with the plane. While the plane is away a checkmark scales into the button and the caption changes to “Sent”; then a fresh plane springs back in (bouncy, from 20%). Light, joyful and precise.",
-            "圆形渐变发送按钮中是一架白色纸飞机图标。点击时按钮下沉到 90%，纸飞机先向后 −12° 蓄力，然后沿一条二次贝塞尔弧线起飞——先向左外摆，再爬升到舞台右上角——机身随曲线切线倾斜转向，约 0.7 秒内缓入缓出并缩小到 70%。一道虚线尾迹在其身后跟随约三分之一路径，并与飞机一同淡出。飞机离场期间，对勾在按钮中放大出现，说明文字变为「已发送」；随后一架新的纸飞机以弹性弹簧从 20% 大小弹回。轻快、愉悦而精准。"
+            "A round gradient send button holds a white paper-plane glyph. On tap the button dips to 90% and the plane pulls back with a −12° wind-up, then launches along a swooping quadratic curve — out to the left, then climbing to the top-right corner of the stage — banking to follow the curve's tangent and tinting from white to indigo once it clears the disc, easing in and out over ~0.7 s and shrinking to 70%. A dotted contrail trails a third of the path behind it and fades with the plane. While the plane is away a checkmark scales into the button and the caption changes to “Sent”; then a fresh plane springs back in (bouncy, from 20%). Light, joyful and precise.",
+            "圆形渐变发送按钮中是一架白色纸飞机图标。点击时按钮下沉到 90%，纸飞机先向后 −12° 蓄力，然后沿一条二次贝塞尔弧线起飞——先向左外摆，再爬升到舞台右上角——机身随曲线切线倾斜转向、离开按钮后由白转为靛蓝，约 0.7 秒内缓入缓出并缩小到 70%。一道虚线尾迹在其身后跟随约三分之一路径，并与飞机一同淡出。飞机离场期间，对勾在按钮中放大出现，说明文字变为「已发送」；随后一架新的纸飞机以弹性弹簧从 20% 大小弹回。轻快、愉悦而精准。"
         ),
         implementation: L(
             "A keyframeAnimator animates a 0→1 flight progress plus scale, opacity and wind-up tracks; position and bank angle are evaluated from a quadratic Bézier and its derivative, and the contrail is the same curve as a Shape trimmed behind the plane.",
@@ -164,6 +164,9 @@ private struct IconsPlaneScene: View {
         let bank = (curve.heading(t) + 45).truncatingRemainder(dividingBy: 360)
         let normalized = bank > 180 ? bank - 360 : (bank < -180 ? bank + 360 : bank)
         let angle = normalized * min(t * 5, 1) + value.windup
+        // White while over the disc, then indigo so the flight reads on the light stage too.
+        let tint: Double = ((t - 0.1) / 0.2).clamped(to: 0...1)
+        let shadowOpacity: Double = t > 0.02 ? 0.2 + 0.15 * tint : 0
         ZStack(alignment: .topLeading) {
             if trail {
                 IconsPlaneTrail(curve: curve)
@@ -173,16 +176,22 @@ private struct IconsPlaneScene: View {
             }
             button
                 .position(curve.start)
-            Image(systemName: "paperplane.fill")
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(t > 0.02 ? 0.2 : 0), radius: 6, y: 4)
+            plane(tint: tint)
+                .shadow(color: Palette.indigo.opacity(shadowOpacity), radius: 6, y: 4)
                 .rotationEffect(.degrees(angle))
                 .scaleEffect(CGFloat(value.scale) * CGFloat(value.press))
                 .opacity(value.opacity)
                 .position(position)
         }
         .frame(width: 300, height: IconsPlaneScene.height, alignment: .topLeading)
+    }
+
+    private func plane(tint: Double) -> some View {
+        let glyph = Image(systemName: "paperplane.fill").font(.system(size: 28, weight: .semibold))
+        return ZStack {
+            glyph.foregroundStyle(.white)
+            glyph.foregroundStyle(Palette.indigo).opacity(tint)
+        }
     }
 
     private var button: some View {

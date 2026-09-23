@@ -60,6 +60,8 @@ private struct IntelligenceGlowDemo: View {
     let ctx: DemoContext
     @State private var model = GlowModel()
     @State private var active = false
+    /// Bumped by every real tap so a pending intro pulse never overrides the user.
+    @State private var tapToken = 0
 
     var body: some View {
         ZStack {
@@ -73,9 +75,13 @@ private struct IntelligenceGlowDemo: View {
         .contentShape(Rectangle())
         .onTapGesture {
             Haptics.tap()
+            tapToken += 1
             toggle()
         }
-        .autoplay(ctx.isPreview, every: 2.6) { toggle() }
+        // Previews loop the toggle; the detail intro pulses once and returns to idle.
+        .autoplay(ctx.isPreview, every: 2.6) {
+            if ctx.isPreview { toggle() } else { pulseOnce() }
+        }
         .backgroundsHint(L("Tap to start listening", "点击开始聆听"), ctx)
     }
 
@@ -95,6 +101,17 @@ private struct IntelligenceGlowDemo: View {
     private func toggle() {
         withAnimation(.smooth(duration: 0.3)) {
             active.toggle()
+        }
+    }
+
+    /// Arrival demo: think for ~1.6 s, then settle back so the stage matches its "Tap to start" hint.
+    private func pulseOnce() {
+        guard !active else { return }
+        let token = tapToken
+        toggle()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.6))
+            if token == tapToken && active { toggle() }
         }
     }
 }

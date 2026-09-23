@@ -15,10 +15,10 @@ extension Effect {
             "暗色成就卡片。点击后，刻有山峰与“3,798 m”的橙色六边形徽章从 160pt 高处以弹簧（响应 0.55 秒、阻尼 0.6）落下，同时以先快后缓的 1.2 秒曲线绕竖轴转两圈，每次转回正面高光一闪；落地轻微过冲，伴随中等触感。身后十二道柔和光芒 0.6 秒内从 60% 放大淡入，随后以每秒 12° 永久缓转，四颗星光错开闪烁。落地后标题“登顶成功”与说明相隔 150 毫秒上浮 12pt 就位，并触发成功触感。点击可重播。胜利而温暖。"
         ),
         implementation: L(
-            "An async sequence resets the badge instantly, then springs its drop offset and runs a timingCurve animation on an accumulated rotation3DEffect angle; the rays are a TimelineView-rotated ForEach of capsules, and the texts use delayed springs keyed on the revealed flag.",
-            "异步序列先瞬间重置徽章，再以弹簧驱动下落偏移，并用 timingCurve 动画驱动累加的 rotation3DEffect 角度；光芒是由 TimelineView 旋转的一组胶囊，文字则由以揭示状态为 key 的延迟弹簧驱动。"
+            "An async sequence resets the badge instantly, then springs its drop offset and runs a timingCurve animation on an accumulated rotation3DEffect angle that an Animatable view reads per frame to un-mirror the back half and flash a glint; the rays are a TimelineView-rotated ForEach of capsules, and the texts use delayed springs keyed on the revealed flag.",
+            "异步序列先瞬间重置徽章，再以弹簧驱动下落偏移，并用 timingCurve 动画驱动累加的 rotation3DEffect 角度，由 Animatable 视图逐帧读取以矫正背面镜像并闪出高光；光芒是由 TimelineView 旋转的一组胶囊，文字则由以揭示状态为 key 的延迟弹簧驱动。"
         ),
-        apis: ["rotation3DEffect", "timingCurve", "TimelineView", "withTransaction", "task(id:)"],
+        apis: ["rotation3DEffect", "Animatable", "timingCurve", "TimelineView", "task(id:)"],
         tags: ["badge", "achievement", "unlock", "summit", "徽章", "成就", "解锁", "登顶"],
         params: [
             .slider("spins", L("Spins", "旋转圈数"), 0...4, default: 2, step: 1, decimals: 0),
@@ -116,26 +116,8 @@ private struct SportSummitBadgeDemo: View {
     }
 
     private var badge: some View {
-        ZStack {
-            SportHexagon()
-                .fill(Signature.accentGradient)
-                .overlay(SportHexagon().stroke(Signature.accentSoft, lineWidth: 3))
-                .overlay {
-                    SportHexagon()
-                        .fill(LinearGradient(colors: [Color.white.opacity(0.45), .clear], startPoint: .topLeading, endPoint: .center))
-                }
-            VStack(spacing: 2) {
-                Image(systemName: "mountain.2.fill")
-                    .font(.system(size: 30, weight: .semibold))
-                Text(verbatim: "3,798 m")
-                    .font(Signature.number(14))
-            }
-            .foregroundStyle(Color.white)
-        }
-        .frame(width: 118, height: 118)
-        .shadow(color: Signature.accent.opacity(0.5), radius: 16, y: 8)
-        .rotation3DEffect(.degrees(spin), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-        .offset(y: -drop)
+        SportSummitSpinner(angle: spin)
+            .offset(y: -drop)
     }
 
     private func play() async {
@@ -157,7 +139,80 @@ private struct SportSummitBadgeDemo: View {
         if !muted { Haptics.tap(.medium) }
         withAnimation(.easeOut(duration: 0.6)) { revealed = true }
         try? await Task.sleep(for: .milliseconds(300))
+        // A re-tap cancels this run; its early wake-up must not fire a stale success haptic.
+        guard !Task.isCancelled else { return }
         if !muted { Haptics.success() }
+    }
+}
+
+/// Receives the interpolated spin angle every frame: un-mirrors the face while its back half turns toward
+/// the viewer, and flashes a glossy glint just before and after each face comes front-on.
+private struct SportSummitSpinner: View, Animatable {
+    var angle: Double
+
+    var animatableData: Double {
+        get { angle }
+        set { angle = newValue }
+    }
+
+    private var facing: Double { cos(angle * .pi / 180) }
+
+    /// Zero at rest (exactly front-on) and edge-on; peaks ~20° either side of front-on.
+    private var glint: Double {
+        let c = abs(facing)
+        return pow(c, 6) * (1 - pow(c, 40))
+    }
+
+    private var sweep: CGFloat {
+        let s = sin(angle * .pi / 180)
+        return CGFloat(s) * 70
+    }
+
+    private var mirror: CGFloat { facing < 0 ? -1 : 1 }
+
+    var body: some View {
+        SportSummitFace(glint: glint, sweep: sweep)
+            .scaleEffect(x: mirror, y: 1)
+            .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+    }
+}
+
+private struct SportSummitFace: View {
+    let glint: Double
+    let sweep: CGFloat
+
+    var body: some View {
+        ZStack {
+            SportHexagon()
+                .fill(Signature.accentGradient)
+                .overlay(SportHexagon().stroke(Signature.accentSoft, lineWidth: 3))
+                .overlay {
+                    SportHexagon()
+                        .fill(LinearGradient(colors: [Color.white.opacity(0.45), .clear], startPoint: .topLeading, endPoint: .center))
+                }
+            VStack(spacing: 2) {
+                Image(systemName: "mountain.2.fill")
+                    .font(.system(size: 30, weight: .semibold))
+                Text(verbatim: "3,798 m")
+                    .font(Signature.number(14))
+            }
+            .foregroundStyle(Color.white)
+            glintBand
+        }
+        .frame(width: 118, height: 118)
+        .shadow(color: Signature.accent.opacity(0.5), radius: 16, y: 8)
+    }
+
+    private var glintBand: some View {
+        LinearGradient(colors: [.clear, Color.white.opacity(0.9), .clear], startPoint: .leading, endPoint: .trailing)
+            .frame(width: 46, height: 170)
+            .rotationEffect(.degrees(18))
+            .offset(x: sweep)
+            .opacity(glint)
+            .blendMode(.plusLighter)
+            .frame(width: 118, height: 118)
+            .mask(SportHexagon())
+            .allowsHitTesting(false)
     }
 }
 

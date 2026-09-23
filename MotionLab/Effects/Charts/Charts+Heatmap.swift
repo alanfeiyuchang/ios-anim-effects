@@ -55,6 +55,8 @@ private struct HeatmapDemo: View {
     @State private var revealed = true
     @State private var origin = (column: 0, row: 0)
     @State private var total = heatTotal(heatSeed)
+    /// Bumped by every ripple; a pending swap from an older tap bails out instead of hard-cutting the grid.
+    @State private var generation = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -135,9 +137,12 @@ private struct HeatmapDemo: View {
     private func ripple(column: Int, row: Int, refresh: Bool) {
         origin = (column, row)
         revealed = false
+        generation += 1
+        let current = generation
         if !ctx.isPreview && refresh { Haptics.tap(.light) }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.22))
+            guard current == generation else { return }
             if refresh { levels = randomLevels() }
             revealed = true
             withAnimation(.snappy) { total = heatTotal(levels) }

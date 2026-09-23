@@ -38,6 +38,8 @@ private struct TokenFieldDemo: View {
     @State private var draft = ""
     @State private var nextID = 1
     @State private var scriptIndex = 0
+    /// Detail-page intro: types and commits one name. It never focuses the field (no keyboard).
+    @State private var introTask: Task<Void, Never>?
     @FocusState private var focused: Bool
 
     private static let names = ["Leo", "Ava", "Noah", "Zoe", "Kai"]
@@ -51,7 +53,13 @@ private struct TokenFieldDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 0.3, delay: 0.4) { previewTick() }
+        .autoplay(ctx.isPreview, every: 0.3, delay: 0.4) {
+            if ctx.isPreview { previewTick() } else { playIntro() }
+        }
+        .onDisappear { stopIntro() }
+        .onChange(of: focused) { _, isFocused in
+            if isFocused { stopIntro() }
+        }
     }
 
     private var spring: Animation {
@@ -94,9 +102,9 @@ private struct TokenFieldDemo: View {
             .autocorrectionDisabled()
             .focused($focused)
             .submitLabel(.done)
-            .onSubmit { commit() }
+            .onSubmit { commit(userInitiated: true) }
             .onChange(of: draft) { _, newValue in
-                if newValue.contains(",") { commit() }
+                if newValue.contains(",") { commit(userInitiated: introTask == nil) }
             }
             .frame(width: 104, height: 30)
     }
@@ -118,7 +126,8 @@ private struct TokenFieldDemo: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.primary)
             Button {
-                remove(token)
+                stopIntro()
+                remove(token, silent: false)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .bold))
@@ -150,35 +159,62 @@ private struct TokenFieldDemo: View {
         .animation(.snappy, value: tokens.count)
     }
 
-    private func commit() {
+    /// Only a real return keeps the keyboard up; simulated commits never touch focus.
+    private func commit(userInitiated: Bool) {
         let name = draft
             .replacingOccurrences(of: ",", with: "")
             .trimmingCharacters(in: .whitespaces)
         draft = ""
         guard !name.isEmpty else { return }
-        if !ctx.isPreview { Haptics.tap() }
+        let live = userInitiated && !ctx.isPreview
+        if live { Haptics.tap() }
         let token = FieldToken(id: nextID, name: name)
         nextID += 1
         tokens.append(token)
-        if !ctx.isPreview { focused = true }
+        if live { focused = true }
     }
 
-    private func remove(_ token: FieldToken) {
-        if !ctx.isPreview { Haptics.tap() }
+    private func remove(_ token: FieldToken, silent: Bool) {
+        if !silent && !ctx.isPreview { Haptics.tap() }
         tokens.removeAll { $0.id == token.id }
+    }
+
+    /// One full sequence on detail arrival: type a name letter by letter, then commit it as a chip.
+    private func playIntro() {
+        introTask?.cancel()
+        let name = "Leo"
+        introTask = Task {
+            for character in name {
+                try? await Task.sleep(for: .seconds(0.24))
+                guard !Task.isCancelled else { return }
+                draft.append(character)
+            }
+            try? await Task.sleep(for: .seconds(0.4))
+            guard !Task.isCancelled else { return }
+            commit(userInitiated: false)
+            introTask = nil
+        }
+    }
+
+    /// The first real touch takes over from the intro and clears its half-typed draft.
+    private func stopIntro() {
+        guard let task = introTask else { return }
+        task.cancel()
+        introTask = nil
+        draft = ""
     }
 
     /// Preview: type a name letter by letter, commit, repeat; trim the list when it gets long.
     private func previewTick() {
         let name = Self.names[scriptIndex % Self.names.count]
         if tokens.count >= 4 {
-            if let first = tokens.first { remove(first) }
+            if let first = tokens.first { remove(first, silent: true) }
             return
         }
         if draft.count < name.count {
             draft.append(name[name.index(name.startIndex, offsetBy: draft.count)])
         } else {
-            commit()
+            commit(userInitiated: false)
             scriptIndex += 1
         }
     }

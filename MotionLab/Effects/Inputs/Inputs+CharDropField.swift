@@ -32,6 +32,8 @@ private struct CharDropFieldDemo: View {
     let ctx: DemoContext
     @State private var text = ""
     @State private var scriptIndex = 0
+    /// Detail-page intro: types a short username. It never focuses the field (no keyboard).
+    @State private var introTask: Task<Void, Never>?
     @FocusState private var focused: Bool
 
     private let limit = 16
@@ -47,10 +49,13 @@ private struct CharDropFieldDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background { hiddenField }
-        .autoplay(ctx.isPreview, every: 0.22, delay: 0.4) { previewType() }
+        .autoplay(ctx.isPreview, every: 0.22, delay: 0.4) {
+            if ctx.isPreview { previewType() } else { playIntro() }
+        }
+        .onDisappear { stopIntro() }
     }
 
-    private var active: Bool { focused || ctx.isPreview }
+    private var active: Bool { focused || ctx.isPreview || introTask != nil }
 
     private var hiddenField: some View {
         TextField("", text: $text)
@@ -113,7 +118,10 @@ private struct CharDropFieldDemo: View {
         .overlay(alignment: .bottom) { underline }
         .clipShape(shape)
         .contentShape(shape)
-        .onTapGesture { focused = true }
+        .onTapGesture {
+            stopIntro()
+            focused = true
+        }
     }
 
     private var letters: some View {
@@ -147,9 +155,38 @@ private struct CharDropFieldDemo: View {
             .animation(.smooth(duration: 0.45), value: active)
     }
 
+    /// One full typing run on detail arrival: "motion_kid", three deletes, then "lab".
+    private func playIntro() {
+        introTask?.cancel()
+        text = ""
+        scriptIndex = 0
+        let steps = Self.script.count - 3
+        introTask = Task {
+            for _ in 0..<steps {
+                try? await Task.sleep(for: .seconds(0.2))
+                guard !Task.isCancelled else { return }
+                previewType()
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
+            introTask = nil
+        }
+    }
+
+    /// The first real touch takes over from the intro.
+    private func stopIntro() {
+        guard let task = introTask else { return }
+        task.cancel()
+        introTask = nil
+    }
+
     private func previewType() {
         let key = Self.script[scriptIndex % Self.script.count]
         scriptIndex += 1
+        apply(key)
+    }
+
+    private func apply(_ key: String) {
         switch key {
         case "⌫":
             if !text.isEmpty { text.removeLast() }

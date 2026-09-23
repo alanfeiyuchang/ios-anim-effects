@@ -7,22 +7,23 @@ extension Effect {
         interaction: .tap,
         name: L("Gallery Zoom", "相册缩放转场"),
         summary: L(
-            "A thumbnail zooms into a full-bleed photo; drag down to shrink it back.",
-            "缩略图放大为全屏照片，向下拖拽即可缩回原位。"
+            "A thumbnail zooms into a full-bleed photo; fling it away in any direction and it tilts and bounces home.",
+            "缩略图放大为全屏照片；向任意方向甩动，它会倾斜并弹跳着回到原位。"
         ),
         prompt: L(
-            "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer: the frame interpolates from the thumbnail rect to the whole screen on a spring (response ≈0.45 s, damping ≈0.86), the corners square off and a black backdrop fades in behind while the grid falls away. The photo is interactive: dragging down makes it follow the finger 1:1, shrink toward ~70% and round its corners in proportion, while the backdrop becomes transparent to reveal the grid. Releasing past ~90 pt (or with a downward flick) flies it back into its exact original cell; otherwise it springs back to full screen.",
-            "一个 3 × 3 的圆角缩略图网格（圆角 14pt）。点击任意一张，它会从所在格子中放大为全屏查看器：外框以弹簧（响应约 0.45 秒、阻尼约 0.86）从缩略图位置插值到整屏，圆角逐渐变直，背后黑色背景淡入，网格随之隐去。照片可交互：向下拖拽时它 1:1 跟手，按拖拽距离缩小到约 70% 并逐渐恢复圆角，黑色背景同时变透明露出网格。松手时若超过约 90pt（或快速下滑），照片会精准飞回原来的格子；否则弹回全屏。"
+            "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer: the frame interpolates from the thumbnail rect to the whole stage on a smooth spring (response ≈0.45 s, damping 0.86) while a black backdrop fades in. Dismissal is physical, like Photos: the photo follows the finger 1:1 in both axes without shrinking, tilts up to ±6° in proportion to the sideways drag as if held by one corner, and the backdrop fades with distance to reveal the grid. Releasing past ~90 pt (or with a flick) flies it back into its cell on an under-damped spring (damping ≈0.7) that lands with a small bounce; otherwise it springs back upright. Tactile and free-handed.",
+            "一个 3 × 3 的圆角缩略图网格（圆角 14pt）。点击任意一张，它会从所在格子中放大为全屏查看器：外框以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从缩略图位置插值到整个舞台，背后黑色背景淡入。关闭像“照片”App 一样有物理感：照片在横纵两个方向 1:1 跟手、不做缩小，并随横向拖动按比例倾斜最多 ±6°，仿佛被捏住一角；黑色背景随拖动距离渐隐，露出网格。松手时若超过约 90pt（或快速甩出），照片以欠阻尼弹簧（阻尼约 0.7）飞回原格子，落位时轻轻一弹；否则回正并弹回全屏。真实、随手。"
         ),
         implementation: L(
-            "Grid tiles and the viewer share a matchedGeometryEffect id per photo; a DragGesture drives offset, scale, corner radius and backdrop opacity, and dismissing resets them in the same spring as the geometry match.",
-            "网格缩略图与查看器按照片共享 matchedGeometryEffect ID；DragGesture 驱动位移、缩放、圆角与背景透明度，关闭时在与几何匹配相同的弹簧中复位。"
+            "Grid tiles and the viewer share a matchedGeometryEffect id per photo; a two-axis DragGesture drives the offset, a drag-proportional rotationEffect and the backdrop opacity, and the return flight resets them inside an under-damped spring together with the geometry match.",
+            "网格缩略图与查看器按照片共享 matchedGeometryEffect ID；双轴 DragGesture 驱动位移、与横向拖动成比例的 rotationEffect 以及背景透明度，归位时在欠阻尼弹簧中与几何匹配一起复位。"
         ),
-        apis: ["matchedGeometryEffect", "DragGesture", "predictedEndTranslation", "scaleEffect", "spring(response:dampingFraction:)"],
-        tags: ["photos", "gallery", "zoom", "drag to dismiss", "相册", "图片放大", "下拉关闭", "转场"],
+        apis: ["matchedGeometryEffect", "DragGesture", "predictedEndTranslation", "rotationEffect", "spring(response:dampingFraction:)"],
+        tags: ["photos", "gallery", "zoom", "drag to dismiss", "相册", "图片放大", "甩动关闭", "转场"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...1.0, default: 0.45, unit: "s"),
-            .slider("damping", L("Damping", "阻尼"), 0.5...1.0, default: 0.86),
+            .slider("damping", L("Return damping", "归位阻尼"), 0.4...1.0, default: 0.7),
+            .slider("tilt", L("Max tilt", "最大倾斜"), 0...15, default: 6, decimals: 0, unit: "°"),
             .slider("threshold", L("Dismiss distance", "关闭距离"), 40...200, default: 90, decimals: 0, unit: "pt"),
         ]
     ) { ctx in
@@ -54,17 +55,34 @@ private struct GalleryZoomDemo: View {
     @State private var selected: Int?
     @State private var drag: CGSize = .zero
     @State private var autoIndex = 4
+    @State private var flingTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
 
-    private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
-    private var dragProgress: CGFloat { min(max(drag.height, 0) / 300, 1) }
+    /// Opening is smooth and critically damped; only the flight home bounces.
+    private var openSpring: Animation { .spring(response: ctx["response"], dampingFraction: 0.86) }
+    private var returnSpring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
+
+    /// 0…1 by how far the photo has been pulled away, in any direction.
+    private var dragProgress: CGFloat {
+        min(GalleryZoomDemo.length(drag) / 260, 1)
+    }
+
+    private static func length(_ size: CGSize) -> CGFloat {
+        (size.width * size.width + size.height * size.height).squareRoot()
+    }
+
+    private var tiltAngle: Angle {
+        let limit: Double = ctx["tilt"]
+        let raw: Double = Double(drag.width) / 160 * limit
+        return .degrees(min(max(raw, -limit), limit))
+    }
 
     var body: some View {
         ZStack {
             grid
             if let id = selected, let photo = galleryPhotos.first(where: { $0.id == id }) {
                 Color.black
-                    .opacity(0.9 * (1 - dragProgress))
+                    .opacity(0.9 * (1 - Double(dragProgress)))
                     .transition(.opacity)
                     .zIndex(1)
                 viewer(photo)
@@ -72,26 +90,29 @@ private struct GalleryZoomDemo: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: .bottom) {
-            DemoHint(
-                text: selected == nil
-                    ? L("Tap a photo", "点击一张照片")
-                    : L("Drag down to close", "向下拖动即可关闭"),
-                ctx: ctx
-            )
-            .environment(\.colorScheme, selected == nil ? colorScheme : .dark)
-            .padding(.bottom, 12)
-            .opacity(dragProgress > 0 ? 0 : 1)
-            .allowsHitTesting(false)
-        }
+        .overlay(alignment: .bottom) { hint }
         .autoplay(ctx.isPreview, every: 1.7) {
             if selected == nil {
                 open(galleryPhotos[autoIndex % galleryPhotos.count].id)
                 autoIndex += 2
             } else {
-                close()
+                fling()
             }
         }
+        .onDisappear { flingTask?.cancel() }
+    }
+
+    private var hint: some View {
+        DemoHint(
+            text: selected == nil
+                ? L("Tap a photo", "点击一张照片")
+                : L("Fling the photo away to close", "把照片甩开即可关闭"),
+            ctx: ctx
+        )
+        .environment(\.colorScheme, selected == nil ? colorScheme : .dark)
+        .padding(.bottom, 12)
+        .opacity(dragProgress > 0 ? 0 : 1)
+        .allowsHitTesting(false)
     }
 
     private var grid: some View {
@@ -113,10 +134,10 @@ private struct GalleryZoomDemo: View {
 
     private func viewer(_ photo: GalleryPhoto) -> some View {
         GalleryArt(photo: photo, symbolSize: 84)
-            .clipShape(RoundedRectangle(cornerRadius: 30 * dragProgress + 4, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             .matchedGeometryEffect(id: photo.id, in: ns)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .scaleEffect(1 - dragProgress * 0.3)
+            .rotationEffect(tiltAngle)
             .offset(drag)
             .gesture(dismissDrag)
             .onTapGesture { close() }
@@ -125,27 +146,42 @@ private struct GalleryZoomDemo: View {
     private var dismissDrag: some Gesture {
         DragGesture()
             .onChanged { value in
-                drag = CGSize(width: value.translation.width, height: max(value.translation.height, rubberBand(value.translation.height, limit: 30)))
+                flingTask?.cancel()
+                drag = value.translation
             }
             .onEnded { value in
-                if value.translation.height > ctx["threshold"] || value.predictedEndTranslation.height > ctx["threshold"] * 3 {
+                let threshold: CGFloat = ctx.cg("threshold")
+                let moved: CGFloat = GalleryZoomDemo.length(value.translation)
+                let projected: CGFloat = GalleryZoomDemo.length(value.predictedEndTranslation)
+                if moved > threshold || projected > threshold * 3 {
                     close()
                 } else {
-                    withAnimation(spring) { drag = .zero }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = .zero }
                 }
             }
     }
 
+    /// Autoplay stand-in for a finger: pull the photo down and to the side, then let go.
+    private func fling() {
+        withAnimation(.easeOut(duration: 0.28)) { drag = CGSize(width: 46, height: 120) }
+        flingTask?.cancel()
+        flingTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.3))
+            guard !Task.isCancelled, selected != nil else { return }
+            close()
+        }
+    }
+
     private func open(_ id: Int) {
         if !ctx.isPreview { Haptics.tap() }
-        withAnimation(spring) {
+        withAnimation(openSpring) {
             drag = .zero
             selected = id
         }
     }
 
     private func close() {
-        withAnimation(spring) {
+        withAnimation(returnSpring) {
             selected = nil
             drag = .zero
         }

@@ -81,14 +81,27 @@ private struct GlassToolbar: View {
     let onToggle: () -> Void
     @Namespace private var glass
 
+    private let main: CGFloat = 64
+    private let small: CGFloat = 56
+    private let inset: CGFloat = 12
+
     var body: some View {
+        // Same fixed-width, leading-aligned frame as the fallback, so + stays put and the actions bud out to its
+        // right instead of the centred row sliding left as it grows.
+        let width: CGFloat = inset * 2 + main + CGFloat(glassActions.count) * (small + gap)
+        container
+            .padding(.leading, inset)
+            .frame(width: width, height: 100, alignment: .leading)
+    }
+
+    private var container: some View {
         GlassEffectContainer(spacing: spacing) {
             HStack(spacing: gap) {
                 Image(systemName: "plus")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
                     .rotationEffect(.degrees(expanded ? 45 : 0))
-                    .frame(width: 64, height: 64)
+                    .frame(width: main, height: main)
                     .contentShape(Circle())
                     .glassEffect(.regular.tint(Palette.indigo.opacity(0.55)).interactive(), in: .circle)
                     .glassEffectID("main", in: glass)
@@ -98,7 +111,7 @@ private struct GlassToolbar: View {
                         Image(systemName: symbol)
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
+                            .frame(width: small, height: small)
                             .contentShape(Circle())
                             .glassEffect(.regular.interactive(), in: .circle)
                             .glassEffectID(symbol, in: glass)

@@ -527,7 +527,7 @@ private struct RingToCheckDemo: View {
         let docked = phase == .docked
         VStack(spacing: 18) {
             ZStack {
-                if docked { row.transition(.move(edge: .bottom).combined(with: .opacity)) }
+                if docked { row.transition(AnyTransition.offset(y: 20).combined(with: .opacity)) }
                 badge
                     .scaleEffect(docked ? 0.23 : 1)
                     .offset(x: docked ? -108 : 0)

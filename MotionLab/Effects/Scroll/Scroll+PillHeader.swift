@@ -31,6 +31,8 @@ private struct ScrollPillHeaderDemo: View {
     @State private var position = ScrollPosition(edge: .top)
     @State private var floating = false
     @State private var down = false
+    /// True while autoplay (or the detail intro) scrolls, so the scripted float stays silent.
+    @State private var scripted = false
     @Namespace private var search
 
     var body: some View {
@@ -49,14 +51,18 @@ private struct ScrollPillHeaderDemo: View {
         .onScrollGeometryChange(for: Bool.self, of: { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top > 40
         }, action: { _, newValue in
-            if newValue && !ctx.isPreview { Haptics.tap(.soft) }
+            if newValue && !ctx.isPreview && !scripted { Haptics.tap(.soft) }
             withAnimation(.spring(response: 0.45, dampingFraction: ctx["damping"])) {
                 floating = newValue
             }
         })
+        .onScrollPhaseChange { _, newPhase in
+            if newPhase == .interacting { scripted = false }
+        }
         .overlay(alignment: .top) { header }
         .clipped()
         .autoplay(ctx.isPreview, every: 1.8) {
+            scripted = true
             down.toggle()
             withAnimation(.smooth(duration: 1.1)) {
                 position.scrollTo(y: down ? 260 : 0)

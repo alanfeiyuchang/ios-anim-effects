@@ -18,8 +18,8 @@ extension Effect {
         apis: ["ForEach(id:)", "Shape.trim(from:to:)", "strikethrough(_:color:)", "contentTransition(.numericText(value:))", "spring(response:dampingFraction:)"],
         tags: ["checklist", "todo", "progress ring", "packing", "清单", "待办", "进度环", "打包"],
         params: [
-            .slider("response", L("Reorder spring", "排序弹簧响应"), 0.2...0.9, default: 0.5, unit: "s"),
-            .toggle("sort", L("Sink packed items", "已打包项下沉"), default: true),
+            .slider("flight", L("Flight time", "飞行时长"), 0.3...1.2, default: 0.55, unit: "s"),
+            .slider("arc", L("Arc height", "弧线高度"), 0...60, default: 28, decimals: 0, unit: "pt"),
             .toggle("strike", L("Strike-through", "删除线"), default: true),
         ]
     ) { ctx in
@@ -34,13 +34,25 @@ private struct GearItem: Identifiable {
     let detail: LocalizedText
 }
 
+private struct GearFlight: Identifiable {
+    let id: Int
+    let symbol: String
+    let from: CGPoint
+    let to: CGPoint
+}
+
 private struct SportGearDemo: View {
     let ctx: DemoContext
     @State private var checked: Set<Int> = [1]
-    /// Lags `checked` by ~300 ms so a row is ticked first and reordered afterwards.
-    @State private var sunk: Set<Int> = [1]
-    @State private var reorderTask: Task<Void, Never>?
+    /// Items whose glyph has reached the ring; the ring and title count these, not the taps.
+    @State private var landed: Set<Int> = [1]
+    @State private var flights: [GearFlight] = []
+    @State private var flightSerial = 0
+    @State private var ringHits = 0
+    @State private var tileCenters: [Int: CGPoint] = [:]
+    @State private var ringCenter: CGPoint = .zero
 
+    private static let space = "gearCard"
     private static let items: [GearItem] = [
         GearItem(id: 0, symbol: "shield.lefthalf.filled", name: L("Helmet", "头盔"), detail: L("Size M · MIPS", "M 码 · MIPS")),
         GearItem(id: 1, symbol: "eyeglasses", name: L("Goggles", "雪镜"), detail: L("Low-light lens", "弱光镜片")),
@@ -49,12 +61,7 @@ private struct SportGearDemo: View {
         GearItem(id: 4, symbol: "cup.and.saucer.fill", name: L("Thermos", "保温壶"), detail: L("Hot ginger tea", "热姜茶")),
     ]
 
-    private var orderedItems: [GearItem] {
-        guard ctx.bool("sort") else { return Self.items }
-        return Self.items.filter { !sunk.contains($0.id) } + Self.items.filter { sunk.contains($0.id) }
-    }
-
-    private var allPacked: Bool { checked.count == Self.items.count }
+    private var allPacked: Bool { landed.count == Self.items.count }
 
     var body: some View {
         SignatureStage {
@@ -74,13 +81,22 @@ private struct SportGearDemo: View {
         VStack(spacing: 10) {
             header
             VStack(spacing: 2) {
-                ForEach(orderedItems) { item in
+                ForEach(Self.items) { item in
                     row(item)
                 }
             }
         }
         .padding(14)
         .frame(width: 292)
+        .coordinateSpace(.named(Self.space))
+        .overlay {
+            ZStack {
+                ForEach(flights) { flight in
+                    GearFlyer(flight: flight, duration: max(ctx["flight"], 0.1), arc: ctx.cg("arc"))
+                }
+            }
+            .allowsHitTesting(false)
+        }
         .signatureCard()
     }
 
@@ -94,7 +110,13 @@ private struct SportGearDemo: View {
                     .contentTransition(.opacity)
             }
             Spacer(minLength: 0)
-            GearRing(count: checked.count, total: Self.items.count, response: ctx["response"])
+            GearRing(count: landed.count, total: Self.items.count, hits: ringHits)
+                .onGeometryChange(for: CGPoint.self) { proxy in
+                    let frame = proxy.frame(in: .named(Self.space))
+                    return CGPoint(x: frame.midX, y: frame.midY)
+                } action: { center in
+                    ringCenter = center
+                }
         }
         .padding(.horizontal, 4)
     }
@@ -110,6 +132,12 @@ private struct SportGearDemo: View {
                     .foregroundStyle(isChecked ? Signature.accent : Color.white.opacity(0.85))
                     .frame(width: 28, height: 28)
                     .background(Color.white.opacity(isChecked ? 0.04 : 0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .onGeometryChange(for: CGPoint.self) { proxy in
+                        let frame = proxy.frame(in: .named(Self.space))
+                        return CGPoint(x: frame.midX, y: frame.midY)
+                    } action: { center in
+                        tileCenters[item.id] = center
+                    }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.name, ctx.language)
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
@@ -131,33 +159,42 @@ private struct SportGearDemo: View {
     }
 
     private func toggle(_ id: Int) {
-        let wasPacked = allPacked
-        var next = checked
-        if next.contains(id) {
-            next.remove(id)
+        if checked.contains(id) {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                checked.remove(id)
+                landed.remove(id)
+            }
         } else {
-            next.insert(id)
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                _ = checked.insert(id)
+            }
+            launch(id)
         }
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-            checked = next
-        }
-        scheduleReorder()
-        guard !ctx.isPreview else { return }
-        if allPacked && !wasPacked {
-            Haptics.success()
-        } else {
-            Haptics.tap(.light)
-        }
+        if !ctx.isPreview { Haptics.tap(.light) }
     }
 
-    private func scheduleReorder() {
-        reorderTask?.cancel()
-        reorderTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(300))
-            guard !Task.isCancelled else { return }
-            withAnimation(.spring(response: ctx["response"], dampingFraction: 0.8)) {
-                sunk = checked
+    /// Sends a copy of the row's glyph along an arc into the ring; the ring counts it when it lands.
+    private func launch(_ id: Int) {
+        guard let from = tileCenters[id], let item = Self.items.first(where: { $0.id == id }) else {
+            landed.insert(id)
+            return
+        }
+        flightSerial += 1
+        let flight = GearFlight(id: flightSerial, symbol: item.symbol, from: from, to: ringCenter)
+        flights.append(flight)
+        let duration = max(ctx["flight"], 0.1)
+        // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
+        let muted = ctx.isPreview || Haptics.isMuted
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(duration))
+            flights.removeAll { $0.id == flight.id }
+            guard checked.contains(id) else { return }
+            let wasPacked = allPacked
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                _ = landed.insert(id)
             }
+            ringHits += 1
+            if !muted && allPacked && !wasPacked { Haptics.success() }
         }
     }
 
@@ -165,19 +202,69 @@ private struct SportGearDemo: View {
         if let next = Self.items.first(where: { !checked.contains($0.id) }) {
             toggle(next.id)
         } else {
-            reorderTask?.cancel()
             withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
                 checked = []
-                sunk = []
+                landed = []
             }
         }
+    }
+}
+
+/// Owns the flight clock: progress runs 0 → 1 once on appear.
+private struct GearFlyer: View {
+    let flight: GearFlight
+    let duration: Double
+    let arc: CGFloat
+    @State private var progress: CGFloat = 0
+
+    var body: some View {
+        GearFlyerGlyph(symbol: flight.symbol, from: flight.from, to: flight.to, arc: arc, progress: progress)
+            .onAppear {
+                withAnimation(.timingCurve(0.3, 0, 0.2, 1, duration: duration)) { progress = 1 }
+            }
+    }
+}
+
+/// Animatable so every interpolated progress re-evaluates the quadratic arc, not just the end points.
+private struct GearFlyerGlyph: View, Animatable {
+    let symbol: String
+    let from: CGPoint
+    let to: CGPoint
+    let arc: CGFloat
+    var progress: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    private var point: CGPoint {
+        let t = progress
+        let u = 1 - t
+        let control = CGPoint(x: (from.x + to.x) / 2, y: min(from.y, to.y) - arc)
+        let x = u * u * from.x + 2 * u * t * control.x + t * t * to.x
+        let y = u * u * from.y + 2 * u * t * control.y + t * t * to.y
+        return CGPoint(x: x, y: y)
+    }
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Signature.accent)
+            .frame(width: 28, height: 28)
+            .background(Signature.accent.opacity(0.18), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .shadow(color: Signature.accent.opacity(0.5), radius: 6)
+            .scaleEffect(1 - 0.5 * progress)
+            .opacity(progress > 0.92 ? Double((1 - progress) / 0.08) : 1)
+            .position(point)
     }
 }
 
 private struct GearRing: View {
     let count: Int
     let total: Int
-    let response: Double
+    /// Bumped each time a glyph lands: the ring gulps it with a quick swell.
+    let hits: Int
 
     private var done: Bool { count == total }
 
@@ -193,7 +280,7 @@ private struct GearRing: View {
                 )
                 .rotationEffect(.degrees(-90))
                 .shadow(color: (done ? Signature.lime : Signature.accent).opacity(0.6), radius: 5)
-                .animation(.spring(response: response, dampingFraction: 0.75), value: count)
+                .animation(.spring(response: 0.5, dampingFraction: 0.75), value: count)
             if done {
                 Image(systemName: "checkmark")
                     .font(.system(size: 17, weight: .heavy))
@@ -210,6 +297,14 @@ private struct GearRing: View {
         .frame(width: 52, height: 52)
         .scaleEffect(done ? 1.08 : 1)
         .animation(.spring(response: 0.4, dampingFraction: 0.55), value: done)
+        .keyframeAnimator(initialValue: 1.0, trigger: hits) { content, scale in
+            content.scaleEffect(scale)
+        } keyframes: { _ in
+            KeyframeTrack(\.self) {
+                CubicKeyframe(1.14, duration: 0.1)
+                SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
+            }
+        }
     }
 }
 

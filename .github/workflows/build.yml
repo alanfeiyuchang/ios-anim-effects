@@ -25,7 +25,9 @@ jobs:
       - name: Build
         run: scripts/ci-build.sh Xcode_16
 
-  # Simulator screenshots of every screen and effect: "[shots]" in the commit message or a manual run.
+  # Simulator screenshots derived from the live catalog (every category and family page, the All
+  # Families page, the first variation of every family, zh/en, light/dark; ~30 min):
+  # "[shots]" in the commit message or a manual run. EFFECTS=all adds every effect page (much longer).
   screenshots:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[shots]')
     needs: build
@@ -45,9 +47,10 @@ jobs:
           xcodebuild -version
 
       - name: Capture screenshots
-        run: PROMPTS=0 scripts/screenshots.sh screenshots
+        run: EFFECTS=sample scripts/screenshots.sh screenshots
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: screenshots
           path: screenshots
@@ -58,6 +61,7 @@ jobs:
           rm -rf docs/screenshots
           mkdir -p docs/screenshots
           cp -R screenshots/* docs/screenshots/
+          rm -f docs/screenshots/plan.tsv
           find docs/screenshots -name '*.jpg' -exec sips -Z 900 -s formatOptions 50 {} \; >/dev/null
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

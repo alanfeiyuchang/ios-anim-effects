@@ -58,9 +58,10 @@ private let roseMonthsZH = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "
 
 private struct RoseBloomDemo: View {
     let ctx: DemoContext
-    @State private var values: [CGFloat] = Array(repeating: 0, count: 12)
+    /// Seeded in bloom so still snapshots show petals; `onAppear` folds them away and blooms them in.
+    @State private var values: [CGFloat] = [0.86, 0.78, 0.7, 0.55, 0.42, 0.3, 0.26, 0.34, 0.48, 0.6, 0.74, 0.9]
     @State private var year = 2021
-    @State private var turned = false
+    @State private var turned = true
 
     var body: some View {
         let stagger = ctx["stagger"]
@@ -96,8 +97,16 @@ private struct RoseBloomDemo: View {
             DemoHint(text: L("Tap for another year", "点击切换年份"), ctx: ctx)
                 .padding(.bottom, 2)
         }
-        .onAppear { load(haptic: false) }
-        .autoplay(ctx.isPreview, every: 2.8, delay: 2.8) { load(haptic: false) }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                values = Array(repeating: 0, count: 12)
+                turned = false
+            }, then: {
+                load(haptic: false)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 2.8, delay: 2.8) { if ctx.isPreview { load(haptic: false) } }
     }
 
     private var monthLabels: some View {

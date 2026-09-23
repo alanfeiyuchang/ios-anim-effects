@@ -10,8 +10,8 @@ extension Effect {
         name: L("Blur-In Toast", "模糊滑入吐司"),
         summary: L("A frosted capsule toast that springs in out of a blur and slips away.", "磨砂胶囊吐司从模糊中弹入，再悄然滑走。"),
         prompt: L(
-            "A compact frosted-glass capsule toast — a green check badge, a bold title and a secondary caption — lives just off the top (or bottom) edge. On trigger it travels 110 pt into view on a spring (response ≈0.45 s, damping 0.72) while simultaneously sharpening from a 10 pt blur, scaling from 86% to 100% and fading in, landing with a slight overshoot; a success haptic fires the instant it launches. After a ~2 s hold it retreats along the same path on a 0.35 s smooth curve, blurring out as it goes. Swiping it toward its edge dismisses it early — it follows the finger 1:1, and a drag of ~30 pt or a flick sends it off on a 0.3 s smooth curve, while a shorter drag springs back and a drag the other way rubber-bands. Re-triggering while visible restarts the timer instead of stacking. It feels light, polished and never interrupts.",
-            "一枚紧凑的磨砂玻璃胶囊吐司——绿色对勾徽标、粗体标题与次级说明——停在画面顶部（或底部）外侧。触发后它以弹簧（响应约 0.45 秒、阻尼 0.72）滑入画面 110 pt，同时从 10 pt 模糊逐渐清晰、从 86% 放大到 100% 并淡入，落位时带一点轻微过冲；触发的同一刻伴随成功触感。停留约 2 秒后，沿原路以 0.35 秒平滑曲线退出，边走边重新模糊。也可以把它朝所在边缘划走：吐司 1:1 跟手，拖动约 30 pt 或快速一甩即以 0.3 秒平滑曲线离场，距离不足则弹回原位，反方向拖动呈橡皮筋阻尼。显示期间再次触发只会重置计时，不会叠加。轻盈、精致，从不打断用户。"
+            "A compact frosted capsule toast (green check badge, bold title, secondary caption) waits just off the top or bottom edge. On trigger it travels 110 pt into view on a spring (response 0.45 s, damping 0.72), sharpening from a 10 pt blur, scaling 86% → 100% and fading in, landing with a slight overshoot; a success haptic fires at launch. After a 2 s hold it retreats the same way on a 0.35 s smooth curve, blurring out. Swiping toward its edge tracks the finger 1:1: past 30 pt or with a flick it leaves on a 0.3 s curve, a shorter drag springs back, and the other direction rubber-bands. Re-triggering restarts the timer instead of stacking. Light and polished, never in the way.",
+            "磨砂胶囊吐司（绿色对勾、粗体标题、灰色说明）藏在画面顶部或底部边缘外。一触发，它就从 10 pt 的模糊里清晰起来，边放大（86% → 100%）边淡入，乘着弹簧（响应 0.45 秒、阻尼 0.72）滑进 110 pt，落位略带过冲；出发瞬间给一次成功触感。停 2 秒后按原路以 0.35 秒平滑曲线退回，重新变糊。朝边缘划它会 1:1 跟手：超过 30 pt 或快速一甩，0.3 秒离场；不够就弹回，反向拖则有橡皮筋阻尼。连续触发只会重新计时，不会叠加。轻巧精致，从不挡路。"
         ),
         implementation: L(
             "Offset, blur, scale and opacity are all driven by one Boolean inside a spring; a tokenized Task handles auto-dismiss, and a DragGesture adds swipe-to-dismiss that cancels the token.",
@@ -141,22 +141,25 @@ extension Effect {
         id: "feedback.island-pill",
         category: .feedback,
         interaction: .tap,
-        name: L("Island Expansion", "灵动岛展开"),
-        summary: L("A black pill that stretches into a rich live-activity card.", "黑色胶囊弹性伸展为信息丰富的实时活动卡片。"),
+        name: L("Island Alert", "灵动岛提示"),
+        summary: L(
+            "System-style alerts: the island bulges sideways to announce an event, then shrinks back on its own.",
+            "系统级提示：灵动岛横向鼓起播报一条事件，随后自动缩回。"
+        ),
         prompt: L(
-            "On a 316 × 300 pt lock screen (gradient wallpaper, date, large rounded 9:41 clock, flashlight and camera buttons), a pure-black 124 × 36 pt pill sits at the top center, showing a tiny tinted glyph on the left and a mini progress ring on the right. On tap it stretches into a 300 × 84 pt continuous-corner card (corner radius 19 → 34 pt) on an under-damped spring (response 0.5 s, damping 0.72), overshooting slightly in both width and height like elastic material, while its shadow deepens. The compact glyphs fade out immediately; the expanded content — a 44 pt icon, title, subtitle and a larger ring — fades in 120 ms later from a 6 pt blur and 90% scale. Tapping again reverses it with the content leaving first. Organic, fluid and alive.",
-            "在一块 316 × 300 pt 的锁屏上（渐变壁纸、日期、大号圆体 9:41 时钟、手电筒与相机按钮），顶部居中是一枚纯黑 124 × 36 pt 胶囊，左侧显示着色小图标，右侧是一枚迷你进度环。点击后它以欠阻尼弹簧（响应 0.5 秒、阻尼 0.72）伸展为 300 × 84 pt 的连续圆角卡片（圆角 19 → 34 pt），宽高都带轻微过冲，像有弹性的材质，投影同时加深。紧凑态图标立即淡出；展开内容——44 pt 图标、标题、副标题与更大的进度环——延迟 120 毫秒后从 6 pt 模糊、90% 缩放中浮现。再次点击则反向收回，内容先行退场。有机、流畅、充满生命力。"
+            "A plain black 124 × 36 pt capsule sits at the top of a lock screen. When an event arrives (AirPods connected, payment done, timer finished) the island bulges outward like a system alert: it widens to 250 × 44 pt on a lively spring (response 0.45 s, damping 0.62) while the whole pill pumps to 107% in 140 ms and springs back. A tinted glyph bounces in on the left and a short label and value fade in on the right, 100 ms after the growth starts; a success haptic lands with it. After a 1.5 s hold the content fades first and the pill contracts to its resting size on a calm spring (0.4 s, damping 0.85). Glanceable, self-dismissing, never needs a tap.",
+            "锁屏顶部静置着一枚 124 × 36 pt 的纯黑胶囊。每当有事件到来（耳机已连接、支付完成、计时结束），灵动岛就像系统提示那样向外鼓起：以活泼的弹簧（响应 0.45 秒、阻尼 0.62）横向撑到 250 × 44 pt，整体同时在 140 毫秒内鼓到 107% 再弹回。生长开始 100 毫秒后，左侧着色图标弹跳入场，右侧短标签与数值淡入，并伴随成功触感。停留 1.5 秒后内容先淡出，胶囊再以平缓弹簧（0.4 秒、阻尼 0.85）缩回原尺寸。一眼即懂，自动消失，无需点击。"
         ),
         implementation: L(
-            "A RoundedRectangle's frame and corner radius animate on a spring; compact and expanded layers cross-fade with separate delayed animations.",
-            "RoundedRectangle 的尺寸与圆角随弹簧动画变化；紧凑层与展开层用各自带延迟的动画交叉淡入。"
+            "An optional event index drives the capsule's frame on a spring, and a keyframeAnimator keyed on an event counter adds the 107% pump; content uses an asymmetric transition with a delayed insertion, and a tokenized Task collapses it after the hold.",
+            "可选的事件索引在弹簧动画中驱动胶囊尺寸，以事件计数为触发器的 keyframeAnimator 叠加 107% 的鼓动；内容使用插入带延迟的非对称转场，带令牌的 Task 在停留结束后将其收回。"
         ),
-        apis: ["RoundedRectangle(style: .continuous)", "spring(response:dampingFraction:)", "animation(_:value:)", "blur(radius:)"],
-        tags: ["dynamic island", "live activity", "pill", "expand", "灵动岛", "实时活动", "胶囊", "展开"],
+        apis: ["keyframeAnimator(initialValue:trigger:)", "spring(response:dampingFraction:)", "transition(.asymmetric)", "symbolEffect(.bounce)", "Task.sleep(for:)"],
+        tags: ["dynamic island", "alert", "notification", "system", "灵动岛", "系统提示", "通知", "反馈"],
         params: [
-            .choice("content", L("Activity", "活动类型"), [L("Headphones", "耳机"), L("Timer", "计时"), L("Payment", "支付")], default: 0),
-            .slider("response", L("Spring response", "弹簧响应"), 0.25...0.9, default: 0.5, unit: "s"),
-            .slider("damping", L("Damping", "阻尼"), 0.45...1.0, default: 0.72),
+            .slider("hold", L("Hold time", "停留时长"), 0.8...3.0, default: 1.5, decimals: 1, unit: "s"),
+            .slider("response", L("Spring response", "弹簧响应"), 0.25...0.9, default: 0.45, unit: "s"),
+            .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.62),
         ]
     ) { ctx in
         IslandDemo(ctx: ctx)
@@ -167,44 +170,56 @@ private struct IslandActivity {
     let symbol: String
     let tint: Color
     let title: LocalizedText
-    let subtitle: LocalizedText
-    let ring: Double
-    let badge: String
+    let value: LocalizedText
 
     static let all: [IslandActivity] = [
-        IslandActivity(symbol: "headphones", tint: Palette.green, title: L("Studio Buds", "录音室耳机"), subtitle: L("Connected", "已连接"), ring: 0.82, badge: "82"),
-        IslandActivity(symbol: "timer", tint: Palette.amber, title: L("Focus Timer", "专注计时"), subtitle: L("Deep work", "深度工作"), ring: 0.6, badge: "15"),
-        IslandActivity(symbol: "creditcard.fill", tint: Palette.sky, title: L("Payment", "支付"), subtitle: L("Done · $24.00", "完成 · ¥168.00"), ring: 1.0, badge: "✓"),
+        IslandActivity(symbol: "airpodspro", tint: Palette.green, title: L("Connected", "已连接"), value: L("82%", "82%")),
+        IslandActivity(symbol: "creditcard.fill", tint: Palette.sky, title: L("Payment", "支付"), value: L("Done ✓", "完成 ✓")),
+        IslandActivity(symbol: "timer", tint: Palette.amber, title: L("Timer", "计时器"), value: L("0:00", "0:00")),
     ]
 }
 
 private struct IslandDemo: View {
     let ctx: DemoContext
-    @State private var expanded = false
+    @State private var event: Int?
+    @State private var next = 0
+    @State private var pulses = 0
+    @State private var token = 0
 
     var body: some View {
-        let activity = IslandActivity.all[min(max(ctx.int("content"), 0), IslandActivity.all.count - 1)]
         let screen = RoundedRectangle(cornerRadius: 44, style: .continuous)
         VStack(spacing: 14) {
             ZStack(alignment: .top) {
                 IslandLockScreen(language: ctx.language)
-                IslandPill(expanded: expanded, activity: activity, language: ctx.language)
-                    .onTapGesture { toggle() }
+                IslandAlertPill(event: event, pulses: pulses, language: ctx.language)
                     .padding(.top, 11)
             }
             .frame(width: 316, height: 300)
             .clipShape(screen)
             .overlay { screen.strokeBorder(Color.black.opacity(0.12), lineWidth: 1) }
             .shadow(color: Color(hex: 0x4B3AA8).opacity(0.28), radius: 24, y: 14)
-            DemoHint(text: L("Tap the island", "点击灵动岛"), ctx: ctx)
+            .contentShape(screen)
+            .onTapGesture { fire() }
+            DemoHint(text: L("Tap the screen to send an event", "点击屏幕推送一条事件"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 2.2, delay: 0.6) { toggle() }
+        .autoplay(ctx.isPreview, every: ctx["hold"] + 1.4, delay: 0.5) { fire() }
     }
 
-    private func toggle() {
-        if !ctx.isPreview { Haptics.tap(.soft) }
-        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { expanded.toggle() }
+    private func fire() {
+        token += 1
+        let current = token
+        let hold = ctx["hold"]
+        let index = next % IslandActivity.all.count
+        next += 1
+        Haptics.success()
+        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { event = index }
+        pulses += 1
+        Task {
+            try? await Task.sleep(for: .seconds(hold))
+            guard token == current else { return }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { event = nil }
+        }
     }
 }
 
@@ -249,85 +264,53 @@ private struct IslandLockScreen: View {
     }
 }
 
-private struct IslandPill: View {
-    let expanded: Bool
-    let activity: IslandActivity
+private struct IslandAlertPill: View {
+    let event: Int?
+    let pulses: Int
     let language: AppLanguage
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: expanded ? 34 : 19, style: .continuous)
+        let open = event != nil
         ZStack {
-            shape.fill(Color.black)
-            compact
-                .opacity(expanded ? 0 : 1)
-                .animation(Animation.easeOut(duration: expanded ? 0.1 : 0.25).delay(expanded ? 0 : 0.18), value: expanded)
-            expandedContent
-                .opacity(expanded ? 1 : 0)
-                .blur(radius: expanded ? 0 : 6)
-                .scaleEffect(expanded ? 1 : 0.9)
-                .animation(expanded ? Animation.smooth(duration: 0.35).delay(0.12) : Animation.easeIn(duration: 0.12), value: expanded)
-        }
-        .frame(width: expanded ? 300 : 124, height: expanded ? 84 : 36)
-        .clipShape(shape)
-        .overlay { shape.strokeBorder(Color.white.opacity(0.08)) }
-        .shadow(color: .black.opacity(expanded ? 0.3 : 0.12), radius: expanded ? 20 : 6, y: expanded ? 10 : 3)
-        .contentShape(shape)
-    }
-
-    private var compact: some View {
-        HStack {
-            Image(systemName: activity.symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(activity.tint)
-            Spacer()
-            IslandRing(progress: activity.ring, tint: activity.tint, lineWidth: 2.5)
-                .frame(width: 16, height: 16)
-        }
-        .padding(.horizontal, 14)
-        .frame(width: 124, height: 36)
-    }
-
-    private var expandedContent: some View {
-        HStack(spacing: 12) {
-            Image(systemName: activity.symbol)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(activity.tint)
-                .frame(width: 44, height: 44)
-                .background(Color.white.opacity(0.12), in: Circle())
-            VStack(alignment: .leading, spacing: 2) {
-                Text(activity.title, language)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                Text(activity.subtitle, language)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
+            Capsule().fill(Color.black)
+            if let event {
+                content(IslandActivity.all[event])
+                    .id(event)
+                    .transition(.asymmetric(
+                        insertion: AnyTransition.opacity.combined(with: .scale(scale: 0.7))
+                            .animation(.smooth(duration: 0.3).delay(0.1)),
+                        removal: AnyTransition.opacity.animation(.easeIn(duration: 0.12))
+                    ))
             }
+        }
+        .frame(width: open ? 250 : 124, height: open ? 44 : 36)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(open ? 0.3 : 0.12), radius: open ? 16 : 6, y: open ? 8 : 3)
+        .keyframeAnimator(initialValue: CGFloat(1), trigger: pulses) { content, scale in
+            content.scaleEffect(scale)
+        } keyframes: { _ in
+            KeyframeTrack(\.self) {
+                CubicKeyframe(1.07, duration: 0.14)
+                SpringKeyframe(1, duration: 0.5, spring: .bouncy)
+            }
+        }
+    }
+
+    private func content(_ activity: IslandActivity) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: activity.symbol)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(activity.tint)
+                .symbolEffect(.bounce, value: pulses)
+            Text(activity.title, language)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
             Spacer(minLength: 0)
-            ZStack {
-                IslandRing(progress: activity.ring, tint: activity.tint, lineWidth: 4)
-                Text(activity.badge)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 40, height: 40)
+            Text(activity.value, language)
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .foregroundStyle(activity.tint)
         }
-        .padding(.horizontal, 20)
-        .frame(width: 300, height: 84)
-    }
-}
-
-private struct IslandRing: View {
-    let progress: Double
-    let tint: Color
-    let lineWidth: CGFloat
-
-    var body: some View {
-        ZStack {
-            Circle().stroke(tint.opacity(0.25), lineWidth: lineWidth)
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
+        .padding(.horizontal, 16)
+        .frame(width: 250, height: 44)
     }
 }

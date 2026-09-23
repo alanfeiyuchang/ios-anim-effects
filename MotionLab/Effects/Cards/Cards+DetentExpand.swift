@@ -6,10 +6,10 @@ extension Effect {
         category: .cards,
         interaction: .gesture,
         name: L("Detent Pull-Down Card", "档位下拉卡片"),
-        summary: L("Pull a card's handle to grow it through three snapping heights, with rubber-band edges and ticks.", "拖动卡片把手，让它在三个吸附高度间伸缩，边缘带橡皮筋阻尼与触感。"),
+        summary: L("Pull a card down to grow it through three snapping heights, with rubber-band edges and ticks.", "向下拖动卡片，让它在三个吸附高度间伸缩，边缘带橡皮筋阻尼与触感。"),
         prompt: L(
-            "A 280 pt-wide order card shows a compact summary above a small grab handle. Dragging the handle stretches the card 1:1 between three detents — 112, 196 and 280 pt tall — and past the smallest or largest it resists with a rubber-band curve (≈55% coefficient over 60 pt). Rows of detail appear progressively: each fades and slides in as the card grows past its line. On release, the predicted end height picks the nearest detent and the card springs there (response 0.42 s, damping 0.78) with a rigid haptic when it lands on a new detent; the handle widens from 36 to 48 pt while grabbed. Precise, physical and controllable, like an iOS sheet in miniature.",
-            "一张 280 pt 宽的订单卡片，上方是精简摘要，下方是一个小小的拖动把手。拖动把手时，卡片在三个档位——112、196、280 pt 高——之间 1:1 伸缩，拉过最小或最大档位时会以橡皮筋曲线产生阻力（系数约 55%，作用范围 60 pt）。详情行逐步出现：卡片长到哪一行，哪一行就淡入滑出。松手时根据预测的结束高度选择最近的档位，卡片以弹簧（响应 0.42 秒、阻尼 0.78）吸附过去，落到新档位时伴随清脆触感；拖动时把手从 36 pt 变宽到 48 pt。精准、真实、可控，就像迷你版的 iOS 面板。"
+            "A 280 pt-wide order card shows a compact summary above a small grab handle. Dragging anywhere on the card stretches the card 1:1 between three detents — 112, 196 and 280 pt tall — and past the smallest or largest it resists with a rubber-band curve (≈55% coefficient over 60 pt). Rows of detail appear progressively: each fades and slides in as the card grows past its line. On release, the predicted end height picks the nearest detent and the card springs there (response 0.42 s, damping 0.78) with a rigid haptic when it lands on a new detent; the handle widens from 36 to 48 pt while grabbed. Precise, physical and controllable, like an iOS sheet in miniature.",
+            "一张 280 pt 宽的订单卡片，上方是精简摘要，下方是一个小小的拖动把手。在卡片上任意位置拖动，卡片在三个档位——112、196、280 pt 高——之间 1:1 伸缩，拉过最小或最大档位时会以橡皮筋曲线产生阻力（系数约 55%，作用范围 60 pt）。详情行逐步出现：卡片长到哪一行，哪一行就淡入滑出。松手时根据预测的结束高度选择最近的档位，卡片以弹簧（响应 0.42 秒、阻尼 0.78）吸附过去，落到新档位时伴随清脆触感；拖动时把手从 36 pt 变宽到 48 pt。精准可控，像迷你版的 iOS 面板。"
         ),
         implementation: L(
             "A DragGesture adds the translation to the height at gesture start, applying rubberBand beyond the outer detents; onEnded uses predictedEndTranslation to choose a detent. Each detail row's opacity and offset are derived from the live height.",
@@ -35,15 +35,17 @@ private struct CardsDetentDemo: View {
     @State private var startHeight: CGFloat?
     @State private var detent = 0
     @State private var step = 0
+    /// True while the autoplay script drives the card, so simulated snaps never buzz.
+    @State private var scripted = false
 
     var body: some View {
         VStack(spacing: 14) {
             card
                 .frame(height: 300, alignment: .top)
-            DemoHint(text: L("Drag the handle down", "向下拖动把手"), ctx: ctx)
+            DemoHint(text: L("Drag the card down", "向下拖动卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.impact(flexibility: .rigid, intensity: 0.7), trigger: detent) { _, _ in !ctx.isPreview }
+        .sensoryFeedback(.impact(flexibility: .rigid, intensity: 0.7), trigger: detent) { _, _ in !ctx.isPreview && !scripted }
         .autoplay(ctx.isPreview, every: 1.4) { autoStep() }
     }
 
@@ -85,6 +87,7 @@ private struct CardsDetentDemo: View {
             .onChanged { value in
                 let start = startHeight ?? height
                 if startHeight == nil { startHeight = height }
+                scripted = false
                 height = resisted(start + value.translation.height)
             }
             .onEnded { value in
@@ -123,6 +126,7 @@ private struct CardsDetentDemo: View {
         let sequence = [1, 2, 0, 2, 1, 0]
         let next = sequence[step % sequence.count]
         step += 1
+        scripted = true
         // Overshoot a little first so the rubber-band and settle read in the preview.
         let target = cardsDetents[next]
         let overshoot: CGFloat = next == 2 ? 26 : (next == 0 ? -20 : 0)

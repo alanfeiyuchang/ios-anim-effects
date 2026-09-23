@@ -127,7 +127,7 @@ private struct GroupedStackedDemo: View {
     private var quarterRow: some View {
         HStack(spacing: 0) {
             ForEach(0..<groupedData.count, id: \.self) { quarter in
-                Text("Q\(quarter + 1)")
+                Text(verbatim: "Q\(quarter + 1)")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)

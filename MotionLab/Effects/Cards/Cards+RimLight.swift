@@ -8,8 +8,8 @@ extension Effect {
         name: L("Rim Light Tilt", "边缘光倾斜"),
         summary: L("Drag a light around a dark card: its edge catches the light and a specular band sweeps across.", "拖动光源绕着深色卡片移动：卡片边缘被点亮，镜面光带随之扫过。"),
         prompt: L(
-            "A midnight-blue 250×158 pt card floats on the stage. The finger acts as a light source: wherever it is, the nearest edge of the card lights up with a 2.5 pt white rim (plus a 6 pt blurred glow) that fades out within ±60° around the border, a soft specular band slides across the face in the opposite direction, and the card turns up to 8° toward the light while its shadow falls away from it. The card follows through a heavy, lagging spring (response 0.55 s, damping 0.72), so it feels massive and turns a beat after the finger. On release it eases back to a third of its tilt. Before the first touch the light orbits the card slowly. Moody, cinematic, product-shot quality.",
-            "一张 250×158 pt 的午夜蓝卡片悬浮在舞台上。手指就是光源：无论移到哪里，离它最近的卡片边缘都会亮起 2.5 pt 的白色轮廓光（外加 6 pt 模糊辉光），并沿边框在 ±60° 范围内渐隐；一条柔和的镜面光带朝反方向滑过卡面，卡片最多向光源转动 8°，阴影落向背光一侧。卡片通过厚重、滞后的弹簧（响应 0.55 秒、阻尼 0.72）跟随，显得有分量，总比手指慢半拍。松手后倾斜缓缓回落到三分之一。首次触摸前，光源会缓慢绕卡片旋转。氛围感强，宛如产品大片。"
+            "A midnight-blue 250×158 pt card floats almost still while the finger acts as a light source. The edge nearest the light glows with a 2.5 pt white rim plus a 6 pt blurred halo that fades out within ±60° along the border, a soft specular band slides across the face the opposite way, and the shadow falls away from the light. The card itself barely turns (at most 2°); all the motion is in the light, which trails the finger on a heavy spring (response 0.55 s, damping 0.72), and on release drifts back to a third of its offset over a slow spring (response 0.9 s). Before the first touch the light orbits the card, moody and cinematic like a product shot.",
+            "一张 250×158 pt 的午夜蓝卡片几乎静止地悬浮着，手指就是光源。离光最近的边缘亮起 2.5 pt 白色轮廓光，外加 6 pt 模糊光晕，沿边框在 ±60° 内渐隐；一道柔和镜面光带朝反方向扫过卡面，投影则落向背光一侧。卡片本身几乎不转（最多 2°），动的只有光：它以厚重的弹簧（响应 0.55 秒、阻尼 0.72）慢半拍地追随手指，松手后再以缓慢弹簧（响应 0.9 秒）退回到三分之一的位置。未触摸前光源绕卡片缓缓旋转，氛围感十足，宛如产品大片。"
         ),
         implementation: L(
             "The light position (−1…1) sets an AngularGradient stroke whose peak angle is atan2 of the light, an offset specular stripe with plusLighter blending and two rotation3DEffects; a TimelineView orbits the light until the first touch.",
@@ -20,7 +20,7 @@ extension Effect {
         params: [
             .slider("lag", L("Follow lag", "跟随滞后"), 0.2...1.0, default: 0.55, unit: "s"),
             .slider("rim", L("Rim intensity", "轮廓光强度"), 0...1, default: 0.9),
-            .slider("angle", L("Max tilt", "最大倾斜"), 0...16, default: 8, step: 1, decimals: 0, unit: "°"),
+            .slider("angle", L("Max tilt", "最大倾斜"), 0...3, default: 2, step: 0.5, decimals: 1, unit: "°"),
         ]
     ) { ctx in
         CardsRimLightDemo(ctx: ctx)

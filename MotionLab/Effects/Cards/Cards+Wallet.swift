@@ -8,8 +8,8 @@ extension Effect {
         name: L("Wallet Stack", "钱包卡片堆"),
         summary: L("Apple Wallet-style cards: tap one to lift it out while the rest tuck away.", "类 Apple 钱包卡片堆：点选一张抽出，其余卡片收拢到底部。"),
         prompt: L(
-            "Four payment cards are stacked vertically like Apple Wallet, each overlapping the previous one and exposing a 46 pt header strip. Tapping a card slides it up to the top slot while the remaining cards drop away and compress into a tight pile at the bottom edge — 12 pt apart, scaled 90–96%, partly running off-screen. Every card moves on its own spring (response ≈0.5 s, damping ≈0.8) with a 35 ms stagger by position, so the stack ripples rather than moving as one block. Tapping the selected card reverses the choreography and fans the stack back open. Soft shadows and a light haptic make it feel tangible and orderly.",
-            "四张支付卡片像 Apple 钱包一样纵向层叠，每张压住上一张，只露出 46 pt 的顶部条。点击某张卡片，它会滑到顶部位置，其余卡片下沉并在底部边缘收拢成紧密的一叠——间距 12 pt、缩放 90%–96%，部分延伸出屏幕。每张卡片各自使用弹簧（响应约 0.5 秒、阻尼约 0.8），并按位置错开 35 毫秒，使整叠卡片呈涟漪般依次运动而非整体平移。再次点击已选中的卡片则反向回放，重新展开卡片堆。柔和投影与轻触感让它显得真实而有序。"
+            "Four payment cards are stacked vertically like Apple Wallet, each overlapping the previous one and exposing a 46 pt header strip. Tapping a card slides it up to the top slot while the remaining cards drop away and compress into a tight pile at the bottom edge, 10 pt apart and scaled 90–96%. Every card moves on its own spring (response ≈0.5 s, damping ≈0.8) with a 35 ms stagger by position, so the stack ripples rather than moving as one block. Tapping the selected card reverses the choreography and fans the stack back open. Soft shadows and a light haptic make it feel tangible and orderly.",
+            "四张支付卡片像 Apple 钱包一样纵向层叠，每张压住上一张，只露出 46 pt 的顶部条。点击某张卡片，它会滑到顶部位置，其余卡片下沉，在底部边缘收拢成紧密的一叠，间距 10 pt、缩放 90%–96%。每张卡片各自使用弹簧（响应约 0.5 秒、阻尼约 0.8），并按位置错开 35 毫秒，使整叠卡片呈涟漪般依次运动而非整体平移。再次点击已选中的卡片则反向回放，重新展开卡片堆。柔和投影与轻触感让它显得真实而有序。"
         ),
         implementation: L(
             "Cards live in a top-aligned ZStack; each computes its y offset and scale from the selected index, with a per-card .animation(_:value:) whose delay creates the stagger.",
@@ -42,7 +42,8 @@ private struct CardsWalletDemo: View {
                     card(index)
                 }
             }
-            .frame(width: 250, height: 300, alignment: .top)
+            // Tall enough for the tucked pile (168 + 2 × 10 + 158 × 0.96 ≈ 340), so it never spills onto the hint.
+            .frame(width: 250, height: 340, alignment: .top)
             DemoHint(text: L("Tap a card", "点击一张卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,7 +78,7 @@ private struct CardsWalletDemo: View {
     private func offsetY(_ index: Int) -> CGFloat {
         guard let selected else { return CGFloat(index) * ctx.cg("peek") }
         if index == selected { return 0 }
-        return 182 + CGFloat(pileSlot(index)) * 12
+        return 168 + CGFloat(pileSlot(index)) * 10
     }
 
     private func scale(_ index: Int) -> CGFloat {

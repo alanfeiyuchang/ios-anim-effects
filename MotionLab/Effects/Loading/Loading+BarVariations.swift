@@ -432,13 +432,31 @@ private struct TooltipTrack: View {
                 .frame(width: 16, height: 16)
                 .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
                 .offset(x: x - 8)
-            bubble(done: done)
-                .offset(x: x - 27, y: -30)
+            // Clamp the bubble inside the card; the caret keeps pointing at the knob.
+            let bx: CGFloat = min(max(x, 18), width - 18)
+            bubble(done: done, caretShift: x - bx)
+                .offset(x: bx - 27, y: -30)
         }
         .frame(width: width, height: 6)
     }
 
-    private func bubble(done: Bool) -> some View {
+    private func bubble(done: Bool, caretShift: CGFloat) -> some View {
+        let pivot = UnitPoint(x: 0.5 + caretShift / 54, y: 1)
+        return bubbleBody(done: done, caretShift: caretShift)
+            .scaleEffect(done ? 1.15 : 1, anchor: pivot)
+            .animation(.spring(response: 0.4, dampingFraction: 0.55), value: done)
+            .keyframeAnimator(initialValue: 0.0, trigger: steps) { content, angle in
+                content.rotationEffect(.degrees(angle), anchor: pivot)
+            } keyframes: { _ in
+                KeyframeTrack(\.self) {
+                    CubicKeyframe(-swing, duration: 0.12)
+                    CubicKeyframe(swing * 0.5, duration: 0.2)
+                    SpringKeyframe(0.0, duration: 0.5, spring: .bouncy)
+                }
+            }
+    }
+
+    private func bubbleBody(done: Bool, caretShift: CGFloat) -> some View {
         VStack(spacing: 0) {
             ZStack {
                 if done {
@@ -453,24 +471,13 @@ private struct TooltipTrack: View {
             }
             .foregroundStyle(.white)
             .frame(width: 54, height: 30)
-            .background(done ? Palette.green : Palette.indigo, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(done ? Palette.successStrong : Palette.indigo, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             Image(systemName: "arrowtriangle.down.fill")
                 .font(.system(size: 9))
-                .foregroundStyle(done ? Palette.green : Palette.indigo)
-                .offset(y: -3)
+                .foregroundStyle(done ? Palette.successStrong : Palette.indigo)
+                .offset(x: caretShift, y: -3)
         }
         .frame(width: 54)
-        .scaleEffect(done ? 1.15 : 1, anchor: .bottom)
-        .animation(.spring(response: 0.4, dampingFraction: 0.55), value: done)
-        .keyframeAnimator(initialValue: 0.0, trigger: steps) { content, angle in
-            content.rotationEffect(.degrees(angle), anchor: .bottom)
-        } keyframes: { _ in
-            KeyframeTrack(\.self) {
-                CubicKeyframe(-swing, duration: 0.12)
-                CubicKeyframe(swing * 0.5, duration: 0.2)
-                SpringKeyframe(0.0, duration: 0.5, spring: .bouncy)
-            }
-        }
     }
 }
 
@@ -537,7 +544,8 @@ private struct CandyStripesDemo: View {
                     width: width,
                     height: ctx.cg("height"),
                     march: max(ctx["march"], 0.1),
-                    pulse: pulse
+                    pulse: pulse,
+                    preview: ctx.isPreview
                 )
             }
             .frame(width: width)
@@ -579,6 +587,7 @@ private struct CandyTrack: View {
     let height: CGFloat
     let march: Double
     let pulse: Bool
+    let preview: Bool
 
     var body: some View {
         let fillWidth: CGFloat = max(height, width * CGFloat(min(max(progress, 0), 1)))
@@ -586,7 +595,7 @@ private struct CandyTrack: View {
             Capsule().fill(Color.primary.opacity(0.08))
             ZStack {
                 Rectangle().fill(Palette.primary)
-                TimelineView(.animation(minimumInterval: nil, paused: done)) { timeline in
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: done)) { timeline in
                     let t: Double = timeline.date.timeIntervalSinceReferenceDate
                     let phase: CGFloat = CGFloat((t / march).truncatingRemainder(dividingBy: 1))
                     CandyStripeShape(phase: phase, spacing: 16)

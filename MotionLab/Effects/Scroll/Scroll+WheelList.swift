@@ -8,8 +8,8 @@ extension Effect {
         name: L("Wheel Picker List", "滚轮列表"),
         summary: L("A drum-style list: rows curve away in 3D around a snapping center selection.", "滚筒式列表：各行绕着吸附的中心选中项向后弯曲成三维滚轮。"),
         prompt: L(
-            "A vertical list of city names (44 pt rows, 22 pt rounded type) is shaped into a rotating drum. The row at the center sits flat, bold and fully opaque inside a subtle rounded selection band; rows further from the center tilt back around the horizontal axis up to ~60° in perspective, shrink by up to 12% and fade toward 25% opacity, so the list reads like the surface of a cylinder. Scrolling snaps one row precisely into the band, each change of selection ticks a selection haptic, and a time-zone chip above rolls its digits to the chosen city's UTC offset and its local time at noon UTC. The drum's top and bottom 22% dissolve through a gradient mask, so rows melt into the stage instead of being cut off. Tapping a row scrolls it into the band. Precise, mechanical and tactile, like the iOS time picker.",
-            "一列城市名称（行高 44 pt，22 pt 圆体字）被塑造成可转动的滚筒。位于中心的一行平正、加粗、完全不透明，落在一条含蓄的圆角选中带内；越远离中心的行绕水平轴以透视向后倾斜，最多约 60°，同时最多缩小 12% 并淡出到约 25% 透明度，整列看起来就像圆柱表面。滚动时总有一行精确吸附到选中带中，每次切换选中项都伴随选择触感，上方的时区胶囊以数字滚动切换为所选城市的 UTC 偏移及其在 UTC 正午时的当地时间。滚筒上下各 22% 通过渐变遮罩淡出，行项融入舞台而非被生硬裁切。点击某行会将其滚入选中带。精准、机械、富有触感，就像 iOS 的时间选择器。"
+            "A vertical list of city names in 22 pt rounded type on 44 pt rows is shaped into a rotating drum. The centre row sits flat, bold and opaque inside a subtle rounded selection band, while rows further out tilt back up to 60° in perspective, shrink by up to 12% and fade toward 25% opacity, and the top and bottom 22% dissolve through a gradient mask. Scrolling snaps a whole row into the band with a selection tick per change, and tapping a row springs it there (response 0.45 s, damping 0.85). A time-zone chip above rolls its digits to the city's UTC offset and its local time at noon UTC. Precise and mechanical, like the iOS time picker.",
+            "一列城市名（22 pt 圆体，行高 44 pt）被塑造成可转动的滚筒。正中一行平正、加粗、完全不透明，落在一条含蓄的圆角选中带里；越往外的行绕水平轴以透视向后倾斜，最多 60°，同时最多缩小 12%、淡到 25% 不透明度，上下各 22% 经渐变遮罩融化。滚动总会把一整行吸进选中带，每换一行轻轻一震；点某行则以弹簧（响应 0.45 秒、阻尼 0.85）把它转进来。上方时区胶囊以数字滚动显示该城市的 UTC 偏移，以及 UTC 正午时的当地时间。精准而富有机械感，像 iOS 的时间选择器。"
         ),
         implementation: L(
             "Each row's visualEffect maps its distance from the fixed viewport center to rotation3DEffect, scale and opacity; spacer padding centers the first and last rows, a custom ScrollTargetBehavior snaps the offset to whole rows, onScrollGeometryChange derives the selection and ScrollPosition drives programmatic scrolls, with sensoryFeedback(.selection).",
@@ -36,15 +36,6 @@ private let scrollWheelCities: [LocalizedText] = [
 /// Standard-time UTC offsets (hours) for `scrollWheelCities`, shown in the time-zone chip.
 private let scrollWheelOffsets: [Int] = [9, 1, -5, 0, 8, 10, 1, 9, 0, 0, 2, -5, 4, 1]
 
-/// Snaps the resting offset to a whole row, so one row always lands in the band.
-private struct ScrollWheelSnap: ScrollTargetBehavior {
-    let rowHeight: CGFloat
-
-    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
-        target.rect.origin.y = (target.rect.minY / rowHeight).rounded() * rowHeight
-    }
-}
-
 private let scrollWheelInitialIndex = 4
 
 private struct ScrollWheelDemo: View {
@@ -52,6 +43,8 @@ private struct ScrollWheelDemo: View {
     @State private var current = scrollWheelInitialIndex
     @State private var position = ScrollPosition(edge: .top)
     @State private var direction = 1
+    /// True while autoplay (or the detail intro) scrolls the wheel, so scripted ticks stay silent.
+    @State private var scripted = false
 
     private let rowHeight: CGFloat = 44
     private let viewport: CGFloat = 264
@@ -62,7 +55,7 @@ private struct ScrollWheelDemo: View {
             wheel
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview }
+        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
         .autoplay(ctx.isPreview, every: 1.3) { advance() }
     }
 
@@ -99,7 +92,7 @@ private struct ScrollWheelDemo: View {
             }
             .padding(.vertical, pad)
         }
-        .scrollTargetBehavior(ScrollWheelSnap(rowHeight: rowHeight))
+        .scrollTargetBehavior(ScrollStrideSnap(pitch: rowHeight, axis: .vertical))
         .scrollPosition($position)
         .onScrollGeometryChange(for: Int.self, of: { geometry in
             let offset = geometry.contentOffset.y + geometry.contentInsets.top
@@ -107,6 +100,9 @@ private struct ScrollWheelDemo: View {
         }, action: { _, newValue in
             current = newValue
         })
+        .onScrollPhaseChange { _, newPhase in
+            if newPhase == .interacting { scripted = false }
+        }
         .onAppear { position.scrollTo(y: CGFloat(scrollWheelInitialIndex) * rowHeight) }
         .scrollIndicators(.hidden)
         .frame(height: viewport)
@@ -132,6 +128,7 @@ private struct ScrollWheelDemo: View {
     }
 
     private func select(_ i: Int) {
+        scripted = false
         withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
             position.scrollTo(y: CGFloat(i) * rowHeight)
         }
@@ -140,6 +137,7 @@ private struct ScrollWheelDemo: View {
     private func advance() {
         let count = scrollWheelCities.count
         let stepSize = 2
+        scripted = true
         if current + direction * stepSize >= count || current + direction * stepSize < 0 { direction = -direction }
         withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) {
             position.scrollTo(y: CGFloat(current + direction * stepSize) * rowHeight)

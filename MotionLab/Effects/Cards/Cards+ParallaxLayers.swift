@@ -8,14 +8,14 @@ extension Effect {
         name: L("Layered Parallax Card", "分层视差卡片"),
         summary: L("A landscape card whose sky, sun, ridges and title drift at different depths.", "风景卡片中的天空、太阳、山脊与标题以不同景深错位漂移。"),
         prompt: L(
-            "A tall poster card (240×300 pt, 28 pt corners) illustrates a dusk landscape built from separate layers: a violet-to-peach sky with faint stars, a glowing sun, a translucent far ridge, a dark near ridge and a bold title floating on top. Dragging tilts the card up to ~8° in perspective while every layer translates against the gesture by an amount proportional to its depth — stars ×0.1, sun ×0.25, far ridge ×0.55, near ridge ×0.9, title ×1.5 of a 16 pt base — revealing convincing depth like tvOS focus posters. Layers are overscanned so edges never show. Release returns all layers together on a soft spring (response ≈0.55 s, damping ≈0.7). Until the first touch the card drifts in a slow idle sway so the depth is visible on arrival.",
-            "一张竖版海报卡片（240×300 pt，28 pt 圆角）描绘黄昏风景，由多个独立图层组成：紫色到蜜桃色的天空与点点星光、发光的太阳、半透明远山、深色近山，以及浮于最上层的粗体标题。拖动时卡片以透视方式倾斜最多约 8°，同时每一层按其景深比例朝手势反方向平移——以 16 pt 为基准，星空 ×0.1、太阳 ×0.25、远山 ×0.55、近山 ×0.9、标题 ×1.5——呈现类似 tvOS 焦点海报的真实纵深感。各图层留有出血，边缘永不露底。松手后所有图层以柔和弹簧（响应约 0.55 秒、阻尼约 0.7）一同归位。首次触摸前，卡片会缓慢地自行摇摆，一进入页面即可看出纵深。"
+            "A 240×300 pt poster card with 28 pt corners shows a dusk landscape built from separate layers: a violet-to-peach sky with faint stars, a glowing sun, a translucent far ridge, a dark near ridge and a bold title on top. Dragging tilts the card up to 8° while each layer shifts against the finger in proportion to its depth (stars ×0.1, sun ×0.25, far ridge ×0.55, near ridge ×0.9, title ×1.5 of a 16 pt base). Every layer rides its own spring whose response grows with depth, from about 0.3 s for the stars to 0.7 s for the title (damping 0.7), so on release the layers settle one after another and the scene seems to breathe back into place. Before the first touch the card sways slowly so the depth reads on arrival.",
+            "一张 240×300 pt、28 pt 圆角的竖版海报卡，黄昏风景由多个图层叠成：缀着星光的紫到蜜桃色天空、发光的太阳、半透明远山、深色近山和最上层的粗体标题。拖动时卡片倾斜最多 8°，各层按景深朝手指反方向平移——以 16 pt 为基准，星空 ×0.1、太阳 ×0.25、远山 ×0.55、近山 ×0.9、标题 ×1.5。每层各配一个弹簧，越靠前响应越慢，从星空约 0.3 秒到标题约 0.7 秒（阻尼 0.7），松手后各层依次落定，画面像呼吸般回位。未触摸前卡片缓缓摇摆，一进页面就看得出纵深。"
         ),
         implementation: L(
-            "A ZStack of shapes and gradients where each layer gets .offset(normalisedDrag × depth × amount); a pair of rotation3DEffect modifiers add the tilt and clipShape hides the overscan.",
-            "由形状与渐变组成的 ZStack，每层施加 .offset(归一化拖动 × 景深 × 幅度)；两个 rotation3DEffect 负责倾斜，clipShape 隐藏出血区域。"
+            "A ZStack of shapes and gradients where each layer gets .offset(normalisedDrag × depth × amount) plus its own .animation(.spring, value:) whose response scales with depth; two rotation3DEffect modifiers add the tilt and clipShape hides the overscan.",
+            "由形状与渐变组成的 ZStack，每层施加 .offset(归一化拖动 × 景深 × 幅度)，并各带一个响应随景深增大的 .animation(.spring, value:)；两个 rotation3DEffect 负责倾斜，clipShape 隐藏出血区域。"
         ),
-        apis: ["offset", "rotation3DEffect", "Shape", "DragGesture", "TimelineView"],
+        apis: ["offset", "animation(_:value:)", "rotation3DEffect", "DragGesture", "TimelineView"],
         tags: ["parallax", "depth", "layers", "tvOS", "视差", "景深", "分层", "海报"],
         params: [
             .slider("depth", L("Parallax depth", "视差幅度"), 0...30, default: 16, step: 1, decimals: 0, unit: "pt"),
@@ -40,6 +40,7 @@ private struct CardsParallaxDemo: View {
                     point: touched ? point : sway(at: timeline.date.timeIntervalSinceReferenceDate),
                     amount: ctx.cg("depth"),
                     tilt: ctx["tilt"],
+                    response: ctx["response"],
                     language: ctx.language
                 )
             }
@@ -97,6 +98,7 @@ private struct CardsParallaxCard: View {
     let point: CGSize
     let amount: CGFloat
     let tilt: Double
+    let response: Double
     let language: AppLanguage
 
     private static let stars: [CGPoint] = [
@@ -112,10 +114,10 @@ private struct CardsParallaxCard: View {
                 endPoint: .bottom
             )
             .scaleEffect(1.15)
-            stars.offset(layer(0.1))
-            sun.offset(layer(0.25))
+            stars.offset(layer(0.1)).animation(lag(0.1), value: point)
+            sun.offset(layer(0.25)).animation(lag(0.25), value: point)
             ridges
-            title.offset(layer(1.5))
+            title.offset(layer(1.5)).animation(lag(1.5), value: point)
         }
         .frame(width: 240, height: 300)
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
@@ -123,6 +125,12 @@ private struct CardsParallaxCard: View {
         .rotation3DEffect(.degrees(-Double(point.height) * tilt), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
         .rotation3DEffect(.degrees(Double(point.width) * tilt), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
         .shadow(color: Color(hex: 0x5B3BFF).opacity(0.3), radius: 24, x: -point.width * 12, y: 16)
+    }
+
+    /// Each layer rides its own spring; deeper-into-the-foreground layers respond more slowly,
+    /// so after a release the layers settle one after another instead of together.
+    private func lag(_ depth: CGFloat) -> Animation {
+        .spring(response: response * (0.5 + 0.5 * Double(depth)), dampingFraction: 0.7)
     }
 
     private func layer(_ depth: CGFloat) -> CGSize {
@@ -154,10 +162,12 @@ private struct CardsParallaxCard: View {
                 .fill(Color(hex: 0x6B4FD8).opacity(0.75))
                 .frame(width: 320, height: 170)
                 .offset(layer(0.55))
+                .animation(lag(0.55), value: point)
             CardsRidge(heights: [0.3, 0.5, 0.34, 0.58, 0.38, 0.52, 0.26])
                 .fill(LinearGradient(colors: [Color(hex: 0x2A1E5C), Color(hex: 0x120D2E)], startPoint: .top, endPoint: .bottom))
                 .frame(width: 330, height: 156)
                 .offset(layer(0.9))
+                .animation(lag(0.9), value: point)
                 .offset(y: 28)
         }
         .frame(width: 240, height: 300, alignment: .bottom)

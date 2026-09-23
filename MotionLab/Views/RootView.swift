@@ -1,9 +1,13 @@
 import SwiftUI
 
 enum Route: Hashable {
-    case category(EffectCategory)
+    /// `source` (here and on `.family`) names the placement of a zoom-source link, e.g. "tile" or
+    /// "familyCard"; empty pushes without a zoom source.
+    case category(EffectCategory, source: String = "")
     /// A family of variations (`EffectFamily.id`), e.g. "inputs.slider".
-    case family(String)
+    case family(String, source: String = "")
+    /// Every family, grouped by category.
+    case families
     /// `source` names the placement the link lives in (e.g. "featured", "recent", "grid") so the
     /// zoom transition's source id is unique even when one effect is visible in two places at once.
     /// An empty source (dice, launch arguments) pushes without a zoom source.
@@ -11,6 +15,86 @@ enum Route: Hashable {
 
     /// Id shared by `matchedTransitionSource` and `.zoom(sourceID:)`.
     static func zoomID(effect id: String, source: String) -> String { "\(source)/\(id)" }
+
+    /// The screen this route shows, ignoring where the link lives ("family:inputs.slider").
+    var destination: String {
+        switch self {
+        case .category(let category, _): return "category:\(category.rawValue)"
+        case .family(let id, _): return "family:\(id)"
+        case .families: return "families"
+        case .effect(let id, _): return "effect:\(id)"
+        }
+    }
+
+    /// Placement of the link that opened this route ("" when it has no zoom source).
+    var source: String {
+        switch self {
+        case .category(_, let source), .family(_, let source), .effect(_, let source): return source
+        case .families: return ""
+        }
+    }
+
+    /// Zoom id for this route's source link (effects keep their historic "<source>/<id>" form).
+    var zoomID: String {
+        switch self {
+        case .effect(let id, let source): return Route.zoomID(effect: id, source: source)
+        default: return Route.zoomID(effect: destination, source: source)
+        }
+    }
+}
+
+/// The path of one tab's NavigationStack. Links that point back at a screen already on the stack
+/// (a detail page's category chip, a family page's category link, …) pop back to it instead of
+/// pushing another copy, so detail → family → detail → family never grows the stack.
+@Observable
+final class StackRouter {
+    var path: [Route] = []
+
+    func open(_ route: Route) {
+        let key = route.destination
+        if let index = path.lastIndex(where: { $0.destination == key }) {
+            if index < path.count - 1 { path.removeSubrange((index + 1)...) }
+        } else {
+            path.append(route)
+        }
+    }
+}
+
+/// A link to a route that pops back when that screen is already on the stack (see `StackRouter`).
+/// Style it like a `NavigationLink` (e.g. `.buttonStyle(PressableCardStyle())`).
+struct RouteLink<Label: View>: View {
+    let route: Route
+    @ViewBuilder var label: () -> Label
+    @Environment(StackRouter.self) private var router: StackRouter?
+
+    var body: some View {
+        if let router {
+            Button {
+                router.open(route)
+            } label: {
+                label()
+            }
+        } else {
+            NavigationLink(value: route) { label() }
+        }
+    }
+}
+
+/// A navigation link that zooms its destination out of `label` (category tiles, family cards).
+struct ZoomRouteLink<Label: View>: View {
+    let route: Route
+    @ViewBuilder var label: () -> Label
+    @Environment(\.zoomNamespace) private var namespace
+
+    var body: some View {
+        NavigationLink(value: route) {
+            if let namespace, !route.source.isEmpty {
+                label().matchedTransitionSource(id: route.zoomID, in: namespace)
+            } else {
+                label()
+            }
+        }
+    }
 }
 
 private struct ZoomNamespaceKey: EnvironmentKey {
@@ -82,71 +166,119 @@ struct RootView: View {
 
 /// Launch arguments used for automated screenshots, e.g.
 /// `-ML_route effect:shader.ripple`, `-ML_route category:buttons`, `-ML_route family:inputs.slider`,
-/// `-ML_tab 3`, `-ML_anchor prompt`.
-/// (`-app.language en` / `-app.appearance 2` also work because @AppStorage reads the argument domain.)
+/// `-ML_route families`, `-ML_tab 3`, `-ML_anchor prompt`, `-ML_freshState YES` (no recents are read
+/// or written, so every launch starts from the same Browse page).
+/// (`-app.language en` / `-app.appearance 2` / `-app.familyMode compare` also work because
+/// @AppStorage reads the argument domain.)
 /// Intentionally available in every build configuration.
 enum LaunchOptions {
     static var initialTab: AppTab { AppTab(rawValue: UserDefaults.standard.integer(forKey: "ML_tab")) ?? .browse }
 
     static var initialPath: [Route] {
         guard let raw = UserDefaults.standard.string(forKey: "ML_route") else { return [] }
+        return route(from: raw).map { [$0] } ?? []
+    }
+
+    /// Parses "effect:<id>", "category:<id>", "family:<id>" or "families"; nil for unknown ids.
+    static func route(from raw: String) -> Route? {
+        if raw == "families" { return .families }
         if raw.hasPrefix("effect:") {
             let id = String(raw.dropFirst("effect:".count))
-            return EffectLibrary.effect(id: id) == nil ? [] : [.effect(id)]
+            return EffectLibrary.effect(id: id) == nil ? nil : .effect(id)
         }
-        if raw.hasPrefix("category:"), let category = EffectCategory(rawValue: String(raw.dropFirst("category:".count))) {
-            return [.category(category)]
+        if raw.hasPrefix("category:") {
+            return EffectCategory(rawValue: String(raw.dropFirst("category:".count))).map { Route.category($0) }
         }
         if raw.hasPrefix("family:") {
             let id = String(raw.dropFirst("family:".count))
-            return EffectFamilies.family(id: id) == nil ? [] : [.family(id)]
+            return EffectFamilies.family(id: id) == nil ? nil : .family(id)
         }
-        return []
+        return nil
     }
 
     static var detailAnchor: String? { UserDefaults.standard.string(forKey: "ML_anchor") }
+
+    /// Screenshot runs: start without persisted recents and never record new ones.
+    static var freshState: Bool { UserDefaults.standard.bool(forKey: "ML_freshState") }
 }
 
-/// A NavigationStack that knows how to show categories, families and effects (the latter with a zoom transition).
+/// A NavigationStack that knows how to show categories, families and effects (with zoom transitions
+/// from the link that opened them).
 struct RoutedStack<Content: View>: View {
     @Namespace private var namespace
-    @State private var path: [Route]
+    @State private var router = StackRouter()
+    @State private var appliedInitialPath = false
     @Environment(AppNavigator.self) private var navigator
+    private let initialPath: [Route]
     private let popsToRootOnSearch: Bool
     private let content: () -> Content
 
     init(initialPath: [Route] = [], popsToRootOnSearch: Bool = false, @ViewBuilder content: @escaping () -> Content) {
-        _path = State(initialValue: initialPath)
+        self.initialPath = initialPath
         self.popsToRootOnSearch = popsToRootOnSearch
         self.content = content
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
+        @Bindable var router = router
+        return NavigationStack(path: $router.path) {
             content()
                 .navigationDestination(for: Route.self) { route in
-                    switch route {
-                    case .category(let category):
-                        CategoryView(category: category)
-                    case .family(let id):
-                        if let family = EffectFamilies.family(id: id) {
-                            FamilyView(family: family)
-                        }
-                    case .effect(let id, let source):
-                        if let effect = EffectLibrary.effect(id: id) {
-                            if source.isEmpty {
-                                EffectDetailView(effect: effect)
-                            } else {
-                                EffectDetailView(effect: effect)
-                                    .navigationTransition(.zoom(sourceID: Route.zoomID(effect: id, source: source), in: namespace))
-                            }
-                        }
-                    }
+                    destination(route)
                 }
         }
         .environment(\.zoomNamespace, namespace)
+        .environment(self.router)
+        .task {
+            // Launch-argument routes are pushed once the stack and its destinations exist
+            // (a path set before the root has registered `navigationDestination` can resolve to
+            // SwiftUI's "missing destination" placeholder).
+            guard !appliedInitialPath else { return }
+            appliedInitialPath = true
+            guard !initialPath.isEmpty else { return }
+            await Task.yield()
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { self.router.path = initialPath }
+        }
         .onChange(of: navigator.searchRevision) {
-            if popsToRootOnSearch { path = [] }
+            if popsToRootOnSearch { self.router.path = [] }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(_ route: Route) -> some View {
+        switch route {
+        case .category(let category, _):
+            CategoryView(category: category)
+                .modifier(ZoomDestination(route: route, namespace: namespace))
+        case .family(let id, _):
+            if let family = EffectFamilies.family(id: id) {
+                FamilyView(family: family)
+                    .modifier(ZoomDestination(route: route, namespace: namespace))
+            }
+        case .families:
+            AllFamiliesView()
+        case .effect(let id, _):
+            if let effect = EffectLibrary.effect(id: id) {
+                EffectDetailView(effect: effect)
+                    .modifier(ZoomDestination(route: route, namespace: namespace))
+            }
+        }
+    }
+}
+
+/// Zooms a pushed screen out of its source link when the route names one.
+private struct ZoomDestination: ViewModifier {
+    let route: Route
+    let namespace: Namespace.ID
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if route.source.isEmpty {
+            content
+        } else {
+            content.navigationTransition(.zoom(sourceID: route.zoomID, in: namespace))
         }
     }
 }

@@ -8,15 +8,15 @@ extension Effect {
         name: L("Activity Rings", "健身圆环"),
         summary: L("Three concentric gradient rings that close with springs and lap past 100% with a shadowed cap.", "三条同心渐变圆环以弹簧闭合，超额时带投影端帽继续绕圈。"),
         prompt: L(
-            "Three concentric rings (22 pt stroke, 4 pt gaps, outer diameter 210 pt) in Move red-pink, Exercise lime and Stand cyan, each over a 20%-opacity track of its own color, with a small bold glyph at 12 o’clock. On appear and on tap the rings drain in 250 ms, then fill clockwise from the top in outer-to-inner order, 150 ms apart, on a smooth spring (response ≈ 1.2 s, damping 0.82). Each arc carries an angular gradient from its darker start to its brighter tip, with a solid start-colored cap at 12 o'clock so there is no seam, and the glyph sits on it in solid black for contrast. When a goal passes 100%, the ring keeps traveling: the full gradient rotates so the bright end stays at the tip, and a round end cap casts a soft 3 pt shadow along the tangent, ahead of the tip, fading in from 85%, so the overlap reads as a physical strap. Percentages beneath count up in step. Rewarding, iconic, unmistakably Apple Watch.",
-            "三条同心圆环（描边 22pt、间距 4pt、外径 210pt），分别为“活动”红粉、“锻炼”青柠与“站立”青蓝，每条下方是 20% 透明度的同色轨道，12 点方向带一个小巧的粗体图标。出现与点击时，圆环先在 250ms 内清空，再从顶部顺时针填充，由外到内依次错开 150ms，使用平滑弹簧（响应约 1.2 秒、阻尼 0.82）。每条弧线都带角向渐变：起点偏深、末端更亮；12 点处的起点端帽为纯起点色，不留接缝，图标以纯黑置于其上保证对比度。当目标超过 100% 时圆环继续前进：整圈渐变随之旋转，使亮端始终位于末端，圆形端帽沿切线方向在末端前方投下 3pt 的柔和阴影（自 85% 起渐显），让重叠处看起来像一条真实的表带。下方百分比同步递增。富有成就感，经典的 Apple Watch 味道。"
+            "Three concentric rings (22 pt stroke, 4 pt gaps, 210 pt outer diameter) in Move red-pink, Exercise lime and Stand cyan, each over a 20%-opacity track of its own color with a small bold glyph at 12 o’clock. On appear and on every tap the rings drain in 250 ms, then fill clockwise from the top, outer to inner, 150 ms apart, on a smooth spring (response ≈ 1.2 s, damping 0.82). Each arc carries an angular gradient from a darker start to a brighter tip, with a solid start-colored cap at 12 o’clock so there is no seam. Past 100% the ring keeps traveling: the gradient rotates so the bright end stays at the tip, and the round end cap casts a soft 3 pt shadow ahead of itself, fading in from 85%, so the overlap reads as a physical strap. Percentages below count up in step: rewarding, iconic.",
+            "三条同心圆环（描边 22pt、间距 4pt、外径 210pt），依次为“活动”红粉、“锻炼”青柠、“站立”青蓝，下方各有 20% 透明度的同色轨道，12 点处嵌一个粗体小图标。出现时和每次点击时，圆环先在 250ms 内清空，再从顶部顺时针填充，由外向内错开 150ms，采用平滑弹簧（响应约 1.2 秒、阻尼 0.82）。弧线带角向渐变，起点偏深、末端偏亮，12 点处的起点端帽为纯色，不留接缝。超过 100% 时圆环继续前进：渐变整体旋转，让亮端始终停在末端，圆形端帽在前方投下 3pt 柔和阴影（自 85% 起渐显），重叠处宛如一条真实表带。下方百分比同步递增，成就感十足。"
         ),
         implementation: L(
             "Each ring is an Animatable view: up to 100% it trims a Circle stroked with an AngularGradient; beyond 100% it draws the full ring rotated by the excess and adds a shadowed end-cap circle rotated to the tip angle.",
             "每条圆环都是 Animatable 视图：100% 以内用 AngularGradient 描边并 trim 的 Circle；超过 100% 时绘制整圈并按超出量旋转，再在末端角度叠加带阴影的端帽圆点。"
         ),
         apis: ["Animatable", "AngularGradient", "trim(from:to:)", "rotationEffect", "spring(response:dampingFraction:)"],
-        tags: ["activity rings", "progress ring", "fitness", "apple watch", "goal", "健身圆环", "进度环", "目标", "运动"],
+        tags: ["activity rings", "progress ring", "fitness", "apple watch", "健身圆环", "进度环", "运动", "目标"],
         params: [
             .slider("thickness", L("Ring thickness", "环宽"), 12...30, default: 22, step: 1, decimals: 0, unit: "pt"),
             .slider("response", L("Spring response", "弹簧响应"), 0.5...2.0, default: 1.2, unit: "s"),
@@ -42,7 +42,8 @@ private let ringStyles: [RingStyle] = [
 
 private struct ActivityRingsDemo: View {
     let ctx: DemoContext
-    @State private var progress: [Double] = [0, 0, 0]
+    /// Seeded with a settled day so still snapshots show closed rings; `onAppear` rewinds and plays.
+    @State private var progress: [Double] = [1.08, 0.82, 0.64]
 
     private let outer: CGFloat = 210
 
@@ -69,8 +70,15 @@ private struct ActivityRingsDemo: View {
         .contentShape(Rectangle())
         .onTapGesture { play() }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { play() }
-        .autoplay(ctx.isPreview, every: 3.6, delay: 3.6) { play() }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                progress = [0, 0, 0]
+            }, then: {
+                play()
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 3.6, delay: 3.6) { if ctx.isPreview { play() } }
     }
 
     private func play() {
@@ -180,7 +188,7 @@ private struct RingLegend: View, Animatable {
             Text(style.name, language)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text("\(Int((max(value, 0) * 100).rounded()))%")
+            Text(verbatim: "\(Int((max(value, 0) * 100).rounded()))%")
                 .font(.system(size: 17, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(style.start)

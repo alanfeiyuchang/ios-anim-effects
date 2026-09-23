@@ -11,7 +11,7 @@ enum CardsFamilies {
             id: "cards.tilt",
             category: .cards,
             name: L("Tilt & Foil", "倾斜与光泽"),
-            summary: L("Cards that tilt in 3D under the finger with glare, foil or parallax depth.", "随手指 3D 倾斜，带高光、镭射或视差层次的卡片。"),
+            summary: L("Cards that answer the finger with 3D tilt, moving light, foil or parallax depth.", "随手指 3D 倾斜，或以移动光线、镭射与视差层次回应的卡片。"),
             symbol: "rotate.3d"
         ),
         EffectFamily(

@@ -18,7 +18,7 @@ enum InputsFamilies {
             id: "inputs.slider",
             category: .inputs,
             name: L("Slider", "滑块"),
-            summary: L("Dragging a value: liquid, magnetic, 3D drum, LED, rubber-band, velocity-aware and range sliders.", "拖动取值：液面、磁吸、3D 滚筒、LED、橡皮筋、感知速度与区间滑块。"),
+            summary: L("Dragging a value: liquid, magnetic, 3D drum, LED, rubber-band, velocity-aware and range sliders, and a media scrubber that grows under the finger.", "拖动取值：液面、磁吸、3D 滚筒、LED、橡皮筋、感知速度与区间滑块，以及按住变粗的媒体进度条。"),
             symbol: "slider.horizontal.3"
         ),
         EffectFamily(

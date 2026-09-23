@@ -32,10 +32,12 @@ private struct ScrollFanDemo: View {
     @State private var current = 3
     @State private var width: CGFloat = 340
     @State private var direction = 1
+    /// True while autoplay (or the detail intro) scrolls, so scripted selection ticks stay silent.
+    @State private var scripted = false
 
     private let count = 9
     private let cardSize = CGSize(width: 140, height: 190)
-    private let stride: CGFloat = 110
+    private let pitch: CGFloat = 110
 
     var body: some View {
         VStack(spacing: 8) {
@@ -46,7 +48,7 @@ private struct ScrollFanDemo: View {
                 .animation(.snappy, value: current)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview }
+        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
         .autoplay(ctx.isPreview, every: 1.3) { advance() }
     }
 
@@ -54,15 +56,15 @@ private struct ScrollFanDemo: View {
         let stepAngle: Double = ctx["step"]
         let radius = ctx.cg("radius")
         let viewport = max(width, 1)
-        let stride = self.stride
+        let pitch = self.pitch
         let count = self.count
         return ScrollView(.horizontal) {
-            LazyHStack(spacing: stride - cardSize.width) {
+            LazyHStack(spacing: pitch - cardSize.width) {
                 ForEach(0..<count, id: \.self) { i in
                     ScrollFanCard(index: i, focused: i == current, language: ctx.language, size: cardSize)
                         .visualEffect { content, proxy in
                             let mid: CGFloat = proxy.frame(in: .scrollView).midX
-                            let d: CGFloat = (mid - viewport / 2) / stride
+                            let d: CGFloat = (mid - viewport / 2) / pitch
                             let theta: Double = Double(d) * stepAngle * .pi / 180
                             let arcX: CGFloat = radius * CGFloat(sin(theta))
                             let arcY: CGFloat = radius * CGFloat(1 - cos(theta))
@@ -71,22 +73,27 @@ private struct ScrollFanDemo: View {
                                 .rotationEffect(.radians(theta))
                                 .scaleEffect(1 - near * 0.1)
                                 .brightness(-Double(near) * 0.08)
-                                .offset(x: arcX - d * stride, y: arcY - 24)
+                                .offset(x: arcX - d * pitch, y: arcY - 24)
                         }
+                        // Neighbours overlap: cards nearer the top of the arc draw above the rest.
+                        .zIndex(-Double(abs(i - current)))
                         .onTapGesture { select(i) }
                 }
             }
             .padding(.horizontal, max((width - cardSize.width) / 2, 0))
         }
-        .scrollTargetBehavior(ScrollStrideSnap(stride: stride))
+        .scrollTargetBehavior(ScrollStrideSnap(pitch: pitch))
         .scrollPosition($position)
         .onScrollGeometryChange(for: Int.self, of: { geometry in
             let offset = geometry.contentOffset.x + geometry.contentInsets.leading
-            return Int((offset / stride).rounded()).clamped(to: 0...(count - 1))
+            return Int((offset / pitch).rounded()).clamped(to: 0...(count - 1))
         }, action: { _, newValue in
             current = newValue
         })
-        .onAppear { position.scrollTo(x: CGFloat(3) * stride) }
+        .onScrollPhaseChange { _, newPhase in
+            if newPhase == .interacting { scripted = false }
+        }
+        .onAppear { position.scrollTo(x: CGFloat(3) * pitch) }
         .scrollIndicators(.hidden)
         .frame(height: cardSize.height + 80)
         .onGeometryChange(for: CGFloat.self, of: { proxy in proxy.size.width }, action: { newWidth in
@@ -95,15 +102,17 @@ private struct ScrollFanDemo: View {
     }
 
     private func select(_ i: Int) {
+        scripted = false
         withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) {
-            position.scrollTo(x: CGFloat(i) * stride)
+            position.scrollTo(x: CGFloat(i) * pitch)
         }
     }
 
     private func advance() {
+        scripted = true
         if current + direction >= count || current + direction < 0 { direction = -direction }
         withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) {
-            position.scrollTo(x: CGFloat(current + direction) * stride)
+            position.scrollTo(x: CGFloat(current + direction) * pitch)
         }
     }
 }

@@ -32,11 +32,13 @@ private struct ScrollStackCarouselDemo: View {
     @State private var current = 0
     @State private var width: CGFloat = 340
     @State private var direction = 1
+    /// True while autoplay (or the detail intro) scrolls, so scripted selection ticks stay silent.
+    @State private var scripted = false
 
     private let count = 8
     private let cardWidth: CGFloat = 190
     private let spacing: CGFloat = 16
-    private var stride: CGFloat { cardWidth + spacing }
+    private var pitch: CGFloat { cardWidth + spacing }
 
     var body: some View {
         VStack(spacing: 14) {
@@ -47,7 +49,7 @@ private struct ScrollStackCarouselDemo: View {
                 .animation(.snappy, value: current)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview }
+        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
         .autoplay(ctx.isPreview, every: 1.3) { advance() }
     }
 
@@ -55,7 +57,7 @@ private struct ScrollStackCarouselDemo: View {
         let peek = ctx.cg("peek")
         let shrink = ctx.cg("shrink")
         let viewport = max(width, 1)
-        let stride = self.stride
+        let pitch = self.pitch
         let count = self.count
         return ScrollView(.horizontal) {
             LazyHStack(spacing: spacing) {
@@ -66,9 +68,9 @@ private struct ScrollStackCarouselDemo: View {
                         .shadow(color: .black.opacity(0.14), radius: 10, y: 6)
                         .visualEffect { content, proxy in
                             let mid: CGFloat = proxy.frame(in: .scrollView).midX
-                            let d: CGFloat = (mid - viewport / 2) / stride
+                            let d: CGFloat = (mid - viewport / 2) / pitch
                             let past: CGFloat = max(-d, 0)
-                            let pull: CGFloat = past * stride * (1 - peek)
+                            let pull: CGFloat = past * pitch * (1 - peek)
                             let scale: CGFloat = max(1 - past * shrink, 0.5)
                             let dim: Double = -Double(min(past, 3)) * 0.18
                             let blur: CGFloat = min(past * 1.5, 3)
@@ -83,14 +85,17 @@ private struct ScrollStackCarouselDemo: View {
             }
             .padding(.horizontal, max((width - cardWidth) / 2, 0))
         }
-        .scrollTargetBehavior(ScrollStrideSnap(stride: stride))
+        .scrollTargetBehavior(ScrollStrideSnap(pitch: pitch))
         .scrollPosition($position)
         .onScrollGeometryChange(for: Int.self, of: { geometry in
             let offset = geometry.contentOffset.x + geometry.contentInsets.leading
-            return Int((offset / stride).rounded()).clamped(to: 0...(count - 1))
+            return Int((offset / pitch).rounded()).clamped(to: 0...(count - 1))
         }, action: { _, newValue in
             current = newValue
         })
+        .onScrollPhaseChange { _, newPhase in
+            if newPhase == .interacting { scripted = false }
+        }
         .scrollIndicators(.hidden)
         .frame(height: 260)
         .onGeometryChange(for: CGFloat.self, of: { proxy in proxy.size.width }, action: { newWidth in
@@ -99,15 +104,17 @@ private struct ScrollStackCarouselDemo: View {
     }
 
     private func select(_ i: Int) {
+        scripted = false
         withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) {
-            position.scrollTo(x: CGFloat(i) * stride)
+            position.scrollTo(x: CGFloat(i) * pitch)
         }
     }
 
     private func advance() {
+        scripted = true
         if current + direction >= count || current + direction < 0 { direction = -direction }
         withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) {
-            position.scrollTo(x: CGFloat(current + direction) * stride)
+            position.scrollTo(x: CGFloat(current + direction) * pitch)
         }
     }
 }

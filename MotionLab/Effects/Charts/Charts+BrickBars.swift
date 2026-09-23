@@ -32,8 +32,9 @@ private let brickColumns = 7
 
 private struct BrickBarsDemo: View {
     let ctx: DemoContext
-    @State private var counts: [Int] = Array(repeating: 0, count: brickColumns)
-    @State private var shown = false
+    /// Seeded with a settled week so still snapshots show stacks; `onAppear` rewinds and plays.
+    @State private var counts: [Int] = [5, 8, 6, 10, 7, 4, 9]
+    @State private var shown = true
     @State private var dropping = false
 
     var body: some View {
@@ -44,7 +45,7 @@ private struct BrickBarsDemo: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(shown ? total : 0)")
+                Text(verbatim: "\(shown ? total : 0)")
                     .font(.system(size: 22, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .contentTransition(.numericText(value: Double(shown ? total : 0)))
@@ -79,8 +80,15 @@ private struct BrickBarsDemo: View {
             DemoHint(text: L("Tap to rebuild", "点击重新搭建"), ctx: ctx)
                 .padding(.bottom, 6)
         }
-        .onAppear { play(haptic: false) }
-        .autoplay(ctx.isPreview, every: 3.4, delay: 3.4) { play(haptic: false) }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                shown = false
+            }, then: {
+                play(haptic: false)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 3.4, delay: 3.4) { if ctx.isPreview { play(haptic: false) } }
     }
 
     private func play(haptic: Bool) {

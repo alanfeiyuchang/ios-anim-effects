@@ -16,7 +16,7 @@ extension Effect {
             "每个格子使用 .animation(revealed ? spring.delay(距离 × 间隔) : easeOut, value: revealed)；点击时记录圆心、隐藏网格，经短暂 Task.sleep 后替换数据并重新揭示。"
         ),
         apis: ["animation(_:value:)", "Animation.delay", "Grid", "contentTransition(.numericText)", "Task.sleep"],
-        tags: ["heatmap", "contribution", "grid", "ripple", "cascade", "热力图", "贡献图", "涟漪", "网格"],
+        tags: ["heatmap", "contribution", "ripple", "cascade", "热力图", "贡献图", "涟漪", "网格"],
         params: [
             .slider("stagger", L("Ripple speed", "涟漪间隔"), 0.01...0.08, default: 0.035, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.6),
@@ -42,12 +42,19 @@ private func randomLevels() -> [Int] {
     }
 }
 
+private let heatSeed = randomLevels()
+
+private func heatTotal(_ levels: [Int]) -> Int {
+    levels.reduce(0) { $0 + $1 * 7 } + 120
+}
+
 private struct HeatmapDemo: View {
     let ctx: DemoContext
-    @State private var levels: [Int] = randomLevels()
-    @State private var revealed = false
+    /// Seeded revealed so still snapshots show the grid; `onAppear` hides it and ripples it in.
+    @State private var levels: [Int] = heatSeed
+    @State private var revealed = true
     @State private var origin = (column: 0, row: 0)
-    @State private var total = 0
+    @State private var total = heatTotal(heatSeed)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -69,15 +76,24 @@ private struct HeatmapDemo: View {
             DemoHint(text: L("Tap any cell", "点击任意格子"), ctx: ctx)
                 .padding(.bottom, 8)
         }
-        .onAppear { ripple(column: 0, row: 0, refresh: false) }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                revealed = false
+            }, then: {
+                ripple(column: 0, row: 0, refresh: false)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
         .autoplay(ctx.isPreview, every: 3.0, delay: 2.6) {
-            ripple(column: Int.random(in: 0..<heatColumns), row: Int.random(in: 0..<heatRows), refresh: true)
+            if ctx.isPreview {
+                ripple(column: Int.random(in: 0..<heatColumns), row: Int.random(in: 0..<heatRows), refresh: true)
+            }
         }
     }
 
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("\(total)")
+            Text(verbatim: "\(total)")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText(value: Double(total)))
@@ -126,7 +142,7 @@ private struct HeatmapDemo: View {
             try? await Task.sleep(for: .seconds(0.22))
             if refresh { levels = randomLevels() }
             revealed = true
-            withAnimation(.snappy) { total = levels.reduce(0) { $0 + $1 * 7 } + 120 }
+            withAnimation(.snappy) { total = heatTotal(levels) }
         }
     }
 }

@@ -45,33 +45,43 @@ private struct TravelGetStartedDemo: View {
 
     var body: some View {
         SignatureStage {
-            ZStack(alignment: .bottom) {
-                TravelOnboardingBackdrop(zh: zh, dimmed: expanded)
-                if expanded {
-                    TravelStartSheet(ns: ns, zh: zh, showBody: showBody, onClose: toggle)
-                        .padding(12)
-                } else {
-                    TravelStartPill(
-                        ns: ns,
-                        zh: zh,
-                        stretch: ctx.cg("stretch"),
-                        squeezed: squeezed,
-                        shimmer: ctx.bool("shimmer"),
-                        onTap: expand
-                    )
-                    .padding(.bottom, 24)
-                }
+            VStack(spacing: 12) {
+                stageCard
+                DemoHint(text: L("Tap Get Started, then ✕ to close", "点击「立即开始」，再点 ✕ 收起"), ctx: ctx)
             }
-            .frame(width: 300, height: 320)
-            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-            .signatureCard(cornerRadius: 30)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: 2.4) { toggle() }
     }
 
+    private var stageCard: some View {
+        ZStack(alignment: .bottom) {
+            TravelOnboardingBackdrop(zh: zh, dimmed: expanded)
+            if expanded {
+                TravelStartSheet(ns: ns, zh: zh, showBody: showBody, onClose: toggle)
+                    .padding(12)
+            } else {
+                TravelStartPill(
+                    ns: ns,
+                    zh: zh,
+                    stretch: ctx.cg("stretch"),
+                    squeezed: squeezed,
+                    shimmer: ctx.bool("shimmer"),
+                    preview: ctx.isPreview,
+                    onTap: expand
+                )
+                .padding(.bottom, 24)
+            }
+        }
+        .frame(width: 300, height: 320)
+        .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .signatureCard(cornerRadius: 30)
+    }
+
     /// Autoplay path: simulate the touch-down squash, then release into the morph.
     private func toggle() {
+        // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
+        let muted = Haptics.isMuted
         if expanded {
             if !ctx.isPreview { Haptics.tap() }
             withAnimation(.easeOut(duration: 0.12)) {
@@ -83,15 +93,19 @@ private struct TravelGetStartedDemo: View {
             withAnimation(.spring(response: 0.16, dampingFraction: 0.7)) {
                 squeezed = true
             } completion: {
-                expand()
+                morph(silent: muted)
             }
         }
     }
 
     /// Release: the ButtonStyle already squashed on touch-down, so morph straight away.
     private func expand() {
+        morph(silent: false)
+    }
+
+    private func morph(silent: Bool) {
         guard !expanded else { return }
-        if !ctx.isPreview { Haptics.tap(.medium) }
+        if !ctx.isPreview && !silent { Haptics.tap(.medium) }
         withAnimation(spring) {
             squeezed = false
             expanded = true
@@ -139,12 +153,13 @@ private struct TravelStartPill: View {
     let stretch: CGFloat
     let squeezed: Bool
     let shimmer: Bool
+    let preview: Bool
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 14) {
-                TravelShimmerLabel(text: zh ? "立即开始" : "Get Started", active: shimmer)
+                TravelShimmerLabel(text: zh ? "立即开始" : "Get Started", active: shimmer, preview: preview)
                     .matchedGeometryEffect(id: "title", in: ns)
                 TravelArrowBadge()
             }
@@ -178,6 +193,7 @@ private struct TravelSquashStyle: ButtonStyle {
 private struct TravelShimmerLabel: View {
     let text: String
     let active: Bool
+    let preview: Bool
 
     var body: some View {
         let label = Text(text).font(.system(size: 17, weight: .bold, design: .rounded))
@@ -185,7 +201,7 @@ private struct TravelShimmerLabel: View {
             .foregroundStyle(Signature.ink)
             .overlay {
                 if active {
-                    TimelineView(.animation) { timeline in
+                    TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
                         let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2) / 2.2
                         let x = CGFloat(-0.4 + 1.8 * t)
                         LinearGradient(

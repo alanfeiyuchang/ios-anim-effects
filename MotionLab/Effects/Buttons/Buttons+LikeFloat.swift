@@ -167,7 +167,7 @@ private struct ButtonLikeFloatDemo: View {
     }
 
     private func tap() {
-        taps += 1
+        withAnimation(.snappy) { taps += 1 }
         Haptics.tap()
         let seed = sportHash(Double(nextID) * 1.37)
         let heart = ButtonFloatingHeart(id: nextID, born: Date(), seed: seed)

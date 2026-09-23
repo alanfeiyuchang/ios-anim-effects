@@ -11,12 +11,12 @@ extension Effect {
             "霓虹网格无尽地奔向条纹复古落日。"
         ),
         prompt: L(
-            "A retro-futurist 1980s horizon. Upper half: a violet-to-magenta dusk gradient with a large sun whose fill runs from butter yellow to hot pink; horizontal slits cut through its lower half, thin near the center and thicker toward the horizon, sliding steadily downward. Lower half: a near-black purple floor with a glowing magenta perspective grid — lines converge to a central vanishing point while horizontal rungs rush toward the viewer with correct 1/z spacing, looping seamlessly every rung. Every grid line has a blurred neon bloom beneath a crisp core, the far grid fades into horizon haze, and a hot pink horizon line glows. Speed is constant and hypnotic; the mood is nostalgic, cool and cinematic.",
-            "八十年代复古未来主义的地平线。上半部分是紫到品红的黄昏渐变，中间一轮巨大的落日，由奶油黄过渡到亮粉；落日下半部分被数道水平缝隙切开，越靠近中心越细、越接近地平线越粗，并持续向下滑动。下半部分是近黑的紫色地面，铺着发光的品红透视网格：纵线汇聚于中央灭点，横线按正确的 1/z 间距朝观者疾驰而来，每经过一格便无缝循环。所有网格线都是清晰的线芯叠加模糊霓虹辉光，远处网格淡入地平线雾气，地平线本身是一道炽热的粉色光线。速度恒定、令人着迷，氛围怀旧、酷感且富有电影感。"
+            "A retro-futurist 1980s horizon. Upper half: a violet-to-magenta dusk gradient with a large sun filled from butter yellow to hot pink; horizontal slits cut its lower half, thin near the center and thicker toward the horizon, sliding steadily downward. Lower half: a near-black purple floor with a glowing magenta perspective grid — lines converge to a central vanishing point while rungs rush toward the viewer with correct 1/z spacing, looping seamlessly. Every line has a blurred neon bloom under a crisp core, the far grid fades into horizon haze, and a hot pink horizon line glows. Pressing and holding floors the throttle: speed eases up to 4× over about half a second and the bloom thickens, then coasts back to cruise on release. Hypnotic, nostalgic, cinematic.",
+            "八十年代复古未来主义的地平线。上半部是紫到品红的黄昏渐变，中央一轮巨大的落日由奶油黄过渡到亮粉；落日下半部被数道水平缝隙切开，越近中心越细、越近地平线越粗，并持续向下滑动。下半部是近黑的紫色地面，铺着发光的品红透视网格：纵线汇聚于中央灭点，横线按正确的 1/z 间距朝观者疾驰而来，无缝循环。每条网格线都是清晰线芯叠加模糊霓虹辉光，远处淡入地平线雾气，地平线本身是一道炽热的粉色光线。长按即踩下油门：速度在约半秒内平滑升至 4 倍，辉光随之变粗，松手后缓缓回落到巡航速度。令人着迷，怀旧而富有电影感。"
         ),
         implementation: L(
-            "A single Canvas draws sky, a sun clipped by an inverse stripe path, the floor, then the grid path twice (a blurred drawLayer for bloom plus a crisp stroke) and a horizon haze gradient.",
-            "单个 Canvas 依次绘制天空、以反向条纹路径裁剪的太阳、地面，再将网格路径绘制两次（模糊 drawLayer 做辉光 + 清晰描边），最后叠加地平线雾化渐变。"
+            "A single Canvas draws sky, a sun clipped by an inverse stripe path, the floor, then the grid path twice (a blurred drawLayer for bloom plus a crisp stroke) and a horizon haze gradient. A never-completing long press reports pressing, and a smoothed throttle multiplies the clock speed.",
+            "单个 Canvas 依次绘制天空、以反向条纹路径裁剪的太阳、地面，再将网格路径绘制两次（模糊 drawLayer 做辉光 + 清晰描边），最后叠加地平线雾化渐变。一个永不完成的长按手势报告按压状态，经平滑的“油门”倍增时钟速度。"
         ),
         apis: ["Canvas", "TimelineView(.animation)", "GraphicsContext.clip(to:options: .inverse)", "GraphicsContext.drawLayer"],
         tags: ["synthwave", "retro", "neon", "grid", "合成波", "复古", "霓虹", "网格"],
@@ -33,14 +33,24 @@ extension Effect {
 private struct SynthwaveDemo: View {
     let ctx: DemoContext
     @State private var clock = BackgroundClock()
+    @State private var throttle = SynthThrottle()
 
     var body: some View {
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-            let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
+            let boost = throttle.step(clock.delta)
+            let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"] * (1 + 3 * boost))
             Canvas { context, size in
-                SynthwaveScene.draw(&context, size: size, t: t, lines: ctx.int("lines"), sun: ctx.bool("sun"))
+                SynthwaveScene.draw(&context, size: size, t: t, lines: ctx.int("lines"), sun: ctx.bool("sun"), boost: boost)
             }
         }
+        .contentShape(Rectangle())
+        // A long press that never completes reports pressing while the finger stays down and fails
+        // as soon as it moves, so the page can still scroll (same pattern as Starfield Warp).
+        .onLongPressGesture(minimumDuration: 60, maximumDistance: 10, perform: {}, onPressingChanged: { pressing in
+            if pressing && !throttle.pressed { Haptics.tap(.medium) }
+            throttle.pressed = pressing
+        })
+        .backgroundsHint(L("Press and hold to speed up", "长按加速"), ctx)
         .overlay(alignment: .top) {
             Text(verbatim: ctx.language == .zh ? "午夜驾驶" : "NIGHT DRIVE")
                 .font(.system(size: 26, weight: .black, design: .rounded))
@@ -54,11 +64,23 @@ private struct SynthwaveDemo: View {
     }
 }
 
+/// Eased 0…1 throttle: rises in ~0.5 s while pressed, coasts back more slowly on release.
+private final class SynthThrottle {
+    var pressed = false
+    private var level = 0.0
+
+    func step(_ dt: Double) -> Double {
+        let rate = pressed ? 5.0 : 2.0
+        level += ((pressed ? 1 : 0) - level) * (1 - exp(-dt * rate))
+        return level
+    }
+}
+
 private enum SynthwaveScene {
     static let pink = Color(hex: 0xFF3CAC)
     static let floorTop = Color(hex: 0x1A0433)
 
-    static func draw(_ context: inout GraphicsContext, size: CGSize, t: Double, lines: Int, sun: Bool) {
+    static func draw(_ context: inout GraphicsContext, size: CGSize, t: Double, lines: Int, sun: Bool, boost: Double) {
         let horizon = size.height * 0.58
         drawSky(&context, size: size, horizon: horizon)
         if sun {
@@ -67,8 +89,8 @@ private enum SynthwaveScene {
         drawFloor(&context, size: size, horizon: horizon)
         let grid = gridPath(size: size, horizon: horizon, t: t, lines: max(lines, 2))
         context.drawLayer { layer in
-            layer.addFilter(.blur(radius: 4))
-            layer.stroke(grid, with: .color(pink), lineWidth: 3)
+            layer.addFilter(.blur(radius: 4 + 2 * CGFloat(boost)))
+            layer.stroke(grid, with: .color(pink), lineWidth: 3 + 2.5 * CGFloat(boost))
         }
         context.stroke(grid, with: .color(Color(hex: 0xFF9AD5)), lineWidth: 1.1)
         drawHaze(&context, size: size, horizon: horizon)

@@ -165,7 +165,7 @@ private struct HeroExpanded: View {
     var body: some View {
         VStack(spacing: 0) {
             HeroArtwork(story: story, language: language, expanded: true)
-                .frame(height: 190)
+                .frame(height: 160)
             VStack(alignment: .leading, spacing: 10) {
                 Text(language == .zh ? "阅读 3 分钟 · 动效词典编辑部" : "3 min read · Motion Lexicon Editors")
                     .font(.caption.weight(.semibold))
@@ -175,6 +175,7 @@ private struct HeroExpanded: View {
                     Text(paragraph, language)
                         .font(.subheadline)
                         .foregroundStyle(.primary)
+                        .lineLimit(4)
                         .fixedSize(horizontal: false, vertical: true)
                         .modifier(HeroBodyReveal(visible: showBody, index: index + 1))
                 }

@@ -8,8 +8,8 @@ extension Effect {
         name: L("List Insert & Remove", "列表增删动画"),
         summary: L("Rows drop in at the top and slide away on delete while the list reflows smoothly.", "新行从顶部落入，删除时滑出，其余行平滑重排。"),
         prompt: L(
-            "An inbox-style list of rounded rows sits under a header with a live count and a round gradient “+” button. Tapping + inserts a new row at the top: it drops in from above while fading up, and every existing row slides down to make room on the same spring (response ≈0.45 s, damping ≈0.8) so the whole list moves as one elastic body. Tapping a row's × removes it: the row slides out to the right and fades while the rows beneath glide up to close the gap. Alternative styles pop rows in from 70% scale or dissolve them through a 10 pt blur. The count ticks with a rolling numeric transition, and each action has a light haptic. Clear cause and effect, no jumps.",
-            "收件箱式的圆角列表上方是带实时计数和圆形渐变「+」按钮的标题栏。点击 + 会在顶部插入一行：新行自上方落入并淡入，已有各行以同一弹簧（响应约 0.45 秒、阻尼约 0.8）向下让位，整个列表像一个有弹性的整体一起移动。点击某行的 × 将其删除：该行向右滑出并淡出，下方各行上移补齐空缺。另有样式可让新行从 70% 缩放弹出，或以 10 pt 模糊溶解消失。计数以滚动数字过渡跳变，每次操作都有轻触感。因果清晰，毫无跳变。"
+            "An inbox-style list of rounded rows sits under a header with a live count and a round gradient “+” button. Tapping + inserts a row at the top: it drops in from above while fading up, and every existing row slides down on the same spring (response 0.45 s, damping 0.8), so the list moves as one elastic body. Tapping a row's × slides it out to the right as it fades while the rows beneath glide up to close the gap; alternative styles pop rows in from 70% scale or dissolve them through a 10 pt blur. The count rolls with a numeric transition and every action taps a light haptic, giving clear cause and effect with no jumps.",
+            "收件箱式的圆角列表上方是标题栏，带实时计数和一个圆形渐变「+」按钮。点 + 会在顶部插入一行：新行从上方落下并淡入，已有各行以同一个弹簧（响应 0.45 秒、阻尼 0.8）向下让位，整张列表像一块有弹性的整体。点某行的 × 时，它向右滑出并淡去，下方各行随即上移补位；也可以换成从 70% 缩放弹出，或经 10 pt 模糊溶解消失。计数以滚动数字过渡跳变，每次操作都有一下轻触感，因果清楚，毫无跳变。"
         ),
         implementation: L(
             "Rows are an identifiable ForEach inside a VStack; inserts and deletes happen inside withAnimation(.spring) and each row carries an AnyTransition (asymmetric move, scale or a custom blur modifier transition).",
@@ -71,6 +71,8 @@ private struct ScrollInsertRemoveDemo: View {
                 .padding(.vertical, 6)
             }
             .scrollIndicators(.hidden)
+            DemoHint(text: L("Tap + to add, × to remove", "点 + 添加，点 × 删除"), ctx: ctx)
+                .padding(.bottom, 10)
         }
         .padding(.top, 16)
         .autoplay(ctx.isPreview, every: 1.2) { autoStep() }

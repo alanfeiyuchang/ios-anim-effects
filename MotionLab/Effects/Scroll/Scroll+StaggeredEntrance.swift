@@ -75,7 +75,8 @@ private struct ScrollStaggerDemo: View {
             guard !Task.isCancelled else { return }
             settled = true
         }
-        .autoplay(ctx.isPreview, every: 3.2) { replay() }
+        // Rows already enter on appear; the detail intro play must not replay them a second time.
+        .autoplay(ctx.isPreview, every: 3.2) { if ctx.isPreview { replay() } }
     }
 
     private func replay() {

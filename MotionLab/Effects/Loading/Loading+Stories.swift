@@ -66,13 +66,13 @@ private struct StoryBarsDemo: View {
         let index = step % count
         VStack(spacing: 16) {
             ZStack {
-                StoryArtwork(page: storyPages[index], start: pageStart, duration: duration, drift: ctx.bool("kenBurns"))
+                StoryArtwork(page: storyPages[index], start: pageStart, duration: duration, drift: ctx.bool("kenBurns"), preview: ctx.isPreview)
                     .id(step)
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .scale(scale: 1.04)),
                         removal: .opacity
                     ))
-                StoryChrome(page: storyPages[index], index: index, count: count, start: pageStart, duration: duration, language: ctx.language)
+                StoryChrome(page: storyPages[index], index: index, count: count, start: pageStart, duration: duration, language: ctx.language, preview: ctx.isPreview)
             }
             .frame(width: size.width, height: size.height)
             .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
@@ -110,9 +110,10 @@ private struct StoryArtwork: View {
     let start: Date
     let duration: Double
     let drift: Bool
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !drift)) { timeline in
             let progress = min(max(timeline.date.timeIntervalSince(start) / duration, 0), 1)
             ZStack {
                 LinearGradient(colors: page.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -135,10 +136,11 @@ private struct StoryChrome: View {
     let start: Date
     let duration: Double
     let language: AppLanguage
+    let preview: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
                 let progress = min(max(timeline.date.timeIntervalSince(start) / duration, 0), 1)
                 HStack(spacing: 4) {
                     ForEach(0..<count, id: \.self) { segment in
@@ -155,7 +157,7 @@ private struct StoryChrome: View {
             }
             .frame(height: 3)
             HStack(spacing: 8) {
-                Text("AL")
+                Text(verbatim: "AL")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.white)
                     .frame(width: 28, height: 28)

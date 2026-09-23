@@ -11,12 +11,12 @@ extension Effect {
             "失焦的城市灯光分三层景深缓缓上浮。"
         ),
         prompt: L(
-            "A dim plum-to-wine gradient behind softly glowing out-of-focus light discs, like a fast lens shooting city lights at night. Discs live on three depth planes: far ones are small, faint and more blurred, near ones are large with brighter, slightly sharper rims — each disc uses a radial fill that is faint in the middle and brightest just inside the edge, mimicking real aperture bokeh. All discs rise slowly (a full crossing takes 12–30 s depending on depth) with a gentle sideways sway and a subtle 4–7 s brightness pulse, blending additively where they overlap. A frosted glass card sits on top to show the backdrop in context. Warm, festive, intimate.",
-            "昏暗的梅子色到酒红色渐变背景上，漂浮着柔和发光的失焦光斑，宛如大光圈镜头拍摄的夜晚城市灯火。光斑分布在三个景深层：远景小而暗、更模糊；近景大且边缘更亮、略微清晰——每个光斑都采用中心淡、贴近边缘最亮的径向填充，模拟真实光圈散景。所有光斑缓慢上升（依景深不同，穿越画面需 12–30 秒），伴随轻微的左右摇摆与 4–7 秒的明暗呼吸，重叠处以叠加方式增亮。上方放置一张磨砂玻璃卡片，展示背景的实际使用语境。温暖、节日感、亲密。"
+            "A dim plum-to-wine gradient behind softly glowing out-of-focus light discs, like a fast lens shooting city lights at night. Discs live on three depth planes: far ones are small, faint and more blurred, near ones are large with brighter, slightly sharper rims — each disc uses a radial fill that is faint in the middle and brightest just inside the edge, mimicking real aperture bokeh. All discs rise slowly (12–30 s per crossing depending on depth) with a gentle sideways sway and a subtle 4–7 s brightness pulse, blending additively. Dragging sideways racks focus: left pulls the far plane sharp, right the near one; each plane’s blur follows its distance from the focal plane, easing in about 0.3 s and drifting back to the near plane on release. A frosted glass card sits on top for context. Warm, festive, intimate.",
+            "昏暗的梅子色到酒红色渐变背景上，漂浮着柔和发光的失焦光斑，宛如大光圈镜头拍下的夜晚城市灯火。光斑分布在三个景深层：远景小而暗、更模糊；近景大且边缘更亮、略微清晰。每个光斑采用中心淡、贴近边缘最亮的径向填充，模拟真实光圈散景。所有光斑缓慢上升（依景深不同，穿越画面需 12–30 秒），伴随轻微左右摇摆与 4–7 秒的明暗呼吸，重叠处叠加增亮。左右拖动即可移焦：向左让远景变清晰，向右让近景清晰；每层的模糊程度取决于它与焦平面的距离，约 0.3 秒内平滑过渡，松手后焦点慢慢回到近景。上方放一张磨砂玻璃卡片展示使用语境。温暖、节日感、亲密。"
         ),
         implementation: L(
-            "Canvas renders three drawLayers, each with its own blur filter and .plusLighter blending; every disc's position and pulse derive from its index and time, filled with a rim-weighted radial gradient.",
-            "Canvas 绘制三个 drawLayer，各自带有不同模糊滤镜并使用 .plusLighter 混合；每个光斑的位置与呼吸由索引和时间推导，并以边缘加权的径向渐变填充。"
+            "Canvas renders three drawLayers, each with its own blur filter and .plusLighter blending; every disc's position and pulse derive from its index and time, filled with a rim-weighted radial gradient. A horizontal-first drag sets a smoothed focal plane, and each layer's blur scales with its distance from it.",
+            "Canvas 绘制三个 drawLayer，各自带有不同模糊滤镜并使用 .plusLighter 混合；每个光斑的位置与呼吸由索引和时间推导，并以边缘加权的径向渐变填充。水平优先的拖动设定经平滑的焦平面，每层模糊按与焦平面的距离缩放。"
         ),
         apis: ["Canvas", "GraphicsContext.drawLayer", "GraphicsContext.Filter.blur", ".ultraThinMaterial"],
         tags: ["bokeh", "lights", "blur", "depth", "散景", "光斑", "景深", "灯光"],
@@ -34,16 +34,30 @@ extension Effect {
 private struct BokehDemo: View {
     let ctx: DemoContext
     @State private var clock = BackgroundClock()
+    @State private var focus = BokehFocus()
 
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0x120A1C), Color(hex: 0x2A1330), Color(hex: 0x1A0B16)], startPoint: .top, endPoint: .bottom)
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
-                BokehCanvas(t: t, count: ctx.int("count"), blur: ctx.cg("blur"), palette: BokehCanvas.paletteColors(ctx.int("palette")))
+                BokehCanvas(
+                    t: t,
+                    count: ctx.int("count"),
+                    blur: ctx.cg("blur"),
+                    palette: BokehCanvas.paletteColors(ctx.int("palette")),
+                    focus: focus.step(clock.follow(rate: 7))
+                )
             }
             card
         }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            focus.width = width
+        }
+        .backgroundsTouch { location in focus.touchX = location.x } onEnded: { focus.touchX = nil }
+        .backgroundsHint(L("Drag sideways to rack focus", "左右拖动移焦"), ctx)
     }
 
     private var card: some View {
@@ -71,11 +85,25 @@ private struct BokehDemo: View {
     }
 }
 
+/// Focal plane in depth units (0 far … 2 near), eased toward the finger's horizontal position.
+private final class BokehFocus {
+    var touchX: CGFloat?
+    var width: CGFloat = 340
+    private var plane: CGFloat = 2
+
+    func step(_ k: Double) -> CGFloat {
+        let target = touchX.map { 2 * ($0 / max(width, 1)).clamped(to: 0...1) } ?? 2
+        plane += (target - plane) * CGFloat(k)
+        return plane
+    }
+}
+
 private struct BokehCanvas: View {
     let t: Double
     let count: Int
     let blur: CGFloat
     let palette: [Color]
+    let focus: CGFloat
 
     static func paletteColors(_ index: Int) -> [Color] {
         switch index {
@@ -90,10 +118,11 @@ private struct BokehCanvas: View {
 
     var body: some View {
         Canvas { context, size in
-            let blurFactors: [CGFloat] = [1.8, 1.0, 0.5]
             for depth in 0..<3 {
+                // 0.5× at the focal plane, +0.65× per plane away (focus 2 gives the resting 1.8 / 1.15 / 0.5).
+                let defocus = abs(CGFloat(depth) - focus)
                 context.drawLayer { layer in
-                    let layerBlur = blur * blurFactors[depth]
+                    let layerBlur = blur * (0.5 + 0.65 * defocus)
                     if layerBlur > 0.1 {
                         layer.addFilter(.blur(radius: layerBlur))
                     }

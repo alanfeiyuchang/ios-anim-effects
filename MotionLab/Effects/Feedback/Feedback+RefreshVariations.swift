@@ -33,6 +33,7 @@ private struct RefreshVarHost<Indicator: View>: View {
     @State private var armed = false
     @State private var items: [Int] = [3, 2, 1, 0]
     @State private var nextItem = 4
+    @State private var token = 0
 
     init(ctx: DemoContext, threshold: CGFloat = 80, holdHeight: CGFloat = 70, @ViewBuilder indicator: @escaping (CGFloat, CGFloat, Bool) -> Indicator) {
         self.ctx = ctx
@@ -110,8 +111,11 @@ private struct RefreshVarHost<Indicator: View>: View {
         }
         let wait = ctx["duration"]
         let live = !ctx.isPreview
+        token += 1
+        let current = token
         Task {
             try? await Task.sleep(for: .seconds(wait))
+            guard token == current else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.84)) {
                 items.insert(nextItem, at: 0)
                 if items.count > 4 { items.removeLast() }
@@ -126,12 +130,16 @@ private struct RefreshVarHost<Indicator: View>: View {
 
     private func simulate() {
         guard !refreshing else { return }
+        token += 1
+        let current = token
         withAnimation(.easeOut(duration: 0.6)) { pull = threshold * 0.6 }
         Task {
             try? await Task.sleep(for: .seconds(0.6))
+            guard token == current, !refreshing else { return }
             withAnimation(.easeOut(duration: 0.4)) { pull = threshold + 16 }
             updateArmed(threshold + 16)
             try? await Task.sleep(for: .seconds(0.45))
+            guard token == current else { return }
             release()
         }
     }
@@ -192,7 +200,7 @@ extension Effect {
         ]
     ) { ctx in
         RefreshVarHost(ctx: ctx) { progress, _, refreshing in
-            GumDropIndicator(progress: progress, refreshing: refreshing, stretch: ctx.cg("stretch"))
+            GumDropIndicator(progress: progress, refreshing: refreshing, stretch: ctx.cg("stretch"), preview: ctx.isPreview)
         }
     }
 }
@@ -201,13 +209,14 @@ private struct GumDropIndicator: View {
     let progress: CGFloat
     let refreshing: Bool
     let stretch: CGFloat
+    let preview: Bool
 
     var body: some View {
         let p: CGFloat = min(max(progress, 0), 1)
         let snapped: Bool = refreshing || progress >= 1
         ZStack(alignment: .top) {
             if snapped {
-                RefreshVarSpinner(color: Palette.indigo)
+                RefreshVarSpinner(color: Palette.indigo, preview: preview)
                     .frame(width: 26, height: 26)
                     .padding(.top, 22)
                     .transition(.scale(scale: 0.4).combined(with: .opacity))
@@ -233,8 +242,14 @@ private struct GumDropIndicator: View {
 }
 
 private struct GumDropShape: Shape {
-    let progress: CGFloat
+    var progress: CGFloat
     let stretch: CGFloat
+
+    /// Animatable so an early release retracts the drop instead of snapping it away.
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
 
     func path(in rect: CGRect) -> Path {
         let cx: CGFloat = rect.midX
@@ -257,9 +272,10 @@ private struct GumDropShape: Shape {
 
 private struct RefreshVarSpinner: View {
     let color: Color
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t: Double = timeline.date.timeIntervalSinceReferenceDate
             Circle()
                 .trim(from: 0, to: 0.72)
@@ -294,7 +310,7 @@ extension Effect {
         ]
     ) { ctx in
         RefreshVarHost(ctx: ctx) { progress, pull, refreshing in
-            SunriseIndicator(progress: progress, pull: pull, refreshing: refreshing, rays: max(ctx.int("rays"), 3))
+            SunriseIndicator(progress: progress, pull: pull, refreshing: refreshing, rays: max(ctx.int("rays"), 3), preview: ctx.isPreview)
         }
     }
 }
@@ -304,13 +320,14 @@ private struct SunriseIndicator: View {
     let pull: CGFloat
     let refreshing: Bool
     let rays: Int
+    let preview: Bool
 
     var body: some View {
         let p: CGFloat = min(max(progress, 0), 1)
         ZStack(alignment: .bottom) {
             LinearGradient(colors: [Palette.sky.opacity(0.55), Palette.amber.opacity(0.55)], startPoint: .top, endPoint: .bottom)
                 .opacity(Double(p))
-            TimelineView(.animation(minimumInterval: nil, paused: !refreshing)) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !refreshing)) { timeline in
                 let t: Double = timeline.date.timeIntervalSinceReferenceDate
                 let spin: Double = refreshing ? (t / 2).truncatingRemainder(dividingBy: 1) * 360 : 0
                 let pulse: CGFloat = refreshing ? 0.8 + 0.2 * CGFloat(sin(t * 5)) : 1
@@ -378,7 +395,8 @@ extension Effect {
                 text: ctx.language == .zh ? "下拉即可刷新" : "PULL TO REFRESH",
                 progress: progress,
                 refreshing: refreshing,
-                rise: ctx.cg("rise")
+                rise: ctx.cg("rise"),
+                preview: ctx.isPreview
             )
         }
     }
@@ -389,6 +407,7 @@ private struct LetterRiseIndicator: View {
     let progress: CGFloat
     let refreshing: Bool
     let rise: CGFloat
+    let preview: Bool
 
     var body: some View {
         let letters: [String] = text.map { String($0) }
@@ -396,7 +415,7 @@ private struct LetterRiseIndicator: View {
         let style: AnyShapeStyle = armed
             ? AnyShapeStyle(LinearGradient(colors: [Palette.indigo, Palette.pink], startPoint: .leading, endPoint: .trailing))
             : AnyShapeStyle(Color.secondary)
-        TimelineView(.animation(minimumInterval: nil, paused: !refreshing)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !refreshing)) { timeline in
             let t: Double = timeline.date.timeIntervalSinceReferenceDate
             HStack(spacing: 0) {
                 ForEach(0..<letters.count, id: \.self) { index in
@@ -462,7 +481,7 @@ private struct DotsRefreshIndicator: View {
 
     var body: some View {
         let lit: Int = refreshing ? 3 : min(Int(progress * 3 + 0.0001), 3)
-        TimelineView(.animation(minimumInterval: nil, paused: !refreshing)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: !live), paused: !refreshing)) { timeline in
             let t: Double = timeline.date.timeIntervalSinceReferenceDate / 0.6
             HStack(spacing: 8) {
                 ForEach(0..<3, id: \.self) { index in

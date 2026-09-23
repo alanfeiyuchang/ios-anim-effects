@@ -82,7 +82,7 @@ struct FamilyView: View {
         HStack(alignment: .center, spacing: 14) {
             FamilyBadge(family: family, size: 52, bounce: badgeBounce)
             VStack(alignment: .leading, spacing: 4) {
-                NavigationLink(value: Route.category(family.category)) {
+                RouteLink(route: Route.category(family.category)) {
                     HStack(spacing: 4) {
                         Text(family.category.title, language)
                         Image(systemName: "chevron.right")
@@ -120,37 +120,123 @@ struct FamilyView: View {
     }
 }
 
-/// Every variation stacked as a large live preview, so the motion styles can be compared directly.
+/// Every variation as a live preview, side by side (two columns on iPhone), on one shared clock:
+/// autoplay loops fire on a common grid (`demoSyncEpoch`), so variations with the same rhythm play
+/// in lockstep, and "Replay All" restarts every demo in the same frame.
 /// Previews play even when "Animate previews" is off (this view exists to watch them move),
 /// but never with Reduce Motion.
 private struct FamilyCompareList: View {
     let effects: [Effect]
     @Environment(\.appLanguage) private var language
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Shared start of every autoplay loop; reset by Replay All.
+    @State private var epoch = Date()
+    @State private var replays = 0
 
-    private static let columns = [GridItem(.adaptive(minimum: 300), spacing: 14)]
+    /// Two columns on iPhone (compact width), adaptive on iPad, one column at accessibility sizes.
+    private var columns: [GridItem] {
+        if dynamicTypeSize.isAccessibilitySize { return [GridItem(.flexible(), spacing: 12)] }
+        if sizeClass == .regular { return [GridItem(.adaptive(minimum: 250), spacing: 14)] }
+        return [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+    }
 
     var body: some View {
         let total = effects.count
+        let compact = sizeClass != .regular && !dynamicTypeSize.isAccessibilitySize
+        let replays = self.replays
+        let pulses = !reduceMotion
         VStack(alignment: .leading, spacing: 12) {
-            Label {
-                Text(Strings.compareHint, language)
-            } icon: {
-                Image(systemName: "rectangle.grid.1x2")
-                    .foregroundStyle(Palette.accent)
-            }
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            LazyVGrid(columns: Self.columns, spacing: 14) {
+            header
+            LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(Array(effects.enumerated()), id: \.element.id) { index, effect in
                     EffectLink(effect: effect, source: "compare") {
-                        CompareCard(effect: effect, position: index + 1, total: total)
+                        CompareCard(effect: effect, position: index + 1, total: total, compact: compact, replays: replays)
                     }
+                    .modifier(ReplayPulse(trigger: replays, delay: ShellMotion.stagger(index, step: 0.04, cap: 8), enabled: pulses))
                     .scrollReveal(delay: ShellMotion.stagger(index, step: 0.04, cap: 4))
                 }
             }
         }
         .environment(\.previewMotionEnabled, !reduceMotion)
+        .environment(\.demoSyncEpoch, epoch)
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Label {
+                Text(Strings.compareHint, language)
+            } icon: {
+                Image(systemName: "square.grid.2x2")
+                    .foregroundStyle(Palette.accent)
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
+            ReplayAllButton(replays: replays, action: replayAll)
+        }
+    }
+
+    private func replayAll() {
+        Haptics.tap(.light)
+        // One new epoch + one new identity for every stage: all demos restart in the same frame.
+        epoch = Date()
+        replays += 1
+        UIAccessibility.post(notification: .announcement, argument: Strings.replayAll(language))
+    }
+}
+
+/// Capsule "Replay All" button; the arrow makes one full turn per replay.
+private struct ReplayAllButton: View {
+    let replays: Int
+    let action: () -> Void
+    @Environment(\.appLanguage) private var language
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button(action: action) {
+            Label {
+                Text(Strings.replayAll, language)
+            } icon: {
+                Image(systemName: "arrow.counterclockwise")
+                    .rotationEffect(.degrees(reduceMotion ? 0 : Double(replays) * -360))
+                    .animation(.spring(response: 0.6, dampingFraction: 0.72), value: replays)
+            }
+            .font(.footnote.weight(.semibold))
+            .lineLimit(1)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(Palette.primaryStrong, in: Capsule())
+            .shadow(color: Palette.indigo.opacity(0.25), radius: 6, y: 3)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(PressableCardStyle())
+        .fixedSize()
+        .accessibilityHint(Text(Strings.replayAllHint, language))
+    }
+}
+
+/// A quick dip-and-spring of each compare card on Replay All, cascading 40 ms per card.
+private struct ReplayPulse: ViewModifier {
+    let trigger: Int
+    let delay: Double
+    let enabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled {
+            let delay = self.delay
+            content.phaseAnimator([false, true], trigger: trigger) { view, dipped in
+                view.scaleEffect(dipped ? 0.95 : 1)
+            } animation: { dipped in
+                dipped ? Animation.easeOut(duration: 0.14).delay(delay) : ShellMotion.pressUp
+            }
+        } else {
+            content
+        }
     }
 }
 
@@ -158,48 +244,62 @@ private struct CompareCard: View {
     let effect: Effect
     let position: Int
     let total: Int
+    /// Two-column iPhone layout: number + name only.
+    let compact: Bool
+    /// Replay All count; a new value rebuilds the stage so the demo restarts.
+    let replays: Int
     @Environment(\.appLanguage) private var language
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        let isLarge = dynamicTypeSize.isAccessibilitySize
-        let shape = RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 8) {
-                Text(verbatim: "\(position)")
-                    .font(.caption.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.white)
-                    .frame(minWidth: 24, minHeight: 24)
+        let shape = RoundedRectangle(cornerRadius: compact ? CornerRadius.section : CornerRadius.card, style: .continuous)
+        VStack(alignment: .leading, spacing: compact ? 8 : 10) {
+            title
+            PreviewStage(effect: effect, cornerRadius: compact ? 14 : CornerRadius.thumbnail)
+                .id(replays)
+            if !compact {
+                Text(effect.summary, language)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2, reservesSpace: !dynamicTypeSize.isAccessibilitySize)
                     .padding(.horizontal, 2)
-                    .background(Palette.primaryStrong, in: Capsule())
-                    .accessibilityLabel(Text(verbatim: Strings.variationPosition(position, of: total, language)))
-                Text(effect.name, language)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(isLarge ? 3 : 1)
-                    .minimumScaleFactor(0.85)
-                if let requirement = effect.requirement {
-                    RequirementBadge(text: requirement)
-                }
-                Spacer(minLength: 4)
+            }
+        }
+        .padding(compact ? 8 : 10)
+        .background(Palette.cardBackground, in: shape)
+        .overlay(shape.strokeBorder(Palette.stroke))
+        .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
+        .contentShape(shape)
+    }
+
+    private var title: some View {
+        let isLarge = dynamicTypeSize.isAccessibilitySize
+        return HStack(alignment: .center, spacing: compact ? 6 : 8) {
+            Text(verbatim: "\(position)")
+                .font(.caption2.weight(.bold).monospacedDigit())
+                .foregroundStyle(.white)
+                .frame(minWidth: compact ? 20 : 24, minHeight: compact ? 20 : 24)
+                .padding(.horizontal, 2)
+                .background(Palette.primaryStrong, in: Capsule())
+                .accessibilityLabel(Text(verbatim: Strings.variationPosition(position, of: total, language)))
+            Text(effect.name, language)
+                .font(compact ? Font.caption.weight(.semibold) : Font.headline)
+                .foregroundStyle(.primary)
+                .lineLimit(isLarge ? 3 : (compact ? 2 : 1), reservesSpace: compact && !isLarge)
+                .minimumScaleFactor(0.85)
+                .multilineTextAlignment(.leading)
+            if !compact, let requirement = effect.requirement {
+                RequirementBadge(text: requirement)
+            }
+            Spacer(minLength: 0)
+            if !compact {
                 Image(systemName: effect.interaction.symbol)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
             }
-            PreviewStage(effect: effect, cornerRadius: CornerRadius.thumbnail)
-            Text(effect.summary, language)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.leading)
-                .lineLimit(isLarge ? 4 : 2, reservesSpace: !isLarge)
-                .padding(.horizontal, 2)
         }
-        .padding(10)
-        .background(Color(uiColor: .systemBackground), in: shape)
-        .overlay(shape.strokeBorder(Palette.stroke))
-        .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
-        .contentShape(shape)
     }
 }
 
@@ -273,7 +373,7 @@ struct FamilyCard: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(uiColor: .systemBackground), in: shape)
+        .background(Palette.cardBackground, in: shape)
         .overlay(shape.strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
         .contentShape(shape)
@@ -281,17 +381,36 @@ struct FamilyCard: View {
 }
 
 /// Up to `slots` equal square previews; empty slots are dashed placeholders so every tile keeps its height.
+///
+/// Only one slot plays live at a time: a "spotlight" (with a softly glowing ring that glides between
+/// slots) moves to the next variation every few seconds with a crossfade, while the others show still
+/// frames. A category page therefore runs one live demo per visible family card instead of three,
+/// and none at all while the strip is scrolled away.
 struct FamilyPreviewStrip: View {
     let effects: [Effect]
     var slots = 3
+    @Environment(\.previewMotionEnabled) private var motionEnabled
+    @State private var spotlight = 0
+    @State private var isVisible = false
+    @Namespace private var ring
+
+    private static let dwell: Double = 3.2
 
     var body: some View {
         let shown = Array(effects.prefix(slots))
         let extra = effects.count - shown.count
         let empty = max(slots - shown.count, 0)
+        let live = motionEnabled
+        let lit = shown.isEmpty ? 0 : spotlight % shown.count
         HStack(spacing: 8) {
             ForEach(Array(shown.enumerated()), id: \.element.id) { index, effect in
                 PreviewStage(effect: effect, cornerRadius: 14)
+                    .environment(\.previewMotionEnabled, live && index == lit)
+                    .overlay {
+                        if live && index == lit && shown.count > 1 {
+                            SpotlightRing(namespace: ring)
+                        }
+                    }
                     .overlay(alignment: .bottomTrailing) {
                         if index == shown.count - 1 && extra > 0 {
                             MoreBadge(count: extra)
@@ -307,6 +426,30 @@ struct FamilyPreviewStrip: View {
             }
         }
         .accessibilityHidden(true)
+        .onScrollVisibilityChange(threshold: 0.2) { visible in
+            if isVisible != visible { isVisible = visible }
+        }
+        .task(id: live && isVisible && shown.count > 1) {
+            guard live && isVisible && shown.count > 1 else { return }
+            let count = shown.count
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(Self.dwell))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.4)) { spotlight = (spotlight + 1) % count }
+            }
+        }
+    }
+}
+
+/// Thin accent ring on the live slot of a preview strip; glides to the next slot.
+private struct SpotlightRing: View {
+    let namespace: Namespace.ID
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder(Palette.accent.opacity(0.6), lineWidth: 1.5)
+            .matchedGeometryEffect(id: "spotlight", in: namespace)
+            .allowsHitTesting(false)
     }
 }
 
@@ -371,6 +514,8 @@ struct VariationStrip: View {
     let variations: [Effect]
     let currentID: String
     let onSelect: (Effect) -> Void
+    /// Steps to the previous (-1) or next (+1) variation; shows chevron buttons when set.
+    var onStep: ((Int) -> Void)? = nil
     @Environment(\.appLanguage) private var language
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var ring
@@ -387,8 +532,12 @@ struct VariationStrip: View {
                     .foregroundStyle(.secondary)
                     .contentTransition(.numericText(value: Double(position)))
                     .accessibilityLabel(Text(verbatim: Strings.variationPosition(position, of: variations.count, language)))
+                if let onStep {
+                    StepChevron(symbol: "chevron.left", label: Strings.previousVariation) { onStep(-1) }
+                    StepChevron(symbol: "chevron.right", label: Strings.nextVariation) { onStep(1) }
+                }
                 Spacer(minLength: 8)
-                NavigationLink(value: Route.family(family.id)) {
+                RouteLink(route: Route.family(family.id)) {
                     HStack(spacing: 3) {
                         Text(family.name, language)
                         Image(systemName: "chevron.right")
@@ -430,6 +579,35 @@ struct VariationStrip: View {
         }
         // Tiny thumbnails stay still (the stage below is the live demo), which also keeps this row cheap.
         .environment(\.previewMotionEnabled, false)
+    }
+}
+
+/// Small round chevron next to the "2/5" counter; bounces in its direction on each tap.
+private struct StepChevron: View {
+    let symbol: String
+    let label: LocalizedText
+    let action: () -> Void
+    @Environment(\.appLanguage) private var language
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var taps = 0
+
+    var body: some View {
+        Button {
+            if !reduceMotion { taps += 1 }
+            action()
+        } label: {
+            Image(systemName: symbol)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Palette.accent)
+                .symbolEffect(.bounce, value: taps)
+                .frame(width: 24, height: 24)
+                .background(Palette.chipOnPage, in: Circle())
+                .overlay(Circle().strokeBorder(Palette.stroke))
+                .padding(4)
+                .contentShape(Circle())
+        }
+        .buttonStyle(PressableCardStyle())
+        .accessibilityLabel(Text(label, language))
     }
 }
 

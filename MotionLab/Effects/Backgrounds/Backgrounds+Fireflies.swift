@@ -11,12 +11,12 @@ extension Effect {
             "温暖的光点在暮色森林中游走、明灭。"
         ),
         prompt: L(
-            "A dusky forest-green gradient backdrop with a darker floor. Dozens of fireflies — warm lime and honey-gold points, each wrapped in a soft radial halo — wander on slow, organic paths made of two layered sine drifts per axis (periods 5–20 s, each particle with its own seeded phase), never in lockstep. Every firefly pulses independently: its brightness rises and falls on a squared-sine curve every 2.5–5 s, lingering dim and flaring briefly, while halos add together where they overlap. Halo size varies per particle to fake depth. The overall mood is quiet, magical and nocturnal — a summer evening you could fall asleep to.",
-            "暮色森林绿渐变背景，底部更深。数十只萤火虫——暖青柠色与蜂蜜金色的光点，各自包裹一圈柔和径向光晕——沿缓慢而有机的路径游走：每个轴由两层正弦漂移叠加（周期 5–20 秒，每个粒子相位由种子决定），彼此从不同步。每只萤火虫独立呼吸闪烁：亮度按正弦平方曲线每 2.5–5 秒起落一次，多数时间微暗、偶尔骤亮，重叠处光晕叠加增亮。光晕大小因粒子而异，营造景深。整体安静、奇幻、充满夏夜气息，令人放松。"
+            "A dusky forest-green gradient backdrop with a darker floor. Dozens of fireflies — warm lime and honey-gold points, each wrapped in a soft radial halo — wander on slow, organic paths made of two layered sine drifts per axis (periods 5–20 s, each with its own seeded phase), never in lockstep. Every firefly pulses independently: brightness rises and falls on a squared-sine curve every 2.5–5 s, lingering dim and flaring briefly, and halos add together where they overlap; halo size varies per particle to fake depth. Tapping startles the swarm: fireflies within ~120 pt flare to full brightness and scatter outward up to 60 pt, then drift back over about 1.5 s as the glow decays. Quiet, magical and nocturnal — a summer evening you could fall asleep to.",
+            "暮色森林绿渐变背景，底部更深。数十只萤火虫——暖青柠色与蜂蜜金色的光点，各自包裹一圈柔和的径向光晕——沿缓慢而有机的路径游走：每个轴由两层正弦漂移叠加（周期 5–20 秒，相位由种子决定），彼此从不同步。每只独立呼吸闪烁：亮度按正弦平方曲线每 2.5–5 秒起落一次，多数时间微暗、偶尔骤亮，重叠处光晕叠加；光晕大小因粒子而异，营造景深。点击会惊动光群：约 120pt 范围内的萤火虫瞬间亮到最强，向外散开最多 60pt，再在约 1.5 秒内随光芒衰减漂回原处。安静、奇幻，满是仲夏夜的气息，令人放松。"
         ),
         implementation: L(
-            "Canvas inside TimelineView(.animation): each firefly's position and pulse are pure functions of its index and time, drawn as radial-gradient discs with .plusLighter blending.",
-            "TimelineView(.animation) 中的 Canvas：每只萤火虫的位置与脉动都是索引与时间的纯函数，以 .plusLighter 混合绘制径向渐变圆。"
+            "Canvas inside TimelineView(.animation): each firefly's position and pulse are pure functions of its index and time, drawn as radial-gradient discs with .plusLighter blending. A tap stores an origin and timestamp; a distance falloff times an out-and-back impulse envelope offsets and brightens nearby fireflies.",
+            "TimelineView(.animation) 中的 Canvas：每只萤火虫的位置与脉动都是索引与时间的纯函数，以 .plusLighter 混合绘制径向渐变圆。点击记录圆心与时间，距离衰减乘以“先散开再回位”的脉冲包络，为附近的萤火虫施加位移并提亮。"
         ),
         apis: ["Canvas", "TimelineView(.animation)", "GraphicsContext.Shading.radialGradient", ".plusLighter"],
         tags: ["particles", "fireflies", "glow", "night", "粒子", "萤火虫", "光点", "夜晚"],
@@ -33,6 +33,7 @@ extension Effect {
 private struct FirefliesDemo: View {
     let ctx: DemoContext
     @State private var clock = BackgroundClock()
+    @State private var burst: FireflyBurst?
 
     var body: some View {
         ZStack {
@@ -43,7 +44,13 @@ private struct FirefliesDemo: View {
             )
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
-                FireflyField(t: t, count: ctx.int("count"), glow: ctx.cg("glow"))
+                FireflyField(
+                    t: t,
+                    count: ctx.int("count"),
+                    glow: ctx.cg("glow"),
+                    burst: burst,
+                    now: timeline.date.timeIntervalSinceReferenceDate
+                )
             }
             BackgroundSampleTitle(
                 title: L("Midsummer", "仲夏夜"),
@@ -52,6 +59,33 @@ private struct FirefliesDemo: View {
                 size: 26
             )
         }
+        .contentShape(Rectangle())
+        .onTapGesture { location in
+            burst = FireflyBurst(origin: location, time: Date().timeIntervalSinceReferenceDate)
+            Haptics.tap(.soft)
+        }
+        .backgroundsHint(L("Tap to startle the fireflies", "点击惊动萤火虫"), ctx)
+    }
+}
+
+/// A tap that startles nearby fireflies: they flare and scatter, then drift back.
+private struct FireflyBurst {
+    let origin: CGPoint
+    let time: Double
+
+    /// Offset and flare (0…1) for a firefly resting at `point`, `now` seconds on the real clock.
+    func effect(on point: CGPoint, now: Double) -> (offset: CGVector, flare: Double) {
+        let age = now - time
+        guard age >= 0, age < 2.5 else { return (offset: CGVector(dx: 0, dy: 0), flare: 0) }
+        let dx = point.x - origin.x
+        let dy = point.y - origin.y
+        let distance = max((dx * dx + dy * dy).squareRoot(), 0.001)
+        let falloff = exp(-pow(Double(distance) / 120, 2))
+        // Out fast, back slowly: rises in ~0.15 s, decays over ~1.5 s.
+        let push = 60 * falloff * (1 - exp(-age * 12)) * exp(-age * 2)
+        let flare = falloff * exp(-age * 2.2)
+        let offset = CGVector(dx: dx / distance * CGFloat(push), dy: dy / distance * CGFloat(push))
+        return (offset, flare)
     }
 }
 
@@ -59,12 +93,14 @@ private struct FireflyField: View {
     let t: Double
     let count: Int
     let glow: CGFloat
+    let burst: FireflyBurst?
+    let now: Double
 
     var body: some View {
         Canvas { context, size in
             context.blendMode = .plusLighter
             for index in 0..<max(count, 0) {
-                FireflyField.draw(&context, index: index, size: size, t: t, glow: glow)
+                FireflyField.draw(&context, index: index, size: size, t: t, glow: glow, burst: burst, now: now)
             }
         }
     }
@@ -72,15 +108,28 @@ private struct FireflyField: View {
     private static let lime = Color(hex: 0xD9FF7A)
     private static let gold = Color(hex: 0xFFD36B)
 
-    private static func draw(_ context: inout GraphicsContext, index i: Int, size: CGSize, t: Double, glow: CGFloat) {
+    private static func draw(
+        _ context: inout GraphicsContext,
+        index i: Int,
+        size: CGSize,
+        t: Double,
+        glow: CGFloat,
+        burst: FireflyBurst?,
+        now: Double
+    ) {
         let r = { (salt: Int) -> Double in BackgroundMath.rand(i, salt) }
         let driftX = 26 * sin(t * (0.3 + 0.4 * r(3)) + r(4) * BackgroundMath.tau) + 10 * sin(t * (0.7 + r(5)) + Double(i))
         let driftY = 22 * cos(t * (0.25 + 0.35 * r(6)) + r(7) * BackgroundMath.tau) + 9 * sin(t * (0.6 + r(8)) - Double(i))
-        let x = BackgroundMath.unit(i, 1) * size.width + CGFloat(driftX)
-        let y = (0.12 + BackgroundMath.unit(i, 2) * 0.84) * size.height + CGFloat(driftY)
+        let rest = CGPoint(
+            x: BackgroundMath.unit(i, 1) * size.width + CGFloat(driftX),
+            y: (0.12 + BackgroundMath.unit(i, 2) * 0.84) * size.height + CGFloat(driftY)
+        )
+        let startle = burst?.effect(on: rest, now: now) ?? (offset: CGVector(dx: 0, dy: 0), flare: 0)
+        let x = rest.x + startle.offset.dx
+        let y = rest.y + startle.offset.dy
 
         let wave = max(0, sin(t * (1.6 + r(9) * 1.4) + r(10) * BackgroundMath.tau))
-        let pulse = 0.15 + 0.85 * wave * wave
+        let pulse = max(0.15 + 0.85 * wave * wave, startle.flare)
         let color = r(11) > 0.5 ? lime : gold
         let radius = glow * CGFloat(0.6 + 0.8 * r(12))
 

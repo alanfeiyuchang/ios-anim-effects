@@ -93,8 +93,8 @@ private struct CardsTurnSwipeDemo: View {
             }
     }
 
-    private func throwCard(direction: CGFloat) {
-        Haptics.tap(.medium)
+    private func throwCard(direction: CGFloat, haptic: Bool = true) {
+        if haptic && !ctx.isPreview { Haptics.tap(.medium) }
         withAnimation(.spring(response: 0.42, dampingFraction: 0.88)) {
             thrown = Double(direction) * 90
             drag = direction * ctx.cg("threshold")
@@ -118,11 +118,12 @@ private struct CardsTurnSwipeDemo: View {
     private func autoSwipe() {
         autoDirection = -autoDirection
         let direction = autoDirection
+        let muted = Haptics.isMuted || ctx.isPreview
         withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
             drag = direction * 70
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
-            throwCard(direction: direction)
+            throwCard(direction: direction, haptic: !muted)
         }
     }
 }

@@ -17,7 +17,7 @@ extension Effect {
             "chartXSelection(value:) 绑定所选小时；RuleMark 的 annotation 通过 overflowResolution 的 .fit(to: .chart) 渲染提示框，sensoryFeedback(.selection) 在每次变化时触发。"
         ),
         apis: ["chartXSelection(value:)", "RuleMark", "annotation(position:overflowResolution:)", "AreaMark", "sensoryFeedback"],
-        tags: ["scrub", "tooltip", "selection", "line chart", "interactive", "滑动", "提示框", "数据点", "交互图表"],
+        tags: ["scrub", "tooltip", "selection", "line chart", "滑动", "提示框", "数据点", "交互图表"],
         params: [
             .choice("curve", L("Interpolation", "插值方式"), [L("Smooth", "平滑"), L("Linear", "折线"), L("Step", "阶梯")]),
             .toggle("area", L("Area fill", "面积填充"), default: true),
@@ -83,11 +83,11 @@ private struct ScrubDemo: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(Int(value.rounded()) + 40)")
+                Text(verbatim: "\(Int(value.rounded()) + 40)")
                     .font(.system(size: 30, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .contentTransition(.numericText(value: value))
-                Text("BPM")
+                Text(verbatim: "BPM")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Palette.pink)
             }
@@ -155,7 +155,7 @@ private struct ScrubTooltip: View {
             Text(String(format: "%02d:00", hour))
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(.secondary)
-            Text("\(Int(value.rounded()))")
+            Text(verbatim: "\(Int(value.rounded()))")
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .monospacedDigit()
         }

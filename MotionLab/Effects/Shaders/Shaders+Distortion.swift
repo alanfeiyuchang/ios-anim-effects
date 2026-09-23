@@ -44,7 +44,7 @@ extension Effect {
             "Metal layerEffect 着色器在经 sin/cos 位移后的坐标采样，并按波形的解析斜率调节亮度形成褶皱明暗；TimelineView(.animation) 提供按速度累积的时间。"
         ),
         apis: ["layerEffect", "TimelineView", "ShaderLibrary", "Metal"],
-        tags: ["wave", "flag", "cloth", "distortion", "fabric", "波浪", "旗帜", "布料", "扭曲"],
+        tags: ["wave", "flag", "cloth", "distortion", "波浪", "旗帜", "布料", "扭曲"],
         params: [
             .slider("amplitude", L("Amplitude", "振幅"), 0...16, default: 6, decimals: 1, unit: "pt"),
             .slider("wavelength", L("Wavelength", "波长"), 10...80, default: 30, decimals: 0, unit: "pt"),
@@ -70,7 +70,7 @@ extension Effect {
             "[[stitchable]] layerEffect 着色器逐像素计算球冠高度，重映射采样点实现中心放大与边缘折射，并以不同折射量分别采样 R/G/B 形成色散，再叠加镜面高光；Animatable 修饰器让球心以弹簧移动。"
         ),
         apis: ["layerEffect", "Animatable", "DragGesture", "Shader.Argument.float2", "Metal"],
-        tags: ["lens", "glass", "refraction", "dispersion", "magnifier", "透镜", "玻璃", "折射", "色散", "放大镜"],
+        tags: ["sphere", "lens", "refraction", "dispersion", "球面", "透镜", "折射", "色散"],
         params: [
             .slider("radius", L("Radius", "半径"), 40...120, default: 70, decimals: 0, unit: "pt"),
             .slider("strength", L("Magnification", "放大强度"), 0.1...0.8, default: 0.5),

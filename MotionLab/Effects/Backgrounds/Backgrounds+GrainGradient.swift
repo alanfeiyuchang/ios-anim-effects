@@ -19,7 +19,7 @@ extension Effect {
             "[[stitchable]] Metal colorEffect 计算域扭曲的 fBm 噪声，在底色上以 exp(−d²) 权重混合三团色域，并按“坐标 × displayScale”逐物理像素叠加哈希颗粒；小型模型累积按速度缩放的时间，并让焦点平滑跟随触点。"
         ),
         apis: ["colorEffect", "visualEffect", "TimelineView(.animation)", "ShaderLibrary", "DragGesture"],
-        tags: ["grain", "noise", "gradient", "film grain", "editorial", "颗粒", "噪点", "渐变", "质感", "胶片"],
+        tags: ["grain", "noise", "gradient", "film grain", "颗粒", "噪点", "渐变", "胶片"],
         params: [
             .choice("palette", L("Palette", "配色"), [L("Dusk", "暮色"), L("Citrus", "柑橘"), L("Lagoon", "泻湖")]),
             .slider("speed", L("Drift speed", "漂移速度"), 0.2...3.0, default: 1.0, unit: "×"),

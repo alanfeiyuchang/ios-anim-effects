@@ -8,8 +8,8 @@ extension Effect {
         name: L("Scratch Card", "刮刮卡"),
         summary: L("Scratch a metallic foil off a reward card; past a threshold it clears itself.", "用手指刮开奖励卡上的金属涂层，超过阈值后自动揭晓。"),
         prompt: L(
-            "A 280×170 pt reward card hides its prize under a brushed-metal foil with a fine diagonal pinstripe and an embossed “Scratch here” label. The finger erases the foil along its path with a round brush (~30 pt) whose edge is feathered by a ~6 pt blur, leaving soft, powdery strokes and a light selection tick every few new cells. Coverage is sampled on a coarse grid; once ~55% is gone, the remaining foil dissolves in 350 ms while scaling up 4%, and the prize beneath — a bold gradient amount with sparkles — springs from 92% to 100% (response 0.45 s, damping 0.6) with a success haptic. On arrival a single short swoosh is scratched by itself to invite the finger. Tactile, suspenseful and rewarding.",
-            "一张 280×170 pt 的奖励卡，奖品藏在带细斜纹拉丝质感、压印「刮开此处」字样的金属涂层下。手指沿轨迹以约 30 pt 的圆形笔刷擦除涂层，笔刷边缘经约 6 pt 模糊羽化，留下柔和如粉末般的刮痕，每刮开若干新区域便有一次轻微的选择触感。系统在粗网格上统计刮开比例；超过约 55% 后，剩余涂层在 350 毫秒内放大 4% 并消散，下方的奖品——渐变大字金额与闪光——以弹簧（响应 0.45 秒、阻尼 0.6）从 92% 弹到 100%，伴随成功触感。进入页面时会自动刮出一道短短的弧线，邀请手指接着刮。有手感、有悬念、有回报。"
+            "A 280×170 pt reward card hides its prize under a brushed-metal foil with a fine diagonal pinstripe and an embossed “Scratch here” label. The finger erases the foil along its path with a 30 pt round brush feathered by a 6 pt blur, leaving soft, powdery strokes and a light selection tick every six newly cleared grid cells. Once 55% of the grid is gone, the remaining foil fades out over 350 ms while scaling up 4%, and the prize beneath, a bold gradient amount with sparkles, springs from 92% to 100% (response 0.45 s, damping 0.6) with a success haptic. On arrival one short swoosh scratches itself to invite the finger, and a tap on a revealed card deals a fresh one. Tactile, suspenseful and rewarding.",
+            "一张 280×170 pt 的奖励卡，奖品藏在金属涂层下：细斜纹拉丝质感，压印着「刮开此处」。手指以 30 pt 圆形笔刷沿轨迹擦除涂层，笔刷边缘经 6 pt 模糊羽化，刮痕柔软如粉末；每多刮开 6 个网格单元，就有一下轻微的选择触感。刮开比例达到 55% 时，剩余涂层在 350 毫秒内放大 4% 并淡出，下方的渐变大字金额与星芒以弹簧（响应 0.45 秒、阻尼 0.6）从 92% 弹到 100%，伴随成功触感。进入页面时会自动刮出一道短弧，邀请手指接着刮；揭晓后轻点卡片即换一张新的。有手感、有悬念、有回报。"
         ),
         implementation: L(
             "The foil is masked by a Canvas that fills its rect, then adds a blur filter (≈20% of the brush) and strokes the recorded drag paths with blendMode .destinationOut for feathered edges; a Set of touched grid cells estimates coverage and triggers the reveal animation.",
@@ -40,7 +40,7 @@ private struct CardsScratchDemo: View {
     @State private var strokes: [[CGPoint]] = []
     @State private var cells: Set<Int> = []
     @State private var revealed = false
-    @State private var round = 0
+    @State private var roundIndex = 0
     @State private var ticks = 0
     @State private var autoStep = 0
     @State private var dragging = false
@@ -58,7 +58,7 @@ private struct CardsScratchDemo: View {
 
     private var card: some View {
         ZStack {
-            CardsScratchPrize(round: round, revealed: revealed, language: ctx.language)
+            CardsScratchPrize(roundIndex: roundIndex, revealed: revealed, language: ctx.language)
             CardsScratchFoil(gold: ctx.int("foil") == 1, language: ctx.language)
                 .mask {
                     Canvas { context, size in
@@ -140,7 +140,7 @@ private struct CardsScratchDemo: View {
         Haptics.tap(.soft)
         strokes = []
         cells = []
-        round += 1
+        roundIndex += 1
         withAnimation(.smooth(duration: 0.3)) { revealed = false }
     }
 
@@ -168,7 +168,7 @@ private struct CardsScratchDemo: View {
         } else if autoStep == steps + 30 {
             strokes = []
             cells = []
-            round += 1
+            roundIndex += 1
             withAnimation(.smooth(duration: 0.3)) { revealed = false }
             autoStep = -1
         }
@@ -196,13 +196,13 @@ extension CardsScratchDemo {
 }
 
 private struct CardsScratchPrize: View {
-    let round: Int
+    let roundIndex: Int
     let revealed: Bool
     let language: AppLanguage
 
     private var amount: String {
         let amounts = language == .zh ? ["¥88", "¥520", "¥66", "¥128"] : ["$25", "$100", "$10", "$50"]
-        return amounts[round % amounts.count]
+        return amounts[roundIndex % amounts.count]
     }
 
     private let sparkleOffsets: [CGSize] = [

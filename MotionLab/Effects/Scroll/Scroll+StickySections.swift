@@ -44,6 +44,8 @@ private struct ScrollStickyDemo: View {
     @State private var position = ScrollPosition(edge: .top)
     @State private var step = 0
     @State private var pinnedSection = 0
+    /// True while autoplay (or the detail intro) scrolls, so scripted pins stay silent.
+    @State private var scripted = false
 
     var body: some View {
         ScrollView {
@@ -72,13 +74,17 @@ private struct ScrollStickyDemo: View {
         }
         .scrollIndicators(.hidden)
         .scrollPosition($position)
-        .sensoryFeedback(.selection, trigger: pinnedSection) { _, _ in !ctx.isPreview }
+        .onScrollPhaseChange { _, newPhase in
+            if newPhase == .interacting { scripted = false }
+        }
+        .sensoryFeedback(.selection, trigger: pinnedSection) { _, _ in !ctx.isPreview && !scripted }
         .autoplay(ctx.isPreview, every: 2.0) { advance() }
     }
 
     private func advance() {
         let stops: [CGFloat] = [0, 170, 400, 700, 400]
         step = (step + 1) % stops.count
+        scripted = true
         withAnimation(.smooth(duration: 1.5)) {
             position.scrollTo(y: stops[step])
         }

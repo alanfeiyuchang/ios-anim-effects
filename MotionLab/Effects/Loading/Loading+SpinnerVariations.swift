@@ -4,6 +4,21 @@ import SwiftUI
 
 private func spinVarFrac(_ x: Double) -> Double { x - floor(x) }
 
+/// A phase (in cycles) that advances at `rate` per second and stays continuous when the rate changes.
+private struct SpinVarPhaseClock {
+    var anchorDate = Date()
+    var anchorPhase: Double = 0
+
+    func phase(at date: Date, rate: Double) -> Double {
+        anchorPhase + date.timeIntervalSince(anchorDate) * rate
+    }
+
+    mutating func rebase(at date: Date, oldRate: Double) {
+        anchorPhase = phase(at: date, rate: oldRate)
+        anchorDate = date
+    }
+}
+
 /// A settle curve that overshoots once and lands exactly on 1 at u = 1.
 private func spinVarSettle(_ u: Double, overshoot: Double) -> Double {
     let x = min(max(u, 0), 1)
@@ -64,7 +79,7 @@ private struct GooeyOrbitDemo: View {
     var body: some View {
         let zh = ctx.language == .zh
         VStack(spacing: 18) {
-            GooeyOrbitView(period: ctx["period"], goo: ctx.cg("goo"), count: max(ctx.int("count"), 1))
+            GooeyOrbitView(period: ctx["period"], goo: ctx.cg("goo"), count: max(ctx.int("count"), 1), preview: ctx.isPreview)
                 .frame(width: 150, height: 150)
             SpinnerCaption(
                 title: zh ? "正在查找附近设备" : "Looking for nearby devices",
@@ -97,10 +112,14 @@ private struct GooeyOrbitView: View {
     let period: Double
     let goo: CGFloat
     let count: Int
+    let preview: Bool
+    @State private var clock = SpinVarPhaseClock()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t: Double = timeline.date.timeIntervalSinceReferenceDate
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            // Seconds on a clock that runs at 1 / period and is rescaled back, so changing the
+            // period keeps the blobs where they are.
+            let t: Double = clock.phase(at: timeline.date, rate: 1 / max(period, 0.1)) * period
             LinearGradient(colors: [Palette.mint, Palette.sky, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
                 .mask {
                     Canvas { context, size in
@@ -113,8 +132,10 @@ private struct GooeyOrbitView: View {
                         }
                     }
                     .blur(radius: 0.6)
+                    .drawingGroup()
                 }
         }
+        .onChange(of: period) { old, _ in clock.rebase(at: .now, oldRate: 1 / max(old, 0.1)) }
     }
 
     static func blobs(t: Double, period: Double, count: Int, size: CGSize) -> [CGRect] {
@@ -173,7 +194,7 @@ private struct GyroscopeDemo: View {
     var body: some View {
         let zh = ctx.language == .zh
         VStack(spacing: 20) {
-            GyroscopeView(speed: ctx["speed"], perspective: ctx.cg("perspective"), glow: ctx.bool("glow"))
+            GyroscopeView(speed: ctx["speed"], perspective: ctx.cg("perspective"), glow: ctx.bool("glow"), preview: ctx.isPreview)
                 .frame(width: 150, height: 150)
             SpinnerCaption(
                 title: zh ? "正在校准运动传感器" : "Calibrating motion sensors",
@@ -189,14 +210,16 @@ private struct GyroscopeView: View {
     let speed: Double
     let perspective: CGFloat
     let glow: Bool
+    let preview: Bool
+    @State private var clock = SpinVarPhaseClock()
 
     private let colors: [Color] = [Palette.mint, Palette.sky, Palette.violet]
     private let periods: [Double] = [2.4, 3.2, 4.0]
     private let axes: [(x: CGFloat, y: CGFloat, z: CGFloat)] = [(1, 0, 0), (0, 1, 0), (1, 1, 0.3)]
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t: Double = timeline.date.timeIntervalSinceReferenceDate * speed
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            let t: Double = clock.phase(at: timeline.date, rate: speed)
             ZStack {
                 ForEach(0..<3, id: \.self) { index in
                     ring(index: index, t: t)
@@ -204,6 +227,7 @@ private struct GyroscopeView: View {
                 core(t: t)
             }
         }
+        .onChange(of: speed) { old, _ in clock.rebase(at: .now, oldRate: old) }
     }
 
     private func ring(index: Int, t: Double) -> some View {
@@ -287,7 +311,7 @@ private struct FlipTileDemo: View {
     var body: some View {
         let zh = ctx.language == .zh
         VStack(spacing: 26) {
-            FlipTileView(beat: max(ctx["beat"], 0.2), overshoot: ctx["overshoot"], side: ctx.cg("size"))
+            FlipTileView(beat: max(ctx["beat"], 0.2), overshoot: ctx["overshoot"], side: ctx.cg("size"), preview: ctx.isPreview)
                 .frame(width: 140, height: 140)
             SpinnerCaption(
                 title: zh ? "正在搭建你的工作区" : "Building your workspace",
@@ -302,12 +326,14 @@ private struct FlipTileView: View {
     let beat: Double
     let overshoot: Double
     let side: CGFloat
+    let preview: Bool
+    @State private var clock = SpinVarPhaseClock()
 
     private let colors: [Color] = [Palette.indigo, Palette.violet, Palette.pink, Palette.amber]
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t: Double = timeline.date.timeIntervalSinceReferenceDate / beat
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            let t: Double = clock.phase(at: timeline.date, rate: 1 / beat)
             let index: Int = Int(floor(t))
             let u: Double = t - floor(t)
             let angle: Double = 180 * spinVarSettle(u, overshoot: overshoot)
@@ -331,6 +357,7 @@ private struct FlipTileView: View {
                     .padding(.top, 14)
             }
         }
+        .onChange(of: beat) { old, _ in clock.rebase(at: .now, oldRate: 1 / old) }
     }
 }
 
@@ -365,14 +392,14 @@ extension Effect {
 
 private struct InfinityCometDemo: View {
     let ctx: DemoContext
+    @State private var clock = SpinVarPhaseClock()
 
     var body: some View {
         let zh = ctx.language == .zh
         let period: Double = max(ctx["period"], 0.3)
         VStack(spacing: 26) {
-            TimelineView(.animation) { timeline in
-                let t: Double = timeline.date.timeIntervalSinceReferenceDate
-                let phase: Double = spinVarFrac(t / period)
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+                let phase: Double = spinVarFrac(clock.phase(at: timeline.date, rate: 1 / period))
                 let side: Double = cos(InfinityPath.warp(phase) * 2 * .pi)
                 HStack(spacing: 6) {
                     device("iphone", lit: side < -0.6)
@@ -387,6 +414,7 @@ private struct InfinityCometDemo: View {
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: ctx["period"]) { old, _ in clock.rebase(at: .now, oldRate: 1 / max(old, 0.3)) }
     }
 
     private func device(_ symbol: String, lit: Bool) -> some View {

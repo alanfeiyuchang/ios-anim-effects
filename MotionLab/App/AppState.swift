@@ -57,9 +57,12 @@ final class RecentsStore {
     private static let limit = 10
 
     private(set) var ids: [String]
+    /// Off for screenshot runs (`-ML_freshState YES`): every launch starts from the same Browse page.
+    private let persists: Bool
 
     init() {
-        ids = UserDefaults.standard.stringArray(forKey: Self.key) ?? []
+        persists = !LaunchOptions.freshState
+        ids = persists ? (UserDefaults.standard.stringArray(forKey: Self.key) ?? []) : []
     }
 
     func record(_ id: String) {
@@ -67,12 +70,12 @@ final class RecentsStore {
         ids.removeAll { $0 == id }
         ids.insert(id, at: 0)
         if ids.count > Self.limit { ids.removeLast(ids.count - Self.limit) }
-        UserDefaults.standard.set(ids, forKey: Self.key)
+        if persists { UserDefaults.standard.set(ids, forKey: Self.key) }
     }
 
     func clear() {
         ids = []
-        UserDefaults.standard.removeObject(forKey: Self.key)
+        if persists { UserDefaults.standard.removeObject(forKey: Self.key) }
     }
 
     var effects: [Effect] { ids.compactMap { EffectLibrary.effect(id: $0) } }

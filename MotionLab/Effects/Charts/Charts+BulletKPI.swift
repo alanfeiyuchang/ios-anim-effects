@@ -40,8 +40,9 @@ private let bulletMetrics: [BulletMetric] = [
 
 private struct BulletKPIDemo: View {
     let ctx: DemoContext
-    @State private var measures: [Double] = [0, 0, 0]
-    @State private var finals: [Double] = [0, 0, 0]
+    /// Seeded with a settled quarter so still snapshots show bars; `onAppear` rewinds and plays.
+    @State private var measures: [Double] = [0.78, 0.57, 0.91]
+    @State private var finals: [Double] = [0.78, 0.57, 0.91]
 
     var body: some View {
         let onTrack = zip(finals, bulletMetrics).filter { $0.0 >= $0.1.target }.count
@@ -71,8 +72,18 @@ private struct BulletKPIDemo: View {
             DemoHint(text: L("Tap to refresh", "点击刷新"), ctx: ctx)
                 .padding(.bottom, 10)
         }
-        .onAppear { refresh() }
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: ctx["duration"] + 1.6) { refresh() }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                measures = [0, 0, 0]
+                finals = [0, 0, 0]
+            }, then: {
+                refresh()
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: ctx["duration"] + 1.6) {
+            if ctx.isPreview { refresh() }
+        }
     }
 
     private func summaryPill(_ onTrack: Int) -> some View {
@@ -131,7 +142,7 @@ private struct BulletRow: View, Animatable {
                 Text(metric.title, language)
                     .font(.caption.weight(.semibold))
                 Spacer()
-                Text("\(Int((measure * 100).rounded()))%")
+                Text(verbatim: "\(Int((measure * 100).rounded()))%")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)

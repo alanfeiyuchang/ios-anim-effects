@@ -5,7 +5,7 @@ extension Effect {
         id: "cards.toss-swipe",
         category: .cards,
         interaction: .gesture,
-        name: L("Gravity Toss", "重力抛掷"),
+        name: L("Arc Toss Deck", "抛物线甩卡"),
         summary: L("Pick a card up by any corner and toss it: it arcs up, spins and falls off-stage under gravity.", "从任意位置拎起卡片抛出：它先向上划出弧线、旋转，再在重力下坠出舞台。"),
         prompt: L(
             "A loose pile of 180×230 pt cards, each resting at a slightly different angle (±4°). The top card is picked up where the finger lands: it pivots around that grab point, swinging up to ±18° as it is dragged, so holding it by a corner feels different from holding it by the middle. Releasing past 90 pt tosses it along a real arc — horizontally with an ease-out over 0.75 s, vertically first rising 70 pt in 0.2 s then accelerating downward with an ease-in over 0.55 s — while it keeps spinning up to 140°, then it drops off the bottom of the stage. The next card lifts out of the pile with a gentle spring. Casual, physical and fun.",
@@ -98,9 +98,9 @@ private struct CardsTossDemo: View {
             }
     }
 
-    private func toss(direction: CGFloat) {
+    private func toss(direction: CGFloat, haptic: Bool = true) {
         tossing = true
-        Haptics.tap(.medium)
+        if haptic && !ctx.isPreview { Haptics.tap(.medium) }
         let lift = ctx.cg("lift")
         withAnimation(.easeOut(duration: 0.75)) {
             tossX = direction * 240
@@ -139,12 +139,13 @@ private struct CardsTossDemo: View {
         guard !tossing else { return }
         autoDirection = -autoDirection
         let direction = autoDirection
+        let muted = Haptics.isMuted || ctx.isPreview
         grab = UnitPoint(x: direction > 0 ? 0.8 : 0.2, y: 0.15)
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
             drag = CGSize(width: direction * 50, height: -20)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            toss(direction: direction)
+            toss(direction: direction, haptic: !muted)
         }
     }
 }

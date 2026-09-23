@@ -16,7 +16,7 @@ extension Effect {
             "纯 SwiftUI 材质实现，无需 Metal：TimelineView 驱动的模糊圆形铺在高饱和渐变底板上，位于 .ultraThinMaterial 圆角矩形之下；DragGesture 驱动 rotation3DEffect 与渐变高光层的位移。"
         ),
         apis: ["ultraThinMaterial", "rotation3DEffect", "TimelineView", "DragGesture", "blur"],
-        tags: ["glass", "glassmorphism", "frosted", "material", "blur", "磨砂", "玻璃拟态", "毛玻璃", "材质"],
+        tags: ["glassmorphism", "frosted", "material", "blur", "玻璃拟态", "毛玻璃", "材质", "磨砂"],
         params: [
             .slider("maxTilt", L("Max tilt", "最大倾斜"), 0...25, default: 12, decimals: 0, unit: "°"),
             .choice("material", L("Material", "材质"), [L("Ultra thin", "极薄"), L("Thin", "薄"), L("Regular", "常规")]),

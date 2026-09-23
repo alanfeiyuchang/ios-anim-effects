@@ -54,7 +54,7 @@ private struct StreakFlameDemo: View {
         VStack(spacing: 16) {
             VStack(spacing: 14) {
                 ZStack {
-                    EmberField(embers: embers)
+                    EmberField(embers: embers, preview: ctx.isPreview)
                         .frame(width: 120, height: 120)
                         .offset(y: -20)
                     flame
@@ -74,7 +74,7 @@ private struct StreakFlameDemo: View {
                         .font(.headline)
                         .foregroundStyle(.white)
                         .frame(width: 220, height: 46)
-                        .background(checked ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Palette.sunset), in: Capsule())
+                        .background(checked ? AnyShapeStyle(Palette.successStrong) : AnyShapeStyle(Palette.sunset), in: Capsule())
                         .contentTransition(.opacity)
                 }
                 .buttonStyle(.plain)
@@ -167,6 +167,12 @@ private struct StreakFlameDemo: View {
             ))
             nextEmber += 1
         }
+        // Prune once they have burnt out so the timeline pauses again.
+        Task {
+            try? await Task.sleep(for: .seconds(0.95))
+            let later = Date.now
+            embers.removeAll { later.timeIntervalSince($0.born) > 0.9 }
+        }
         ignites += 1
         withAnimation(.snappy(duration: 0.3)) { checked = true }
         if !ctx.isPreview { Haptics.success() }
@@ -175,9 +181,10 @@ private struct StreakFlameDemo: View {
 
 private struct EmberField: View {
     let embers: [Ember]
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: embers.isEmpty)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: embers.isEmpty)) { timeline in
             let now: Date = timeline.date
             Canvas { context, size in
                 let origin = CGPoint(x: size.width / 2, y: size.height * 0.75)
@@ -321,14 +328,15 @@ private struct PresencePingDemo: View {
                 .offset(x: 1, y: 1)
             }
             .zIndex(Double(members.count - index))
-            .onTapGesture { flip(index) }
+            .onTapGesture { flip(index, byUser: true) }
             .animation(.smooth(duration: 0.35), value: isOnline)
     }
 
-    private func flip(_ index: Int) {
+    /// Only a user's own tap buzzes; the ambient status cycle stays silent.
+    private func flip(_ index: Int, byUser: Bool) {
         withAnimation(.snappy(duration: 0.3)) { online[index].toggle() }
         pops[index] += 1
-        if online[index] && !ctx.isPreview { Haptics.tap(.soft) }
+        if byUser && online[index] { Haptics.tap(.soft) }
     }
 
     private func cycle() async {
@@ -337,7 +345,7 @@ private struct PresencePingDemo: View {
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(max(ctx["toggle"], 0.5)))
             guard !Task.isCancelled else { return }
-            flip(sequence[order % sequence.count])
+            flip(sequence[order % sequence.count], byUser: false)
             order += 1
         }
     }
@@ -357,8 +365,8 @@ extension Effect {
             "一张 280 × 300 pt 的直播卡片，带脉动的“LIVE”标签与观看人数，右下角是一个爱心按钮。每次点击都会从按钮里弹出一颗 24–34 pt 的爱心——0.15 秒内从 0 放大到 115%——随后在 2.2 秒内以缓出曲线上升约 220 pt，同时按各自随机相位的正弦左右摇摆（±14 pt），透明度按平方曲线淡出；颜色在粉、红、珊瑚、紫罗兰、琥珀中随机选择。按钮每次点击压到 88%，点赞数滚动，并伴随轻触感。快速连点会汇成一条飘荡的爱心流。欢快、有社交感、轻盈。"
         ),
         implementation: L(
-            "Hearts are value records with a birth time, sway phase, size and color; a TimelineView (paused when none are alive) computes each heart's position, scale and opacity from its age and prunes old ones on the next tap.",
-            "每颗心是包含出生时间、摇摆相位、尺寸与颜色的值记录；TimelineView（无心时暂停）按“年龄”计算位置、缩放与透明度，并在下一次点击时清理过期的心。"
+            "Hearts are value records with a birth time, sway phase, size and color; a TimelineView (paused when none are alive) computes each heart's position, scale and opacity from its age, and a delayed task prunes each heart once its life is over.",
+            "每颗心是包含出生时间、摇摆相位、尺寸与颜色的值记录；TimelineView（无心时暂停）按“年龄”计算位置、缩放与透明度，寿命结束后由延迟任务将其清理。"
         ),
         apis: ["TimelineView(.animation(minimumInterval:paused:))", "Identifiable", "contentTransition(.numericText)", "ButtonStyle"],
         tags: ["hearts", "live", "like", "stream", "飘心", "直播", "点赞", "爱心"],
@@ -424,7 +432,7 @@ private struct FloatingHeartsDemo: View {
                     } animation: { _ in
                         .easeInOut(duration: 0.8)
                     }
-                Label("2.4k", systemImage: "eye.fill")
+                Label { Text(verbatim: "2.4k") } icon: { Image(systemName: "eye.fill") }
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.9))
             }
@@ -436,7 +444,7 @@ private struct FloatingHeartsDemo: View {
         let life: Double = max(ctx["life"], 0.3)
         let sway: CGFloat = ctx.cg("sway")
         let rise: CGFloat = ctx.cg("rise")
-        return TimelineView(.animation(minimumInterval: nil, paused: hearts.isEmpty)) { timeline in
+        return TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: hearts.isEmpty)) { timeline in
             let now: Date = timeline.date
             ZStack(alignment: .bottomTrailing) {
                 Color.clear
@@ -480,6 +488,12 @@ private struct FloatingHeartsDemo: View {
         )
         nextID += 1
         hearts.append(heart)
+        // Prune after the last heart has faded so the timeline pauses instead of ticking forever.
+        Task {
+            try? await Task.sleep(for: .seconds(life + 0.05))
+            let later = Date.now
+            hearts.removeAll { later.timeIntervalSince($0.born) > life }
+        }
         withAnimation(.snappy(duration: 0.2)) { likes += 1 }
         if !ctx.isPreview { Haptics.tap(.soft) }
     }
@@ -497,7 +511,8 @@ private struct FloatHeartView: View {
         let u: Double = min(max(age / life, 0), 1)
         let eased: Double = 1 - (1 - u) * (1 - u)
         let pop: Double = age < 0.15 ? age / 0.15 * 1.15 : (age < 0.3 ? 1.15 - (age - 0.15) / 0.15 * 0.15 : 1)
-        let x: CGFloat = sway * CGFloat(sin(age * 3 + heart.phase))
+        // The sway ramps in over 0.3 s so every heart pops out of the button itself.
+        let x: CGFloat = sway * CGFloat(sin(age * 3 + heart.phase)) * CGFloat(min(age / 0.3, 1))
         let y: CGFloat = -rise * CGFloat(eased)
         Image(systemName: "heart.fill")
             .font(.system(size: heart.size))

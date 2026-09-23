@@ -38,6 +38,8 @@ private struct InputSwatchPickerDemo: View {
     @State private var selected = 0
     @State private var previous = 0
     @State private var flicks = 0
+    /// Counts real taps only, so autoplay and the detail intro never tick the haptic.
+    @State private var userPicks = 0
     @Namespace private var ns
 
     private static let swatches: [InputSwatch] = [
@@ -62,7 +64,7 @@ private struct InputSwatchPickerDemo: View {
                 .padding(.bottom, 14)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: ctx.isPreview ? 0 : selected)
+        .sensoryFeedback(.selection, trigger: userPicks)
         .autoplay(ctx.isPreview, every: 1.1, delay: 0.4) {
             select(Self.previewOrder[flicks % Self.previewOrder.count])
         }
@@ -131,6 +133,7 @@ private struct InputSwatchPickerDemo: View {
         let swatch = Self.swatches[index]
         let isSelected = index == selected
         return Button {
+            if index != selected { userPicks += 1 }
             select(index)
         } label: {
             ZStack {

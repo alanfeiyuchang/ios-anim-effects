@@ -126,7 +126,7 @@ private struct LifeFinanceDemo: View {
                     .minimumScaleFactor(0.7)
                 deltaChip
             }
-            LifeSparkline(values: range.series, progress: drawn, rising: range.change >= 0)
+            LifeSparkline(values: range.series, progress: drawn, rising: range.change >= 0, preview: ctx.isPreview)
             chips
         }
         .padding(18)
@@ -306,6 +306,7 @@ private struct LifeSparkline: View {
     let values: [Double]
     let progress: CGFloat
     let rising: Bool
+    let preview: Bool
 
     /// The card's content width is fixed (300 − 2 × 18), so no GeometryReader is needed.
     private static let size = CGSize(width: 264, height: 64)
@@ -326,7 +327,7 @@ private struct LifeSparkline: View {
                 .stroke(tint, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
                 .shadow(color: tint.opacity(0.6), radius: 5)
             if let last = points.last {
-                SportLiveDot(color: tint, size: 7)
+                SportLiveDot(color: tint, size: 7, preview: preview)
                     .position(last)
                     .opacity(progress >= 0.99 ? 1 : 0)
                     .animation(.easeOut(duration: 0.25), value: progress >= 0.99)

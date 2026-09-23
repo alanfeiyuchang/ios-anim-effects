@@ -104,7 +104,9 @@ private struct TravelBoardingDemo: View {
         DragGesture()
             .onChanged { value in
                 guard !torn, !regrowing else { return }
-                pull = CGSize(width: value.translation.width, height: max(0, value.translation.height) * 0.85)
+                // While flipped the stub sits inside a 180° Y rotation, so un-mirror the horizontal drift.
+                let dx = flipped ? -value.translation.width : value.translation.width
+                pull = CGSize(width: dx, height: max(0, value.translation.height) * 0.85)
                 let crossed = pull.height > threshold
                 if crossed != armed {
                     armed = crossed
@@ -122,8 +124,8 @@ private struct TravelBoardingDemo: View {
             }
     }
 
-    private func tear() {
-        if !ctx.isPreview { Haptics.success() }
+    private func tear(silent: Bool = false) {
+        if !ctx.isPreview && !silent { Haptics.success() }
         withAnimation(.easeIn(duration: 0.6)) { torn = true }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.3))
@@ -151,9 +153,11 @@ private struct TravelBoardingDemo: View {
             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                 pull = CGSize(width: 14, height: threshold * 0.75)
             }
+            // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
+            let muted = Haptics.isMuted
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(500))
-                tear()
+                tear(silent: muted)
             }
         default:
             // Steps 1 and 2 flip to the barcode and back.

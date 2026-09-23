@@ -28,7 +28,8 @@ extension Effect {
 
 private struct WaffleKPIDemo: View {
     let ctx: DemoContext
-    @State private var percent = 0
+    /// Seeded with a settled value so still snapshots show filled cells; `onAppear` fills from zero.
+    @State private var percent = 68
     @State private var previous = 0
 
     var body: some View {
@@ -66,8 +67,15 @@ private struct WaffleKPIDemo: View {
             DemoHint(text: L("Tap for a new value", "点击更新数值"), ctx: ctx)
                 .padding(.bottom, 2)
         }
-        .onAppear { update(haptic: false) }
-        .autoplay(ctx.isPreview, every: 2.8, delay: 2.6) { update(haptic: false) }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                percent = 0
+            }, then: {
+                update(haptic: false)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 2.8, delay: 2.6) { if ctx.isPreview { update(haptic: false) } }
     }
 
     private func delay(for order: Int) -> Double {
@@ -127,10 +135,10 @@ private struct WaffleNumber: View, Animatable {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 1) {
-            Text("\(Int(value.rounded()))")
+            Text(verbatim: "\(Int(value.rounded()))")
                 .font(.system(size: 46, weight: .bold, design: .rounded))
                 .monospacedDigit()
-            Text("%")
+            Text(verbatim: "%")
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(.secondary)
         }

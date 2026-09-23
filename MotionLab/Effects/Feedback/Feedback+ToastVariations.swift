@@ -99,6 +99,7 @@ private struct HingeToastDemo: View {
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { shown = true }
         Task {
             try? await Task.sleep(for: .seconds(0.35))
+            guard token == current else { return }
             rings += 1
             try? await Task.sleep(for: .seconds(hold))
             guard token == current else { return }
@@ -122,8 +123,8 @@ extension Effect {
         name: L("Morphing Status Toast", "形变状态吐司"),
         summary: L("One toast that stays put and reshapes itself from 'Uploading' to 'Done' to a dot.", "同一枚吐司原地变形：从“上传中”到“完成”，再缩成一个圆点。"),
         prompt: L(
-            "A dark pill toast rises 60 pt from the bottom of a photo grid on a spring (response 0.45 s, damping 0.8), showing a small spinning arc and 'Uploading 3 photos'. Instead of being replaced, it morphs in place: when the upload finishes its width springs to fit 'Uploaded to Shared Album' as the arc scales out and a green check scales in while the text blur-replaces, with a success haptic. After 1.6 s it contracts to a 12 pt green dot on a snappy spring (text fading out first), holds for 0.5 s, then sinks away and fades. The pill's size is always driven by its content, so every change is a smooth reshape. Coherent, informative, minimal.",
-            "一枚深色胶囊吐司以弹簧（响应 0.45 秒、阻尼 0.8）从照片网格底部升起 60 pt，显示一段旋转的小弧线和“正在上传 3 张照片”。它不会被替换，而是原地变形：上传完成时宽度以弹簧伸展到恰好容纳“已上传到共享相簿”，弧线缩小消失、绿色对勾放大出现，文字以模糊替换方式切换，并伴随成功触感。1.6 秒后它以利落的弹簧收缩成 12 pt 的绿色圆点（文字先淡出），停留 0.5 秒后下沉并淡出。胶囊尺寸始终由内容决定，所以每次变化都是一次平滑的形变。连贯、信息明确、极简。"
+            "A toast that is one shape from start to finish. A 12 pt green dot rises 60 pt from the bottom of a photo grid and, on a spring (response 0.45 s, damping 0.8), swells into a dark pill with a spinning arc and 'Uploading 3 photos'. When the upload finishes, the pill springs to fit 'Uploaded to Shared Album' as the arc scales out, a green check scales in and the text blur-replaces, with a success haptic. After 1.6 s it contracts back to the green dot on a snappy 0.35 s spring, holds 0.5 s, then sinks and fades as a dot. Its size always follows its content, so every change is a reshape, never a swap.",
+            "一枚从头到尾都是同一个形状的吐司。12 pt 的绿色圆点从照片网格底部升起 60 pt，随即以弹簧（响应 0.45 秒、阻尼 0.8）鼓胀成深色胶囊，露出旋转小弧线与“正在上传 3 张照片”。上传完成，胶囊弹性伸展以容纳“已上传到共享相簿”：弧线缩没、绿色对勾放大浮现，文字模糊替换，伴随成功触感。1.6 秒后以 0.35 秒的利落弹簧缩回绿点，停 0.5 秒，再以圆点的形态下沉淡出。尺寸始终跟随内容——只变形，不替换。"
         ),
         implementation: L(
             "The toast's background is a Capsule sized by its content; a stage enum swaps content with blur/opacity transitions inside a spring so the capsule reshapes to each new size.",
@@ -192,10 +193,11 @@ private struct MorphToastDemo: View {
     private var toast: some View {
         let zh = ctx.language == .zh
         let visible = stage != .hidden
+        let isDot = stage == .dot || stage == .hidden
         return HStack(spacing: 10) {
             switch stage {
-            case .hidden, .uploading:
-                MorphToastSpinner()
+            case .uploading:
+                MorphToastSpinner(preview: ctx.isPreview)
                     .frame(width: 18, height: 18)
                 Text(zh ? "正在上传 3 张照片" : "Uploading 3 photos")
                     .transition(.blurReplace)
@@ -206,17 +208,17 @@ private struct MorphToastDemo: View {
                     .transition(.scale.combined(with: .opacity))
                 Text(zh ? "已上传到共享相簿" : "Uploaded to Shared Album")
                     .transition(.blurReplace)
-            case .dot:
+            case .hidden, .dot:
                 EmptyView()
             }
         }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(.white)
         .fixedSize()
-        .padding(.horizontal, stage == .dot ? 0 : 16)
+        .padding(.horizontal, isDot ? 0 : 16)
         .frame(minWidth: 12, minHeight: 12)
-        .frame(height: stage == .dot ? 12 : 44)
-        .background(stage == .dot ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Color.black.opacity(0.82)), in: Capsule())
+        .frame(height: isDot ? 12 : 44)
+        .background(isDot ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Color.black.opacity(0.82)), in: Capsule())
         .shadow(color: .black.opacity(0.25), radius: 14, y: 8)
         .offset(y: visible ? 0 : 60)
         .opacity(visible ? 1 : 0)
@@ -247,8 +249,10 @@ private struct MorphToastDemo: View {
 }
 
 private struct MorphToastSpinner: View {
+    let preview: Bool
+
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t: Double = timeline.date.timeIntervalSinceReferenceDate
             Circle()
                 .trim(from: 0.1, to: 0.8)

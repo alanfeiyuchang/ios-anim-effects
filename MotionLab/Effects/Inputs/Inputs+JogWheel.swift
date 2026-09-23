@@ -18,7 +18,7 @@ extension Effect {
         apis: ["DragGesture", "atan2", "Animatable", "timingCurve(_:_:_:_:duration:)", "rotationEffect"],
         tags: ["dial", "jog wheel", "inertia", "rotation", "旋钮", "飞梭", "惯性", "转盘"],
         params: [
-            .slider("coast", L("Coast factor", "滑行系数"), 0...0.8, default: 0.35, unit: "s"),
+            .slider("coast", L("Coast time", "滑行时间"), 0...0.8, default: 0.35, unit: "s"),
             .slider("duration", L("Coast duration", "滑行时长"), 0.4...2.5, default: 1.2, unit: "s"),
             .slider("detent", L("Degrees per frame", "每帧角度"), 5...30, default: 10, decimals: 0, unit: "°"),
         ]

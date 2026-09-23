@@ -230,7 +230,7 @@ private struct TravelFogHoles: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: paused)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: isPreview), paused: paused)) { timeline in
             Canvas { context, size in
                 let now = timeline.date
                 // Feather the brush inside the Canvas rather than blurring the whole (often empty) layer.

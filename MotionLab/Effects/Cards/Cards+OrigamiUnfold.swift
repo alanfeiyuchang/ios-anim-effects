@@ -36,7 +36,8 @@ private struct CardsOrigamiDemo: View {
     var body: some View {
         VStack(spacing: 16) {
             VStack(spacing: 0) {
-                CardsOrigamiHeader(language: ctx.language)
+                CardsOrigamiHeader(open: open, language: ctx.language)
+                    .animation(.spring(response: ctx["response"], dampingFraction: 0.72).delay(firstPanelDelay), value: open)
                 ForEach(0..<panelCount, id: \.self) { i in
                     panel(i)
                 }
@@ -50,6 +51,11 @@ private struct CardsOrigamiDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.1) { toggle() }
+    }
+
+    /// The header's bottom corners follow the first panel: square while it hangs below, round once it is folded away.
+    private var firstPanelDelay: Double {
+        open ? 0 : Double(panelCount - 1) * ctx["stagger"]
     }
 
     private func panel(_ i: Int) -> some View {
@@ -71,6 +77,7 @@ private struct CardsOrigamiDemo: View {
 }
 
 private struct CardsOrigamiHeader: View {
+    let open: Bool
     let language: AppLanguage
 
     var body: some View {
@@ -98,7 +105,7 @@ private struct CardsOrigamiHeader: View {
         .padding(.horizontal, 18)
         .frame(height: 78)
         .background(Palette.ocean)
-        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 4, bottomTrailingRadius: 4, topTrailingRadius: 18, style: .continuous))
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: open ? 4 : 18, bottomTrailingRadius: open ? 4 : 18, topTrailingRadius: 18, style: .continuous))
     }
 }
 

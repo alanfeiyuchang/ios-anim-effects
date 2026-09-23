@@ -183,16 +183,30 @@ private struct InputStarField: View {
                 Image(systemName: "sparkle")
                     .font(.system(size: index % 2 == 0 ? 9 : 6, weight: .bold))
                     .foregroundStyle(Color.white)
-                    .phaseAnimator([1.0, 0.45]) { content, phase in
-                        content.opacity(phase)
-                    } animation: { _ in
-                        .easeInOut(duration: 0.9 + Double(index) * 0.2)
-                    }
+                    .modifier(InputStarTwinkle(active: isNight, period: 0.9 + Double(index) * 0.2))
                     .scaleEffect(isNight ? 1 : 0.1)
                     .opacity(isNight ? 1 : 0)
                     .offset(x: point.x, y: point.y)
                     .animation(.spring(response: 0.45, dampingFraction: 0.6).delay(isNight ? 0.12 + Double(index) * 0.06 : 0), value: isNight)
             }
+        }
+    }
+}
+
+/// The endless twinkle only exists at night; in day mode the stars are invisible, so nothing keeps animating.
+private struct InputStarTwinkle: ViewModifier {
+    let active: Bool
+    let period: Double
+
+    func body(content: Content) -> some View {
+        if active {
+            content.phaseAnimator([1.0, 0.45]) { view, phase in
+                view.opacity(phase)
+            } animation: { _ in
+                .easeInOut(duration: period)
+            }
+        } else {
+            content
         }
     }
 }

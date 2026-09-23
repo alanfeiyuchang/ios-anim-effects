@@ -16,7 +16,7 @@ extension Effect {
             "整个表盘是以 value 为动画数据的 Animatable 视图，指针旋转、trim 激活弧和数字读数都由同一帧插值数值计算；点击位置通过 atan2 换算为角度。"
         ),
         apis: ["Animatable", "rotationEffect", "trim(from:to:)", "AngularGradient", "spring(response:dampingFraction:)"],
-        tags: ["gauge", "speedometer", "needle", "dial", "meter", "仪表盘", "指针", "测速", "表盘"],
+        tags: ["gauge", "speedometer", "needle", "dial", "仪表盘", "指针", "测速", "表盘"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...1.4, default: 0.7, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.2...1.0, default: 0.45),
@@ -35,7 +35,8 @@ private enum GaugeMetrics {
 
 private struct GaugeDemo: View {
     let ctx: DemoContext
-    @State private var value: Double = 0
+    /// Seeded at rest so still snapshots show a reading; `onAppear` swings it in from zero.
+    @State private var value: Double = 0.74
 
     var body: some View {
         VStack(spacing: 16) {
@@ -46,8 +47,17 @@ private struct GaugeDemo: View {
             DemoHint(text: L("Tap anywhere on the dial", "点击表盘任意位置"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { set(0.74) }
-        .autoplay(ctx.isPreview, every: 2.0, delay: 1.8) { set(Double.random(in: 0.15...0.95)) }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                value = 0
+            }, then: {
+                set(0.74)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 2.0, delay: 1.8) {
+            if ctx.isPreview { set(Double.random(in: 0.15...0.95)) }
+        }
     }
 
     private func set(_ newValue: Double) {
@@ -137,10 +147,10 @@ private struct GaugeFace: View, Animatable {
 
     private var readout: some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text("\(Int((max(value, 0) * 1000).rounded()))")
+            Text(verbatim: "\(Int((max(value, 0) * 1000).rounded()))")
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .monospacedDigit()
-            Text("Mbps")
+            Text(verbatim: "Mbps")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
         }

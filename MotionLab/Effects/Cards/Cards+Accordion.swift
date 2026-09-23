@@ -55,15 +55,18 @@ private struct CardsAccordionDemo: View {
     @State private var autoStep = 0
 
     var body: some View {
-        VStack(spacing: 10) {
-            ForEach(cardsAccordionItems.indices, id: \.self) { i in
-                CardsAccordionCard(item: cardsAccordionItems[i], expanded: expanded == i, language: ctx.language)
-                    .scaleEffect(recedes(i) ? 0.97 : 1)
-                    .opacity(recedes(i) ? 0.6 : 1)
-                    .onTapGesture { toggle(i) }
+        VStack(spacing: 16) {
+            VStack(spacing: 10) {
+                ForEach(cardsAccordionItems.indices, id: \.self) { i in
+                    CardsAccordionCard(item: cardsAccordionItems[i], expanded: expanded == i, language: ctx.language)
+                        .scaleEffect(recedes(i) ? 0.97 : 1)
+                        .opacity(recedes(i) ? 0.6 : 1)
+                        .onTapGesture { toggle(i) }
+                }
             }
+            .frame(width: 300)
+            DemoHint(text: L("Tap a card", "点击卡片"), ctx: ctx)
         }
-        .frame(width: 300)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.6) { autoAdvance() }
     }

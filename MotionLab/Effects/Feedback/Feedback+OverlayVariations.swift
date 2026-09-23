@@ -7,18 +7,21 @@ extension Effect {
         id: "feedback.receding-sheet",
         category: .feedback,
         interaction: .gesture,
-        name: L("Receding Share Sheet", "后退式分享面板"),
-        summary: L("The page recedes into depth as a sheet rises; dragging the sheet pulls the page back.", "面板升起时页面退向纵深；拖动面板页面会随之回来。"),
+        name: L("Receding Action Sheet", "后退式确认面板"),
+        summary: L(
+            "A delete confirmation rises as the page recedes into depth; its buttons cascade in and dragging scrubs the page back.",
+            "删除确认面板升起，页面退向纵深；按钮依次落位，拖动面板可把页面拉回。"
+        ),
         prompt: L(
-            "A 300 × 320 pt photo page with a 'Share' button. On tap the page recedes — scaling to 92%, rounding its corners from 18 to 30 pt, sliding down 10 pt and dimming under a 25% black scrim — while a 190 pt share sheet with a grabber rises from the bottom edge on a spring (response 0.45 s, damping 0.86). Its five contact circles pop in from 60% scale, staggered 40 ms. Dragging the sheet down follows the finger 1:1 and scrubs the page back toward 100% in proportion; releasing past 60 pt (or with a downward flick) dismisses, otherwise it springs back. Tapping the scrim also dismisses. Spatial, iOS-native, reassuringly reversible.",
-            "一个 300 × 320 pt 的照片页面，上面有“分享”按钮。点击后页面退向纵深——缩小到 92%、圆角从 18 pt 变为 30 pt、下移 10 pt，并被 25% 的黑色遮罩压暗——同时一张带抓手的 190 pt 分享面板以弹簧（响应 0.45 秒、阻尼 0.86）从底边升起，其中五个联系人圆形从 60% 缩放依次弹出，间隔 40 毫秒。向下拖动面板时它 1:1 跟手，页面按比例回到 100%；松手时超过 60 pt（或向下快速一甩）即关闭，否则弹回。点击遮罩同样关闭。有空间感、原汁原味的 iOS 感、随时可以反悔。"
+            "A photo grid with three selected photos and a trash button. On tap the page recedes: it scales to 92%, rounds its corners from 18 to 30 pt, slides down 10 pt and dims under a 25% scrim, while a 200 pt confirmation sheet rises on a spring (response 0.45 s, damping 0.86). Inside, the 'Delete 3 photos?' title, a red 'Delete' button and 'Cancel' cascade in, each rising 18 pt and fading in, staggered 50 ms. Dragging the sheet down tracks 1:1 and scrubs the page back toward 100%; past 60 pt or a flick dismisses, otherwise it springs back. Confirming fires a firm haptic as the sheet leaves and the three photos shrink away. Deliberate, reversible.",
+            "照片网格里选中了三张，右上角有删除按钮。点击后页面退向纵深：缩到 92%，圆角由 18 pt 变 30 pt，下沉 10 pt，并压上 25% 的暗色遮罩；与此同时，一张 200 pt 的确认面板以弹簧（响应 0.45 秒、阻尼 0.86）升起。面板里“删除 3 张照片？”标题、红色“删除”与“取消”按钮依次上浮 18 pt 淡入，间隔 50 毫秒。向下拖动面板 1:1 跟手，页面随之按比例回到 100%；超过 60 pt 或快速下甩即关闭，否则弹回。确认删除时面板退场、给出一记硬朗触感，三张照片缩小消失。郑重，且随时可以反悔。"
         ),
         implementation: L(
-            "One presented flag plus a live drag offset feed a single 'openness' value (0…1) that drives the page's scale, corner radius and scrim; the sheet uses offset with a DragGesture and a spring on release.",
-            "一个展示标志加上实时拖动位移，合成单一的“展开度”（0…1），驱动页面的缩放、圆角与遮罩；面板使用 offset 配合 DragGesture，松手时用弹簧收尾。"
+            "One presented flag plus a live drag offset feed a single 'openness' value (0…1) that drives the page's scale, corner radius and scrim; the sheet's rows use per-index delayed springs, and a DragGesture with predictedEndTranslation decides dismissal.",
+            "一个展示标志加上实时拖动位移，合成单一的“展开度”（0…1），驱动页面的缩放、圆角与遮罩；面板各行使用按序号递增延迟的弹簧，DragGesture 结合 predictedEndTranslation 判断是否关闭。"
         ),
-        apis: ["DragGesture", "scaleEffect", "RoundedRectangle(cornerRadius:style:)", "spring(response:dampingFraction:)", "predictedEndTranslation"],
-        tags: ["sheet", "share", "depth", "modal", "面板", "分享", "纵深", "模态"],
+        apis: ["DragGesture", "scaleEffect", "predictedEndTranslation", "spring(response:dampingFraction:)", "animation(_:value:)"],
+        tags: ["action sheet", "confirm", "delete", "depth", "确认", "删除", "纵深", "模态"],
         params: [
             .slider("depth", L("Recede scale", "后退缩放"), 0.8...0.98, default: 0.92),
             .slider("response", L("Spring response", "弹簧响应"), 0.25...0.8, default: 0.45, unit: "s"),
@@ -33,9 +36,11 @@ private struct RecedingSheetDemo: View {
     let ctx: DemoContext
     @State private var presented = false
     @State private var drag: CGFloat = 0
+    @State private var deleted = false
 
-    private let sheetHeight: CGFloat = 190
-    private let people: [(String, Color)] = [("MJ", Palette.pink), ("AK", Palette.sky), ("SL", Palette.mint), ("RT", Palette.amber), ("DN", Palette.violet)]
+    private let sheetHeight: CGFloat = 200
+    private let tints: [Color] = [Palette.coral, Palette.sky, Palette.mint, Palette.violet, Palette.amber, Palette.pink, Palette.blue, Palette.green, Palette.indigo]
+    private let selected: Set<Int> = [1, 3, 7]
 
     var body: some View {
         let open: CGFloat = presented ? max(0, 1 - drag / sheetHeight) : 0
@@ -58,41 +63,36 @@ private struct RecedingSheetDemo: View {
             }
             .frame(width: 300, height: 320)
             .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-            DemoHint(text: L("Tap Share, then drag the sheet down", "点击分享，再向下拖动面板"), ctx: ctx)
+            DemoHint(text: L("Tap the trash, then drag the sheet down", "点击删除按钮，再向下拖动面板"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.6, delay: 0.5) {
-            if presented { dismiss() } else { present() }
+            if presented { confirm() } else { present() }
         }
     }
 
     private var page: some View {
-        VStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Palette.aurora)
-                .frame(height: 200)
-                .overlay {
-                    Image(systemName: "mountain.2.fill")
-                        .font(.system(size: 54))
-                        .foregroundStyle(.white.opacity(0.85))
-                }
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(ctx.language == .zh ? "雪山日出" : "Alpine Sunrise")
-                        .font(.headline)
-                    Text(ctx.language == .zh ? "3 月 14 日" : "Mar 14")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(ctx.language == .zh ? (deleted ? "最近项目" : "已选 3 项") : (deleted ? "Recents" : "3 Selected"))
+                    .font(.headline)
+                    .contentTransition(.opacity)
                 Spacer()
                 Button(action: present) {
-                    Image(systemName: "square.and.arrow.up")
+                    Image(systemName: "trash")
                         .font(.headline)
                         .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(Palette.primary, in: Circle())
+                        .frame(width: 40, height: 40)
+                        .background(Palette.red.gradient, in: Circle())
                 }
                 .buttonStyle(.plain)
+                .disabled(deleted)
+                .opacity(deleted ? 0.4 : 1)
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
+                ForEach(0..<tints.count, id: \.self) { index in
+                    photo(index)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -101,31 +101,61 @@ private struct RecedingSheetDemo: View {
         .background(Palette.elevated)
     }
 
+    private func photo(_ index: Int) -> some View {
+        let isSelected = selected.contains(index)
+        let gone = isSelected && deleted
+        return RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(tints[index].gradient)
+            .aspectRatio(1, contentMode: .fit)
+            .overlay(alignment: .bottomTrailing) {
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white, Palette.blue)
+                        .padding(5)
+                }
+            }
+            .scaleEffect(gone ? 0.2 : (isSelected ? 0.92 : 1))
+            .opacity(gone ? 0 : 1)
+            .animation(.spring(response: 0.4, dampingFraction: 0.7).delay(gone ? 0.15 + Double(index) * 0.03 : 0), value: gone)
+    }
+
     private var sheet: some View {
-        VStack(spacing: 14) {
+        let zh = ctx.language == .zh
+        return VStack(spacing: 10) {
             Capsule()
                 .fill(Color.secondary.opacity(0.5))
                 .frame(width: 36, height: 5)
                 .padding(.top, 8)
-            Text(ctx.language == .zh ? "分享给" : "Share with")
-                .font(.subheadline.weight(.semibold))
-            HStack(spacing: 12) {
-                ForEach(0..<people.count, id: \.self) { index in
-                    Text(people[index].0)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(people[index].1.gradient, in: Circle())
-                        .scaleEffect(presented ? 1 : 0.6)
-                        .opacity(presented ? 1 : 0)
-                        .animation(.spring(response: 0.4, dampingFraction: 0.6).delay(presented ? 0.12 + Double(index) * 0.04 : 0), value: presented)
-                }
+            VStack(spacing: 3) {
+                Text(zh ? "删除 3 张照片？" : "Delete 3 photos?")
+                    .font(.headline)
+                Text(zh ? "它们将从你的所有设备中移除。" : "They'll be removed from all your devices.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
+            .modifier(RecedingCascade(shown: presented, index: 0))
+            actionRow(zh ? "删除" : "Delete", destructive: true, index: 1, action: confirm)
+            actionRow(zh ? "取消" : "Cancel", destructive: false, index: 2, action: dismiss)
             Spacer(minLength: 0)
         }
         .frame(width: 300, height: sheetHeight + 20, alignment: .top)
         .background(.regularMaterial, in: UnevenRoundedRectangle(topLeadingRadius: 26, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 26, style: .continuous))
         .offset(y: 20)
+    }
+
+    private func actionRow(_ title: String, destructive: Bool, index: Int, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.body.weight(destructive ? .semibold : .regular))
+                .foregroundStyle(destructive ? Palette.red : Color.primary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 42)
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .modifier(RecedingCascade(shown: presented, index: index))
     }
 
     private var sheetDrag: some Gesture {
@@ -145,11 +175,19 @@ private struct RecedingSheetDemo: View {
 
     private func present() {
         guard !presented else { return }
-        if !ctx.isPreview { Haptics.tap() }
+        Haptics.tap()
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             drag = 0
+            deleted = false
             presented = true
         }
+    }
+
+    private func confirm() {
+        guard presented else { return }
+        Haptics.tap(.rigid)
+        dismiss()
+        withAnimation(.smooth(duration: 0.3)) { deleted = true }
     }
 
     private func dismiss() {
@@ -157,6 +195,19 @@ private struct RecedingSheetDemo: View {
             presented = false
             drag = 0
         }
+    }
+}
+
+/// Sheet rows rise 18 pt and fade in one after another.
+private struct RecedingCascade: ViewModifier {
+    let shown: Bool
+    let index: Int
+
+    func body(content: Content) -> some View {
+        content
+            .offset(y: shown ? 0 : 18)
+            .opacity(shown ? 1 : 0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.75).delay(shown ? 0.1 + Double(index) * 0.05 : 0), value: shown)
     }
 }
 
@@ -341,6 +392,7 @@ private struct DropAlertDemo: View {
     @State private var shown = false
     @State private var leaving = false
     @State private var drops = 0
+    @State private var token = 0
 
     var body: some View {
         let zh = ctx.language == .zh
@@ -441,6 +493,8 @@ private struct DropAlertDemo: View {
 
     private func present() {
         guard !shown else { return }
+        token += 1
+        let current = token
         leaving = false
         shown = true
         drops += 1
@@ -448,15 +502,19 @@ private struct DropAlertDemo: View {
         guard !ctx.isPreview else { return }
         Task {
             try? await Task.sleep(for: .seconds(fall))
+            guard token == current else { return }
             Haptics.tap(.rigid)
         }
     }
 
     private func dismiss() {
         guard shown, !leaving else { return }
+        token += 1
+        let current = token
         withAnimation(.easeIn(duration: 0.4)) { leaving = true }
         Task {
             try? await Task.sleep(for: .seconds(0.42))
+            guard token == current else { return }
             shown = false
             leaving = false
         }

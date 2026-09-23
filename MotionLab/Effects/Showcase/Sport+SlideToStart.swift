@@ -74,11 +74,11 @@ private struct SportSlideDemo: View {
                 .fill(Signature.accentGradient)
                 .frame(width: expanded ? trackWidth : max(trackHeight + dragX, 44))
                 .opacity(expanded ? 1 : 0.35 + 0.65 * Double(progress))
-            SportShimmerLabel(text: L("Start Run", "开始滑行")(ctx.language))
+            SportShimmerLabel(text: L("Start Run", "开始滑行")(ctx.language), preview: ctx.isPreview)
                 .frame(maxWidth: .infinity)
                 .padding(.leading, knob)
                 .opacity(expanded ? 0 : max(0, 1 - Double(progress) * 1.6))
-            SportRunningContent(startDate: startDate, language: ctx.language)
+            SportRunningContent(startDate: startDate, language: ctx.language, preview: ctx.isPreview)
                 .padding(.leading, 20)
                 .padding(.trailing, knob + inset * 2)
                 .opacity(expanded ? 1 : 0)
@@ -146,12 +146,12 @@ private struct SportSlideDemo: View {
         if !ctx.isPreview { Haptics.tap(.soft) }
     }
 
-    private func complete() {
+    private func complete(silent: Bool = false) {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             dragX = maxX
             completed = true
         }
-        if !ctx.isPreview { Haptics.success() }
+        if !ctx.isPreview && !silent { Haptics.success() }
         Task {
             try? await Task.sleep(for: .seconds(0.7))
             guard completed else { return }
@@ -160,19 +160,21 @@ private struct SportSlideDemo: View {
         }
     }
 
-    private func reset() {
+    private func reset(silent: Bool = false) {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
             expanded = false
             completed = false
             dragX = 0
         }
         lastTick = 0
-        if !ctx.isPreview { Haptics.tap(.medium) }
+        if !ctx.isPreview && !silent { Haptics.tap(.medium) }
     }
 
     private func simulate() {
+        // Captured now: autoplay (and the detail intro) mute haptics only for the synchronous part.
+        let muted = Haptics.isMuted
         Task {
-            reset()
+            reset(silent: muted)
             try? await Task.sleep(for: .seconds(0.7))
             withAnimation(.easeInOut(duration: 0.55)) { dragX = maxX * 0.45 }
             try? await Task.sleep(for: .seconds(0.65))
@@ -180,7 +182,7 @@ private struct SportSlideDemo: View {
             try? await Task.sleep(for: .seconds(0.9))
             withAnimation(.easeIn(duration: 0.7)) { dragX = maxX }
             try? await Task.sleep(for: .seconds(0.7))
-            complete()
+            complete(silent: muted)
         }
     }
 }
@@ -217,10 +219,11 @@ private struct SportSlideHeader: View {
 private struct SportRunningContent: View {
     let startDate: Date
     let language: AppLanguage
+    let preview: Bool
 
     var body: some View {
         HStack(spacing: 8) {
-            SportLiveDot(color: .white, size: 7)
+            SportLiveDot(color: .white, size: 7, preview: preview)
             VStack(alignment: .leading, spacing: 0) {
                 Text(L("Run started", "已开始滑行"), language)
                     .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -237,9 +240,10 @@ private struct SportRunningContent: View {
 /// Label with a soft highlight sweeping across it, like the classic slide-to-unlock.
 private struct SportShimmerLabel: View {
     let text: String
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             let phase = CGFloat(t.truncatingRemainder(dividingBy: 2.2) / 2.2)
             label

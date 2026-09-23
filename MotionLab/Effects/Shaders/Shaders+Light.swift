@@ -18,7 +18,7 @@ extension Effect {
             "[[stitchable]] layerEffect 着色器按 smoothstep 遮罩逐像素计算模糊半径，以黄金角分布的 32 个采样点（每像素哈希旋转）求平均；Animatable 修饰器以弹簧移动对焦线，ShaderClock 驱动信息流滚动。"
         ),
         apis: ["layerEffect", "Animatable", "TimelineView", "onTapGesture(coordinateSpace:)", "Metal"],
-        tags: ["progressive blur", "variable blur", "tilt shift", "scroll edge", "mask", "渐进模糊", "可变模糊", "移轴", "滚动边缘"],
+        tags: ["progressive blur", "variable blur", "tilt shift", "scroll edge", "渐进模糊", "可变模糊", "移轴", "滚动边缘"],
         params: [
             .slider("radius", L("Max blur", "最大模糊"), 4...24, default: 14, decimals: 0, unit: "pt"),
             .slider("fade", L("Ramp length", "渐变长度"), 20...140, default: 70, decimals: 0, unit: "pt"),
@@ -43,7 +43,7 @@ extension Effect {
             "[[stitchable]] layerEffect 着色器对“正弦叠加 + 噪声”高度场做有限差分求梯度来偏移采样，再叠加迭代计算的焦散光项；ShaderClock 提供时间，最近一次点击的位置与时长驱动涟漪。"
         ),
         apis: ["layerEffect", "TimelineView", "Canvas", "onTapGesture(coordinateSpace:)", "Metal"],
-        tags: ["caustics", "water", "pool", "refraction", "light", "焦散", "水面", "泳池", "折射", "光纹"],
+        tags: ["caustics", "water", "pool", "refraction", "焦散", "水面", "泳池", "光纹"],
         params: [
             .slider("speed", L("Water speed", "水流速度"), 0.2...2, default: 1, unit: "×"),
             .slider("intensity", L("Light intensity", "光纹强度"), 0...1.5, default: 0.9),

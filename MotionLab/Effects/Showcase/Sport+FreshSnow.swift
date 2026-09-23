@@ -70,7 +70,7 @@ private struct SportSnowDemo: View {
         .padding(20)
         .frame(width: 292)
         .background {
-            SnowfallLayer(count: ctx.int("snow"))
+            SnowfallLayer(count: ctx.int("snow"), preview: ctx.isPreview)
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         }
         .signatureCard()
@@ -171,9 +171,10 @@ private struct SnowBar: View {
 /// Procedural snowfall: each flake has a hashed speed, size, column and sway phase.
 private struct SnowfallLayer: View {
     let count: Int
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             Canvas { context, size in
                 let t = timeline.date.timeIntervalSinceReferenceDate
                 let w = Double(size.width)

@@ -19,7 +19,7 @@ extension Effect {
             "TimelineView 中的 Canvas 以索引与时间的纯函数计算节点位置，把所有近距离节点对按强度分入四条 Path（每帧仅四次描边），并在小型引用类型模型中平滑枢纽位置与出现程度。"
         ),
         apis: ["Canvas", "TimelineView(.animation)", "Path", "GraphicsContext.Shading.radialGradient", "DragGesture"],
-        tags: ["plexus", "network", "constellation", "nodes", "lines", "连线", "网络", "星座", "节点", "粒子"],
+        tags: ["plexus", "network", "constellation", "nodes", "连线", "网络", "星座", "节点"],
         params: [
             .slider("count", L("Nodes", "节点数量"), 16...80, default: 42, step: 1, decimals: 0),
             .slider("link", L("Link distance", "连线距离"), 50...150, default: 95, decimals: 0, unit: "pt"),

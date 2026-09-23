@@ -38,7 +38,7 @@ private struct ButtonShimmerDemo: View {
             Button {
                 Haptics.tap(.medium)
             } label: {
-                TimelineView(.animation) { timeline in
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                     ButtonShimmerFace(
                         progress: progress(at: timeline.date),
                         size: size,

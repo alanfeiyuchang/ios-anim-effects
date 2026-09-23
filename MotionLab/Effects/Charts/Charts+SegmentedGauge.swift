@@ -31,7 +31,8 @@ private let gaugeSweep: Double = 240
 
 private struct SegmentedGaugeDemo: View {
     let ctx: DemoContext
-    @State private var value: Double = 0
+    /// Seeded with a settled reading so still snapshots show lit ticks; `onAppear` sweeps up from zero.
+    @State private var value: Double = 64
     @State private var previousLit = 0
 
     var body: some View {
@@ -57,22 +58,23 @@ private struct SegmentedGaugeDemo: View {
             DemoHint(text: L("Tap for a new reading", "点击获取新读数"), ctx: ctx)
                 .padding(.bottom, 8)
         }
-        .onAppear { setRandom(haptic: false) }
-        .autoplay(ctx.isPreview, every: 2.4, delay: 2.2) { setRandom(haptic: false) }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                value = 0
+            }, then: {
+                setRandom(haptic: false)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 2.4, delay: 2.2) { if ctx.isPreview { setRandom(haptic: false) } }
     }
 
     private var readout: some View {
-        let status = statusFor(value)
-        return VStack(spacing: 4) {
+        VStack(spacing: 4) {
             Text(ctx.language == .zh ? "CPU 负载" : "CPU load")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-            GaugeNumber(value: value)
-            Text(status.label, ctx.language)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(status.color)
-                .id(status.label.en)
-                .transition(.opacity)
+            GaugeReadout(value: value, language: ctx.language)
         }
         .offset(y: 8)
     }
@@ -86,12 +88,6 @@ private struct SegmentedGaugeDemo: View {
             return Double(max(index - previousLit, 0)) * step
         }
         return Double(max(previousLit - 1 - index, 0)) * step
-    }
-
-    private func statusFor(_ v: Double) -> (label: LocalizedText, color: Color) {
-        if v < 55 { return (L("Normal", "正常"), Palette.green) }
-        if v < 82 { return (L("Busy", "繁忙"), Palette.amber) }
-        return (L("Critical", "过载"), Palette.red)
     }
 
     private func setRandom(haptic: Bool) {
@@ -141,8 +137,11 @@ private struct GaugeTick: View {
     }
 }
 
-private struct GaugeNumber: View, Animatable {
+/// Number and status word are both derived from the interpolated value, so the status flips
+/// exactly when the count (and the lit ticks) cross the 55% / 82% thresholds, not at tap time.
+private struct GaugeReadout: View, Animatable {
     var value: Double
+    let language: AppLanguage
 
     var animatableData: Double {
         get { value }
@@ -150,13 +149,27 @@ private struct GaugeNumber: View, Animatable {
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
-            Text("\(Int(value.rounded()))")
-                .font(.system(size: 52, weight: .bold, design: .rounded))
-                .monospacedDigit()
-            Text("%")
-                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
+        let status = Self.status(value)
+        VStack(spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(verbatim: "\(Int(value.rounded()))")
+                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                Text(verbatim: "%")
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+            Text(status.label, language)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(status.color)
+                .contentTransition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: status.label.en)
         }
+    }
+
+    private static func status(_ v: Double) -> (label: LocalizedText, color: Color) {
+        if v < 55 { return (L("Normal", "正常"), Palette.green) }
+        if v < 82 { return (L("Busy", "繁忙"), Palette.amber) }
+        return (L("Critical", "过载"), Palette.red)
     }
 }

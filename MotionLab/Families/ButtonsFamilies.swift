@@ -67,6 +67,7 @@ enum ButtonsFamilies {
         "buttons.soft-press": "buttons.press",
         "buttons.echo-press": "buttons.press",
         "buttons.stack-press": "buttons.press",
+        "buttons.label-roll": "buttons.press",
         // Finger-aware
         "buttons.magnetic": "buttons.pointer",
         "buttons.spotlight": "buttons.pointer",
@@ -90,7 +91,6 @@ enum ButtonsFamilies {
         // State change
         "buttons.add-to-cart": "buttons.state-morph",
         "buttons.follow-morph": "buttons.state-morph",
-        "buttons.label-roll": "buttons.state-morph",
         "buttons.liquid-glass": "buttons.state-morph",
         "buttons.bookmark-ribbon": "buttons.state-morph",
         "buttons.copy-flip": "buttons.state-morph",

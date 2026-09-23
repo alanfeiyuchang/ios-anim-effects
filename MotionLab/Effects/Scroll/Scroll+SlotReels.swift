@@ -92,6 +92,8 @@ private struct ScrollSlotDemo: View {
         win = false
         spins += 1
         Haptics.tap(.medium)
+        // Captured now: the delayed stop haptics below run after autoplay has unmuted Haptics.
+        let muted = Haptics.isMuted || ctx.isPreview
         let count = scrollSlotSymbols.count
         // Recenter each reel by whole symbol cycles so it never reaches the end.
         var starts: [Int] = targets
@@ -123,20 +125,20 @@ private struct ScrollSlotDemo: View {
                     positions[k].scrollTo(y: CGFloat(next[k]) * scrollSlotCell)
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + duration * 0.8) {
-                    if !ctx.isPreview { Haptics.tap(.rigid) }
-                    if k == 2 { finish() }
+                    if !muted { Haptics.tap(.rigid) }
+                    if k == 2 { finish(haptic: !muted) }
                 }
             }
         }
     }
 
-    private func finish() {
+    private func finish(haptic: Bool) {
         spinning = false
         let count = scrollSlotSymbols.count
         let symbols = targets.map { $0 % count }
         if symbols.allSatisfy({ $0 == symbols[0] }) {
             win = true
-            if !ctx.isPreview { Haptics.success() }
+            if haptic { Haptics.success() }
         }
     }
 }
@@ -169,7 +171,7 @@ private struct ScrollSlotReel: View {
             .padding(.vertical, scrollSlotCell)
         }
         .scrollIndicators(.hidden)
-        .scrollTargetBehavior(ScrollStrideSnap(stride: scrollSlotCell, axis: .vertical))
+        .scrollTargetBehavior(ScrollStrideSnap(pitch: scrollSlotCell, axis: .vertical))
         .scrollPosition($position)
         .frame(width: 84, height: viewport)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))

@@ -57,6 +57,10 @@ private struct LifeEvChargeDemo: View {
             guard !paused else { return }
             await run()
         }
+        // Previews also show the tap: pause, then resume. The detail stage already animates on its own,
+        // so it skips the one-shot intro (which would leave the charger paused).
+        .autoplay(ctx.isPreview, every: 2.2, delay: 2.4) { togglePause() }
+        .environment(\.demoIntroPlay, false)
     }
 
     private var card: some View {
@@ -89,7 +93,7 @@ private struct LifeEvChargeDemo: View {
                     .foregroundStyle(Signature.textSecondary)
                     .frame(width: 24, height: 24)
             } else {
-                SportLiveDot(color: charged ? Signature.lime : Signature.accent)
+                SportLiveDot(color: charged ? Signature.lime : Signature.accent, preview: ctx.isPreview)
             }
             Text(eyebrow)
                 .signatureEyebrow()

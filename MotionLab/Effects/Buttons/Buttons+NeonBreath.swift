@@ -20,7 +20,7 @@ extension Effect {
         params: [
             .slider("period", L("Breath period", "呼吸周期"), 1.0...5.0, default: 2.4, unit: "s"),
             .slider("bloom", L("Max bloom", "最大光晕"), 8...36, default: 22, decimals: 0, unit: "pt"),
-            .choice("color", L("Tube color", "灯管颜色"), [L("Cyan", "青"), L("Magenta", "洋红"), L("Lime", "荧光绿")], default: 0),
+            .toggle("flicker", L("Idle flicker", "待机闪烁"), default: true),
         ]
     ) { ctx in
         ButtonNeonBreathDemo(ctx: ctx)
@@ -31,18 +31,12 @@ private struct ButtonNeonBreathDemo: View {
     let ctx: DemoContext
     @State private var flickers = 0
 
-    private var neon: Color {
-        switch ctx.int("color") {
-        case 1: return Color(hex: 0xFF4FD8)
-        case 2: return Color(hex: 0x9DFF4F)
-        default: return Color(hex: 0x3CF2FF)
-        }
-    }
+    private let neon = Color(hex: 0x3CF2FF)
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 ButtonNeonTube(
                     breath: breath(at: timeline.date),
                     bloom: ctx.cg("bloom"),
@@ -77,6 +71,17 @@ private struct ButtonNeonBreathDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task(id: ctx.bool("flicker")) { await idleFlicker() }
+    }
+
+    /// A failing-tube stutter every few seconds while idle; silent, unlike the tap.
+    private func idleFlicker() async {
+        guard ctx.bool("flicker") else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(Double.random(in: 2.8...5.5)))
+            guard !Task.isCancelled else { return }
+            flickers += 1
+        }
     }
 
     private func breath(at date: Date) -> Double {

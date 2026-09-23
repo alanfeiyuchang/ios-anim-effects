@@ -30,10 +30,11 @@ private let wheelHeight: CGFloat = 52
 
 private struct OdometerKPIDemo: View {
     let ctx: DemoContext
-    @State private var value = 42_000
-    @State private var previous = 42_000
-    @State private var points: [CGFloat] = Array(repeating: 0.5, count: 16)
-    @State private var drawn: CGFloat = 0
+    /// Seeded with a settled reading so still snapshots show a figure and sparkline; `onAppear` replays.
+    @State private var value = 48_209
+    @State private var previous = 45_830
+    @State private var points: [CGFloat] = [0.32, 0.38, 0.35, 0.44, 0.41, 0.5, 0.47, 0.55, 0.52, 0.6, 0.57, 0.66, 0.63, 0.7, 0.74, 0.8]
+    @State private var drawn: CGFloat = 1
 
     var body: some View {
         let digits = String(value).compactMap { $0.wholeNumberValue }
@@ -47,10 +48,10 @@ private struct OdometerKPIDemo: View {
                 OdometerBadge(delta: delta)
             }
             HStack(spacing: 0) {
-                Text("$")
+                Text(verbatim: "$")
                 ForEach(digits.indices, id: \.self) { index in
                     if index == digits.count - 3 {
-                        Text(",")
+                        Text(verbatim: ",")
                     }
                     DigitWheel(
                         digit: digits[index],
@@ -77,8 +78,15 @@ private struct OdometerKPIDemo: View {
             DemoHint(text: L("Tap to refresh", "点击刷新"), ctx: ctx)
                 .padding(.bottom, 8)
         }
-        .onAppear { refresh(haptic: false) }
-        .autoplay(ctx.isPreview, every: 2.8, delay: 2.8) { refresh(haptic: false) }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                drawn = 0
+            }, then: {
+                refresh(haptic: false)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 2.8, delay: 2.8) { if ctx.isPreview { refresh(haptic: false) } }
     }
 
     private var sparkline: some View {
@@ -123,13 +131,14 @@ private struct DigitWheel: View {
     let damping: Double
 
     var body: some View {
+        // 9 · 0…9 · 0: the padding rows keep a spring overshoot past 0 or 9 from showing a blank cell.
         VStack(spacing: 0) {
-            ForEach(0..<10, id: \.self) { number in
-                Text("\(number)")
+            ForEach(0..<12, id: \.self) { row in
+                Text(verbatim: "\((row + 9) % 10)")
                     .frame(height: wheelHeight)
             }
         }
-        .offset(y: -CGFloat(digit) * wheelHeight)
+        .offset(y: -CGFloat(digit + 1) * wheelHeight)
         .animation(.spring(response: 0.7, dampingFraction: damping).delay(delay), value: digit)
         .frame(width: 27, height: wheelHeight, alignment: .top)
         .clipped()

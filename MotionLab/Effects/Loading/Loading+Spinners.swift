@@ -9,6 +9,22 @@ private func spinEaseInOut(_ x: Double) -> Double {
     return u < 0.5 ? 4 * u * u * u : 1 - pow(-2 * u + 2, 3) / 2
 }
 
+/// A phase (in cycles) that advances at `rate` per second and stays continuous when the rate changes,
+/// so dragging a speed slider speeds the loop up instead of teleporting it.
+private struct SpinnerPhaseClock {
+    var anchorDate = Date()
+    var anchorPhase: Double = 0
+
+    func phase(at date: Date, rate: Double) -> Double {
+        anchorPhase + date.timeIntervalSince(anchorDate) * rate
+    }
+
+    mutating func rebase(at date: Date, oldRate: Double) {
+        anchorPhase = phase(at: date, rate: oldRate)
+        anchorDate = date
+    }
+}
+
 // MARK: - Three-dot bounce
 
 extension Effect {
@@ -43,7 +59,7 @@ private struct DotBounceDemo: View {
     let ctx: DemoContext
 
     var body: some View {
-        let row = DotBounceRow(size: ctx.cg("size"), speed: ctx["speed"], height: ctx.cg("height"))
+        let row = DotBounceRow(size: ctx.cg("size"), speed: ctx["speed"], height: ctx.cg("height"), preview: ctx.isPreview)
         Group {
             if ctx.bool("bubble") {
                 DotChatThread(row: row, language: ctx.language)
@@ -79,7 +95,7 @@ private struct DotChatThread: View {
                 )
                 .frame(maxWidth: .infinity, alignment: .trailing)
             HStack(alignment: .bottom, spacing: 8) {
-                Text("MJ")
+                Text(verbatim: "MJ")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.white)
                     .frame(width: 30, height: 30)
@@ -116,12 +132,14 @@ private struct DotBounceRow: View {
     let size: CGFloat
     let speed: Double
     let height: CGFloat
+    let preview: Bool
+    @State private var clock = SpinnerPhaseClock()
 
     private let colors: [Color] = [Palette.indigo, Palette.violet, Palette.pink]
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate * speed
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            let t = clock.phase(at: timeline.date, rate: speed)
             HStack(spacing: size * 0.55) {
                 ForEach(0..<3, id: \.self) { index in
                     let lift = DotBounceRow.lift(t, index: index)
@@ -135,6 +153,7 @@ private struct DotBounceRow: View {
             }
             .frame(height: size + height, alignment: .bottom)
         }
+        .onChange(of: speed) { old, _ in clock.rebase(at: .now, oldRate: old) }
     }
 
     static func lift(_ t: Double, index: Int) -> CGFloat {
@@ -186,7 +205,7 @@ private struct ArcSpinnerDemo: View {
 
     var body: some View {
         VStack(spacing: 28) {
-            ArcSpinnerView(period: ctx["period"], lineWidth: ctx.cg("width"), colors: colors)
+            ArcSpinnerView(period: ctx["period"], lineWidth: ctx.cg("width"), colors: colors, preview: ctx.isPreview)
                 .frame(width: 96, height: 96)
             VStack(spacing: 4) {
                 Text(ctx.language == .zh ? "正在准备资源库" : "Preparing your library")
@@ -204,10 +223,12 @@ private struct ArcSpinnerView: View {
     let period: Double
     let lineWidth: CGFloat
     let colors: [Color]
+    let preview: Bool
+    @State private var clock = SpinnerPhaseClock()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let state = ArcSpinnerView.state(timeline.date.timeIntervalSinceReferenceDate, period: period)
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            let state = ArcSpinnerView.state(clock.phase(at: timeline.date, rate: 1 / max(period, 0.1)))
             let arc = Circle().trim(from: state.from, to: state.to)
             let gradient = LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
             let length = Double(state.to - state.from)
@@ -224,18 +245,19 @@ private struct ArcSpinnerView: View {
                     .rotationEffect(.degrees(state.rotation - 90))
             }
         }
+        .onChange(of: period) { old, _ in clock.rebase(at: .now, oldRate: 1 / max(old, 0.1)) }
     }
 
-    static func state(_ time: Double, period: Double) -> (from: CGFloat, to: CGFloat, rotation: Double) {
-        let loop = period * 5
-        let local = time.truncatingRemainder(dividingBy: loop)
-        let cycle = floor(local / period)
-        let u = local / period - cycle
+    /// `phase` is measured in cycles; the rotation folds every five cycles to stay continuous.
+    static func state(_ phase: Double) -> (from: CGFloat, to: CGFloat, rotation: Double) {
+        let local = phase.truncatingRemainder(dividingBy: 5)
+        let cycle = floor(local)
+        let u = local - cycle
         let head = spinEaseInOut(u / 0.55)
         let tail = spinEaseInOut((u - 0.45) / 0.55)
         let from = 0.8 * tail
         let to = 0.04 + 0.8 * head
-        let rotation = cycle * 288 + local / loop * 720
+        let rotation = cycle * 288 + local / 5 * 720
         return (CGFloat(from), CGFloat(to), rotation)
     }
 }
@@ -270,7 +292,8 @@ extension Effect {
             count: max(ctx.int("count"), 1),
             period: ctx["period"],
             radius: ctx.cg("radius"),
-            multicolor: ctx.bool("color")
+            multicolor: ctx.bool("color"),
+            preview: ctx.isPreview
         )
         .scaleEffect(1.8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -282,14 +305,16 @@ private struct OrbitDotsView: View {
     let period: Double
     let radius: CGFloat
     let multicolor: Bool
+    let preview: Bool
+    @State private var clock = SpinnerPhaseClock()
 
     private let palette: [Color] = [Palette.mint, Palette.sky, Palette.blue, Palette.indigo, Palette.violet, Palette.pink, Palette.coral, Palette.amber]
     private let dot: CGFloat = 14
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            let lap = spinFrac(t / period)
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            let t = clock.phase(at: timeline.date, rate: 1 / max(period, 0.1))
+            let lap = spinFrac(t)
             ZStack {
                 // Faint orbit track so the loader still reads when the dots clump together.
                 Circle()
@@ -308,15 +333,17 @@ private struct OrbitDotsView: View {
                         .shadow(color: color.opacity(0.45), radius: 4)
                         .scaleEffect(1 - CGFloat(index) * 0.065)
                         .offset(y: -radius)
-                        .rotationEffect(.radians(OrbitDotsView.angle(t, index: index, period: period)))
+                        .rotationEffect(.radians(OrbitDotsView.angle(t, index: index)))
                 }
             }
             .frame(width: radius * 2 + dot, height: radius * 2 + dot)
         }
+        .onChange(of: period) { old, _ in clock.rebase(at: .now, oldRate: 1 / max(old, 0.1)) }
     }
 
-    static func angle(_ t: Double, index: Int, period: Double) -> Double {
-        let u = spinFrac(t / period - Double(index) * 0.075)
+    /// `t` is the lap phase in cycles.
+    static func angle(_ t: Double, index: Int) -> Double {
+        let u = spinFrac(t - Double(index) * 0.075)
         return spinEaseInOut(u) * 2 * .pi
     }
 }
@@ -355,7 +382,7 @@ private struct PetalsDemo: View {
     let ctx: DemoContext
 
     var body: some View {
-        let petals = PetalsView(count: max(ctx.int("count"), 1), period: ctx["period"], stepped: ctx.bool("stepped"))
+        let petals = PetalsView(count: max(ctx.int("count"), 1), period: ctx["period"], stepped: ctx.bool("stepped"), preview: ctx.isPreview)
         Group {
             if ctx.bool("hud") {
                 ZStack {
@@ -420,11 +447,13 @@ private struct PetalsView: View {
     let count: Int
     let period: Double
     let stepped: Bool
+    let preview: Bool
+    @State private var clock = SpinnerPhaseClock()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            let rawHead = spinFrac(t / period) * Double(count)
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            let t = clock.phase(at: timeline.date, rate: 1 / max(period, 0.1))
+            let rawHead = spinFrac(t) * Double(count)
             let head = stepped ? floor(rawHead) : rawHead
             ZStack {
                 ForEach(0..<count, id: \.self) { index in
@@ -440,6 +469,7 @@ private struct PetalsView: View {
             }
             .frame(width: 50, height: 50)
         }
+        .onChange(of: period) { old, _ in clock.rebase(at: .now, oldRate: 1 / max(old, 0.1)) }
     }
 
     static func opacity(head: Double, index: Int, count: Int) -> Double {

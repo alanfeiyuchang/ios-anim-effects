@@ -5,7 +5,7 @@ extension Effect {
         id: "buttons.elastic-blob",
         category: .buttons,
         interaction: .gesture,
-        name: L("Elastic Highlight", "弹性高光"),
+        name: L("Elastic Button Bar", "弹性按钮条"),
         summary: L("A liquid highlight chases the finger across a button bar, stretching with speed.", "液态高光在按钮条上追随手指，速度越快拉得越长。"),
         prompt: L(
             "A 288 × 64 pt frosted capsule holds four icon buttons (home, search, camera, profile). Wherever the finger slides, a 60 × 48 pt violet-tinted highlight blob follows it on a spring (response 0.28 s, damping 0.62). Its width stretches with the finger's horizontal speed — up to +80% at ~1500 pt/s — while its height slims by up to 25%, and the stretch is anchored on the leading edge of travel so the blob trails like a droplet; when the finger stops for 120 ms it relaxes back into a pill. The icon under the blob tints and grows to 112%. On release the blob snaps to the nearest button with a bouncy settle, that icon bounces and a selection haptic ticks. Fluid, gooey and very finger-aware.",
@@ -36,6 +36,8 @@ private struct ButtonElasticBlobDemo: View {
     @State private var bounces: [Int] = [0, 0, 0, 0]
     @State private var generation = 0
     @State private var step = 0
+    /// One debounced relax task for the whole drag instead of one Task per touch event.
+    @State private var relaxTask: Task<Void, Never>?
 
     private let size = CGSize(width: 288, height: 64)
     private static let symbols = ["house.fill", "magnifyingglass", "camera.fill", "person.crop.circle.fill"]
@@ -108,15 +110,18 @@ private struct ButtonElasticBlobDemo: View {
             stretch = amount
             if abs(velocity) > 40 { leftward = velocity < 0 }
         }
-        Task { @MainActor in
+        relaxTask?.cancel()
+        relaxTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(120))
-            guard tag == generation else { return }
+            guard !Task.isCancelled, tag == generation else { return }
             withAnimation(spring) { stretch = 0 }
         }
     }
 
     private func snap(to x: CGFloat) {
         let index = Int((x / slotWidth).rounded(.down)).clamped(to: 0...3)
+        relaxTask?.cancel()
+        relaxTask = nil
         generation += 1
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
             blobX = center(of: index)

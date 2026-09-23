@@ -62,9 +62,13 @@ struct EffectDetailView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     header(variations: variations)
                     if variations.count > 1, let family = EffectFamilies.family(for: effect) {
-                        VariationStrip(family: family, variations: variations, currentID: effect.id) { item in
-                            showVariation(item, in: variations)
-                        }
+                        VariationStrip(
+                            family: family,
+                            variations: variations,
+                            currentID: effect.id,
+                            onSelect: { item in showVariation(item, in: variations) },
+                            onStep: { step in stepVariation(by: step, in: variations) }
+                        )
                         .appearEntrance(delay: 0.08, distance: 10, blur: 0)
                     }
                     VStack(spacing: 10) {
@@ -141,7 +145,7 @@ struct EffectDetailView: View {
     private func header(variations: [Effect]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             FlowLayout(spacing: 8) {
-                NavigationLink(value: Route.category(effect.category)) {
+                RouteLink(route: Route.category(effect.category)) {
                     Label {
                         Text(effect.category.title, language)
                             .foregroundStyle(.primary)
@@ -218,7 +222,7 @@ struct EffectDetailView: View {
 
     /// The live demo. Each demo draws its own specific instruction (`DemoHint`) inside the stage.
     private func stage(fullPrompt: String) -> some View {
-        effect.makeDemo(DemoContext(params: params, isPreview: false, language: language))
+        EffectDemoView(effect: effect, context: DemoContext(params: params, isPreview: false, language: language))
             // Tap-driven demos play once on arrival (and again after Reset, which rebuilds the view).
             .environment(\.demoIntroPlay, true)
             .id(resetToken)
@@ -228,9 +232,10 @@ struct EffectDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.stage, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: CornerRadius.stage, style: .continuous).strokeBorder(Palette.stroke))
             .shadow(color: .black.opacity(0.05), radius: 14, y: 6)
-            // One VoiceOver stop: "<name>, <summary>", the interaction type as the hint, and
-            // Reset / Copy Prompt as custom actions. Double-tap still reaches the demo's own control.
-            .accessibilityElement(children: .combine)
+            // A container named "<name>, <summary>" with the interaction type as the hint and
+            // Reset / Copy Prompt as custom actions; the demo's own controls (legend chips, range
+            // pickers, buttons) stay individually reachable inside it.
+            .accessibilityElement(children: .contain)
             .accessibilityLabel(Text(verbatim: "\(effect.name(language)), \(effect.summary(language))"))
             .accessibilityHint(Text(verbatim: "\(Strings.interactionFilter(language)): \(effect.interaction.title(language))"))
             .accessibilityAction(named: Text(Strings.reset, language)) { resetDemo() }
@@ -391,7 +396,7 @@ struct EffectDetailView: View {
                         }
                         .scrollReveal(delay: 0.06 + ShellMotion.stagger(index, step: 0.07), distance: 18, scale: 0.97, blur: 3)
                     }
-                    NavigationLink(value: Route.category(effect.category)) {
+                    RouteLink(route: Route.category(effect.category)) {
                         HStack(spacing: 4) {
                             Text(Strings.seeAll, language)
                             Text(verbatim: "·")

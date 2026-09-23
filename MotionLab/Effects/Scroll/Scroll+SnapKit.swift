@@ -1,18 +1,18 @@
 import SwiftUI
 
-/// Snaps the resting scroll offset to whole multiples of `stride` along one axis.
-/// Used with plain spacer padding so that at offset `i * stride`, item `i` is exactly centered.
+/// Snaps the resting scroll offset to whole multiples of `pitch` along one axis.
+/// Used with plain spacer padding so that at offset `i * pitch`, item `i` is exactly centered.
 struct ScrollStrideSnap: ScrollTargetBehavior {
-    let stride: CGFloat
+    let pitch: CGFloat
     var axis: Axis = .horizontal
 
     func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
-        guard stride > 0 else { return }
+        guard pitch > 0 else { return }
         switch axis {
         case .horizontal:
-            target.rect.origin.x = (target.rect.minX / stride).rounded() * stride
+            target.rect.origin.x = (target.rect.minX / pitch).rounded() * pitch
         case .vertical:
-            target.rect.origin.y = (target.rect.minY / stride).rounded() * stride
+            target.rect.origin.y = (target.rect.minY / pitch).rounded() * pitch
         }
     }
 }

@@ -81,8 +81,12 @@ private struct NewsTickerDemo: View {
         .contentShape(Rectangle())
         .onTapGesture {
             Haptics.selection()
-            skipped += 1
-            start = Date()
+            // Fold the ticks already shown into `skipped` before restarting the clock,
+            // so a skip always moves exactly one headline forward.
+            let now = Date()
+            let ticks = Int(now.timeIntervalSince(start) / max(ctx["interval"], 0.5))
+            skipped += ticks + 1
+            start = now
         }
     }
 

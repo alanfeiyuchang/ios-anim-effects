@@ -67,7 +67,18 @@ private struct ButtonStackPressDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 0.8, delay: 0.3) { autoPressed.toggle() }
+        .autoplay(ctx.isPreview, every: 0.8, delay: 0.3) {
+            // The detail intro presses once and lets go, so the key never stays held down.
+            if ctx.isPreview { autoPressed.toggle() } else { introPress() }
+        }
+    }
+
+    private func introPress() {
+        autoPressed = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.4))
+            autoPressed = false
+        }
     }
 }
 

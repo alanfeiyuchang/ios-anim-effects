@@ -20,6 +20,7 @@ extension Effect {
         params: [
             .slider("max", L("Maximum", "最大值"), 3...20, default: 8, step: 1, decimals: 0),
             .slider("response", L("Roll response", "滚动响应"), 0.15...0.8, default: 0.3, unit: "s"),
+            .slider("nudge", L("Nudge distance", "推移距离"), 0...10, default: 4, decimals: 0, unit: "pt"),
         ]
     ) { ctx in
         InputRollingStepperDemo(ctx: ctx)
@@ -155,7 +156,7 @@ private struct InputRollingStepperDemo: View {
         if !ctx.isPreview { Haptics.tap() }
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.8)) {
             value = target
-            nudge = CGFloat(delta) * 4
+            nudge = CGFloat(delta) * ctx.cg("nudge")
         }
         Task {
             try? await Task.sleep(for: .seconds(0.12))

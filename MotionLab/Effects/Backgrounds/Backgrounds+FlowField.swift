@@ -11,15 +11,15 @@ extension Effect {
             "数百缕发光游丝沿无形且缓慢变化的洋流漂动，手指可搅出漩涡。"
         ),
         prompt: L(
-            "On a near-black ink backdrop, ~260 particles trace an invisible vector field whose direction is a sum of three slowly evolving sine terms, so the current bends into broad, ever-changing swirls. Each particle leaves a trail sampled every 1/30 s of simulated time (14 samples, ≈ 0.45 s of path), so its length depends on speed, never on frame rate; the trail is drawn in three segments that taper from a faint, thin tail to a bright, thicker head, in one of four spectrum hues (indigo, violet, sky, mint) with additive blending, so dense lanes glow brighter; particles live 2.5–6 s, fading in and out so the image never pops. Dragging on the stage (horizontal-first, so the page still scrolls vertically) turns the finger into a vortex: within ≈ 120 pt, particles gain a tangential swirl plus a slight outward push, drawing a luminous whirlpool that dissolves back into the current on release. Generative, meditative and quietly premium.",
-            "近乎纯黑的墨色背景上，约 260 个粒子沿一张看不见的向量场漂流：方向由三组缓慢演变的正弦项叠加而成，洋流因此弯成宽阔且不断变化的漩涡。每个粒子的轨迹按模拟时间每 1/30 秒采样一次（14 个采样点，约 0.45 秒的路径），长度只取决于速度而与帧率无关；轨迹分三段绘制，从暗淡纤细的尾部渐变到明亮稍粗的头部，颜色取自四种光谱色（靛蓝、紫、天蓝、薄荷），以叠加混合绘制，密集的流道自然更亮；粒子寿命 2.5–6 秒，出生与消亡都有淡入淡出，画面从不闪跳。在舞台上拖动（水平方向优先识别，页面仍可竖向滚动），手指化身漩涡中心：约 120pt 内的粒子获得切向旋转与轻微外推，绘出一个发光的涡流，松手后又融回洋流。生成式、冥想感，安静而高级。"
+            "On a near-black ink backdrop, ~260 particles trace an invisible vector field whose direction sums three slowly evolving sine terms, so the current bends into broad, ever-changing swirls. Each particle leaves a trail sampled every 1/30 s of simulated time (14 samples, ≈ 0.45 s of path), so its length depends on speed, never frame rate; it tapers in three segments from a faint, thin tail to a bright, thicker head, in one of four hues (indigo, violet, sky, mint) blended additively, so dense lanes glow brighter. Particles live 2.5–6 s and fade in and out, so nothing pops. Dragging sideways turns the finger into a vortex: within ≈ 120 pt particles gain a tangential swirl and a slight outward push, drawing a luminous whirlpool that dissolves back into the current on release. Generative, meditative, quietly premium.",
+            "近乎纯黑的墨色背景上，约 260 个粒子沿一张看不见的向量场漂流：方向由三组缓慢演变的正弦项叠加而成，洋流因此弯成宽阔、不断变化的漩涡。每个粒子的轨迹按模拟时间每 1/30 秒采样一次（14 个采样点，约 0.45 秒路径），长度只取决于速度而与帧率无关；轨迹分三段，从暗淡纤细的尾部渐变到明亮稍粗的头部，取四种色相之一（靛蓝、紫、天蓝、薄荷），叠加混合，密集的流道自然更亮。粒子寿命 2.5–6 秒，生灭都有淡入淡出，画面从不闪跳。横向拖动时手指化身漩涡中心：约 120pt 内的粒子获得切向旋转与轻微外推，绘出发光的涡流，松手后又融回洋流。生成式、冥想感、安静而高级。"
         ),
         implementation: L(
             "A reference-type particle system advanced inside a TimelineView Canvas integrates each head along the field and a touch vortex and records trail samples on a fixed simulated-time interval; trails are split into tail/mid/head segments and binned by hue, fade level and segment into 36 Paths stroked with .plusLighter.",
             "在 TimelineView 驱动的 Canvas 中推进引用类型粒子系统：每个粒子头沿向量场与触点漩涡积分，并按固定的模拟时间间隔记录轨迹采样；轨迹切分为尾、中、头三段，按色相、淡入淡出程度与分段归入 36 条 Path，以 .plusLighter 描边。"
         ),
         apis: ["Canvas", "TimelineView(.animation)", "Path", ".plusLighter", "DragGesture"],
-        tags: ["flow field", "particles", "generative", "vortex", "currents", "流场", "粒子", "生成艺术", "漩涡", "洋流"],
+        tags: ["flow field", "particles", "generative", "vortex", "流场", "粒子", "生成艺术", "漩涡"],
         params: [
             .slider("count", L("Particles", "粒子数量"), 80...480, default: 260, step: 10, decimals: 0),
             .slider("speed", L("Current speed", "流速"), 0.3...2.5, default: 1.0, unit: "×"),
@@ -144,6 +144,11 @@ private struct FlowCanvas: View {
 
     private static let hues: [Color] = [Palette.indigo, Palette.violet, Palette.sky, Palette.mint]
 
+    /// Point `index` of the trail-plus-head polyline (`trail.count` is the head).
+    private static func point(_ particle: FlowParticle, _ index: Int) -> CGPoint {
+        index < particle.trail.count ? particle.trail[index] : particle.head
+    }
+
     var body: some View {
         Canvas { context, size in
             let simulated: CGPoint? = simulate
@@ -156,16 +161,18 @@ private struct FlowCanvas: View {
                 let fade = min(particle.age / 0.6, (particle.life - particle.age) / 0.8, 1)
                 guard fade > 0.02 else { continue }
                 let level = min(Int(fade * 3), 2)
-                let points = particle.trail + [particle.head]
-                guard points.count > 1 else { continue }
-                let last = points.count - 1
+                // Trail samples followed by the live head, indexed directly: no per-frame arrays.
+                let last = particle.trail.count
+                guard last > 0 else { continue }
                 for segment in 0..<3 {
                     let from = last * segment / 3
                     let to = last * (segment + 1) / 3
                     guard to > from else { continue }
-                    var path = Path()
-                    path.addLines(Array(points[from...to]))
-                    bins[(particle.hue % 4 * 3 + level) * 3 + segment].addPath(path)
+                    let bin = (particle.hue % 4 * 3 + level) * 3 + segment
+                    bins[bin].move(to: FlowCanvas.point(particle, from))
+                    for index in (from + 1)...to {
+                        bins[bin].addLine(to: FlowCanvas.point(particle, index))
+                    }
                 }
             }
             context.blendMode = .plusLighter

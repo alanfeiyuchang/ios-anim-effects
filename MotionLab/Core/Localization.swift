@@ -173,8 +173,8 @@ enum Strings {
     static let gridMode = L("Grid", "网格")
     static let compareMode = L("Compare", "对比")
     static let compareHint = L(
-        "Every variation plays at once, so you can compare the motion styles side by side.",
-        "所有变体同时播放，方便并排对比不同的动效风格。"
+        "Every variation plays side by side on one shared clock. Replay All restarts them together.",
+        "所有变体按同一节拍并排播放，点「全部重播」可让它们同时重新开始。"
     )
     static let openFamily = L("Shows every variation of this family", "查看该系列的全部变体")
     static let showVariation = L("Switches the page to this variation", "将页面切换到该变体")
@@ -182,6 +182,20 @@ enum Strings {
     static let previousVariation = L("Previous variation", "上一个变体")
     static let swipeVariations = L("Swipe the title left or right to switch variations", "左右滑动标题即可切换变体")
     static let familyResults = L("Matching Families", "匹配的系列")
+    static let allFamilies = L("All Families", "全部系列")
+    static let allFamiliesSubtitle = L(
+        "Every family of variations in the catalog, grouped by category. Each card plays one variation live.",
+        "按分类排列的全部动效系列。每张卡片轮流实时播放其中一个变体。"
+    )
+    static let showAllFamilies = L("Shows every family, grouped by category", "按分类查看全部系列")
+    static let browseAllFamilies = L("Browse all families", "浏览全部系列")
+    static let searchFamilies = L("Search families", "搜索系列")
+    static let noFamilyResults = L("No matching families", "没有匹配的系列")
+    static let noFamilyResultsHint = L("Try another name, such as slider, spinner or toggle.", "换个名称试试，比如滑块、加载或开关。")
+    static let jumpToCategory = L("Jumps to this category's families", "跳到该分类的系列")
+    static let replayAll = L("Replay All", "全部重播")
+    static let replayAllHint = L("Restarts every variation at the same moment", "让所有变体在同一时刻重新开始")
+    static let anyInteraction = L("Any interaction", "全部交互")
 
     /// "1 family" / "6 families" / "6 个系列".
     static func familyCount(_ count: Int, _ language: AppLanguage) -> String {

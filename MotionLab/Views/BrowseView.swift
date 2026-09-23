@@ -117,13 +117,10 @@ struct BrowseView: View {
                 }
                 .accessibilityLabel(Text(verbatim: Strings.categoryCount(categoryCount, language)))
                 .accessibilityHint(Text(Strings.jumpToCategories, language))
-                StatPill(value: countsShown ? familyCount : 0, unit: Strings.familiesUnit(language)) {
-                    withAnimation(reduceMotion ? nil : Animation.smooth) {
-                        reader.scrollTo(Self.categoriesAnchor, anchor: .top)
-                    }
-                }
-                .accessibilityLabel(Text(verbatim: Strings.familyCount(familyCount, language)))
-                .accessibilityHint(Text(Strings.jumpToCategories, language))
+                // "85 families" → the All Families index.
+                StatPill(value: countsShown ? familyCount : 0, unit: Strings.familiesUnit(language), route: .families)
+                    .accessibilityLabel(Text(verbatim: Strings.familyCount(familyCount, language)))
+                    .accessibilityHint(Text(Strings.showAllFamilies, language))
             }
             .entrance(revealed, delay: 0.38, distance: 10)
         }
@@ -232,7 +229,7 @@ struct BrowseView: View {
                 ForEach(Array(EffectCategory.allCases.enumerated()), id: \.element) { index, category in
                     let count = EffectLibrary.effects(in: category).count
                     let familyCount = EffectFamilies.families(in: category).count
-                    NavigationLink(value: Route.category(category)) {
+                    ZoomRouteLink(route: Route.category(category, source: "tile")) {
                         CategoryTile(category: category, count: count, familyCount: familyCount)
                     }
                     .buttonStyle(PressableCardStyle(depth: 10, tilt: true))
@@ -293,38 +290,50 @@ private struct CoverFlowEffect: ViewModifier {
 // MARK: - Pieces
 
 /// Tappable "235 effects" style pill on the Browse header; the number rolls up on first reveal.
+/// Runs `action`, or pushes `route` when one is given.
 private struct StatPill: View {
     let value: Int
     let unit: String
-    let action: () -> Void
+    var route: Route? = nil
+    var action: () -> Void = {}
 
     var body: some View {
-        Button {
-            Haptics.selection()
-            action()
-        } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(verbatim: "\(value)")
-                    .font(.title3.weight(.bold).monospacedDigit())
-                    .foregroundStyle(Palette.primaryStrong)
-                    .contentTransition(.numericText(value: Double(value)))
-                    .animation(ShellMotion.count.delay(0.35), value: value)
-                Text(verbatim: unit)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
+        if let route {
+            NavigationLink(value: route) { label }
+                .buttonStyle(PressableCardStyle())
+                .simultaneousGesture(TapGesture().onEnded { Haptics.selection() })
+        } else {
+            Button {
+                Haptics.selection()
+                action()
+            } label: {
+                label
             }
-            .lineLimit(1)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(.regularMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(Palette.stroke))
-            .contentShape(Capsule())
+            .buttonStyle(PressableCardStyle())
         }
-        .buttonStyle(PressableCardStyle())
+    }
+
+    private var label: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(verbatim: "\(value)")
+                .font(.title3.weight(.bold).monospacedDigit())
+                .foregroundStyle(Palette.primaryStrong)
+                .contentTransition(.numericText(value: Double(value)))
+                .animation(ShellMotion.count.delay(0.35), value: value)
+            Text(verbatim: unit)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.regularMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(Palette.stroke))
+        .contentShape(Capsule())
     }
 }
 
@@ -570,7 +579,7 @@ struct CategoryView: View {
         LazyVGrid(columns: familyColumns, spacing: 14) {
             ForEach(Array(families.enumerated()), id: \.element.id) { index, family in
                 let members = EffectFamilies.effects(in: family)
-                NavigationLink(value: Route.family(family.id)) {
+                ZoomRouteLink(route: Route.family(family.id, source: "familyCard")) {
                     FamilyCard(family: family, effects: members)
                 }
                 .buttonStyle(PressableCardStyle())

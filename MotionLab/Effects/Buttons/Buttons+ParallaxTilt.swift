@@ -50,7 +50,10 @@ private struct ButtonParallaxTiltDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 0.9, delay: 0.3) { previewStep() }
+        .autoplay(ctx.isPreview, every: 0.9, delay: 0.3) {
+            // The detail intro walks the whole path once, which ends on a release, so the tile never stays tilted.
+            if ctx.isPreview { previewStep() } else { introSweep() }
+        }
     }
 
     private var tile: some View {
@@ -133,6 +136,15 @@ private struct ButtonParallaxTiltDemo: View {
         withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) {
             active = false
             tilt = .zero
+        }
+    }
+
+    private func introSweep() {
+        Task { @MainActor in
+            for _ in Self.previewPath.indices {
+                previewStep()
+                try? await Task.sleep(for: .seconds(0.9))
+            }
         }
     }
 

@@ -50,6 +50,7 @@ private struct CardsRewindDemo: View {
             }
             .frame(height: 262)
             rewindButton
+            DemoHint(text: L("Swipe a card, then tap rewind", "滑走卡片，再点撤回"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.1) { autoStep() }

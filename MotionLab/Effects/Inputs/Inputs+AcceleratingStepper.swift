@@ -143,10 +143,10 @@ private struct AcceleratingStepperDemo: View {
         )
     }
 
-    private func apply(_ delta: Int) {
+    private func apply(_ delta: Int, muted: Bool) {
         let target = (value + delta).clamped(to: range)
         guard target != value else { return }
-        if !ctx.isPreview { Haptics.tap(.soft) }
+        if !muted { Haptics.tap(.soft) }
         value = target
     }
 
@@ -155,7 +155,9 @@ private struct AcceleratingStepperDemo: View {
         holding = direction
         speed = 0
         multiplier = 1
-        apply(direction * 10)
+        // Captured before the repeat Task: a simulated hold (preview or detail intro) must not buzz ~20 times.
+        let muted = ctx.isPreview || Haptics.isMuted
+        apply(direction * 10, muted: muted)
         let decay = ctx["acceleration"]
         let fastest = ctx["fastest"]
         let start = firstDelay
@@ -167,7 +169,7 @@ private struct AcceleratingStepperDemo: View {
                 repeats += 1
                 let size = repeats > 20 ? 10 : (repeats > 8 ? 5 : 1)
                 if size != multiplier { multiplier = size }
-                apply(direction * 10 * size)
+                apply(direction * 10 * size, muted: muted)
                 interval = max(interval * decay, fastest)
                 speed = ((start - interval) / (start - fastest)).clamped(to: 0...1)
                 try? await Task.sleep(for: .seconds(interval))

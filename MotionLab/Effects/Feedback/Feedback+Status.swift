@@ -331,7 +331,7 @@ private struct CopyDemo: View {
             .foregroundStyle(copied ? Color.white : Color.primary)
             .padding(.horizontal, 14)
             .frame(height: 40)
-            .background(copied ? Palette.green : Color.primary.opacity(0.07), in: Capsule())
+            .background(copied ? Palette.successStrong : Color.primary.opacity(0.07), in: Capsule())
         }
         .buttonStyle(CopyPressStyle())
         .overlay(alignment: .top) {

@@ -601,7 +601,7 @@ private struct DashFlowRingDemo: View {
         VStack(spacing: 16) {
             ZStack {
                 Circle().stroke(Color.primary.opacity(0.08), lineWidth: 7)
-                DashFlowArc(progress: progress, flow: ctx["flow"], dash: ctx.cg("dash"), paused: done)
+                DashFlowArc(progress: progress, flow: ctx["flow"], dash: ctx.cg("dash"), paused: done, preview: ctx.isPreview)
                     .opacity(done ? 0 : 1)
                 Circle()
                     .trim(from: 0, to: progress)
@@ -662,9 +662,10 @@ private struct DashFlowArc: View {
     let flow: Double
     let dash: CGFloat
     let paused: Bool
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: paused)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: paused)) { timeline in
             let t: Double = timeline.date.timeIntervalSinceReferenceDate
             let period: Double = Double(dash) + 14
             let phase: CGFloat = CGFloat(-(t * flow).truncatingRemainder(dividingBy: period))

@@ -110,7 +110,7 @@ private struct ConfettiDemo: View {
 
     var body: some View {
         ZStack {
-            TimelineView(.animation(minimumInterval: nil, paused: bursts.isEmpty)) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: bursts.isEmpty)) { timeline in
                 let now = timeline.date
                 let live = bursts
                 Canvas { context, size in

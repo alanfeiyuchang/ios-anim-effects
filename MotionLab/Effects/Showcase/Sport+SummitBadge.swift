@@ -55,6 +55,8 @@ private struct SportSummitBadgeDemo: View {
     @State private var spin: Double = 0
     @State private var revealed = true
     @State private var runID = 0
+    /// Set when autoplay or the detail intro starts the run, so the simulated unlock stays silent.
+    @State private var silentRun = false
 
     private var zh: Bool { ctx.language == .zh }
 
@@ -73,7 +75,10 @@ private struct SportSummitBadgeDemo: View {
             guard runID > 0 else { return }
             await play()
         }
-        .autoplay(ctx.isPreview, every: 4.0, delay: 0.5) { runID += 1 }
+        .autoplay(ctx.isPreview, every: 4.0, delay: 0.5) {
+            silentRun = true
+            runID += 1
+        }
     }
 
     private var card: some View {
@@ -104,7 +109,10 @@ private struct SportSummitBadgeDemo: View {
         .frame(width: 280)
         .signatureCard()
         .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .onTapGesture { runID += 1 }
+        .onTapGesture {
+            silentRun = false
+            runID += 1
+        }
     }
 
     private var badge: some View {
@@ -133,7 +141,7 @@ private struct SportSummitBadgeDemo: View {
     private func play() async {
         let height = ctx.cg("drop")
         let spins = Double(max(ctx.int("spins"), 0))
-        let muted = ctx.isPreview
+        let muted = ctx.isPreview || silentRun
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) {

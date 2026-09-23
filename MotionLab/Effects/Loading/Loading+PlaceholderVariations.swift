@@ -78,7 +78,7 @@ private struct BreathingSkeletonDemo: View {
                 InboxRow(sample: samples[index], language: ctx.language)
                     .transition(rise)
             } else {
-                SkeletonBreathRow(index: index, period: max(ctx["period"], 0.2), stagger: ctx["stagger"])
+                SkeletonBreathRow(index: index, period: max(ctx["period"], 0.2), stagger: ctx["stagger"], preview: ctx.isPreview)
                     .transition(.opacity)
             }
         }
@@ -100,9 +100,10 @@ private struct SkeletonBreathRow: View {
     let index: Int
     let period: Double
     let stagger: Double
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t: Double = timeline.date.timeIntervalSinceReferenceDate - Double(index) * stagger
             let wave: Double = 0.5 - 0.5 * cos(2 * .pi * t / period)
             let alpha: Double = 0.06 + 0.1 * wave

@@ -61,7 +61,8 @@ private let liquidDaysZH = ["一", "二", "三", "四", "五", "六", "日"]
 
 private struct LiquidBarsDemo: View {
     let ctx: DemoContext
-    @State private var levels: [CGFloat] = Array(repeating: 0, count: 7)
+    /// Seeded with settled levels so still snapshots show filled tubes; `onAppear` drains and pours.
+    @State private var levels: [CGFloat] = [0.62, 0.78, 0.45, 0.88, 0.7, 0.36, 0.55]
     @State private var kick = Date.distantPast
 
     var body: some View {
@@ -82,8 +83,15 @@ private struct LiquidBarsDemo: View {
             DemoHint(text: L("Tap to pour new data", "点击倒入新数据"), ctx: ctx)
                 .padding(.bottom, 6)
         }
-        .onAppear { refill(haptic: false) }
-        .autoplay(ctx.isPreview, every: 3.0, delay: 3.0) { refill(haptic: false) }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                levels = Array(repeating: 0, count: 7)
+            }, then: {
+                refill(haptic: false)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 3.0, delay: 3.0) { if ctx.isPreview { refill(haptic: false) } }
     }
 
     private var header: some View {

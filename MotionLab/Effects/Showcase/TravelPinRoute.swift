@@ -124,6 +124,7 @@ private struct TravelPinRouteDemo: View {
             TravelMapBackdrop()
             ForEach(Array(pins.enumerated().dropFirst()), id: \.element.id) { index, pin in
                 TravelRouteLeg(from: pins[index - 1].point, to: pin.point, duration: ctx["routeTime"])
+                    .transition(legRemoval(toward: pin.point))
             }
             ForEach(pins) { pin in
                 TravelPinMarker(isLatest: pin.id == pins.last?.id)
@@ -142,6 +143,15 @@ private struct TravelPinRouteDemo: View {
         .onTapGesture(coordinateSpace: .local) { location in
             drop(at: location)
         }
+    }
+
+    /// The oldest leg retracts into the pin it led to and fades, alongside its start pin shrinking away.
+    private func legRemoval(toward point: CGPoint) -> AnyTransition {
+        let anchor = UnitPoint(x: point.x / Self.mapSize.width, y: point.y / Self.mapSize.height)
+        return .asymmetric(
+            insertion: .identity,
+            removal: AnyTransition.scale(scale: 0.2, anchor: anchor).combined(with: .opacity)
+        )
     }
 
     private func drop(at point: CGPoint) {

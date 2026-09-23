@@ -8,8 +8,8 @@ extension Effect {
         name: L("Swipe Deck", "左右滑卡"),
         summary: L("A Tinder-style stack: fling cards left or right with rotation and stamps.", "探探式卡片堆：左右甩出卡片，带旋转与印章反馈。"),
         prompt: L(
-            "A deck of profile cards (200×250 pt, 26 pt corners) is stacked with the ones behind stepping down to 94% and 88% scale, each 22 pt lower so their bottom edges clearly read as a deck. The top card follows the finger 1:1 and rotates around its bottom edge proportionally to horizontal travel (≈14° at full swing); a green LIKE or red NOPE stamp fades in on the leading corner between 60% and 100% of the threshold, so it is fully inked exactly when a release would commit, while the round action buttons beneath swell up to 118%. Meanwhile the cards behind interpolate forward into the next slot. Releasing past ~110 pt — or flicking with enough velocity — throws the card off-screen along its trajectory with a quick spring (≈0.4 s) and a haptic; otherwise it snaps back to centre with a bouncy spring (response 0.45 s, damping ≈0.62). Playful, decisive and physical.",
-            "一叠人物卡片（200×250 pt，26 pt 圆角）层叠摆放，后方卡片依次缩至 94%、88%，并各下移 22 pt，底边清晰错落，一眼可见是一叠卡片。顶部卡片 1:1 跟手，同时以底边为轴按水平位移比例旋转（满幅约 14°）；拖动到阈值的 60%–100% 之间时，左上角的绿色「喜欢」或右上角的红色「无感」印章逐渐淡入，恰好在松手即可甩出时完全显现，下方圆形操作按钮同步放大到 118%，后方卡片则平滑前移补位。松手时若位移超过约 110 pt 或甩动速度足够，卡片沿轨迹以快速弹簧（约 0.4 秒）飞出屏幕并伴随触感反馈；否则以弹性弹簧（响应 0.45 秒、阻尼约 0.62）回弹归位。俏皮、果断且富有物理感。"
+            "A deck of 200×250 pt profile cards with 26 pt corners; the two behind step down to 94% and 88% scale and sit 22 pt lower each, so their edges read as a pile. The top card follows the finger 1:1 and pivots on its bottom edge, about 14° per 220 pt of travel; a green LIKE or red NOPE stamp inks in between 60% and 100% of the 110 pt threshold, the matching round button swells to 118%, and the cards behind slide forward into the next slot. Releasing past the threshold or flicking hard throws the card away along its path on a quick spring (response 0.4 s, damping 0.86) with a success or medium haptic; otherwise it snaps back on a bouncy spring (response 0.45 s, damping 0.62). Playful and decisive.",
+            "一叠 200×250 pt、26 pt 圆角的人物卡，后面两张依次缩到 94%、88%，并各下移 22 pt，底边错落成一叠。顶部卡片 1:1 跟手，以底边为轴旋转，每 220 pt 位移约 14°；拖到 110 pt 阈值的 60%–100% 时，绿色「喜欢」或红色「无感」印章逐渐盖实，对应的圆形按钮放大到 118%，后方卡片同步前移补位。越过阈值或用力一甩再松手，卡片以快速弹簧（响应 0.4 秒、阻尼 0.86）沿轨迹飞走，并伴随成功或中等触感；否则以弹性弹簧（响应 0.45 秒、阻尼 0.62）回弹。俏皮又果断。"
         ),
         implementation: L(
             "The top card's drag offset drives offset + rotationEffect(anchor: .bottom) and the stamp opacities; the drag progress also interpolates the depth of the cards behind. A flung card is recycled to the back without animation.",
@@ -58,11 +58,12 @@ private struct CardsSwipeDemo: View {
                     card(id: id, progress: progress, threshold: threshold)
                 }
             }
-            .frame(height: 300, alignment: .top)
+            .frame(height: 284, alignment: .top)
             HStack(spacing: 36) {
                 actionButton("xmark", color: Palette.red, amount: offset.width < 0 ? progress : 0) { fling(direction: -1) }
                 actionButton("heart.fill", color: Palette.green, amount: offset.width > 0 ? progress : 0) { fling(direction: 1) }
             }
+            DemoHint(text: L("Swipe the card or tap a button", "滑动卡片或点按钮"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.7) { autoSwipe() }
@@ -122,8 +123,8 @@ private struct CardsSwipeDemo: View {
             }
     }
 
-    private func fling(direction: CGFloat) {
-        if !ctx.isPreview {
+    private func fling(direction: CGFloat, haptic: Bool = true) {
+        if haptic && !ctx.isPreview {
             if direction > 0 { Haptics.success() } else { Haptics.tap(.medium) }
         }
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.86)) {
@@ -143,11 +144,12 @@ private struct CardsSwipeDemo: View {
     private func autoSwipe() {
         autoDirection *= -1
         let direction = autoDirection
+        let muted = Haptics.isMuted || ctx.isPreview
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
             offset = CGSize(width: direction * 80, height: -6)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
-            fling(direction: direction)
+            fling(direction: direction, haptic: !muted)
         }
     }
 }

@@ -47,7 +47,8 @@ private struct GlitchErrorDemo: View {
                         start: start,
                         glitching: glitching,
                         intensity: ctx.cg("intensity"),
-                        invalid: invalid
+                        invalid: invalid,
+                        preview: ctx.isPreview
                     )
                     .padding(.horizontal, 14)
                     .frame(height: 50)
@@ -118,9 +119,10 @@ private struct GlitchText: View {
     let glitching: Bool
     let intensity: CGFloat
     let invalid: Bool
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: !glitching)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !glitching)) { timeline in
             let elapsed: Double = max(0, timeline.date.timeIntervalSince(start))
             let step: Int = Int(elapsed / 0.05)
             if glitching {
@@ -206,6 +208,7 @@ private struct LimitBounceDemo: View {
     @State private var bumps = 0
     @State private var flash = false
     @State private var autoHits = 0
+    @State private var flashToken = 0
 
     var body: some View {
         let zh = ctx.language == .zh
@@ -280,8 +283,11 @@ private struct LimitBounceDemo: View {
             bumps += 1
             if !ctx.isPreview { Haptics.tap(.rigid) }
             flash = true
+            flashToken += 1
+            let current = flashToken
             Task {
                 try? await Task.sleep(for: .seconds(0.5))
+                guard flashToken == current else { return }
                 flash = false
             }
             return
@@ -342,6 +348,7 @@ private struct FaceIDFailDemo: View {
     let ctx: DemoContext
     @State private var state: FaceScanState = .idle
     @State private var fails = 0
+    @State private var token = 0
 
     var body: some View {
         let zh = ctx.language == .zh
@@ -416,14 +423,17 @@ private struct FaceIDFailDemo: View {
         guard state != .scanning else { return }
         let scan = max(ctx["scan"], 0.3)
         let live = !ctx.isPreview
+        token += 1
+        let current = token
         withAnimation(.smooth(duration: 0.3)) { state = .scanning }
         Task {
             try? await Task.sleep(for: .seconds(scan))
+            guard token == current else { return }
             withAnimation(.smooth(duration: 0.3)) { state = .failed }
             fails += 1
             if live { Haptics.error() }
             try? await Task.sleep(for: .seconds(2.0))
-            guard state == .failed else { return }
+            guard token == current, state == .failed else { return }
             withAnimation(.smooth(duration: 0.4)) { state = .idle }
         }
     }

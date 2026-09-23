@@ -35,6 +35,8 @@ private struct InputWheelPickerDemo: View {
     @State private var hour: Int?
     @State private var minute: Int?
     @State private var step = 0
+    /// Programmatic moves (first layout, autoplay, the detail intro) set this so they don't tick the haptic.
+    @State private var quietUntil = Date.distantPast
 
     /// "Now" is fixed so the countdown reads the same for everyone.
     private static let now = 22 * 60 + 35
@@ -60,11 +62,12 @@ private struct InputWheelPickerDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             // Setting the positions after the first layout scrolls both drums to them.
+            quietUntil = Date.now.addingTimeInterval(0.6)
             if hour == nil { hour = 7 }
             if minute == nil { minute = 25 }
         }
-        .sensoryFeedback(.selection, trigger: ctx.isPreview ? nil : hour)
-        .sensoryFeedback(.selection, trigger: ctx.isPreview ? nil : minute)
+        .sensoryFeedback(.selection, trigger: hour) { old, _ in userMoved(old) }
+        .sensoryFeedback(.selection, trigger: minute) { old, _ in userMoved(old) }
         .autoplay(ctx.isPreview, every: 1.6, delay: 0.6) { previewTick() }
     }
 
@@ -109,9 +112,14 @@ private struct InputWheelPickerDemo: View {
         return ctx.language == .zh ? "\(h) 小时 \(m) 分钟后响铃" : "Rings in \(h) h \(m) min"
     }
 
+    private func userMoved(_ old: Int?) -> Bool {
+        !ctx.isPreview && old != nil && Date.now >= quietUntil
+    }
+
     private func previewTick() {
         let time = Self.previewTimes[step % Self.previewTimes.count]
         step += 1
+        quietUntil = Date.now.addingTimeInterval(1.1)
         withAnimation(.smooth(duration: 0.8)) {
             hour = time.0
             minute = time.1

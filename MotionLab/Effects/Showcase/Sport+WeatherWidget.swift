@@ -65,6 +65,9 @@ private enum WeatherLook {
 private struct SportWeatherDemo: View {
     let ctx: DemoContext
     @State private var selected = 0
+    /// The outgoing condition keeps animating while it cross-fades out (600 ms), then pauses.
+    @State private var fadingKind: Int?
+    @State private var fadeID = 0
     @Namespace private var ns
 
     private static let hours: [WeatherHour] = [
@@ -212,7 +215,12 @@ private struct SportWeatherDemo: View {
     private var ambience: some View {
         ZStack {
             ForEach(0..<3, id: \.self) { kind in
-                WeatherAmbience(kind: kind, density: ctx.int("density"), active: hour.kind == kind)
+                WeatherAmbience(
+                    kind: kind,
+                    density: ctx.int("density"),
+                    active: hour.kind == kind || fadingKind == kind,
+                    preview: ctx.isPreview
+                )
                     .opacity(hour.kind == kind ? 1 : 0)
                     .animation(.easeInOut(duration: 0.6), value: selected)
             }
@@ -227,6 +235,16 @@ private struct SportWeatherDemo: View {
     private func select(_ index: Int) {
         guard index != selected else { return }
         if !ctx.isPreview { Haptics.selection() }
+        let outgoing = hour.kind
+        if Self.hours[index].kind != outgoing {
+            fadingKind = outgoing
+            fadeID += 1
+            let id = fadeID
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(650))
+                if id == fadeID { fadingKind = nil }
+            }
+        }
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             selected = index
         }
@@ -238,9 +256,10 @@ private struct WeatherAmbience: View {
     let kind: Int
     let density: Int
     let active: Bool
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: !active)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !active)) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             Canvas { context, size in
                 switch kind {

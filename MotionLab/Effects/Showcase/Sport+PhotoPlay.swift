@@ -38,7 +38,7 @@ private struct SportPhotoPlayDemo: View {
             VStack(spacing: 0) {
                 Spacer()
                 Button(action: toggle) {
-                    TimelineView(.animation(minimumInterval: nil, paused: !playing)) { timeline in
+                    TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !playing)) { timeline in
                         PhotoPlayCard(
                             seconds: current(at: timeline.date),
                             clip: max(ctx["clip"], 1),

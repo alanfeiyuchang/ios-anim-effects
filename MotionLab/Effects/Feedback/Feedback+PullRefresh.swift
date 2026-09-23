@@ -48,6 +48,7 @@ private struct PullRefreshDemo: View {
     @State private var armed = false
     @State private var items: [Int] = [3, 2, 1, 0]
     @State private var nextItem = 4
+    @State private var token = 0
 
     private let threshold: CGFloat = 72
     private let holdHeight: CGFloat = 60
@@ -55,7 +56,7 @@ private struct PullRefreshDemo: View {
     var body: some View {
         VStack(spacing: 16) {
             ZStack(alignment: .top) {
-                PullIndicator(progress: min(pull / threshold, 1), armed: armed, refreshing: refreshing)
+                PullIndicator(progress: min(pull / threshold, 1), armed: armed, refreshing: refreshing, preview: ctx.isPreview)
                     .frame(height: max(pull, 1))
                     .opacity(pull > 6 ? 1 : 0)
                 list
@@ -119,8 +120,11 @@ private struct PullRefreshDemo: View {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { pull = holdHeight }
         let wait = ctx["duration"]
         let live = !ctx.isPreview
+        token += 1
+        let current = token
         Task {
             try? await Task.sleep(for: .seconds(wait))
+            guard token == current else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
                 items.insert(nextItem, at: 0)
                 if items.count > 4 { items.removeLast() }
@@ -135,12 +139,16 @@ private struct PullRefreshDemo: View {
 
     private func simulate() {
         guard !refreshing else { return }
+        token += 1
+        let current = token
         withAnimation(.easeOut(duration: 0.5)) { pull = threshold * 0.7 }
         Task {
             try? await Task.sleep(for: .seconds(0.5))
+            guard token == current, !refreshing else { return }
             withAnimation(.easeOut(duration: 0.3)) { pull = threshold + 14 }
             updateArmed(threshold + 14)
             try? await Task.sleep(for: .seconds(0.35))
+            guard token == current else { return }
             release()
         }
     }
@@ -150,11 +158,12 @@ private struct PullIndicator: View {
     let progress: CGFloat
     let armed: Bool
     let refreshing: Bool
+    let preview: Bool
 
     var body: some View {
         ZStack {
             if refreshing {
-                PullSpinner()
+                PullSpinner(preview: preview)
                     .transition(AnyTransition.scale(scale: 0.6).combined(with: .opacity))
             } else {
                 Circle()
@@ -175,8 +184,10 @@ private struct PullIndicator: View {
 }
 
 private struct PullSpinner: View {
+    let preview: Bool
+
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             Circle()
                 .trim(from: 0, to: 0.75)

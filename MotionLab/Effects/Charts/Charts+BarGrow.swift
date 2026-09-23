@@ -36,11 +36,13 @@ private struct BarDatum: Identifiable {
 
 private let weekdaysEN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 private let weekdaysZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+private let barSeed: [Double] = [46, 72, 58, 94, 67, 38, 81]
 
 private struct BarGrowDemo: View {
     let ctx: DemoContext
-    @State private var bars: [BarDatum] = (0..<7).map { BarDatum(id: $0, value: 0, shown: false) }
-    @State private var total: Double = 0
+    /// Seeded with a settled week so still snapshots show data; `onAppear` rewinds and plays.
+    @State private var bars: [BarDatum] = barSeed.enumerated().map { BarDatum(id: $0.offset, value: $0.element, shown: true) }
+    @State private var total: Double = barSeed.reduce(0, +)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -58,8 +60,15 @@ private struct BarGrowDemo: View {
             DemoHint(text: L("Tap to replay", "点击重播"), ctx: ctx)
                 .padding(.bottom, 8)
         }
-        .onAppear { play() }
-        .autoplay(ctx.isPreview, every: 3.2, delay: 3.2) { play() }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                for index in bars.indices { bars[index].shown = false }
+            }, then: {
+                play()
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: 3.2, delay: 3.2) { if ctx.isPreview { play() } }
     }
 
     private var header: some View {
@@ -67,7 +76,7 @@ private struct BarGrowDemo: View {
             Text(ctx.language == .zh ? "本周活跃" : "Weekly activity")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text("\(Int(total))")
+            Text(verbatim: "\(Int(total))")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText(value: total))
@@ -87,7 +96,7 @@ private struct BarGrowDemo: View {
             .annotation(position: .top, spacing: 4) {
                 // Rolls up from 0 with its bar (same staggered spring transaction), and back down on replay.
                 let shownValue = bar.shown ? bar.value : 0
-                Text("\(Int(shownValue))")
+                Text(verbatim: "\(Int(shownValue))")
                     .font(.system(size: 10, weight: .semibold, design: .rounded).monospacedDigit())
                     .foregroundStyle(.secondary)
                     .contentTransition(.numericText(value: shownValue))

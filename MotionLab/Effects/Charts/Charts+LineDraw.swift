@@ -16,7 +16,7 @@ extension Effect {
             "Animatable 视图插值 progress；曲线与面积都被宽度为 progress × 宽度 的矩形遮罩，端点的 y 值由构建路径时相同的三次贝塞尔分段计算得出。"
         ),
         apis: ["Animatable", "Path.addCurve", "mask(alignment:)", "LinearGradient", "timingCurve"],
-        tags: ["line chart", "draw on", "area", "reveal", "sparkline", "折线图", "绘制", "面积图", "揭示"],
+        tags: ["line chart", "draw on", "area", "reveal", "折线图", "绘制", "面积图", "揭示"],
         params: [
             .slider("duration", L("Draw duration", "绘制时长"), 0.6...3.0, default: 1.6, unit: "s"),
             .toggle("smooth", L("Smooth curve", "平滑曲线"), default: true),
@@ -97,7 +97,8 @@ private let lineDatasets: [[Double]] = [
 
 private struct LineDrawDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    /// Seeded fully drawn so still snapshots show the line; `onAppear` rewinds and draws it on.
+    @State private var progress: Double = 1
     @State private var dataset = 0
 
     var body: some View {
@@ -126,8 +127,17 @@ private struct LineDrawDemo: View {
             DemoHint(text: L("Tap to redraw", "点击重新绘制"), ctx: ctx)
                 .padding(.bottom, 8)
         }
-        .onAppear { draw() }
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.6, delay: ctx["duration"] + 1.2) { replay() }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                progress = 0
+            }, then: {
+                draw()
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.6, delay: ctx["duration"] + 1.2) {
+            if ctx.isPreview { replay() }
+        }
     }
 
     /// Every other month under its data point (9 points: Jan…Sep).

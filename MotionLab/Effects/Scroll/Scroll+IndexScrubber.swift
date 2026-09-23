@@ -8,8 +8,8 @@ extension Effect {
         name: L("A–Z Index Scrubber", "A–Z 索引条"),
         summary: L("Scrub a side index: letters magnify under the thumb, a bubble previews the letter and the list jumps.", "在侧边索引上滑动：指下字母放大，气泡预览字母，列表随之跳转。"),
         prompt: L(
-            "A contacts list grouped by initial carries a slim A–Z index down its right edge in 10 pt semibold rounded type, 11 pt per letter. Touching and sliding along the index scrubs it: the letter under the thumb swells to ~190% and pushes left, its neighbours magnify on a falloff that fades out three letters away — a dock-like fisheye that follows the finger on a tight spring (≈0.25 s, damping 0.8). A 56 pt gradient bubble with the letter in heavy type pops in beside the thumb, tracks it vertically and swaps its letter with a numeric-style roll. Every new letter jumps the list, without animation, to that section (or the next one that exists) and ticks a selection haptic. Lifting the finger shrinks the bubble away and relaxes the index. Fast, precise and tactile — the native contacts index, with more character.",
-            "按首字母分组的联系人列表右侧有一条纤细的 A–Z 索引，10 pt 半粗圆体，每个字母占 11 pt。手指按住索引上下滑动即可快速定位：指下字母放大到约 190% 并向左凸出，相邻字母按衰减曲线依次放大，三格之外恢复原样——像程序坞一样的鱼眼效果以紧致弹簧（约 0.25 秒、阻尼 0.8）跟随手指。一个 56 pt 的渐变气泡在指旁弹出，以粗体显示当前字母，随手指上下移动并以滚动数字般的过渡切换字母。每换一个字母，列表都会无动画地直接跳到该分组（若该字母无分组，则跳到下一个存在的分组），并触发一次选择触感。松手后气泡缩小消失，索引恢复平静。迅速、精准、富有触感——原生通讯录索引，但更有个性。"
+            "A contacts list grouped by initial has a slim A–Z index on its right edge, 10 pt semibold rounded letters on an 11 pt pitch. Sliding a thumb along it scrubs a dock-like fisheye: the letter underneath swells to 190% and pushes 14 pt left, and its neighbours magnify on a cosine falloff that fades out three letters away, all on a tight spring (response 0.25 s, damping 0.8). A 56 pt gradient bubble pops in beside the thumb, tracks it and rolls to each new letter like a numeric counter. Every new letter jumps the list without animation to that section, or the next one that exists, with a selection tick; lifting the finger shrinks the bubble away and relaxes the index.",
+            "按首字母分组的联系人列表右侧有一条纤细的 A–Z 索引，字母为 10 pt 半粗圆体，每格 11 pt。手指沿索引滑动，会出现程序坞式的鱼眼：指下字母放大到 190% 并向左凸出 14 pt，相邻字母按余弦衰减依次放大，三格外恢复原样，全程由紧致弹簧（响应 0.25 秒、阻尼 0.8）跟手。一个 56 pt 的渐变气泡在指旁弹出，跟着手指移动，像数字滚动一样切换字母。每换一个字母，列表都无动画地直接跳到对应分组（没有就跳到下一个），并轻轻一震；松手后气泡缩回消失，索引恢复平静。"
         ),
         implementation: L(
             "A DragGesture on the index maps location.y to a letter; ScrollViewReader.scrollTo jumps to the section id, each letter's scaleEffect/offset is a falloff of its distance from the active index, and sensoryFeedback(.selection) ticks on every change.",
@@ -102,10 +102,25 @@ private struct ScrollIndexDemo: View {
                 .gesture(scrub(proxy))
                 .padding(.trailing, 4)
             }
+            .overlay(alignment: .bottom) { hint }
             .sensoryFeedback(.selection, trigger: active) { _, newValue in
                 !ctx.isPreview && !demoing && newValue != nil
             }
             .autoplay(ctx.isPreview, every: 0.32, delay: 0.5) { autoScrub(proxy) }
+        }
+    }
+
+    @ViewBuilder
+    private var hint: some View {
+        if !ctx.isPreview {
+            DemoHint(text: L("Slide along the A–Z index", "沿 A–Z 索引滑动"), ctx: ctx)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.regularMaterial, in: Capsule())
+                .padding(.bottom, 12)
+                .opacity(active == nil ? 1 : 0)
+                .animation(.easeOut(duration: 0.2), value: active == nil)
+                .allowsHitTesting(false)
         }
     }
 

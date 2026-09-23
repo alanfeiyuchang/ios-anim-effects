@@ -8,15 +8,15 @@ extension Effect {
         name: L("Range Switch Morph", "区间切换形变"),
         summary: L("Switching 1D / 1W / 1M / 1Y springs the price line into its new shape, color and baseline.", "切换 1天/1周/1月/1年时，价格折线连同颜色与基准线弹性形变为新形状。"),
         prompt: L(
-            "A stock card: ticker and price on top, a pill showing the period change (▲ green / ▼ red), a 150 pt smooth line chart with a gradient area fill, a dashed previous-close baseline and a glowing end dot, and a segmented control (1D · 1W · 1M · 1Y) whose thumb slides between options with matched geometry. Choosing a range morphs every one of the 36 points from the old series to the new one on a single spring (response ≈ 0.6 s, damping ≈ 0.8) — the line, area, baseline and end dot are all computed from the same interpolated values, so nothing drifts apart, and re-tapping mid-flight redirects smoothly. The stroke color blends green ⇄ red in the same spring, and the change figure rolls with a numeric transition and a selection haptic. Confident, fluid and data-honest.",
-            "一张股票卡片：顶部为代码与价格，胶囊标签显示区间涨跌（▲ 绿 / ▼ 红），下方是 150pt 高的平滑折线图——渐变面积填充、虚线昨收基准线与发光端点，最底部是分段控件（1天 · 1周 · 1月 · 1年），滑块借助几何匹配在选项间滑动。切换区间时，36 个数据点在同一个弹簧（响应约 0.6 秒、阻尼约 0.8）中由旧序列形变为新序列——折线、面积、基准线与端点都由同一组插值数值计算，彼此绝不脱节；动画途中再次点击也会平滑转向。线条颜色在同一弹簧中于绿 ⇄ 红之间过渡，涨跌数字以数字转场滚动，并伴随选择触感。自信、流畅，忠于数据。"
+            "A stock card: ticker and price on top, a pill showing the period change (▲ green / ▼ red), a 150 pt smooth line chart with a gradient area fill, a dashed previous-close baseline and a glowing end dot, and a segmented control (1D · 1W · 1M · 1Y) whose thumb slides between options with matched geometry. Choosing a range morphs every one of the 36 points from the old series to the new one on a single spring (response ≈ 0.6 s, damping ≈ 0.8) — the line, area, baseline and end dot are all computed from the same interpolated values, so nothing drifts apart, and re-tapping mid-flight redirects smoothly. The stroke color blends green ⇄ red in the same spring, and the price and change figures roll with a numeric transition and a selection haptic. Confident, fluid and data-honest.",
+            "一张股票卡片：顶部为代码与价格，胶囊标签显示区间涨跌（▲ 绿 / ▼ 红），下方是 150pt 高的平滑折线图——渐变面积填充、虚线昨收基准线与发光端点，最底部是分段控件（1天 · 1周 · 1月 · 1年），滑块借助几何匹配在选项间滑动。切换区间时，36 个数据点在同一个弹簧（响应约 0.6 秒、阻尼约 0.8）中由旧序列形变为新序列——折线、面积、基准线与端点都由同一组插值数值计算，彼此绝不脱节；动画途中再次点击也会平滑转向。线条颜色在同一弹簧中于绿 ⇄ 红之间过渡，价格与涨跌数字以数字转场滚动，并伴随选择触感。自信、流畅，忠于数据。"
         ),
         implementation: L(
             "The chart is an Animatable view whose animatableData pairs a custom VectorArithmetic series (an array of Doubles) with a color tone, so SwiftUI interpolates every point in one interruptible spring; a Canvas draws line, area, baseline and dot.",
             "图表是一个 Animatable 视图，其 animatableData 将自定义 VectorArithmetic 序列（Double 数组）与颜色色调组合在一起，SwiftUI 因此在同一个可打断的弹簧中插值所有数据点；Canvas 负责绘制折线、面积、基准线与端点。"
         ),
         apis: ["VectorArithmetic", "Animatable", "Canvas", "matchedGeometryEffect", "contentTransition(.numericText)"],
-        tags: ["stock", "line chart", "morph", "range", "time range", "股票", "折线图", "形变", "区间", "行情"],
+        tags: ["stock", "line chart", "morph", "time range", "股票", "折线图", "形变", "行情"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.25...1.2, default: 0.6, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.8),
@@ -69,6 +69,7 @@ private struct RangeData {
     let label: LocalizedText
     let values: [Double]
     let change: Double
+    let price: Double
 }
 
 private func makeSeries(seed: Double, trend: Double, wiggle: Double) -> [Double] {
@@ -85,10 +86,10 @@ private func makeSeries(seed: Double, trend: Double, wiggle: Double) -> [Double]
 }
 
 private let rangeData: [RangeData] = [
-    RangeData(label: L("1D", "1天"), values: makeSeries(seed: 1.3, trend: 0.5, wiggle: 0.55), change: 1.26),
-    RangeData(label: L("1W", "1周"), values: makeSeries(seed: 4.1, trend: -0.9, wiggle: 0.45), change: -2.14),
-    RangeData(label: L("1M", "1月"), values: makeSeries(seed: 2.7, trend: 1.3, wiggle: 0.5), change: 8.72),
-    RangeData(label: L("1Y", "1年"), values: makeSeries(seed: 5.9, trend: 2.2, wiggle: 0.6), change: 41.3),
+    RangeData(label: L("1D", "1天"), values: makeSeries(seed: 1.3, trend: 0.5, wiggle: 0.55), change: 1.26, price: 182.40),
+    RangeData(label: L("1W", "1周"), values: makeSeries(seed: 4.1, trend: -0.9, wiggle: 0.45), change: -2.14, price: 178.91),
+    RangeData(label: L("1M", "1月"), values: makeSeries(seed: 2.7, trend: 1.3, wiggle: 0.5), change: 8.72, price: 186.35),
+    RangeData(label: L("1Y", "1年"), values: makeSeries(seed: 5.9, trend: 2.2, wiggle: 0.6), change: 41.3, price: 204.18),
 ]
 
 // MARK: - Demo
@@ -130,9 +131,10 @@ private struct RangeMorphDemo: View {
                 Text(ctx.language == .zh ? "动效科技 · MLX" : "Motion Labs · MLX")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text("$182.40")
+                Text(verbatim: String(format: "$%.2f", data.price))
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .monospacedDigit()
+                    .contentTransition(.numericText(value: data.price))
             }
             Spacer()
             HStack(spacing: 3) {

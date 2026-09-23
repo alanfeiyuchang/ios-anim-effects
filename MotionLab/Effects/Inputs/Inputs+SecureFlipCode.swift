@@ -36,6 +36,8 @@ private struct SecureFlipCodeDemo: View {
     @State private var staggerFlips = false
     @State private var completions = 0
     @State private var scriptIndex = 0
+    /// Set by the autoplay script so the keystroke it types (in previews or the detail intro) stays silent.
+    @State private var scripted = false
     @FocusState private var focused: Bool
 
     private let length = 4
@@ -108,6 +110,8 @@ private struct SecureFlipCodeDemo: View {
     }
 
     private func handle(old: String, new: String) {
+        let muted = ctx.isPreview || scripted
+        scripted = false
         let digits = String(new.filter(\.isNumber).prefix(length))
         if digits != new {
             code = digits
@@ -119,7 +123,7 @@ private struct SecureFlipCodeDemo: View {
         }
         guard digits.count > old.count else { return }
         let index = digits.count - 1
-        if !ctx.isPreview { Haptics.selection() }
+        if !muted { Haptics.selection() }
         let reveal = ctx["reveal"]
         Task {
             try? await Task.sleep(for: .seconds(reveal))
@@ -129,7 +133,7 @@ private struct SecureFlipCodeDemo: View {
         }
         if digits.count == length {
             completions += 1
-            if !ctx.isPreview { Haptics.success() }
+            if !muted { Haptics.success() }
         }
     }
 
@@ -151,7 +155,10 @@ private struct SecureFlipCodeDemo: View {
         case "⌧":
             reset()
         default:
-            if code.count < length { code.append(contentsOf: key) }
+            if code.count < length {
+                scripted = true
+                code.append(contentsOf: key)
+            }
         }
     }
 }

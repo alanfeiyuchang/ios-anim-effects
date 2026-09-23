@@ -59,7 +59,7 @@ private struct SpotlightDemo: View {
                     .frame(width: current.radius * 2, height: current.radius * 2)
                     .position(current.center)
                 if ctx.bool("pulse") {
-                    SpotlightPulse(radius: current.radius)
+                    SpotlightPulse(radius: current.radius, preview: ctx.isPreview)
                         .position(current.center)
                 }
                 SpotlightTooltip(title: current.title, index: step % SpotlightLayout.steps.count, total: SpotlightLayout.steps.count, language: ctx.language)
@@ -111,9 +111,10 @@ private struct SpotlightHole: Shape {
 
 private struct SpotlightPulse: View {
     let radius: CGFloat
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             ZStack {
                 ForEach(0..<2, id: \.self) { index in

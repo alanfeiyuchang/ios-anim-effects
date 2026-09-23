@@ -59,7 +59,10 @@ private struct ButtonRepelLettersDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 0.7, delay: 0.3) { previewStep() }
+        .autoplay(ctx.isPreview, every: 0.7, delay: 0.3) {
+            // The detail intro slides across once and lifts off, so the letters always regroup.
+            if ctx.isPreview { previewStep() } else { introSweep() }
+        }
     }
 
     private var button: some View {
@@ -133,6 +136,16 @@ private struct ButtonRepelLettersDemo: View {
         let uy = dy / distance
         let tilt = Double(ux * weight) * 25
         return (ux * push, uy * push, tilt, weight)
+    }
+
+    private func introSweep() {
+        Task { @MainActor in
+            for point in Self.previewPath {
+                finger = point
+                try? await Task.sleep(for: .seconds(0.45))
+            }
+            finger = nil
+        }
     }
 
     private func previewStep() {

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Cards stretch along the drag velocity like jelly, wobble when the finger stops and pop in with a squash.", "卡片沿拖动速度像果冻一样拉伸，手指停下时晃动，新卡片挤压弹出。"),
         prompt: L(
             "A deck of 190×240 pt destination cards with 24 pt corners. While dragging, the top card follows the finger and stretches along the direction of travel in proportion to speed — up to 18% longer and 9% thinner at 3,000 pt/s — through a wobbly spring (response 0.28 s, damping 0.32), so when the finger pauses for 80 ms or lets go the card jiggles back to shape. Releasing past 100 pt or with a fast flick throws it off-stage still stretched; the next card then pops forward with a squash-and-stretch keyframe sequence (x/y 108/92% → 95/105% → 102/98% → 100% over ~0.55 s) while the pile behind steps up. Playful, gummy and elastic.",
-            "一叠 190×240 pt、24 pt 圆角的目的地卡片。拖动时顶部卡片跟随手指，并按速度沿运动方向拉伸——在 3000 pt/s 时最多拉长 18%、变细 9%——拉伸通过一个容易晃动的弹簧（响应 0.28 秒、阻尼 0.32）驱动，因此手指停顿 80 毫秒或松开时，卡片会抖动着恢复原形。松手时超过 100 pt 或快速甩动，卡片会保持拉伸状态被甩出舞台；下一张卡片随即以挤压拉伸关键帧弹到前面（x/y 依次为 108/92% → 95/105% → 102/98% → 100%，约 0.55 秒），后方卡堆同步上移。俏皮、Q 弹、富有弹性。"
+            "一叠 190×240 pt、24 pt 圆角的目的地卡片。拖动时顶部卡片跟手，并按速度沿运动方向拉伸——3000 pt/s 时最多拉长 18%、变细 9%——拉伸由易晃动的弹簧（响应 0.28 秒、阻尼 0.32）驱动，手指停顿 80 毫秒或松开时，卡片便抖动着恢复原形。拖过 100 pt 或快速甩动后松手，卡片带着拉伸飞出舞台；下一张随即以挤压拉伸关键帧弹到前面（x/y 依次 108/92% → 95/105% → 102/98% → 100%，约 0.55 秒），后方卡堆同步上移。俏皮而 Q 弹。"
         ),
         implementation: L(
             "DragGesture.velocity sets a stretch vector that an .animation(value:) spring smooths; the card is rotated to the velocity angle, scaled on x and rotated back. A debounce Task relaxes the stretch when events stop, and keyframeAnimator plays the pop.",
@@ -124,8 +124,8 @@ private struct CardsJellySwipeDemo: View {
         }
     }
 
-    private func fling(direction: CGFloat) {
-        Haptics.tap(.medium)
+    private func fling(direction: CGFloat, haptic: Bool = true) {
+        if haptic && !ctx.isPreview { Haptics.tap(.medium) }
         stretch = CGSize(width: direction * 0.18 * ctx.cg("jelly"), height: 0)
         withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
             offset = CGSize(width: direction * 460, height: offset.height + 30)
@@ -149,6 +149,7 @@ private struct CardsJellySwipeDemo: View {
     private func autoFling() {
         autoDirection = -autoDirection
         let direction = autoDirection
+        let muted = Haptics.isMuted || ctx.isPreview
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             offset = CGSize(width: direction * 60, height: -4)
         }
@@ -157,7 +158,7 @@ private struct CardsJellySwipeDemo: View {
             stretch = .zero
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            fling(direction: direction)
+            fling(direction: direction, haptic: !muted)
         }
     }
 }

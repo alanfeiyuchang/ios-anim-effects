@@ -54,6 +54,8 @@ private struct TravelCarouselDemo: View {
     @State private var current: Int? = 0
     /// Measured scroll-view width, so the side margins centre a 200 pt card on any stage size.
     @State private var viewportWidth: CGFloat = 340
+    /// Programmatic advances (autoplay, the detail intro) set this so they don't tick the selection haptic.
+    @State private var quietUntil = Date.distantPast
 
     private var count: Int { TravelCarouselSpot.all.count }
 
@@ -70,7 +72,7 @@ private struct TravelCarouselDemo: View {
         }
         .autoplay(ctx.isPreview, every: 1.8) { advance() }
         .onChange(of: current) { _, _ in
-            if !ctx.isPreview { Haptics.selection() }
+            if !ctx.isPreview && Date.now >= quietUntil { Haptics.selection() }
         }
     }
 
@@ -128,6 +130,7 @@ private struct TravelCarouselDemo: View {
     }
 
     private func advance() {
+        quietUntil = Date.now.addingTimeInterval(0.8)
         withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
             current = ((current ?? 0) + 1) % count
         }

@@ -35,6 +35,8 @@ private struct ScrollRulerDemo: View {
     @State private var index = 28
     @State private var width: CGFloat = 340
     @State private var step = 0
+    /// True while autoplay (or the detail intro) scrolls the ruler, so scripted ticks stay silent.
+    @State private var scripted = false
 
     private let spacing: CGFloat = 12
 
@@ -44,7 +46,7 @@ private struct ScrollRulerDemo: View {
             ruler
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: index) { _, _ in !ctx.isPreview }
+        .sensoryFeedback(.selection, trigger: index) { _, _ in !ctx.isPreview && !scripted }
         .autoplay(ctx.isPreview, every: 1.4) { autoScroll() }
     }
 
@@ -65,25 +67,28 @@ private struct ScrollRulerDemo: View {
         let viewport = max(width, 1)
         let swell = ctx.cg("swell")
         let lens = max(ctx.cg("lens"), 1)
-        let stride = spacing
+        let pitch = spacing
         return ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
                 ForEach(0..<count, id: \.self) { i in
                     ScrollRulerTick(value: scrollRulerMin + i, viewport: viewport, swell: swell, lens: lens)
-                        .frame(width: stride, height: 96, alignment: .bottom)
+                        .frame(width: pitch, height: 96, alignment: .bottom)
                 }
             }
-            .padding(.horizontal, max((width - stride) / 2, 0))
+            .padding(.horizontal, max((width - pitch) / 2, 0))
         }
-        .scrollTargetBehavior(ScrollStrideSnap(stride: stride))
+        .scrollTargetBehavior(ScrollStrideSnap(pitch: pitch))
         .scrollPosition($position)
         .onScrollGeometryChange(for: Int.self, of: { geometry in
             let offset = geometry.contentOffset.x + geometry.contentInsets.leading
-            return Int((offset / stride).rounded()).clamped(to: 0...(count - 1))
+            return Int((offset / pitch).rounded()).clamped(to: 0...(count - 1))
         }, action: { _, newValue in
             index = newValue
         })
-        .onAppear { position.scrollTo(x: CGFloat(28) * stride) }
+        .onScrollPhaseChange { _, newPhase in
+            if newPhase == .interacting { scripted = false }
+        }
+        .onAppear { position.scrollTo(x: CGFloat(28) * pitch) }
         .scrollIndicators(.hidden)
         .frame(height: 100)
         .overlay(alignment: .bottom) {
@@ -115,6 +120,7 @@ private struct ScrollRulerDemo: View {
         let targets = [34, 22, 45, 30, 12, 28]
         let target = targets[step % targets.count]
         step += 1
+        scripted = true
         withAnimation(.spring(response: 0.8, dampingFraction: 0.9)) {
             position.scrollTo(x: CGFloat(target) * spacing)
         }

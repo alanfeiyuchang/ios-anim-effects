@@ -15,7 +15,7 @@ extension Effect {
             "The pull distance drives rotation3DEffect around the x-axis anchored at the top plus a small rotationEffect anchored at the top-leading corner; a torn sheet animates a separate fall state with easeIn before the day index advances.",
             "拉动距离驱动以顶部为锚点绕 x 轴的 rotation3DEffect，以及以左上角为锚点的轻微 rotationEffect；撕下的纸页使用独立的下落状态做缓入动画，之后日期序号前进。"
         ),
-        apis: ["rotation3DEffect(_:axis:anchor:perspective:)", "rotationEffect(_:anchor:)", "DragGesture", "contentTransition(.numericText())"],
+        apis: ["rotation3DEffect(_:axis:anchor:perspective:)", "rotationEffect(_:anchor:)", "DragGesture", "withTransaction"],
         tags: ["calendar", "tear", "peel", "page", "日历", "撕页", "翻页", "纸张"],
         params: [
             .slider("bend", L("Max bend", "最大弯折"), 20...80, default: 55, step: 1, decimals: 0, unit: "°"),
@@ -74,8 +74,8 @@ private struct CardsTearOffDemo: View {
             }
     }
 
-    private func tear() {
-        Haptics.tap(.rigid)
+    private func tear(haptic: Bool = true) {
+        if haptic && !ctx.isPreview { Haptics.tap(.rigid) }
         withAnimation(.easeIn(duration: 0.55)) { falling = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.58) {
             var transaction = Transaction()
@@ -90,8 +90,9 @@ private struct CardsTearOffDemo: View {
 
     private func autoTear() {
         guard !falling else { return }
+        let muted = Haptics.isMuted || ctx.isPreview
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { pull = 120 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { tear() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { tear(haptic: !muted) }
     }
 }
 

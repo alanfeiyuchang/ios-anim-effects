@@ -55,7 +55,8 @@ private struct BlurRevealDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { toggle() }
-        .autoplay(ctx.isPreview, every: max(ctx["duration"], 0.6) + 1.2, delay: 0.2) { toggle() }
+        // The detail stage reveals once in onAppear (also under Reduce Motion), so the intro play is a no-op there.
+        .autoplay(ctx.isPreview, every: max(ctx["duration"], 0.6) + 1.2, delay: 0.2) { if ctx.isPreview { toggle() } }
         .onAppear {
             if !ctx.isPreview { toggle() }
         }

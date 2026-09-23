@@ -2,6 +2,22 @@ import SwiftUI
 
 // MARK: - Helpers
 
+/// A phase that advances at `rate` per second and stays continuous when the rate changes,
+/// so dragging a speed slider speeds the loop up instead of teleporting it.
+private struct ProgressPhaseClock {
+    var anchorDate = Date()
+    var anchorPhase: Double = 0
+
+    func phase(at date: Date, rate: Double) -> Double {
+        anchorPhase + date.timeIntervalSince(anchorDate) * rate
+    }
+
+    mutating func rebase(at date: Date, oldRate: Double) {
+        anchorPhase = phase(at: date, rate: oldRate)
+        anchorDate = date
+    }
+}
+
 private func progEaseInOut(_ x: Double) -> Double {
     let u = min(max(x, 0), 1)
     return u < 0.5 ? 4 * u * u * u : 1 - pow(-2 * u + 2, 3) / 2
@@ -75,7 +91,7 @@ private struct GlowBarDemo: View {
         VStack(spacing: 22) {
             VStack(alignment: .leading, spacing: 14) {
                 header
-                GlowBarTrack(progress: progress, width: width, height: ctx.cg("height"), glow: ctx.cg("glow"))
+                GlowBarTrack(progress: progress, width: width, height: ctx.cg("height"), glow: ctx.cg("glow"), preview: ctx.isPreview)
             }
             .frame(width: width)
             .padding(22)
@@ -114,6 +130,7 @@ private struct GlowBarTrack: View {
     let width: CGFloat
     let height: CGFloat
     let glow: CGFloat
+    let preview: Bool
 
     var body: some View {
         let fillWidth = max(height, width * CGFloat(progress))
@@ -127,7 +144,7 @@ private struct GlowBarTrack: View {
                 .opacity(0.75)
             Capsule()
                 .fill(Palette.aurora)
-                .overlay { BarSheen() }
+                .overlay { BarSheen(preview: preview) }
                 .clipShape(Capsule())
                 .frame(width: fillWidth)
         }
@@ -137,8 +154,10 @@ private struct GlowBarTrack: View {
 }
 
 private struct BarSheen: View {
+    let preview: Bool
+
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             let x = (t / 1.6).truncatingRemainder(dividingBy: 1) * 3 - 1
             LinearGradient(
@@ -332,7 +351,7 @@ private struct IndeterminateDemo: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            IndeterminateTrack(period: ctx["period"], width: width, height: ctx.cg("height"))
+            IndeterminateTrack(period: ctx["period"], width: width, height: ctx.cg("height"), preview: ctx.isPreview)
         }
         .frame(width: width)
         .padding(22)
@@ -345,10 +364,12 @@ private struct IndeterminateTrack: View {
     let period: Double
     let width: CGFloat
     let height: CGFloat
+    let preview: Bool
+    @State private var clock = ProgressPhaseClock()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let u = (timeline.date.timeIntervalSinceReferenceDate / period).truncatingRemainder(dividingBy: 1)
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            let u = clock.phase(at: timeline.date, rate: 1 / max(period, 0.1)).truncatingRemainder(dividingBy: 1)
             let first = IndeterminateTrack.first(u)
             let second = IndeterminateTrack.second(u)
             ZStack(alignment: .leading) {
@@ -360,6 +381,7 @@ private struct IndeterminateTrack: View {
             .clipShape(Capsule())
             .shadow(color: Palette.violet.opacity(0.35), radius: 6)
         }
+        .onChange(of: period) { old, _ in clock.rebase(at: .now, oldRate: 1 / max(old, 0.1)) }
     }
 
     private func segment(_ span: (tail: Double, head: Double)) -> some View {
@@ -423,16 +445,17 @@ extension Effect {
 private struct LiquidFillDemo: View {
     let ctx: DemoContext
     @State private var step = 1
+    @State private var clock = ProgressPhaseClock()
 
     private let levels: [Double] = [0.28, 0.64, 0.9, 0.46]
 
     var body: some View {
         let level = levels[step % levels.count]
         VStack(spacing: 20) {
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 LiquidOrb(
                     level: level,
-                    time: timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000) * ctx["speed"],
+                    time: clock.phase(at: timeline.date, rate: ctx["speed"]),
                     amplitude: ctx.cg("amplitude"),
                     size: 180
                 )
@@ -443,6 +466,7 @@ private struct LiquidFillDemo: View {
         .contentShape(Rectangle())
         .onTapGesture { advance() }
         .autoplay(ctx.isPreview, every: 2.4) { advance() }
+        .onChange(of: ctx["speed"]) { old, _ in clock.rebase(at: .now, oldRate: old) }
     }
 
     private func advance() {

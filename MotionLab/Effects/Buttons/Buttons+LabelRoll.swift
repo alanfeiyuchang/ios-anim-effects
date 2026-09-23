@@ -83,14 +83,14 @@ private struct ButtonLabelRollDemo: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 22)
             .frame(height: 54)
-            .background(Color(hex: 0x16161A), in: Capsule())
+            .background(Color.adaptive(light: 0x16161A, dark: 0x2C2C32), in: Capsule())
             .overlay {
                 Capsule()
                     .fill(LinearGradient(colors: [Color.white.opacity(0.14), .clear], startPoint: .top, endPoint: .center))
                     .padding(1)
                     .allowsHitTesting(false)
             }
-            .overlay(Capsule().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+            .overlay(Capsule().strokeBorder(Color.white.opacity(0.2), lineWidth: 1))
             .shadow(color: .black.opacity(0.25), radius: 14, y: 8)
         }
         .buttonStyle(ButtonRollPressStyle())

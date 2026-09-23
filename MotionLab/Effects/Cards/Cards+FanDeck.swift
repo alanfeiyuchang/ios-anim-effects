@@ -60,7 +60,8 @@ private struct CardsFanDemo: View {
             DemoHint(text: L("Tap to fan, tap a card to draw it", "点击展开，点击单张抽出"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.3) { autoAdvance() }
+        // The detail stage deals the fan itself (below), so the intro play must not advance the script again.
+        .autoplay(ctx.isPreview, every: 1.3) { if ctx.isPreview { autoAdvance() } }
         .task {
             // In the detail stage, deal the fan once on arrival so the stage never opens on a static pile.
             guard !ctx.isPreview else { return }

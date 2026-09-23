@@ -1,10 +1,26 @@
 #!/usr/bin/env bash
-# Builds the app, boots an iPhone simulator and captures screenshots of every screen and every effect.
-# Usage: scripts/screenshots.sh [output-dir]
+# Builds the app, boots an iPhone simulator and captures a representative set of screenshots.
+#
+# The shot list is derived from the live catalog (the app exports catalog.json with -ML_exportCatalog),
+# so it can never go stale:
+#   home/      Browse, Search, Favorites, Settings, All Families (zh light + en dark)
+#   category/  every category page (zh light), a few in en dark, one in "All Effects" mode
+#   family/    every family page (zh light), a few in Compare mode (zh light + en dark)
+#   effect/    the first variation of every family (zh light), one effect per category in en dark,
+#              and a few prompt cards (en dark)
+# EFFECTS=all also captures every effect's detail page (long: ~45 min more).
+#
+# Every launch passes -ML_freshState YES, so recents from earlier shots never show up (a recent
+# preview of a demo that owns a NavigationStack used to break every later route: blank pages with
+# SwiftUI's yellow "missing destination" warning). Shots that still come out blank (tiny JPEG) or
+# identical to the previous one are retried once with a longer wait.
+#
+# Usage: [EFFECTS=all] scripts/screenshots.sh [output-dir]
 set -euo pipefail
 OUT="${1:-screenshots}"
 BUNDLE_ID="com.motionlexicon.MotionLab"
-mkdir -p "$OUT/home" "$OUT/category" "$OUT/effect"
+MODE="${EFFECTS:-sample}"
+mkdir -p "$OUT"
 
 UDID=$(xcrun simctl list devices available -j | python3 -c '
 import json,sys
@@ -20,42 +36,143 @@ xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --
 xcodebuild -project MotionLab.xcodeproj -scheme MotionLab -sdk iphonesimulator \
   -destination "id=$UDID" -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > build.log 2>&1 \
   || { grep -E "error:" build.log | sort -u; exit 1; }
+xcrun simctl uninstall "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/MotionLab.app
 
-# Warm-up launch: let first-boot system banners (e.g. "Ready for Apple Intelligence") appear and expire
-# before any screenshot is taken.
-xcrun simctl launch "$UDID" "$BUNDLE_ID" >/dev/null || true
+# Warm-up launch that also exports the catalog. The wait lets first-boot system banners
+# (e.g. "Ready for Apple Intelligence") appear and expire before any screenshot is taken.
+xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_exportCatalog YES -ML_noIntro YES -ML_freshState YES >/dev/null || true
 sleep 45
+CATALOG="$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)/Documents/catalog.json"
+if [[ ! -s "$CATALOG" ]]; then
+  echo "error: the app did not export catalog.json; cannot derive the screenshot list" >&2
+  exit 1
+fi
+cp "$CATALOG" "$OUT/catalog.json"
 
-shoot() { # name, wait, args...
+# Shot plan: one line per shot, "<name>\t<wait seconds>\t<launch arguments>".
+PLAN="$OUT/plan.tsv"
+python3 - "$CATALOG" "$MODE" > "$PLAN" <<'PY'
+import json, sys
+
+catalog = json.load(open(sys.argv[1]))
+mode = sys.argv[2]
+ZH = "-app.language zh -app.appearance 1"
+EN = "-app.language en -app.appearance 2"
+
+categories = [c["id"] for c in catalog["categories"]]
+families = catalog["families"]
+effects = catalog["effects"]
+members = {}
+for effect in effects:
+    members.setdefault(effect["family"], []).append(effect["id"])
+by_category = {}
+for family in families:
+    if members.get(family["id"]):
+        by_category.setdefault(family["category"], []).append(family["id"])
+
+def shot(name, wait, args):
+    print(f"{name}\t{wait}\t{args}")
+
+def effect_wait(effect_id):
+    # The first Metal shader compile is slow.
+    return 4 if effect_id.startswith("shader.") else 3
+
+# Home screens
+shot("home/browse-zh-light", 4, ZH)
+shot("home/browse-en-dark", 4, EN)
+shot("home/search-zh-light", 3, f"{ZH} -ML_tab 1")
+shot("home/search-en-dark", 3, f"{EN} -ML_tab 1")
+shot("home/favorites-zh-light", 3, f"{ZH} -ML_tab 2")
+shot("home/settings-zh-light", 3, f"{ZH} -ML_tab 3")
+shot("home/settings-en-dark", 3, f"{EN} -ML_tab 3")
+shot("home/all-families-zh-light", 5, f"{ZH} -ML_route families")
+shot("home/all-families-en-dark", 5, f"{EN} -ML_route families")
+
+# Categories: every one in zh light (families mode), every third in en dark, one in "All Effects" mode.
+for index, category in enumerate(categories):
+    shot(f"category/{category}", 5, f"{ZH} -app.categoryMode families -ML_route category:{category}")
+    if index % 3 == 0:
+        shot(f"category/{category}--en-dark", 5, f"{EN} -app.categoryMode families -ML_route category:{category}")
+if categories:
+    shot(f"category/{categories[1 if len(categories) > 1 else 0]}--all-effects", 5,
+         f"{ZH} -app.categoryMode all -ML_route category:{categories[1 if len(categories) > 1 else 0]}")
+
+# Families: every one in grid mode; the first multi-variation family of every third category in Compare mode.
+for family in families:
+    if members.get(family["id"]):
+        shot(f"family/{family['id']}", 4, f"{ZH} -app.familyMode grid -ML_route family:{family['id']}")
+for index, category in enumerate(categories):
+    if index % 3 != 0:
+        continue
+    multi = [f for f in by_category.get(category, []) if len(members[f]) > 2]
+    if multi:
+        fid = multi[0]
+        shot(f"family/{fid}--compare", 5, f"{ZH} -app.familyMode compare -ML_route family:{fid}")
+        shot(f"family/{fid}--compare-en-dark", 5, f"{EN} -app.familyMode compare -ML_route family:{fid}")
+
+# Effects
+if mode == "all":
+    picked = [e["id"] for e in effects]
+else:
+    picked = [members[f["id"]][0] for f in families if members.get(f["id"])]
+for effect_id in picked:
+    shot(f"effect/{effect_id}", effect_wait(effect_id), f"{ZH} -ML_route effect:{effect_id}")
+for category in categories:
+    ids = [e["id"] for e in effects if e["category"] == category]
+    if ids:
+        last = ids[-1]
+        shot(f"effect/{last}--en-dark", effect_wait(last), f"{EN} -ML_route effect:{last}")
+for category in categories[:3]:
+    ids = [e["id"] for e in effects if e["category"] == category]
+    if ids:
+        shot(f"effect/{ids[0]}--prompt-en-dark", 3, f"{EN} -ML_route effect:{ids[0]} -ML_anchor prompt")
+PY
+TOTAL=$(wc -l < "$PLAN" | tr -d ' ')
+echo "Planned $TOTAL screenshots ($MODE effects)"
+
+PREVIOUS_SUM=""
+capture() { # name, wait, args...
   local name="$1" wait="$2"; shift 2
   xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
-  xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_noIntro YES "$@" >/dev/null
+  xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_noIntro YES -ML_freshState YES "$@" >/dev/null < /dev/null
   sleep "$wait"
-  xcrun simctl io "$UDID" screenshot --type=png "$OUT/$name.png" >/dev/null 2>&1
+  xcrun simctl io "$UDID" screenshot --type=png "$OUT/$name.png" >/dev/null 2>&1 < /dev/null
   sips -s format jpeg -s formatOptions 55 -Z 1000 "$OUT/$name.png" --out "$OUT/$name.jpg" >/dev/null && rm "$OUT/$name.png"
 }
 
-shoot home/browse-zh-light 4 -app.language zh -app.appearance 1
-shoot home/browse-en-dark 4 -app.language en -app.appearance 2
-shoot home/search-zh 3 -app.language zh -app.appearance 1 -ML_tab 1
-shoot home/favorites-zh 3 -app.language zh -app.appearance 1 -ML_tab 2
-shoot home/settings-zh 3 -app.language zh -app.appearance 1 -ML_tab 3
-shoot home/settings-en-dark 3 -app.language en -app.appearance 2 -ML_tab 3
+suspicious() { # name → 0 when the shot looks blank or repeats the previous one
+  local file="$OUT/$1.jpg" size sum
+  [[ -f "$file" ]] || return 0
+  size=$(stat -f%z "$file")
+  sum=$(md5 -q "$file")
+  (( size < 14000 )) && return 0
+  [[ -n "$PREVIOUS_SUM" && "$sum" == "$PREVIOUS_SUM" ]] && return 0
+  return 1
+}
 
-for c in $(grep -oE '^    case [a-z]+$' MotionLab/Core/Effect.swift | awk '{print $2}' | head -n 15); do
-  shoot "category/$c" 4 -app.language zh -app.appearance 1 -ML_route "category:$c"
-done
-
-mkdir -p "$OUT/family"
-for f in $(grep -rhoE 'id: "[a-z]+\.[a-z0-9-]+"' MotionLab/Families | sed -E 's/id: "(.*)"/\1/' | sort -u); do
-  shoot "family/$f" 4 -app.language zh -app.appearance 1 -ML_route "family:$f"
-done
-
-for id in $(grep -rhoE 'id: "[a-z]+\.[a-z0-9-]+"' MotionLab/Effects | sed -E 's/id: "(.*)"/\1/' | sort -u); do
-  shoot "effect/$id" 3 -app.language zh -app.appearance 1 -ML_route "effect:$id"
-  if [[ "${PROMPTS:-0}" == "1" ]]; then
-    shoot "effect/$id--prompt-en" 2 -app.language en -app.appearance 2 -ML_route "effect:$id" -ML_anchor prompt
+COUNT=0
+RETRIED=0
+FLAGGED=()
+# The plan is read on fd 3 so simctl can never swallow its lines from stdin.
+while IFS=$'\t' read -r name wait args <&3; do
+  [[ -n "$name" ]] || continue
+  mkdir -p "$OUT/$(dirname "$name")"
+  # shellcheck disable=SC2086  # args are space-separated launch arguments without spaces
+  capture "$name" "$wait" $args
+  if suspicious "$name"; then
+    RETRIED=$((RETRIED + 1))
+    capture "$name" "$((wait + 3))" $args
+    if suspicious "$name"; then FLAGGED+=("$name"); fi
   fi
-done
-echo "Captured $(find "$OUT" -name '*.jpg' | wc -l) screenshots"
+  PREVIOUS_SUM=$(md5 -q "$OUT/$name.jpg" 2>/dev/null || echo "")
+  COUNT=$((COUNT + 1))
+  if (( COUNT % 25 == 0 )); then echo "  $COUNT/$TOTAL"; fi
+done 3< "$PLAN"
+xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+
+echo "Captured $(find "$OUT" -name '*.jpg' | wc -l | tr -d ' ') screenshots ($RETRIED retried)"
+if (( ${#FLAGGED[@]} > 0 )); then
+  echo "warning: ${#FLAGGED[@]} screenshots still look blank or duplicated:" >&2
+  printf '  %s\n' "${FLAGGED[@]}" >&2
+fi

@@ -64,9 +64,11 @@ struct SportLiveDot: View {
     var color: Color = Signature.accent
     var size: CGFloat = 8
     var period: Double = 1.4
+    /// Grid previews tick at 30 fps (see `MotionFrameRate`).
+    var preview: Bool = false
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             let p = CGFloat(t.truncatingRemainder(dividingBy: period) / period)
             ZStack {

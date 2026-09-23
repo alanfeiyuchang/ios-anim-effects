@@ -8,15 +8,15 @@ extension Effect {
         name: L("Live Sparkline Stream", "实时流动迷你图"),
         summary: L("System-monitor sparklines that scroll continuously as new samples stream in.", "系统监控式迷你折线，随新数据流入连续平滑滚动。"),
         prompt: L(
-            "Three stacked monitor rows (CPU, Memory, Network) in rounded cards, each with a caption, a live percentage in rounded tabular digits and a 54 pt-tall sparkline in its own hue (indigo, mint, coral) over a soft vertical gradient fill. New samples arrive every 0.4 s from a mean-reverting random walk, but the chart never jumps: the whole series scrolls left continuously at one sample-width per interval, and the newest point enters from beyond the right edge while the leading dot — a 7 pt core inside a 14 pt translucent halo — stays pinned to the right edge, its height interpolated between the last two samples. The percentage label reads the same interpolated value so it glides rather than ticks. Calm, continuous, ‘always live’ — like Activity Monitor rendered by a motion designer.",
-            "三行纵向排列的监控卡片（CPU、内存、网络），每行包含说明文字、以圆体等宽数字显示的实时百分比，以及一条高 54pt 的迷你折线，分别使用靛蓝、薄荷绿、珊瑚色，下方配柔和的竖向渐变填充。新样本每 0.4 秒由均值回归的随机游走产生，但图表从不跳动：整条序列以“每个间隔移动一个样本宽度”的速度持续左移，最新数据点从右边界外滑入；领头圆点（7pt 实心圆 + 14pt 半透明光晕）固定在右边缘，高度在最后两个样本之间插值。百分比读数使用同一插值结果，因此平滑滑动而非跳变。沉静、连续、始终在线——像由动效设计师重绘的活动监视器。"
+            "Three stacked monitor cards (CPU, Memory, Network), each with a caption, a live percentage in rounded tabular digits and a 54 pt sparkline in its own hue (indigo, mint, coral) over a soft vertical gradient fill. New samples arrive every 0.4 s from a mean-reverting random walk, yet the chart never jumps: the series scrolls left continuously at one sample-width per interval, the newest point slides in from beyond the right edge, and the leading dot — a 7 pt core in a 14 pt translucent halo — stays pinned to the right edge, its height interpolated between the last two samples. The percentage reads the same interpolated value, so it glides rather than ticks. Tapping a card injects a spike that enters with the next sample and decays back through the walk. Calm, continuous, always live.",
+            "三张纵向排列的监控卡片（CPU、内存、网络），每张包含说明文字、圆体等宽数字的实时百分比，以及一条高 54pt 的迷你折线，分别为靛蓝、薄荷绿、珊瑚色，下方配柔和的竖向渐变填充。新样本每 0.4 秒由均值回归的随机游走生成，但图表从不跳动：整条序列以每个间隔一个样本宽度的速度持续左移，最新点从右边界外滑入；领头圆点（7pt 实心 + 14pt 半透明光晕）固定在右缘，高度在最后两个样本之间插值。百分比读取同一插值，因此平滑滑动而非跳变。点击某张卡片会注入一个峰值，随下一个样本进入，再随游走慢慢回落。沉静、连续、始终在线。"
         ),
         implementation: L(
-            "TimelineView(.animation) advances a reference-type buffer; the fractional phase since the last sample offsets every x by −phase × step inside a Canvas, and the head value is lerped with the same phase.",
-            "TimelineView(.animation) 推进引用类型的数据缓冲；距上次采样的小数相位让 Canvas 中每个点的 x 偏移 −相位 × 步长，领头值用同一相位插值。"
+            "TimelineView(.animation) advances a reference-type buffer; the fractional phase since the last sample offsets every x by −phase × step inside a Canvas, and the head value is lerped with the same phase. A tap queues a spike that the next pushed sample adds before mean reversion pulls it back.",
+            "TimelineView(.animation) 推进引用类型的数据缓冲；距上次采样的小数相位让 Canvas 中每个点的 x 偏移 −相位 × 步长，领头值用同一相位插值。点击会登记一个峰值，由下一个样本叠加，再经均值回归拉回。"
         ),
         apis: ["TimelineView(.animation)", "Canvas", "GraphicsContext.Shading.linearGradient", "Path", "monospacedDigit"],
-        tags: ["sparkline", "live", "stream", "real-time", "monitor", "迷你图", "实时", "数据流", "监控"],
+        tags: ["sparkline", "live", "stream", "monitor", "迷你图", "实时", "数据流", "监控"],
         params: [
             .slider("interval", L("Sample interval", "采样间隔"), 0.15...1.0, default: 0.4, unit: "s"),
             .slider("volatility", L("Volatility", "波动幅度"), 0.02...0.3, default: 0.1),
@@ -31,6 +31,13 @@ private final class StreamModel {
     static let visible = 24
     var series: [[Double]]
     private var lastTick: Date?
+    /// Extra height the next sample of each row receives (set by a tap, consumed by `push`).
+    private var pendingSpike: [Double] = [0, 0, 0]
+
+    func spike(_ index: Int) {
+        guard pendingSpike.indices.contains(index) else { return }
+        pendingSpike[index] = 0.38
+    }
 
     init() {
         series = (0..<3).map { index in
@@ -66,7 +73,8 @@ private final class StreamModel {
     private func push(volatility: Double) {
         for index in series.indices {
             let last = series[index].last ?? 0.5
-            let next = last + Double.random(in: -volatility...volatility) + (0.5 - last) * 0.08
+            let next = last + Double.random(in: -volatility...volatility) + (0.5 - last) * 0.08 + pendingSpike[index]
+            pendingSpike[index] = 0
             series[index].append(min(max(next, 0.04), 0.96))
             if series[index].count > StreamModel.visible + 2 {
                 series[index].removeFirst(series[index].count - (StreamModel.visible + 2))
@@ -105,11 +113,20 @@ private struct SparklineStreamDemo: View {
                         showFill: showFill,
                         language: ctx.language
                     )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        model.spike(index)
+                        Haptics.tap(.light)
+                    }
                 }
             }
         }
         .frame(width: 300)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap a card to spike it", "点击卡片制造峰值"), ctx: ctx)
+                .padding(.bottom, 6)
+        }
     }
 }
 
@@ -132,7 +149,7 @@ private struct StreamRow: View {
                 Text(style.title, language)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text("\(Int((head * 100).rounded()))%")
+                Text(verbatim: "\(Int((head * 100).rounded()))%")
                     .font(.system(size: 22, weight: .bold, design: .rounded))
                     .monospacedDigit()
             }

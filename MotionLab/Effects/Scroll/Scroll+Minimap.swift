@@ -18,7 +18,8 @@ extension Effect {
         apis: ["onScrollGeometryChange", "onScrollPhaseChange", "ScrollPosition", "DragGesture", "Equatable"],
         tags: ["minimap", "scrubber", "overview", "code editor", "缩略图", "导航", "概览", "编辑器"],
         params: [
-            .slider("scale", L("Minimap scale", "缩略比例"), 0.12...0.3, default: 0.18),
+            // Capped so the whole miniature (≈1,210 pt × scale) always fits the stage.
+            .slider("scale", L("Minimap scale", "缩略比例"), 0.12...0.22, default: 0.18),
             .toggle("glow", L("Glow while scrolling", "滚动时高亮"), default: true),
         ]
     ) { ctx in
@@ -129,6 +130,7 @@ private struct ScrollMinimapDemo: View {
                     .padding(.horizontal, -3)
             }
             .frame(maxHeight: .infinity, alignment: .top)
+            .clipped()
             .contentShape(Rectangle())
             .gesture(scrub(scale: scale))
     }

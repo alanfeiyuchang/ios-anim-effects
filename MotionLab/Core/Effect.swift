@@ -218,6 +218,10 @@ struct DemoContext {
     /// Demos that normally wait for a tap/gesture must auto-play in this mode (see `.autoplay`).
     var isPreview: Bool
     var language: AppLanguage
+    /// `true` when the demo is rendered once into a still image (grid snapshots, the Variations strip).
+    /// `onAppear` / `task` never run there, so a demo that fills itself in on appearance should seed
+    /// its settled end state from `init` when this is set (e.g. bars at full height, a line fully drawn).
+    var isStill: Bool = false
 
     /// Convenience accessor: `ctx["response"]`.
     subscript(key: String) -> Double { params[key] }

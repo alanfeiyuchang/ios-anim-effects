@@ -1,5 +1,21 @@
 import SwiftUI
 
+/// A phase that advances at `rate` per second and stays continuous when the rate changes,
+/// so dragging a speed slider speeds the loop up instead of teleporting it.
+private struct AmbientPhaseClock {
+    var anchorDate = Date()
+    var anchorPhase: Double = 0
+
+    func phase(at date: Date, rate: Double) -> Double {
+        anchorPhase + date.timeIntervalSince(anchorDate) * rate
+    }
+
+    mutating func rebase(at date: Date, oldRate: Double) {
+        anchorPhase = phase(at: date, rate: oldRate)
+        anchorDate = date
+    }
+}
+
 // MARK: - Skeleton shimmer
 
 extension Effect {
@@ -38,7 +54,7 @@ private struct SkeletonDemo: View {
             ZStack {
                 SkeletonLayout(tint: Color.primary.opacity(0.08))
                     .overlay {
-                        ShimmerBand(speed: ctx["speed"], band: ctx["band"], tilt: ctx["angle"])
+                        ShimmerBand(speed: ctx["speed"], band: ctx["band"], tilt: ctx["angle"], preview: ctx.isPreview)
                             .mask { SkeletonLayout(tint: .black) }
                     }
                     .opacity(loaded ? 0 : 1)
@@ -100,7 +116,7 @@ private struct SkeletonLoadedCard: View {
                 Circle()
                     .fill(Palette.ocean)
                     .frame(width: 40, height: 40)
-                    .overlay { Text("ML").font(.caption.weight(.bold)).foregroundStyle(.white) }
+                    .overlay { Text(verbatim: "ML").font(.caption.weight(.bold)).foregroundStyle(.white) }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(language == .zh ? "极光工作室" : "Aurora Studio").font(.subheadline.weight(.semibold))
                     Text(language == .zh ? "2 分钟前" : "2 min ago").font(.caption).foregroundStyle(.secondary)
@@ -119,12 +135,14 @@ private struct ShimmerBand: View {
     let speed: Double
     let band: Double
     let tilt: Double
+    let preview: Bool
     @Environment(\.colorScheme) private var scheme
+    @State private var clock = AmbientPhaseClock()
 
     var body: some View {
         let peak = Color.white.opacity(scheme == .dark ? 0.14 : 0.7)
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate * speed
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            let t = clock.phase(at: timeline.date, rate: speed)
             let x = (t / 1.4).truncatingRemainder(dividingBy: 1) * (1.4 + band * 2) - 0.2 - band
             LinearGradient(
                 stops: [
@@ -136,6 +154,7 @@ private struct ShimmerBand: View {
                 endPoint: UnitPoint(x: x + band, y: 0.5 + tilt)
             )
         }
+        .onChange(of: speed) { old, _ in clock.rebase(at: .now, oldRate: old) }
     }
 }
 
@@ -182,7 +201,8 @@ private struct AudioWaveDemo: View {
                 count: max(ctx.int("count"), 1),
                 speed: ctx["speed"],
                 maxHeight: ctx.cg("height"),
-                centered: ctx.bool("mirror")
+                centered: ctx.bool("mirror"),
+                preview: ctx.isPreview
             )
             .frame(height: 110)
             Text(zh ? "“把明早的站会改到十点……”" : "“Move tomorrow's standup to ten…”")
@@ -229,6 +249,8 @@ private struct AudioBars: View {
     let speed: Double
     let maxHeight: CGFloat
     let centered: Bool
+    let preview: Bool
+    @State private var clock = AmbientPhaseClock()
 
     private let barWidth: CGFloat = 7
     private let gap: CGFloat = 6
@@ -238,8 +260,8 @@ private struct AudioBars: View {
         LinearGradient(colors: [Palette.violet, Palette.sky, Palette.mint], startPoint: .top, endPoint: .bottom)
             .frame(width: total, height: maxHeight)
             .mask {
-                TimelineView(.animation) { timeline in
-                    let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000) * speed
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+                    let t = clock.phase(at: timeline.date, rate: speed)
                     HStack(alignment: centered ? .center : .bottom, spacing: gap) {
                         ForEach(0..<count, id: \.self) { index in
                             Capsule()
@@ -249,6 +271,7 @@ private struct AudioBars: View {
                     .frame(width: total, height: maxHeight, alignment: centered ? .center : .bottom)
                 }
             }
+            .onChange(of: speed) { old, _ in clock.rebase(at: .now, oldRate: old) }
     }
 
     static func level(_ t: Double, index: Int, count: Int) -> CGFloat {
@@ -290,7 +313,8 @@ extension Effect {
                 count: max(ctx.int("count"), 1),
                 period: ctx["period"],
                 spread: ctx.cg("spread"),
-                tint: [Palette.blue, Palette.mint, Palette.coral][min(max(ctx.int("tint"), 0), 2)]
+                tint: [Palette.blue, Palette.mint, Palette.coral][min(max(ctx.int("tint"), 0), 2)],
+                preview: ctx.isPreview
             )
             .frame(width: 260, height: 250)
             Text(ctx.language == .zh ? "正在查找附近的设备…" : "Looking for nearby devices…")
@@ -306,6 +330,8 @@ private struct PulseRingsView: View {
     let period: Double
     let spread: CGFloat
     let tint: Color
+    let preview: Bool
+    @State private var clock = AmbientPhaseClock()
 
     private let core: CGFloat = 72
     /// The avatar scene is timed from when the demo appears, so it always opens on an empty
@@ -313,19 +339,21 @@ private struct PulseRingsView: View {
     @State private var sceneStart = Date()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+            // Ring phase in cycles; rebased when the period changes so rings never jump.
+            let cycles = clock.phase(at: timeline.date, rate: 1 / max(period, 0.1))
             let scene = max(timeline.date.timeIntervalSince(sceneStart), 0)
             ZStack {
                 ForEach(0..<count, id: \.self) { index in
-                    ring(age: ((t / period) + Double(index) / Double(count)).truncatingRemainder(dividingBy: 1))
+                    ring(age: (cycles + Double(index) / Double(count)).truncatingRemainder(dividingBy: 1))
                 }
                 ForEach(0..<PulsePeer.all.count, id: \.self) { index in
                     peer(index, t: scene)
                 }
-                coreDisc(breath: 1 + 0.03 * sin(t * 2 * .pi / period))
+                coreDisc(breath: 1 + 0.03 * sin(cycles * 2 * .pi))
             }
         }
+        .onChange(of: period) { old, _ in clock.rebase(at: .now, oldRate: 1 / max(old, 0.1)) }
     }
 
     private func peer(_ index: Int, t: Double) -> some View {
@@ -416,7 +444,7 @@ extension Effect {
             .slider("minScale", L("Min scale", "最小缩放"), 0.2...0.9, default: 0.45),
         ]
     ) { ctx in
-        SquareGridView(period: ctx["period"], stagger: ctx["stagger"], minScale: ctx.cg("minScale"))
+        SquareGridView(period: ctx["period"], stagger: ctx["stagger"], minScale: ctx.cg("minScale"), preview: ctx.isPreview)
             .background {
                 Circle()
                     .fill(Palette.aurora)
@@ -436,6 +464,8 @@ private struct SquareGridView: View {
     let period: Double
     let stagger: Double
     let minScale: CGFloat
+    let preview: Bool
+    @State private var clock = AmbientPhaseClock()
 
     private let cell: CGFloat = 26
     private let gap: CGFloat = 8
@@ -445,8 +475,8 @@ private struct SquareGridView: View {
         LinearGradient(colors: [Palette.mint, Palette.sky, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
             .frame(width: side, height: side)
             .mask {
-                TimelineView(.animation) { timeline in
-                    let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
+                    let t = clock.phase(at: timeline.date, rate: 1 / max(period, 0.1))
                     VStack(spacing: gap) {
                         ForEach(0..<3, id: \.self) { row in
                             HStack(spacing: gap) {
@@ -459,10 +489,12 @@ private struct SquareGridView: View {
                 }
             }
             .scaleEffect(1.55)
+            .onChange(of: period) { old, _ in clock.rebase(at: .now, oldRate: 1 / max(old, 0.1)) }
     }
 
+    /// `t` is the phase in cycles; the stagger is converted from seconds to cycles.
     private func morph(_ t: Double, diagonal: Int) -> CGFloat {
-        let phase = (t - Double(diagonal) * stagger) / period * 2 * .pi
+        let phase = (t - Double(diagonal) * stagger / max(period, 0.1)) * 2 * .pi
         return CGFloat(0.5 - 0.5 * cos(phase))
     }
 

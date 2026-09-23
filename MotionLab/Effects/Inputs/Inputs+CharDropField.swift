@@ -60,8 +60,10 @@ private struct CharDropFieldDemo: View {
             .frame(width: 1, height: 1)
             .opacity(0.01)
             .allowsHitTesting(false)
-            .onChange(of: text) { _, newValue in
+            .onChange(of: text) { oldValue, newValue in
                 if newValue.count > limit { text = String(newValue.prefix(limit)) }
+                // Only real typing ticks (the scripted preview/intro text never has focus).
+                if focused && newValue.count != oldValue.count { Haptics.selection() }
             }
     }
 
@@ -126,9 +128,10 @@ private struct CharDropFieldDemo: View {
             active: CharDropModifier(y: -14, angle: 0, scale: 0.6, opacity: 0),
             identity: CharDropModifier(y: 0, angle: 0, scale: 1, opacity: 1)
         )
-        return HStack(spacing: 0.5) {
+        return HStack(spacing: 0) {
             ForEach(characters.indices, id: \.self) { index in
                 Text(String(characters[index]))
+                    .kerning(0.2)
                     .foregroundStyle(.primary)
                     .transition(.asymmetric(insertion: insertion, removal: removal.animation(.easeOut(duration: 0.2))))
             }

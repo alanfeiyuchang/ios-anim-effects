@@ -8,8 +8,8 @@ extension Effect {
         name: L("Holographic Foil", "镭射全息卡"),
         summary: L("A collectible card whose rainbow foil shifts and sparkles as you tilt it.", "收藏卡片的彩虹镭射箔随倾斜流动、闪烁。"),
         prompt: L(
-            "A dark collectible trading card (190×264 pt, 16 pt corners) with a glowing emblem is covered by a holographic foil layer: a rainbow angular gradient visible through diagonal bands, composited in screen blend. Dragging tilts the card up to ~12° in perspective, and the foil responds continuously — the gradient's center slides with the finger and its hue angle turns up to ±120° with horizontal travel (±60° vertically), while the bands drift sideways — so colors sweep across the surface like real prismatic foil. A narrow white specular sheen travels diagonally in plus-lighter blend, scattered sparkle glyphs twinkle out of phase, and a violet under-glow shifts opposite the tilt. Release eases everything back on a soft spring (≈0.6 s). At rest the sparkles keep twinkling on their own clock, and until the first touch the card sways gently in a slow figure-of-eight so the foil is already alive on arrival. Rich, luminous, collectible.",
-            "一张深色收藏卡（190×264 pt，16 pt 圆角）中央有发光徽记，表面覆盖一层镭射箔：彩虹角向渐变透过斜向条纹显现，以滤色模式叠加。拖动时卡片以透视方式最多倾斜约 12°，镭射层实时响应——渐变中心随手指滑动，色相角随水平拖动最多旋转 ±120°（垂直方向 ±60°），条纹也横向漂移，使色彩像真实棱镜箔一样在卡面流转。一道窄白色镜面光带以加亮模式沿对角线扫过，散落的星芒错相闪烁，紫色底光朝倾斜反方向偏移。松手后所有元素以柔和弹簧（约 0.6 秒）回到原位。静止时星芒依旧按自身节奏闪烁；在首次触摸之前，卡片会以缓慢的 8 字轨迹轻轻摇摆，一进入页面镭射就已流动起来。华丽、通透，极具收藏感。"
+            "A dark 190×264 pt collectible card with 16 pt corners and a glowing emblem is coated in holographic foil: a rainbow angular gradient seen through diagonal stripe bands in screen blend. Dragging tilts it up to 12° in perspective on a heavy follow spring (response 0.45 s) while the foil reacts continuously: the gradient centre slides with the finger, its hue angle turns up to ±120° horizontally and ±60° vertically, and the bands drift sideways, so colour sweeps across like prismatic foil. A narrow white sheen crosses diagonally in plus-lighter blend, sparkle glyphs twinkle out of phase and a violet under-glow shifts against the tilt. Release is slow and under-damped (response 0.8 s, damping 0.5), so the card overshoots and rocks once before settling.",
+            "一张 190×264 pt、16 pt 圆角的深色收藏卡，中央是发光徽记，覆着一层镭射箔：彩虹角向渐变透过斜向条纹、以滤色模式叠加。拖动时卡片由偏重的跟手弹簧（响应 0.45 秒）带着透视倾斜，最多 12°；渐变中心随手指滑动，色相角随横向拖动最多转 ±120°、纵向 ±60°，条纹横向漂移，色彩像棱镜箔一样流转。细窄白光以加亮模式斜扫而过，星芒错相闪烁，紫色底光朝倾斜反方向偏移。松手回弹缓慢且欠阻尼（响应 0.8 秒、阻尼 0.5），卡片越过原位、来回摇一下才停稳。"
         ),
         implementation: L(
             "An AngularGradient masked by striped LinearGradient bands is blended with .screen over the card; its center/angle, a .plusLighter sheen and the rotation3DEffect tilt are all driven by the normalised drag position; a TimelineView supplies the sparkle clock and an idle sway until the first touch.",
@@ -21,7 +21,7 @@ extension Effect {
             .slider("intensity", L("Foil intensity", "镭射强度"), 0...1, default: 0.8),
             .slider("angle", L("Max tilt", "最大倾角"), 0...25, default: 12, step: 1, decimals: 0, unit: "°"),
             .toggle("sparkle", L("Sparkles", "星芒"), default: true),
-            .slider("release", L("Release spring", "松手回弹"), 0.3...1.2, default: 0.6, unit: "s"),
+            .slider("release", L("Release spring", "松手回弹"), 0.3...1.2, default: 0.8, unit: "s"),
         ]
     ) { ctx in
         CardsHoloDemo(ctx: ctx)
@@ -71,12 +71,13 @@ private struct CardsHoloDemo: View {
                 let size = CardsHoloCard.size
                 let x = (value.location.x / size.width - 0.5) * 2
                 let y = (value.location.y / size.height - 0.5) * 2
-                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8)) {
+                withAnimation(.interactiveSpring(response: 0.45, dampingFraction: 0.75)) {
                     point = CGSize(width: x.clamped(to: -1...1), height: y.clamped(to: -1...1))
                 }
             }
             .onEnded { _ in
-                withAnimation(.spring(response: ctx["release"], dampingFraction: 0.7)) {
+                // Heavy, under-damped release: the card visibly overshoots and rocks once before settling.
+                withAnimation(.spring(response: ctx["release"], dampingFraction: 0.5)) {
                     point = .zero
                 }
             }

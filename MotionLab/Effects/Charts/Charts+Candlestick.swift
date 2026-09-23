@@ -4,19 +4,19 @@ extension Effect {
     static let chartsCandlestickLive = Effect(
         id: "charts.candlestick-live",
         category: .charts,
-        interaction: .loop,
+        interaction: .tap,
         name: L("Live Candlesticks", "实时 K 线"),
         summary: L("A trading chart whose live candle breathes with every tick while history glides left and the scale re-fits smoothly.", "实时 K 线随每次报价伸缩，历史蜡烛平滑左移，纵轴刻度柔和自适应。"),
         prompt: L(
-            "A dark-friendly trading card: pair name and last price on top (tinted green or red by the live candle's direction), and below it 18 candlesticks plus one live candle. The live candle's close eases toward a new random-walk target every 140 ms (exponential follow ≈ 70 ms), so its body and wick stretch organically rather than jumping; a dashed price line and a colored price tag on the right track it, in a price-axis column that also labels the three horizontal guides. The live candle always has a full slot of room at the right edge, so it is never clipped. When the candle's period ends it is committed and the whole series glides one slot left continuously — no step — while the vertical scale eases (≈ 200 ms) to fit the visible high/low with 12% headroom. The live candle carries a soft glow. Tap to inject a volatility spike. Precise, alive and professional.",
-            "一张适配深浅色的交易卡片：顶部是交易对名称与最新价（按实时蜡烛涨跌染成绿色或红色），下方是 18 根历史 K 线与 1 根实时 K 线。实时蜡烛的收盘价每 140ms 获得一个新的随机游走目标，并以约 70ms 的指数跟随缓动过去，因此实体与影线自然伸缩而非跳变；右侧的虚线价格线与彩色价格标签同步跟随；右侧价格轴一栏同时标注三条水平参考线的价格。最右侧始终为实时蜡烛预留完整一格，绝不会被裁切。当前周期结束时蜡烛被固定，整组序列连续平滑地左移一格——没有任何阶跃——纵轴刻度也在约 200ms 内缓动，以 12% 的余量适配可见区间的最高与最低价。实时蜡烛带有柔和辉光。点击可注入一次剧烈波动。精准、鲜活、专业。"
+            "A trading card: pair name and last price on top, tinted green or red by the live candle’s direction, over 18 candlesticks plus one live candle. Every 140 ms the live close gets a new random-walk target and follows it exponentially (≈ 70 ms), so body and wick stretch organically instead of jumping; a dashed price line and a colored price tag track it in a right-hand axis column that also labels three horizontal guides. The live candle always keeps a full slot at the right edge and a soft glow. When its period ends it is committed and the whole series glides one slot left continuously, with no step, while the vertical scale eases (≈ 200 ms) to fit the visible high/low with 12% headroom. Tap to inject a volatility spike. Precise, alive, professional.",
+            "一张交易卡片：顶部是交易对名称与最新价，按实时蜡烛涨跌染成绿色或红色；下方是 18 根历史 K 线加 1 根实时 K 线。实时收盘价每 140ms 获得一个新的随机游走目标，并以约 70ms 的指数跟随趋近，实体与影线因此自然伸缩而非跳变；虚线价格线与彩色价格标签在右侧价格轴一栏同步跟随，该栏同时标注三条水平参考线。实时蜡烛始终在最右侧占满一格，并带柔和辉光。周期结束时蜡烛被固定，整组序列连续平滑地左移一格，毫无阶跃；纵轴刻度在约 200ms 内缓动，以 12% 余量适配可见区间的高低点。点击可注入一次剧烈波动。精准、鲜活、专业。"
         ),
         implementation: L(
             "A reference-type model advanced by TimelineView eases the live close, commits candles on a timer and smooths the y-range; the fractional progress of the current period offsets every x, and a Canvas draws wicks, bodies, the price line and tag.",
             "由 TimelineView 推进的引用类型模型缓动实时收盘价、按周期固定蜡烛并平滑纵轴区间；当前周期的小数进度为所有 x 坐标提供偏移，Canvas 绘制影线、实体、价格线与标签。"
         ),
         apis: ["TimelineView(.animation)", "Canvas", "GraphicsContext.draw(_:at:)", "monospacedDigit", "onTapGesture"],
-        tags: ["candlestick", "trading", "stock", "live", "ohlc", "crypto", "K 线", "蜡烛图", "行情", "实时", "交易"],
+        tags: ["candlestick", "stock", "live", "ohlc", "K 线", "蜡烛图", "行情", "实时"],
         params: [
             .slider("interval", L("Candle period", "蜡烛周期"), 0.6...3.0, default: 1.4, unit: "s"),
             .slider("volatility", L("Volatility", "波动率"), 0.3...2.0, default: 1.0, unit: "×"),

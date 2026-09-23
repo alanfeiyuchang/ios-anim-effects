@@ -20,6 +20,7 @@ extension Effect {
         params: [
             .choice("digits", L("Length", "位数"), [L("4 digits", "4 位"), L("6 digits", "6 位")], default: 1),
             .slider("shake", L("Shake travel", "抖动幅度"), 4...20, default: 10, decimals: 0, unit: "pt"),
+            .slider("pop", L("Digit pop-in scale", "数字弹入起始缩放"), 0.1...0.9, default: 0.4),
         ]
     ) { ctx in
         InputOTPDemo(ctx: ctx)
@@ -68,7 +69,8 @@ private struct InputOTPDemo: View {
                     isCurrent: (focused || ctx.isPreview) && status == .idle && index == code.count,
                     status: status,
                     index: index,
-                    successes: successes
+                    successes: successes,
+                    pop: ctx.cg("pop")
                 )
             }
         }
@@ -156,6 +158,8 @@ private struct InputOTPBox: View {
     let status: InputOTPStatus
     let index: Int
     let successes: Int
+    /// Scale a typed digit pops in from.
+    let pop: CGFloat
 
     private var borderColor: Color {
         switch status {
@@ -178,7 +182,7 @@ private struct InputOTPBox: View {
                 Text(character)
                     .font(.system(size: 24, weight: .semibold, design: .rounded).monospacedDigit())
                     .foregroundStyle(.primary)
-                    .transition(.scale(scale: 0.4).combined(with: .opacity))
+                    .transition(.scale(scale: pop).combined(with: .opacity))
             } else if isCurrent {
                 InputOTPCaret()
             }

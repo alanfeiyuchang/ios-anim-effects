@@ -17,8 +17,8 @@ enum ShowcaseFamilies {
         EffectFamily(
             id: "showcase.live-stats",
             category: .showcase,
-            name: L("Live Stat Cards", "实时数据卡片"),
-            summary: L("Numbers that roll, flip and flash as live values change.", "数字随实时数据滚动、翻页与闪烁更新。"),
+            name: L("Stat Cards", "数据卡片"),
+            summary: L("Numbers that roll, count up, flip and flash.", "数字滚动、递增计数、翻页与闪烁的数据卡片。"),
             symbol: "square.grid.2x2.fill"
         ),
         EffectFamily(

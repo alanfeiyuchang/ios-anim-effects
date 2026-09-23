@@ -78,22 +78,25 @@ private final class GooModel {
 private struct MetaballsDemo: View {
     let ctx: DemoContext
     @State private var model = GooModel()
+    @State private var size = CGSize(width: 340, height: 340)
 
     var body: some View {
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             let now = timeline.date.timeIntervalSinceReferenceDate
+            // Step once per frame, before either canvas draws, so bloom and goo share the same instant.
+            let t = model.step(now: now, speed: ctx["speed"], simulated: simulatedTouch(now: now))
             let spin = now * 0.35
             let dx = CGFloat(0.5 * cos(spin))
             let dy = CGFloat(0.5 * sin(spin))
             ZStack {
-                MetaBloom(model: model, now: now, count: ctx.int("count"))
+                MetaBloom(model: model, t: t, count: ctx.int("count"))
                 LinearGradient(
                     colors: [Palette.pink, Palette.violet, Palette.sky],
                     startPoint: UnitPoint(x: 0.5 + dx, y: 0.5 + dy),
                     endPoint: UnitPoint(x: 0.5 - dx, y: 0.5 - dy)
                 )
                 .mask {
-                    GooCanvas(model: model, now: now, ctx: ctx)
+                    GooCanvas(model: model, t: t, ctx: ctx)
                 }
             }
             // Bloom comes from a blurred Canvas, and the whole stack renders in one Metal pass
@@ -101,26 +104,32 @@ private struct MetaballsDemo: View {
             .drawingGroup()
         }
         .background(Color(hex: 0x0D0A1A))
+        .onGeometryChange(for: CGSize.self) { proxy in
+            proxy.size
+        } action: { newSize in
+            size = newSize
+        }
         .backgroundsTouch { location in model.touch = location } onEnded: { model.touch = nil }
         .backgroundsHint(L("Tap or drag sideways through the liquid", "点击或横向拖过液体"), ctx)
     }
 
+    /// Previews can't be touched, so a Lissajous "finger" wanders through the goo instead.
+    private func simulatedTouch(now: Double) -> CGPoint? {
+        guard ctx.isPreview else { return nil }
+        return CGPoint(
+            x: size.width * CGFloat(0.5 + 0.34 * sin(now * 0.8)),
+            y: size.height * CGFloat(0.5 + 0.3 * sin(now * 1.15))
+        )
+    }
 }
 
 private struct GooCanvas: View {
     let model: GooModel
-    let now: Double
+    let t: Double
     let ctx: DemoContext
 
     var body: some View {
         Canvas { context, size in
-            let simulated: CGPoint? = ctx.isPreview
-                ? CGPoint(
-                    x: size.width * CGFloat(0.5 + 0.34 * sin(now * 0.8)),
-                    y: size.height * CGFloat(0.5 + 0.3 * sin(now * 1.15))
-                )
-                : nil
-            let t = model.step(now: now, speed: ctx["speed"], simulated: simulated)
             context.addFilter(.alphaThreshold(min: 0.5, color: .white))
             context.addFilter(.blur(radius: ctx.cg("goo")))
             context.drawLayer { layer in
@@ -137,18 +146,17 @@ private struct GooCanvas: View {
     }
 }
 
-/// Violet glow behind the goo: the same blobs, blurred, no threshold. Reads the model's last step
-/// (`now` is passed only so the view redraws every frame).
+/// Violet glow behind the goo: the same blobs, blurred, no threshold, at the frame's shared time `t`.
 private struct MetaBloom: View {
     let model: GooModel
-    let now: Double
+    let t: Double
     let count: Int
 
     var body: some View {
         Canvas { context, size in
             context.addFilter(.blur(radius: 24))
             let color = GraphicsContext.Shading.color(Palette.violet.opacity(0.55))
-            for rect in GooModel.blobs(count: count, size: size, t: model.time) {
+            for rect in GooModel.blobs(count: count, size: size, t: t) {
                 context.fill(Path(ellipseIn: rect.insetBy(dx: -4, dy: -4)), with: color)
             }
             if let finger = model.finger, model.fingerScale > 0.01 {

@@ -80,7 +80,19 @@ private struct InputFloatingLabelDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { focus = nil }
-        .autoplay(ctx.isPreview, every: 1.4, delay: 0.4) { previewTick() }
+        .autoplay(ctx.isPreview, every: 1.4, delay: 0.4) {
+            // The detail intro types through both fields and ends unfocused, so no field keeps a fake focus ring.
+            if ctx.isPreview { previewTick() } else { introFill() }
+        }
+    }
+
+    private func introFill() {
+        Task { @MainActor in
+            for _ in 0..<3 {
+                previewTick()
+                try? await Task.sleep(for: .seconds(1.2))
+            }
+        }
     }
 
     private func previewTick() {
@@ -130,7 +142,7 @@ private struct InputFloatingField: View {
                 TextField("", text: $text)
                     .font(.system(size: 17))
                     .focused(focus, equals: id)
-                    .textInputAutocapitalization(.never)
+                    .textInputAutocapitalization(id == .email ? .never : .words)
                     .autocorrectionDisabled()
                     .keyboardType(id == .email ? .emailAddress : .default)
                 if isValid {

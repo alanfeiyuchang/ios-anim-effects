@@ -20,7 +20,7 @@ extension Effect {
         params: [
             .slider("depth", L("Extrusion depth", "凸起深度"), 4...14, default: 9, decimals: 0, unit: "pt"),
             .slider("response", L("Spring response", "弹簧响应"), 0.1...0.6, default: 0.25, unit: "s"),
-            .choice("accent", L("Accent", "强调色"), [L("Indigo", "靛蓝"), L("Coral", "珊瑚"), L("Mint", "薄荷")], default: 0),
+            .toggle("latch", L("Latching keys", "锁定式按键"), default: true),
         ]
     ) { ctx in
         ButtonSoftPressDemo(ctx: ctx)
@@ -38,17 +38,13 @@ private struct ButtonSoftPressDemo: View {
     @State private var on: [Bool] = [false, true, false, false]
     @State private var bounces: [Int] = [0, 0, 0, 0]
     @State private var step = 0
+    /// Momentary mode: the key autoplay is holding down for a beat.
+    @State private var pulsed: Int?
 
     private static let symbols = ["power", "wifi", "dot.radiowaves.left.and.right", "moon.fill"]
 
     private var accent: LinearGradient {
-        let colors: [Color]
-        switch ctx.int("accent") {
-        case 1: colors = [Palette.amber, Palette.coral]
-        case 2: colors = [Palette.mint, Palette.sky]
-        default: colors = [Palette.indigo, Palette.violet]
-        }
-        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(colors: [Palette.indigo, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     var body: some View {
@@ -61,8 +57,9 @@ private struct ButtonSoftPressDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 0.9, delay: 0.3) {
-            toggle(step % 4)
+            let index = step % 4
             step += 1
+            if ctx.bool("latch") { toggle(index) } else { pulse(index) }
         }
     }
 
@@ -81,7 +78,7 @@ private struct ButtonSoftPressDemo: View {
     }
 
     private func key(_ index: Int, size: CGFloat, corner: CGFloat, glyph: CGFloat) -> some View {
-        let lit = on[index]
+        let lit = ctx.bool("latch") ? on[index] : pulsed == index
         return Button { toggle(index) } label: {
             Image(systemName: Self.symbols[index])
                 .font(.system(size: glyph, weight: .semibold))
@@ -101,8 +98,23 @@ private struct ButtonSoftPressDemo: View {
 
     private func toggle(_ index: Int) {
         Haptics.tap(.soft)
+        guard ctx.bool("latch") else {
+            // Momentary keys: sink only while held, bounce the glyph on every press.
+            bounces[index] += 1
+            return
+        }
         on[index].toggle()
         if on[index] { bounces[index] += 1 }
+    }
+
+    /// Simulated momentary press: holds the key down for a beat, then lets it spring back.
+    private func pulse(_ index: Int) {
+        toggle(index)
+        pulsed = index
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.3))
+            if pulsed == index { pulsed = nil }
+        }
     }
 }
 

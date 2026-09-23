@@ -17,7 +17,7 @@ extension Effect {
             "Swift Charts 的 BarMark 配合 foregroundStyle(by:) 自动堆叠；隐藏的系列保留标记但数值为 0，标识不变，withAnimation(.spring) 因此能插值每个分段。每个月独立的生长系数配合错峰延迟驱动入场。"
         ),
         apis: ["Chart", "BarMark", "foregroundStyle(by:)", "chartForegroundStyleScale", "contentTransition(.numericText)", "spring"],
-        tags: ["stacked bar", "bar chart", "legend", "toggle", "series", "堆叠柱状图", "图例", "系列", "开关"],
+        tags: ["stacked bar", "legend", "toggle", "series", "堆叠柱状图", "图例", "开关", "系列"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.3...1.2, default: 0.55, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.75),
@@ -55,7 +55,8 @@ private let stackMonthsZH = ["4月", "5月", "6月", "7月", "8月", "9月"]
 private struct StackedBarsDemo: View {
     let ctx: DemoContext
     @State private var visible: [Bool] = Array(repeating: true, count: stackSeries.count)
-    @State private var grow: [Double] = Array(repeating: 0, count: stackData.count)
+    /// Seeded fully grown so still snapshots show the stacks; `onAppear` (and a tap) replays the rise.
+    @State private var grow: [Double] = Array(repeating: 1, count: stackData.count)
     @State private var autoIndex = 0
 
     private var spring: Animation {
@@ -174,10 +175,13 @@ private struct StackedBarsDemo: View {
     }
 
     private func rise() {
-        grow = Array(repeating: 0, count: stackData.count)
-        for month in stackData.indices {
-            withAnimation(spring.delay(Double(month) * ctx["stagger"])) { grow[month] = 1 }
-        }
+        ChartEntrance.replay(reset: {
+            grow = Array(repeating: 0, count: stackData.count)
+        }, then: {
+            for month in stackData.indices {
+                withAnimation(spring.delay(Double(month) * ctx["stagger"])) { grow[month] = 1 }
+            }
+        })
     }
 
     /// Previews and the arrival intro: hide one series, then bring it back.

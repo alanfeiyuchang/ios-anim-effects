@@ -369,7 +369,8 @@ private struct UndoSnackbar: View {
             Button(action: onUndo) {
                 Text(language == .zh ? "撤销" : "Undo")
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Palette.sky)
+                    // The snackbar is inverted (black in light mode, white in dark), so the accent flips too.
+                    .foregroundStyle(Color.adaptive(light: 0x3AC4FF, dark: 0x2A6DF4))
                     .padding(.horizontal, 6)
                     .frame(height: 36)
                     .contentShape(Rectangle())

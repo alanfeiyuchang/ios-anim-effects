@@ -61,6 +61,10 @@ private struct TravelTransitLineDemo: View {
         .task(id: runID) {
             await loop()
         }
+        // Shows the tap interaction too: previews (and the detail intro) send the train two stops ahead.
+        .autoplay(ctx.isPreview, every: 3.6, delay: 1.6) {
+            send(to: (current + 2) % Self.stations.count)
+        }
     }
 
     private var card: some View {

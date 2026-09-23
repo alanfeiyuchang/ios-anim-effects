@@ -67,7 +67,10 @@ private struct MagneticTickSliderDemo: View {
         .onChange(of: stops) { _, _ in
             fingerX = CGFloat(nearestStop(fingerX)) * spacing
         }
-        .autoplay(ctx.isPreview, every: 0.55, delay: 0.3) { previewTick() }
+        .autoplay(ctx.isPreview, every: 0.55, delay: 0.3) {
+            // The detail intro plays one full nudge-and-settle cycle so the thumb never stays grabbed.
+            if ctx.isPreview { previewTick() } else { introNudge() }
+        }
     }
 
     private var card: some View {
@@ -162,6 +165,15 @@ private struct MagneticTickSliderDemo: View {
     }
 
     /// Preview: creep toward the midpoint (the thumb clings), then cross it (the thumb leaps).
+    private func introNudge() {
+        Task { @MainActor in
+            for _ in 0..<3 {
+                previewTick()
+                try? await Task.sleep(for: .seconds(0.55))
+            }
+        }
+    }
+
     private func previewTick() {
         let phase = previewStep % 3
         previewStep += 1

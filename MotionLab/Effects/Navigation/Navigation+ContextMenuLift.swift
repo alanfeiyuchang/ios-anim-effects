@@ -75,7 +75,7 @@ private struct ContextMenuLiftDemo: View {
                     // Matched before the fixed frame, so the frame itself interpolates row → card.
                     LiftPreviewCard(photo: liftPhotos[index], language: ctx.language)
                         .matchedGeometryEffect(id: index, in: ns)
-                        .frame(width: 280, height: 168)
+                        .frame(width: 280, height: 150)
                     LiftMenu(language: ctx.language, onSelect: { close() })
                         .transition(
                             .scale(scale: 0.4, anchor: .topLeading)
@@ -224,7 +224,7 @@ private struct LiftMenu: View {
                     }
                     .foregroundStyle(action.2 ? Palette.red : Color.primary)
                     .padding(.horizontal, 14)
-                    .frame(width: 200, height: 36)
+                    .frame(width: 200, height: 34)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

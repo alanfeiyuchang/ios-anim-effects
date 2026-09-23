@@ -19,7 +19,7 @@ extension Effect {
         tags: ["stack", "cascade", "spread", "app switcher", "堆叠", "阶梯", "展开", "切换器"],
         params: [
             .slider("tilt", L("Tilt", "倾倒角度"), 0...55, default: 32, step: 1, decimals: 0, unit: "°"),
-            .slider("gap", L("Step", "阶梯间距"), 30...70, default: 54, step: 1, decimals: 0, unit: "pt"),
+            .slider("gap", L("Step", "阶梯间距"), 30...62, default: 54, step: 1, decimals: 0, unit: "pt"),
             .slider("stagger", L("Stagger", "错落间隔"), 0...0.15, default: 0.06, unit: "s"),
         ]
     ) { ctx in
@@ -41,7 +41,8 @@ private struct CardsCascadeDemo: View {
                     card(i)
                 }
             }
-            .frame(height: 290)
+            // Room for the full cascade: three steps plus one card.
+            .frame(height: 3 * ctx.cg("gap") + 150)
             .contentShape(Rectangle())
             .onTapGesture(perform: toggle)
             DemoHint(text: L("Tap to spread the pile", "点击展开卡堆"), ctx: ctx)

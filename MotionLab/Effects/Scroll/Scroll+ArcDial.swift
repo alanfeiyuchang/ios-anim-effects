@@ -45,14 +45,6 @@ private let scrollArcFilters: [ScrollArcFilter] = [
     ScrollArcFilter(name: L("Film", "胶片"), symbol: "film.fill", colors: [Color(hex: 0xE9C98A), Color(hex: 0x6E4B2A)]),
 ]
 
-private struct ScrollArcSnap: ScrollTargetBehavior {
-    let pitch: CGFloat
-
-    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
-        target.rect.origin.x = (target.rect.minX / pitch).rounded() * pitch
-    }
-}
-
 private let scrollArcInitialIndex = 3
 
 private struct ScrollArcDialDemo: View {
@@ -61,6 +53,8 @@ private struct ScrollArcDialDemo: View {
     @State private var position = ScrollPosition(edge: .leading)
     @State private var width: CGFloat = 340
     @State private var direction = 1
+    /// True while autoplay (or the detail intro) turns the dial, so scripted ticks stay silent.
+    @State private var scripted = false
 
     private let side: CGFloat = 64
     private let spacing: CGFloat = 18
@@ -84,7 +78,7 @@ private struct ScrollArcDialDemo: View {
                 .animation(.snappy, value: current)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview }
+        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview && !scripted }
         .autoplay(ctx.isPreview, every: 1.2) { advance() }
     }
 
@@ -119,7 +113,7 @@ private struct ScrollArcDialDemo: View {
             .padding(.horizontal, max((width - side) / 2, 0))
             .frame(height: 132)
         }
-        .scrollTargetBehavior(ScrollArcSnap(pitch: pitch))
+        .scrollTargetBehavior(ScrollStrideSnap(pitch: pitch))
         .scrollPosition($position)
         .onScrollGeometryChange(for: Int.self, of: { geometry in
             let offset = geometry.contentOffset.x + geometry.contentInsets.leading
@@ -127,6 +121,9 @@ private struct ScrollArcDialDemo: View {
         }, action: { _, newValue in
             current = newValue
         })
+        .onScrollPhaseChange { _, newPhase in
+            if newPhase == .interacting { scripted = false }
+        }
         .onAppear { position.scrollTo(x: CGFloat(scrollArcInitialIndex) * pitch) }
         .scrollIndicators(.hidden)
         .frame(height: 132)
@@ -136,6 +133,7 @@ private struct ScrollArcDialDemo: View {
     }
 
     private func select(_ i: Int) {
+        scripted = false
         withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) {
             position.scrollTo(x: CGFloat(i) * pitch)
         }
@@ -143,6 +141,7 @@ private struct ScrollArcDialDemo: View {
 
     private func advance() {
         let count = scrollArcFilters.count
+        scripted = true
         if current + direction >= count || current + direction < 0 { direction = -direction }
         withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
             position.scrollTo(x: CGFloat(current + direction) * pitch)

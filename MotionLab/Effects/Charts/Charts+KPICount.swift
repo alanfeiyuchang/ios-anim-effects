@@ -16,7 +16,7 @@ extension Effect {
             "Animatable 文本视图逐帧插值并格式化数值，使计数经过所有中间值；每张卡片使用独立的 withAnimation(.timingCurve(...).delay(i × 间隔))。"
         ),
         apis: ["Animatable", "timingCurve", "Animation.delay", "monospacedDigit", "Grid"],
-        tags: ["kpi", "stat card", "counter", "count up", "dashboard", "数据卡片", "计数", "数字滚动", "仪表盘"],
+        tags: ["kpi", "stat card", "count up", "dashboard", "数据卡片", "计数", "数字滚动", "仪表盘"],
         params: [
             .slider("duration", L("Count duration", "计数时长"), 0.6...3.0, default: 1.6, unit: "s"),
             .slider("stagger", L("Stagger", "错峰间隔"), 0...0.3, default: 0.12, unit: "s"),
@@ -72,10 +72,10 @@ private enum KPIKind: Int, CaseIterable {
         return self == .latency ? 1 - clamped * 0.7 : 0.3 + clamped * 0.7
     }
 
-    func format(_ value: Double) -> String {
+    func format(_ value: Double, locale: Locale) -> String {
         switch self {
-        case .revenue: return "$" + Int(value.rounded()).formatted()
-        case .users: return Int(value.rounded()).formatted()
+        case .revenue: return "$" + Int(value.rounded()).formatted(.number.locale(locale))
+        case .users: return Int(value.rounded()).formatted(.number.locale(locale))
         case .conversion: return String(format: "%.1f%%", value)
         case .latency: return "\(Int(value.rounded())) ms"
         }
@@ -84,9 +84,10 @@ private enum KPIKind: Int, CaseIterable {
 
 private struct KPICountDemo: View {
     let ctx: DemoContext
-    @State private var values: [Double] = [0, 0, 0, 0]
-    @State private var deltas: [Double] = [0, 0, 0, 0]
-    @State private var shown = false
+    /// Seeded with settled numbers so still snapshots show data; `onAppear` rewinds and counts up.
+    @State private var values: [Double] = [72_480, 15_320, 4.6, 64]
+    @State private var deltas: [Double] = [8.4, 3.1, -2.2, -6.5]
+    @State private var shown = true
 
     var body: some View {
         Grid(horizontalSpacing: 12, verticalSpacing: 12) {
@@ -106,8 +107,18 @@ private struct KPICountDemo: View {
             DemoHint(text: L("Tap to refresh", "点击刷新"), ctx: ctx)
                 .padding(.bottom, 10)
         }
-        .onAppear { refresh(fromZero: true) }
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 2.0, delay: ctx["duration"] + 1.6) { replay() }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                values = [0, 0, 0, 0]
+                shown = false
+            }, then: {
+                refresh(fromZero: true)
+            })
+        }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 2.0, delay: ctx["duration"] + 1.6) {
+            if ctx.isPreview { replay() }
+        }
     }
 
     private func card(_ kind: KPIKind) -> some View {
@@ -179,7 +190,7 @@ private struct KPICard: View {
             Text(kind.title, language)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
-            CountingValue(value: value, kind: kind)
+            CountingValue(value: value, kind: kind, locale: language.locale)
             ProgressLine(fraction: value == 0 ? 0 : kind.fraction(value), tint: kind.tint)
         }
         .padding(12)
@@ -191,6 +202,7 @@ private struct KPICard: View {
 private struct CountingValue: View, Animatable {
     var value: Double
     let kind: KPIKind
+    let locale: Locale
 
     var animatableData: Double {
         get { value }
@@ -198,7 +210,7 @@ private struct CountingValue: View, Animatable {
     }
 
     var body: some View {
-        Text(kind.format(max(value, 0)))
+        Text(kind.format(max(value, 0), locale: locale))
             .font(.system(size: 21, weight: .bold, design: .rounded))
             .monospacedDigit()
             .lineLimit(1)

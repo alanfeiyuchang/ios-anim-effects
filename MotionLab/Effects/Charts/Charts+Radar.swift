@@ -16,7 +16,7 @@ extension Effect {
             "自定义 VectorArithmetic 类型包装半径数组，使 Shape 能通过 animatableData 同时为所有顶点做动画；分段胶囊使用 matchedGeometryEffect 实现选中态滑动。"
         ),
         apis: ["VectorArithmetic", "Shape.animatableData", "matchedGeometryEffect", "spring(response:dampingFraction:)", "sensoryFeedback"],
-        tags: ["radar chart", "spider chart", "morph", "polygon", "compare", "雷达图", "蜘蛛图", "形变", "对比"],
+        tags: ["radar chart", "spider chart", "morph", "compare", "雷达图", "蜘蛛图", "形变", "对比"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.3...1.2, default: 0.6, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.3...1.0, default: 0.65),

@@ -35,6 +35,8 @@ private struct SportCountdownDemo: View {
     @State private var waveScale: CGFloat = 1
     @State private var waveOpacity: Double = 0
     @State private var runID = 0
+    /// Set when autoplay or the detail intro starts the run, so the simulated countdown stays silent.
+    @State private var silentRun = false
 
     var body: some View {
         SignatureStage {
@@ -76,19 +78,21 @@ private struct SportCountdownDemo: View {
 
     private func start() {
         guard count == nil else { return }
+        silentRun = Haptics.isMuted
         runID += 1
     }
 
     private func run() async {
         let step = ctx["step"]
         let from = max(ctx.int("from"), 1)
+        let muted = ctx.isPreview || silentRun
         for n in stride(from: from, through: 1, by: -1) {
             guard !Task.isCancelled else { return }
             var instant = Transaction()
             instant.disablesAnimations = true
             withTransaction(instant) { ring = 1 }
             withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { count = n }
-            if !ctx.isPreview { Haptics.tap(.medium) }
+            if !muted { Haptics.tap(.medium) }
             try? await Task.sleep(for: .milliseconds(40))
             withAnimation(.linear(duration: step - 0.04)) { ring = 0 }
             try? await Task.sleep(for: .seconds(step - 0.04))
@@ -107,7 +111,7 @@ private struct SportCountdownDemo: View {
                 waveOpacity = 0
             }
         }
-        if !ctx.isPreview { Haptics.success() }
+        if !muted { Haptics.success() }
         try? await Task.sleep(for: .seconds(1.6))
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { count = nil }

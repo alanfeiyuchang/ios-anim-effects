@@ -11,18 +11,18 @@ extension Effect {
             "玻璃按钮像水滴一样从彼此中分裂而出，又融合回去。"
         ),
         prompt: L(
-            "A single tinted Liquid Glass button with a plus glyph floats over a vivid gradient. On tap, three secondary glass buttons bud out of it to the right, each first appearing as a bulge on the parent's edge, stretching into a liquid bridge and then pinching off into its own 56 pt circle as it springs into place (response ≈0.5 s, damping ≈0.75); the glass refracts and specular-highlights the backdrop continuously as shapes merge and separate. The plus rotates 45° into a close glyph. Collapsing reverses it: buttons are drawn back and melt into the parent like droplets merging. Glass responds to touch with the interactive glass bounce. Before iOS 26 the same choreography is drawn as a frosted metaball: the circles are blurred and alpha-thresholded together, so drops stay joined by liquid bridges until they are farther apart than the merge distance, then pinch off.",
-            "一枚带加号、着色的液态玻璃按钮悬浮在鲜艳的渐变背景上。点击后，三个次级玻璃按钮从它右侧「分裂」而出：先在母按钮边缘鼓起，再拉伸成液体般的连接桥，最后断开成各自 56pt 的圆形，并以弹簧（响应约 0.5 秒、阻尼约 0.75）落位；在形状融合与分离的全过程中，玻璃持续折射背景并带有高光。加号旋转 45° 变为关闭符号。收起时反向进行：按钮被吸回并像水滴汇合一样融进母按钮。玻璃在触摸时带有交互式回弹。"
+            "A tinted Liquid Glass plus button floats over a vivid gradient. On tap, three secondary glass buttons bud out to its right: each bulges from the parent's edge, stretches into a liquid bridge, then pinches off into its own 56 pt circle as it springs into place (response 0.5 s, damping 0.75), the glass refracting and highlighting the backdrop as shapes merge and part. The plus rotates 45° into a close glyph. Collapsing reverses it, the buttons melting back like merging droplets; touches get the interactive glass bounce. Before iOS 26 the same choreography is a frosted metaball: blurred, alpha-thresholded circles stay bridged until they pass the merge distance.",
+            "一枚着色的液态玻璃加号按钮浮在鲜艳渐变上。轻点，三个次级玻璃按钮从它右侧“分裂”而出：先在母按钮边缘鼓起，拉成液桥，再断开成各自 56 pt 的圆，以弹簧（响应 0.5 秒、阻尼 0.75）落位；融合与分离全程，玻璃持续折射背景、泛着高光。加号旋转 45° 变成关闭符号。收起时一切倒放，按钮像水滴汇合般融回母体；触摸带有玻璃的交互回弹。iOS 26 之前以磨砂融球呈现同一编排：模糊后做透明度阈值的圆形始终以液桥相连，直到间距超过融合距离才断开。"
         ),
         implementation: L(
             "On iOS 26, buttons live in a GlassEffectContainer and carry glassEffect(.regular.interactive()) plus glassEffectID in a shared namespace so SwiftUI morphs the glass shapes; on iOS 18 a Canvas stacks alphaThreshold on blur (radius driven by the merge distance) to draw spring-interpolated circles as a metaball that masks a frosted material.",
-            "iOS 26 上按钮位于 GlassEffectContainer 中，使用 glassEffect(.regular.interactive()) 与共享命名空间的 glassEffectID，由 SwiftUI 负责玻璃形状的融合形变；更早的系统回退为从主按钮缩放而出的材质圆形。"
+            "iOS 26 上按钮位于 GlassEffectContainer 中，使用 glassEffect(.regular.interactive()) 与共享命名空间的 glassEffectID，由 SwiftUI 负责玻璃形状的融合形变；更早的系统用 Canvas 叠加模糊与 alphaThreshold（半径随融合距离变化）绘制弹簧插值的圆形融球，并作为磨砂材质的遮罩。"
         ),
         apis: ["GlassEffectContainer", "glassEffect(_:in:)", "glassEffectID(_:in:)", "Glass.interactive()", "Canvas", "GraphicsContext.Filter.alphaThreshold"],
         tags: ["liquid glass", "glass", "ios 26", "metaball", "液态玻璃", "玻璃", "融合", "水滴"],
         params: [
             .slider("spacing", L("Merge distance", "融合距离"), 0...60, default: 30, decimals: 0, unit: "pt"),
-            .slider("gap", L("Button gap", "按钮间距"), 4...30, default: 12, decimals: 0, unit: "pt"),
+            .slider("gap", L("Button gap", "按钮间距"), 4...24, default: 12, decimals: 0, unit: "pt"),
             .slider("response", L("Spring response", "弹簧响应"), 0.2...1.0, default: 0.5, unit: "s"),
         ],
         requirement: "iOS 26"

@@ -39,7 +39,7 @@ enum ScrollFamilies {
             id: "scroll.indicator",
             category: .scroll,
             name: L("Progress & Index", "进度与索引"),
-            summary: L("Reading progress and index scrubbers tied to the scroll position.", "与滚动位置联动的阅读进度与索引条。"),
+            summary: L("Progress bars, scrubbers, minimaps and scrollbars tied to the scroll position.", "与滚动位置联动的进度条、索引条、缩略图与滚动条。"),
             symbol: "list.number"
         ),
     ]

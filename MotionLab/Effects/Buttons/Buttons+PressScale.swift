@@ -48,8 +48,22 @@ private struct ButtonPressScaleDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 0.9) {
-            autoPressed.toggle()
-            if !autoPressed { releases += 1 }
+            // The detail intro presses once and lets go, so the button never stays held down.
+            if ctx.isPreview {
+                autoPressed.toggle()
+                if !autoPressed { releases += 1 }
+            } else {
+                introPress()
+            }
+        }
+    }
+
+    private func introPress() {
+        autoPressed = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.4))
+            autoPressed = false
+            releases += 1
         }
     }
 

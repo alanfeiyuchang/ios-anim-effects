@@ -43,25 +43,24 @@ private struct TravelNowPlayingDemo: View {
         SignatureStage {
             VStack(spacing: 0) {
                 Spacer()
-                TimelineView(.animation(minimumInterval: nil, paused: !playing)) { timeline in
-                    TravelNowPlayingCard(
-                        seconds: position(at: timeline.date),
-                        length: length,
-                        track: track,
-                        skipDirection: skipDirection,
-                        time: timeline.date.timeIntervalSinceReferenceDate,
-                        playing: playing,
-                        scrubbing: scrubbing,
-                        bars: max(ctx.int("bars"), 8),
-                        pausedArt: ctx.cg("artScale"),
-                        glow: ctx.bool("glow"),
-                        language: ctx.language,
-                        onToggle: toggle,
-                        onScrub: scrub,
-                        onScrubEnd: endScrub,
-                        onSkip: skip
-                    )
-                }
+                // Only the waveform, time row and glow tick per frame; the card's static parts stay outside the clock.
+                TravelNowPlayingCard(
+                    position: position(at:),
+                    length: length,
+                    track: track,
+                    skipDirection: skipDirection,
+                    playing: playing,
+                    scrubbing: scrubbing,
+                    bars: max(ctx.int("bars"), 8),
+                    pausedArt: ctx.cg("artScale"),
+                    glow: ctx.bool("glow"),
+                    preview: ctx.isPreview,
+                    language: ctx.language,
+                    onToggle: toggle,
+                    onScrub: scrub,
+                    onScrubEnd: endScrub,
+                    onSkip: skip
+                )
                 Spacer()
                 DemoHint(text: L("Play, skip, or drag the waveform", "播放、切歌，或拖动波形"), ctx: ctx)
                     .padding(.bottom, 14)
@@ -131,16 +130,16 @@ private struct TravelTrack {
 }
 
 private struct TravelNowPlayingCard: View {
-    let seconds: Double
+    let position: (Date) -> Double
     let length: Double
     let track: TravelTrack
     let skipDirection: Double
-    let time: Double
     let playing: Bool
     let scrubbing: Bool
     let bars: Int
     let pausedArt: CGFloat
     let glow: Bool
+    let preview: Bool
     let language: AppLanguage
     let onToggle: () -> Void
     let onScrub: (Double) -> Void
@@ -153,19 +152,34 @@ private struct TravelNowPlayingCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
-            waveform
-            timeRow
+            clock { date in
+                let seconds = position(date)
+                let time = date.timeIntervalSinceReferenceDate
+                VStack(alignment: .leading, spacing: 14) {
+                    waveform(seconds: seconds, time: time)
+                    timeRow(seconds: seconds)
+                }
+            }
             controls
         }
         .padding(18)
         .frame(width: 288)
         .signatureCard()
         .background {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: 0xE0785A), Signature.accent], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .blur(radius: 34)
-                .scaleEffect(0.9)
-                .opacity(glow && playing ? 0.32 + 0.1 * sin(time * 2.2) : 0)
+            clock { date in
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(LinearGradient(colors: [Color(hex: 0xE0785A), Signature.accent], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .blur(radius: 34)
+                    .scaleEffect(0.9)
+                    .opacity(glow && playing ? 0.32 + 0.1 * sin(date.timeIntervalSinceReferenceDate * 2.2) : 0)
+            }
+        }
+    }
+
+    /// A frame clock that runs only while playing (30 fps in grid previews).
+    private func clock<Content: View>(@ViewBuilder _ content: @escaping (Date) -> Content) -> some View {
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !playing)) { timeline in
+            content(timeline.date)
         }
     }
 
@@ -204,7 +218,7 @@ private struct TravelNowPlayingCard: View {
         }
     }
 
-    private var waveform: some View {
+    private func waveform(seconds: Double, time: Double) -> some View {
         let progress = seconds / length
         let gap: CGFloat = 3
         let barWidth = (waveWidth - gap * CGFloat(bars - 1)) / CGFloat(bars)
@@ -213,7 +227,7 @@ private struct TravelNowPlayingCard: View {
                 let played = Double(index) / Double(bars) < progress
                 Capsule()
                     .fill(played ? AnyShapeStyle(Signature.accentGradient) : AnyShapeStyle(Color.white.opacity(0.18)))
-                    .frame(width: barWidth, height: barHeight(index) * lens(index, progress: progress))
+                    .frame(width: barWidth, height: barHeight(index, time: time) * lens(index, progress: progress))
             }
         }
         .frame(width: waveWidth, height: waveHeight)
@@ -233,7 +247,7 @@ private struct TravelNowPlayingCard: View {
     }
 
     /// Static per-bar envelope times a live, layered sine while playing; a low silhouette when paused.
-    private func barHeight(_ index: Int) -> CGFloat {
+    private func barHeight(_ index: Int, time: Double) -> CGFloat {
         let x = Double(index)
         let envelope = 0.35 + 0.65 * sportHash(x * 3.3 + 1)
         let live = playing ? 0.5 + 0.3 * abs(sin(time * 5.2 + x * 0.9)) + 0.2 * abs(sin(time * 2.3 + x * 0.37)) : 0.38
@@ -248,7 +262,7 @@ private struct TravelNowPlayingCard: View {
         return CGFloat(1 + 0.35 * (0.5 + 0.5 * cos(distance / 4 * .pi)))
     }
 
-    private var timeRow: some View {
+    private func timeRow(seconds: Double) -> some View {
         HStack {
             Text(verbatim: Self.format(seconds))
             Spacer(minLength: 0)

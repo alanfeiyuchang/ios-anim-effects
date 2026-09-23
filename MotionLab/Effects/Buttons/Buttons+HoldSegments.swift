@@ -67,7 +67,7 @@ private struct ButtonHoldSegmentsDemo: View {
         .frame(width: 260, height: 64)
         .background {
             Capsule()
-                .fill(unlocked ? AnyShapeStyle(Palette.mint.opacity(0.9)) : AnyShapeStyle(Color(hex: 0x1C1C22)))
+                .fill(unlocked ? AnyShapeStyle(Palette.mint.opacity(0.9)) : AnyShapeStyle(Color.adaptive(light: 0x1C1C22, dark: 0x2C2C32)))
         }
         .overlay(Capsule().strokeBorder(tint.opacity(0.35), lineWidth: 1))
         .shadow(color: tint.opacity(pressing || unlocked ? 0.35 : 0.1), radius: 16, y: 8)

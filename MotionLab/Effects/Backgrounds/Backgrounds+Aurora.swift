@@ -11,12 +11,12 @@ extension Effect {
             "绿紫交织的光幕在星空与山脊之上缓缓起伏。"
         ),
         prompt: L(
-            "A night-sky scene: a deep navy-to-teal vertical gradient scattered with ~70 pinpoint stars that twinkle independently on roughly 3–6 s cycles, and a dark mountain ridge silhouette along the bottom. Above it, four wide, heavily blurred aurora ribbons (mint, cyan-indigo, pale green, violet-pink) sway across the sky; each ribbon is a stroked sine curve built from two summed waves whose phases advance at slightly different rates (≈ 8–12 s periods), so the curtains ripple, cross and breathe in thickness. Ribbons use additive blending with horizontal fades at both ends; rising from each one, a curtain of thin vertical rays (every 6 pt, 10–30% of the sky tall) glows brightest at the ribbon's edge and fades upward, their lengths and brightness shimmering along the curtain, while a faint upper echo adds depth. The feeling is serene, cinematic and quietly awe-inspiring.",
-            "夜空场景：由深海军蓝过渡到青绿的纵向渐变背景，点缀约 70 颗独立闪烁（周期约 3–6 秒）的细小星点，底部是一道深色山脊剪影。天空中四条宽幅、强模糊的极光飘带（薄荷绿、青蓝、浅绿、紫粉）横贯摇曳：每条飘带是由两组正弦波叠加而成的描边曲线，相位以略有差异的速率推进（周期约 8–12 秒），因此光幕不断起伏、交错，粗细也随之呼吸。飘带采用叠加混合，两端横向淡出；每条飘带上方升起一排细密的竖直光柱（间隔 6pt，高度为天空的 10%～30%），在飘带边缘最亮并向上渐隐，长短与明暗沿光幕闪烁流动，上方另有一层更淡的回声增加纵深。整体静谧、电影感十足，令人屏息。"
+            "A night sky: a deep navy-to-teal gradient with ~70 pinpoint stars twinkling independently on 3–6 s cycles, above a dark mountain ridge. Four wide, heavily blurred aurora ribbons (mint, cyan-indigo, pale green, violet-pink) sway across it; each is a stroked curve of two summed sine waves whose phases advance at slightly different rates (≈ 8–12 s periods), so the curtains ripple, cross and breathe in thickness. Ribbons blend additively and fade out at both ends; from each rises a curtain of thin vertical rays (every 6 pt, 10–30% of the sky tall), brightest at the ribbon’s edge and fading upward, shimmering in length, with a faint upper echo for depth. Dragging sideways stirs the sky: near the finger the ribbons lift and the rays flare longer and brighter, easing back on release. Serene and cinematic.",
+            "夜空场景：深海军蓝过渡到青绿的纵向渐变，点缀约 70 颗各自以 3–6 秒周期闪烁的星点，底部是一道深色山脊剪影。四条宽幅、强模糊的极光飘带（薄荷绿、青蓝、浅绿、紫粉）横贯天际：每条是两组正弦波叠加的描边曲线，相位以略有差异的速率推进（周期约 8–12 秒），光幕因而起伏、交错，粗细随之呼吸。飘带叠加混合、两端淡出；每条上方升起一排细密的竖直光柱（间隔 6pt，高为天空的 10%～30%），在飘带边缘最亮并向上渐隐，长短明暗不断闪烁，上方另有一层淡淡的回声增加纵深。左右拖动可搅动夜空：指尖附近的飘带被托起，光柱变长变亮，松手后缓缓回落。静谧而富有电影感。"
         ),
         implementation: L(
-            "One Canvas per frame: stars in the base context; a lightly blurred .plusLighter layer strokes vertical rays (batched into three brightness bins per ribbon) with an upward-fading gradient; a heavily blurred layer strokes four sine-wave ribbons with fading linear gradients; a ridge path is filled last.",
-            "每帧一个 Canvas：先在主上下文绘制星点；在轻度模糊的 .plusLighter 图层中以向上渐隐的渐变描边竖直光柱（每条飘带按亮度分三档批量绘制）；再在强模糊图层中描边四条渐隐线性渐变的正弦飘带；最后填充山脊。"
+            "One Canvas per frame: stars in the base context; a lightly blurred .plusLighter layer strokes vertical rays (batched into three brightness bins per ribbon) with an upward-fading gradient; a heavily blurred layer strokes four sine-wave ribbons; a ridge path is filled last. A horizontal-first drag feeds a smoothed Gaussian surge that lifts ribbons and lengthens rays near the finger.",
+            "每帧一个 Canvas：先绘制星点；在轻度模糊的 .plusLighter 图层中以向上渐隐的渐变描边竖直光柱（每条飘带按亮度分三档批量绘制）；再在强模糊图层中描边四条正弦飘带；最后填充山脊。水平优先的拖动驱动一个平滑的高斯“涌动”，托起指尖附近的飘带并拉长光柱。"
         ),
         apis: ["Canvas", "TimelineView(.animation)", "GraphicsContext.drawLayer", "GraphicsContext.Filter.blur", ".plusLighter"],
         tags: ["aurora", "northern lights", "night", "blur", "极光", "北极光", "夜空", "星空"],
@@ -33,6 +33,7 @@ extension Effect {
 private struct AuroraDemo: View {
     let ctx: DemoContext
     @State private var clock = BackgroundClock()
+    @State private var surge = AuroraSurge()
 
     var body: some View {
         ZStack {
@@ -43,7 +44,8 @@ private struct AuroraDemo: View {
             )
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
-                AuroraCanvas(t: t, blur: ctx.cg("blur"), intensity: ctx["intensity"])
+                let stir = surge.step(clock.follow(rate: 5))
+                AuroraCanvas(t: t, blur: ctx.cg("blur"), intensity: ctx["intensity"], stir: stir)
             }
             BackgroundSampleTitle(
                 title: L("Tonight", "今夜"),
@@ -54,6 +56,35 @@ private struct AuroraDemo: View {
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.top, 40)
         }
+        .backgroundsTouch { location in surge.target = location } onEnded: { surge.target = nil }
+        .backgroundsHint(L("Drag sideways to stir the sky", "左右拖动搅动夜空"), ctx)
+    }
+}
+
+/// Where (x) and how strongly (0…1) the finger stirs the aurora, eased toward the touch every frame.
+private struct AuroraStir {
+    var x: CGFloat
+    var amount: Double
+
+    /// Gaussian falloff of the stir around its x, in 0…1.
+    func weight(at px: CGFloat, width: CGFloat) -> Double {
+        guard amount > 0.001 else { return 0 }
+        let d = Double((px - x) / max(width * 0.2, 1))
+        return amount * exp(-d * d)
+    }
+}
+
+private final class AuroraSurge {
+    var target: CGPoint?
+    private var stir = AuroraStir(x: 0, amount: 0)
+
+    func step(_ k: Double) -> AuroraStir {
+        if let target {
+            // Jump to the first touch instead of sliding in from the last one.
+            stir.x = stir.amount < 0.02 ? target.x : stir.x + (target.x - stir.x) * CGFloat(k)
+        }
+        stir.amount += ((target == nil ? 0 : 1) - stir.amount) * k
+        return stir
     }
 }
 
@@ -61,6 +92,7 @@ private struct AuroraCanvas: View {
     let t: Double
     let blur: CGFloat
     let intensity: Double
+    let stir: AuroraStir
 
     private static let ribbons: [(Color, Color)] = [
         (Color(hex: 0x21D4A8), Color(hex: 0x3AF2C0)),
@@ -78,7 +110,7 @@ private struct AuroraCanvas: View {
                 layer.blendMode = .plusLighter
                 layer.opacity = intensity
                 for index in 0..<AuroraCanvas.ribbons.count {
-                    AuroraCanvas.drawRays(&layer, index: index, size: size, t: t)
+                    AuroraCanvas.drawRays(&layer, index: index, size: size, t: t, stir: stir)
                 }
             }
             context.drawLayer { layer in
@@ -86,7 +118,7 @@ private struct AuroraCanvas: View {
                 layer.blendMode = .plusLighter
                 layer.opacity = intensity
                 for index in 0..<AuroraCanvas.ribbons.count {
-                    AuroraCanvas.drawRibbon(&layer, index: index, size: size, t: t)
+                    AuroraCanvas.drawRibbon(&layer, index: index, size: size, t: t, stir: stir)
                 }
             }
             AuroraCanvas.drawRidge(&context, size: size)
@@ -106,22 +138,23 @@ private struct AuroraCanvas: View {
     }
 
     /// The ribbon's center line at `x`.
-    private static func ribbonY(index i: Int, x: CGFloat, size: CGSize, t: Double) -> CGFloat {
+    private static func ribbonY(index i: Int, x: CGFloat, size: CGSize, t: Double, stir: AuroraStir) -> CGFloat {
         let h = size.height
         let di = Double(i)
         let base = h * (0.3 + 0.09 * CGFloat(i))
         let u = Double(x / max(size.width, 1))
         let wave1 = sin(u * (3.2 + di * 0.7) + t * (0.6 + di * 0.17) + di * 1.9)
         let wave2 = sin(u * 7.1 - t * (0.9 + di * 0.11))
-        return base + CGFloat(wave1) * h * 0.08 + CGFloat(wave2) * h * 0.025
+        let lift = CGFloat(stir.weight(at: x, width: size.width)) * h * 0.07
+        return base + CGFloat(wave1) * h * 0.08 + CGFloat(wave2) * h * 0.025 - lift
     }
 
-    private static func ribbonPath(index i: Int, size: CGSize, t: Double) -> Path {
+    private static func ribbonPath(index i: Int, size: CGSize, t: Double, stir: AuroraStir) -> Path {
         let w = size.width
         var path = Path()
         var x: CGFloat = -40
         while x <= w + 40 {
-            let y = ribbonY(index: i, x: x, size: size, t: t)
+            let y = ribbonY(index: i, x: x, size: size, t: t, stir: stir)
             if x == -40 {
                 path.move(to: CGPoint(x: x, y: y))
             } else {
@@ -132,8 +165,8 @@ private struct AuroraCanvas: View {
         return path
     }
 
-    private static func drawRibbon(_ context: inout GraphicsContext, index i: Int, size: CGSize, t: Double) {
-        let path = ribbonPath(index: i, size: size, t: t)
+    private static func drawRibbon(_ context: inout GraphicsContext, index i: Int, size: CGSize, t: Double, stir: AuroraStir) {
+        let path = ribbonPath(index: i, size: size, t: t, stir: stir)
         let pair = ribbons[i % ribbons.count]
         let h = size.height
         let lineWidth = h * (0.1 + 0.04 * CGFloat(sin(t * 0.5 + Double(i))))
@@ -159,7 +192,7 @@ private struct AuroraCanvas: View {
 
     /// Thin vertical rays hanging above a ribbon, bright at its edge and fading upward. Ray length and
     /// brightness shimmer with two drifting sines; rays are batched into three brightness bins.
-    private static func drawRays(_ context: inout GraphicsContext, index i: Int, size: CGSize, t: Double) {
+    private static func drawRays(_ context: inout GraphicsContext, index i: Int, size: CGSize, t: Double, stir: AuroraStir) {
         let h = size.height
         let di = Double(i)
         var bins = [Path(), Path(), Path()]
@@ -167,9 +200,10 @@ private struct AuroraCanvas: View {
         while x < size.width {
             let dx = Double(x)
             let shimmer = (0.5 + 0.5 * sin(dx * 0.09 + t * 1.3 + di * 2.1)) * (0.55 + 0.45 * sin(dx * 0.023 - t * 0.4 + di))
-            let y = ribbonY(index: i, x: x, size: size, t: t) + h * 0.03
-            let length = h * CGFloat(0.1 + 0.2 * shimmer)
-            let bin = min(Int(shimmer * 3), 2)
+            let flare = stir.weight(at: x, width: size.width)
+            let y = ribbonY(index: i, x: x, size: size, t: t, stir: stir) + h * 0.03
+            let length = h * CGFloat(0.1 + 0.2 * shimmer) * CGFloat(1 + 1.1 * flare)
+            let bin = min(Int((shimmer + flare) * 3), 2)
             bins[bin].move(to: CGPoint(x: x, y: y))
             bins[bin].addLine(to: CGPoint(x: x, y: y - length))
             x += 6

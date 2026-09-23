@@ -4,7 +4,7 @@ extension Effect {
     static let backgroundsRain = Effect(
         id: "backgrounds.rain",
         category: .backgrounds,
-        interaction: .loop,
+        interaction: .tap,
         name: L("Night Rain", "夜雨"),
         summary: L(
             "Wind-slanted rain streaks over blurred city lights — tap for lightning.",

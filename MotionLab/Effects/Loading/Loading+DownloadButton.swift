@@ -57,7 +57,7 @@ private struct DownloadButtonDemo: View {
                 }
                 Spacer(minLength: 8)
                 Button(action: tap) {
-                    DownloadFace(phase: phase, progress: progress, language: ctx.language)
+                    DownloadFace(phase: phase, progress: progress, language: ctx.language, preview: ctx.isPreview)
                 }
                 .buttonStyle(.plain)
             }
@@ -126,6 +126,7 @@ private struct DownloadFace: View {
     let phase: DownloadPhase
     let progress: Double
     let language: AppLanguage
+    let preview: Bool
 
     private let side: CGFloat = 36
 
@@ -138,7 +139,7 @@ private struct DownloadFace: View {
             Capsule()
                 .strokeBorder(Color.primary.opacity(circular ? 0.12 : 0), lineWidth: 3)
             if phase == .waiting {
-                DownloadWaitingArc()
+                DownloadWaitingArc(preview: preview)
                     .transition(.opacity)
             }
             if phase == .downloading {
@@ -167,8 +168,10 @@ private struct DownloadFace: View {
 }
 
 private struct DownloadWaitingArc: View {
+    let preview: Bool
+
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             Circle()
                 .trim(from: 0, to: 0.25)

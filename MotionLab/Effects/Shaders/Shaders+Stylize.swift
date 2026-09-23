@@ -116,7 +116,7 @@ extension Effect {
             "[[stitchable]] layerEffect 着色器循环处理四层网屏：把坐标旋转到网屏空间、吸附到网格中心再旋回，采样后将 RGB 转为 CMYK，绘制抗锯齿网点并把各色油墨相乘叠印在纸色上；下层由 Canvas 绘制动态场景。"
         ),
         apis: ["layerEffect", "TimelineView", "Canvas", "Metal"],
-        tags: ["halftone", "cmyk", "print", "rosette", "risograph", "半色调", "网点", "印刷", "四色", "网角"],
+        tags: ["halftone", "cmyk", "print", "risograph", "半色调", "网点", "印刷", "四色"],
         params: [
             .slider("cell", L("Screen size", "网格尺寸"), 4...16, default: 7, decimals: 0, unit: "pt"),
             .slider("angle", L("Screen rotation", "网屏旋转"), 0...90, default: 0, decimals: 0, unit: "°"),

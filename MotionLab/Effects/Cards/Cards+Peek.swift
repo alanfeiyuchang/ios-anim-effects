@@ -107,9 +107,9 @@ private struct CardsPeekDemo: View {
         return CGSize(width: column * 67, height: row * 67)
     }
 
-    private func peek(_ i: Int) {
+    private func peek(_ i: Int, haptic: Bool = true) {
         guard peeked == nil else { return }
-        if !ctx.isPreview { Haptics.tap(.medium) }
+        if haptic && !ctx.isPreview { Haptics.tap(.medium) }
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.72)) {
             peeked = i
             pressing = nil
@@ -126,7 +126,9 @@ private struct CardsPeekDemo: View {
         if peeked == nil {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { pressing = autoIndex % 4 }
             let index = autoIndex % 4
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { peek(index) }
+            // Simulated presses stay silent, including the detail stage's intro play.
+            let muted = Haptics.isMuted || ctx.isPreview
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { peek(index, haptic: !muted) }
             autoIndex += 1
         } else {
             dismiss()

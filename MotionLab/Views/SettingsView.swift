@@ -80,6 +80,7 @@ struct SettingsView: View {
                 // Browsing lives in the Browse tab; Settings only summarises the catalog.
                 LabeledContent(Strings.allEffects(language), value: Strings.effectCount(EffectLibrary.all.count, language))
                 LabeledContent(Strings.categories(language), value: Strings.categoryCount(EffectCategory.allCases.count, language))
+                LabeledContent(Strings.families(language), value: Strings.familyCount(EffectFamilies.all.count, language))
                 LabeledContent(Strings.version(language), value: versionString)
             }
         }

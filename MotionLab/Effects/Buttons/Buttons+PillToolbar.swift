@@ -95,8 +95,8 @@ private struct ButtonPillToolbarDemo: View {
         let expanded = ctx.cg("width")
         return ZStack(alignment: .trailing) {
             Capsule()
-                .fill(Color(hex: 0x16161A).opacity(0.92))
-                .overlay(Capsule().strokeBorder(Color.white.opacity(0.14), lineWidth: 1))
+                .fill(Color.adaptive(light: 0x16161A, dark: 0x2C2C32).opacity(0.92))
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.2), lineWidth: 1))
                 .frame(width: open ? expanded : 56, height: 56)
                 .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
             HStack(spacing: 0) {

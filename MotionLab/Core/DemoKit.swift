@@ -114,6 +114,10 @@ private struct DemoIntroPlayKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+private struct DemoSyncEpochKey: EnvironmentKey {
+    static let defaultValue: Date? = nil
+}
+
 extension EnvironmentValues {
     /// Master switch for `.autoplay`. The app shell turns it off for grid thumbnails when
     /// Reduce Motion is on, when "Animate previews" is disabled, or when a card scrolls away.
@@ -128,26 +132,46 @@ extension EnvironmentValues {
         get { self[DemoIntroPlayKey.self] }
         set { self[DemoIntroPlayKey.self] = newValue }
     }
+
+    /// Shared clock for side-by-side previews (the family page's Compare mode). When set, every
+    /// autoplay loop fires on the grid `epoch + delay + k × interval`, so variations that tick at the
+    /// same interval play in lockstep no matter when their card was created.
+    var demoSyncEpoch: Date? {
+        get { self[DemoSyncEpochKey.self] }
+        set { self[DemoSyncEpochKey.self] = newValue }
+    }
 }
 
 private struct AutoplayModifier: ViewModifier {
     let active: Bool
     let interval: Double
     let initialDelay: Double
+    /// Whether this autoplay also performs the one-shot arrival play on the detail stage.
+    let intro: Bool
     let action: () -> Void
     @Environment(\.demoAutoplayEnabled) private var enabled
     @Environment(\.demoIntroPlay) private var introPlay
+    @Environment(\.demoSyncEpoch) private var syncEpoch
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private enum Mode: Hashable {
         case idle
         case intro
-        case loop(interval: Double)
+        case loop(interval: Double, epoch: Date?)
     }
 
     private var mode: Mode {
-        if active { return enabled ? .loop(interval: interval) : .idle }
-        return introPlay && !reduceMotion ? .intro : .idle
+        if active { return enabled ? .loop(interval: interval, epoch: syncEpoch) : .idle }
+        return intro && introPlay && !reduceMotion ? .intro : .idle
+    }
+
+    /// Wait before the first loop tick: `initialDelay`, or the time to the next shared-clock tick.
+    private static func firstWait(delay: Double, interval: Double, epoch: Date?) -> Double {
+        guard let epoch, interval > 0 else { return delay }
+        let elapsed = Date().timeIntervalSince(epoch)
+        if elapsed <= delay { return delay - elapsed }
+        let phase = (elapsed - delay).truncatingRemainder(dividingBy: interval)
+        return phase < 0.001 ? 0 : interval - phase
     }
 
     func body(content: Content) -> some View {
@@ -161,8 +185,9 @@ private struct AutoplayModifier: ViewModifier {
                 try? await Task.sleep(for: .seconds(0.9))
                 guard !Task.isCancelled else { return }
                 Self.silently(action)
-            case .loop(let interval):
-                try? await Task.sleep(for: .seconds(initialDelay))
+            case .loop(let interval, let epoch):
+                let wait = Self.firstWait(delay: initialDelay, interval: interval, epoch: epoch)
+                if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
                 while !Task.isCancelled {
                     Self.silently(action)
                     try? await Task.sleep(for: .seconds(interval))
@@ -183,8 +208,18 @@ extension View {
     /// Repeatedly calls `action` every `interval` seconds while `active` is true.
     /// Use it so tap-driven demos animate on their own inside grid previews:
     /// `.autoplay(ctx.isPreview, every: 1.6) { toggle() }`
-    func autoplay(_ active: Bool, every interval: Double = 1.8, delay: Double = 0.6, _ action: @escaping () -> Void) -> some View {
-        modifier(AutoplayModifier(active: active, interval: interval, initialDelay: delay, action: action))
+    ///
+    /// On the detail stage an inactive autoplay plays `action` once, 0.9 s after arrival (see
+    /// `demoIntroPlay`). Pass `intro: false` when the demo already plays itself in `onAppear`,
+    /// otherwise that entrance is interrupted by a second play.
+    func autoplay(
+        _ active: Bool,
+        every interval: Double = 1.8,
+        delay: Double = 0.6,
+        intro: Bool = true,
+        _ action: @escaping () -> Void
+    ) -> some View {
+        modifier(AutoplayModifier(active: active, interval: interval, initialDelay: delay, intro: intro, action: action))
     }
 
     /// Standard floating card look used by many demos.

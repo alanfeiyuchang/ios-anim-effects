@@ -55,8 +55,9 @@ struct PreviewStage: View {
                         .frame(width: proxy.size.width, height: proxy.size.height)
                 } else if isOnScreen && proxy.size.width > 0 {
                     Color.clear.task(id: key) {
-                        // Let the grid's first frame land before rasterising.
-                        await Task.yield()
+                        // Let the grid's first frame land, then wait for a free render slot so a
+                        // screenful of new cards never rasterises in one scroll frame.
+                        await SnapshotGate.waitForTurn()
                         guard !Task.isCancelled else { return }
                         renderSnapshot(key: key, pixelsPerPoint: scale * displayScale)
                     }
@@ -82,7 +83,7 @@ struct PreviewStage: View {
 
     private func liveDemo(scale: CGFloat, size: CGSize, autoplay: Bool) -> some View {
         let side = StageMetrics.previewCanvas
-        return effect.makeDemo(context)
+        return EffectDemoView(effect: effect, context: context)
             .frame(width: side, height: side)
             .scaleEffect(scale)
             .frame(width: size.width, height: size.height)
@@ -104,7 +105,9 @@ struct PreviewStage: View {
     private func renderSnapshot(key: String, pixelsPerPoint: CGFloat) {
         guard pixelsPerPoint > 0 else { return }
         let side = StageMetrics.previewCanvas
-        let content = effect.makeDemo(context)
+        var still = context
+        still.isStill = true
+        let content = effect.makeDemo(still)
             .frame(width: side, height: side)
             .environment(\.demoAutoplayEnabled, false)
             .environment(\.appLanguage, language)
@@ -164,6 +167,7 @@ final class PreviewSnapshotCache: @unchecked Sendable {
 
     static func canSnapshot(_ effect: Effect) -> Bool {
         effect.interaction != .scroll && effect.category != .scroll && !liveOnlyIDs.contains(effect.id)
+            && !DemoIsolation.needsHost(effect)
     }
 
     func image(for key: String) -> UIImage? {
@@ -173,6 +177,26 @@ final class PreviewSnapshotCache: @unchecked Sendable {
     func insert(_ image: UIImage, for key: String) {
         let pixels = image.size.width * image.scale * image.size.height * image.scale
         cache.setObject(image, forKey: key as NSString, cost: Int(pixels * 4))
+    }
+}
+
+/// Spaces out snapshot renders: at most one `ImageRenderer` pass per ~frame across the whole app,
+/// so heavy demos (particle fields, flow fields) never stack up inside a single scroll frame.
+@MainActor
+enum SnapshotGate {
+    private static var nextSlot = ContinuousClock.now
+
+    static func waitForTurn() async {
+        await Task.yield()
+        let clock = ContinuousClock()
+        while !Task.isCancelled {
+            let now = clock.now
+            if now >= nextSlot {
+                nextSlot = now + .milliseconds(20)
+                return
+            }
+            try? await Task.sleep(until: nextSlot, clock: clock)
+        }
     }
 }
 
@@ -237,7 +261,7 @@ struct EffectCard: View {
         }
         .padding(8)
         .padding(.bottom, 4)
-        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))

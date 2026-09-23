@@ -8,15 +8,15 @@ extension Effect {
         name: L("Donut ⇄ Bars Morph", "环形图 ⇄ 柱状图形变"),
         summary: L("Each donut segment unrolls into its own bar — and curls back — on a staggered spring.", "每段圆环依次舒展成对应的柱子，再卷回圆环，错峰弹性形变。"),
         prompt: L(
-            "A “Sessions by platform” card with five segments (indigo, pink, amber, mint, sky) that switches chart type in place. As a donut (outer radius 46% of the plot's short side, inner radius 60% of that, ≈ 6° gaps between slices) each segment is an arc, and the center shows the real weekly total, 11.1k sessions; as bars each is a column with 6 pt rounded top corners whose height is its value. On tap, every segment morphs along its own outline — the outer arc straightens into the bar's rounded top while the inner arc becomes its base — so the viewer can follow each value from slice to column. Segments start 60 ms apart and ride a spring (response ≈ 0.7 s, damping ≈ 0.78) with a hint of overshoot; the total fades out as per-bar values (4.2k, 2.7k…) and a baseline fade in, and the reverse curls them back. Clear, clever and continuous.",
-            "一张“各平台会话”卡片，包含五个数据分段（靛蓝、粉、琥珀、薄荷、天蓝），可在原位切换图表类型。环形图状态下每段是一段圆弧（外半径为绘图区短边的 46%，内半径为外半径的 60%，扇段之间约 6° 间隙），中心显示真实的本周总数“11.1k 次会话”；柱状图状态下每段是一根顶部带 6pt 圆角、高度等于数值的柱子。点击后，每段沿自身轮廓形变——外弧拉直成圆角柱顶，内弧展开成柱底——观众能一眼追踪每个数值从扇段到柱子的去向。各段依次间隔 60ms 启动，乘着弹簧（响应约 0.7 秒、阻尼约 0.78）并带轻微过冲；总数淡出，各柱数值（4.2k、2.7k……）与基线随之淡入；反向操作则把柱子卷回圆环。清晰、巧妙、连贯。"
+            "A “Sessions by platform” card with five segments (indigo, pink, amber, mint, sky) that switches chart type in place. As a donut (≈ 6° gaps, inner radius 60% of the outer) each segment is an arc and the center shows the weekly total, 11.1k sessions; as bars each is a column with 6 pt rounded top corners whose height is its value. On tap every segment morphs along its own outline — the outer arc straightens into the bar’s rounded top while the inner arc becomes its base — so the eye can follow each value from slice to column. Segments start 60 ms apart on a spring (response ≈ 0.7 s, damping ≈ 0.78) with a hint of overshoot; the total fades out as per-bar values (4.2k, 2.7k…) and a baseline fade in, and the reverse curls them back. Clear, clever, continuous.",
+            "一张“各平台会话”卡片，五个分段（靛蓝、粉、琥珀、薄荷、天蓝）可在原位切换图表类型。环形图状态下每段是一段圆弧（段间约 6° 间隙，内半径为外半径的 60%），中心显示本周总数“11.1k 次会话”；柱状图状态下每段是一根顶部 6pt 圆角、高度等于数值的柱子。点击后每段沿自身轮廓形变：外弧拉直成圆角柱顶，内弧展开成柱底，视线能一路追踪每个数值从扇段到柱子。各段间隔 60ms 启动，乘着弹簧（响应约 0.7 秒、阻尼约 0.78）并带轻微过冲；总数淡出，各柱数值（4.2k、2.7k……）与基线随之淡入；反向操作再把柱子卷回圆环。清晰、巧妙、连贯。"
         ),
         implementation: L(
             "Each segment is an Animatable Shape that samples 24 points along the arc outline and along the bar outline (its top edge bent into rounded corners) and linearly interpolates them by an animatable progress; per-segment .animation(spring.delay(i × stagger), value:) creates the cascade.",
             "每个分段是一个 Animatable Shape：分别沿圆弧轮廓与柱形轮廓（柱顶采样点弯成圆角）采样 24 个点，并按可动画的进度线性插值；每段使用 .animation(spring.delay(序号 × 间隔), value:) 形成错峰级联。"
         ),
         apis: ["Shape", "Animatable", "animation(_:value:)", "Path.addLines", "contentTransition(.numericText)"],
-        tags: ["donut", "bar chart", "morph", "chart type", "transition", "环形图", "柱状图", "形变", "图表切换"],
+        tags: ["donut", "bar chart", "morph", "chart type", "环形图", "柱状图", "形变", "图表切换"],
         params: [
             .slider("stagger", L("Stagger", "错峰间隔"), 0...0.15, default: 0.06, unit: "s"),
             .slider("response", L("Spring response", "弹簧响应"), 0.3...1.2, default: 0.7, unit: "s"),

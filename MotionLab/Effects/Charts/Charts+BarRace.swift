@@ -16,7 +16,7 @@ extension Effect {
             "行由 VStack 中以稳定 id 标识的 ForEach 构成；数值与数组顺序在同一个 withAnimation(.spring) 中改变，SwiftUI 同时为布局位移与条形宽度做动画，Animatable 标签负责计数。"
         ),
         apis: ["ForEach(id:)", "withAnimation(.spring)", "Animatable", "contentTransition(.numericText)", "Capsule"],
-        tags: ["bar chart race", "ranking", "sort", "leaderboard", "reorder", "排行", "条形图", "排序", "竞赛"],
+        tags: ["bar chart race", "ranking", "leaderboard", "reorder", "排行", "条形图", "排序", "竞赛"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.3...1.2, default: 0.6, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.5...1.0, default: 0.8),
@@ -90,7 +90,7 @@ private struct RaceRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Text("\(rank + 1)")
+            Text(verbatim: "\(rank + 1)")
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText(value: Double(rank)))
@@ -126,7 +126,7 @@ private struct RaceValue: View, Animatable {
     }
 
     var body: some View {
-        Text("\(Int(value.rounded()))")
+        Text(verbatim: "\(Int(value.rounded()))")
             .font(.system(size: 13, weight: .bold, design: .rounded))
             .monospacedDigit()
             .frame(width: 28, alignment: .trailing)

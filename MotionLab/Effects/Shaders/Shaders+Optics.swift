@@ -18,7 +18,7 @@ extension Effect {
             "由 TimelineView 逐帧推进的引用类型弹簧模型记录卡片位置与速度；visualEffect 把尺寸与由速度换算的偏移传给 [[stitchable]] layerEffect 着色器，分别采样 R/G/B。"
         ),
         apis: ["layerEffect", "visualEffect", "TimelineView", "DragGesture", "ShaderLibrary"],
-        tags: ["chromatic aberration", "rgb split", "motion", "glitch", "velocity", "色散", "色差", "RGB 分离", "拖影"],
+        tags: ["chromatic aberration", "rgb split", "velocity", "glitch", "色散", "色差", "RGB 分离", "拖影"],
         params: [
             .slider("strength", L("Split strength", "分离强度"), 0.2...2.0, default: 1.0, unit: "×"),
             .slider("fringe", L("Lens fringe", "镜头色边"), 0...24, default: 8, decimals: 0, unit: "pt"),
@@ -43,7 +43,7 @@ extension Effect {
             "visualEffect 将视图尺寸传入 [[stitchable]] layerEffect 着色器，把 atan2 角度折叠为镜像分段；折叠后的采样点可能落在视窗任意位置，因此 maxSampleOffset 覆盖整个 280pt。ShaderClock 提供按速度缩放的时间，Canvas 绘制环形分布的图案，水平优先的 DragGesture 叠加手动旋转偏移。"
         ),
         apis: ["layerEffect", "visualEffect", "TimelineView", "DragGesture", "Metal"],
-        tags: ["kaleidoscope", "mirror", "symmetry", "polar", "pattern", "万花筒", "镜像", "对称", "花纹"],
+        tags: ["kaleidoscope", "mirror", "symmetry", "pattern", "万花筒", "镜像", "对称", "花纹"],
         params: [
             .slider("segments", L("Mirrors", "镜面数"), 3...12, default: 8, step: 1, decimals: 0),
             .slider("speed", L("Turn speed", "旋转速度"), 0...2, default: 1.0, unit: "×"),
@@ -68,7 +68,7 @@ extension Effect {
             "[[stitchable]] layerEffect 着色器取八个相邻采样计算 Sobel 梯度，在可动画的扫描位置之上混合霓虹边缘；Animatable 修饰器插值扫描位置，让扫描线平滑移动。"
         ),
         apis: ["layerEffect", "Animatable", "ShaderLibrary", "Sobel", "withAnimation"],
-        tags: ["edge detection", "sobel", "scan", "neon", "wireframe", "AR", "边缘检测", "扫描", "霓虹", "线框"],
+        tags: ["edge detection", "sobel", "scan", "neon", "边缘检测", "扫描", "霓虹", "线框"],
         params: [
             .slider("duration", L("Sweep duration", "扫描时长"), 0.6...3.0, default: 1.4, unit: "s"),
             .slider("band", L("Glow height", "光晕高度"), 4...30, default: 12, decimals: 0, unit: "pt"),

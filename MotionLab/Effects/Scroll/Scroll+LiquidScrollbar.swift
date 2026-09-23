@@ -8,8 +8,8 @@ extension Effect {
         name: L("Liquid Scrollbar", "液态滚动条"),
         summary: L("A custom scroll thumb that stretches with speed, squashes at the ends and melts away when idle.", "自定义滚动滑块：随速度拉长、在两端被挤扁、静止时悄然消融。"),
         prompt: L(
-            "A list scrolls with a custom thumb along its right edge. At rest the thumb is invisible; as soon as scrolling starts it fades in and widens from 5 to 8 pt on a quick spring. Its length is proportional to the visible fraction, but it also stretches with speed — up to 60% longer at 30 pt per frame, trailing opposite the motion — and eases back when the scroll slows (spring response 0.3 s, damping 0.55). Pulled past either end, it squashes against the edge, losing up to 70% of its length while bulging 2 pt wider, like a droplet. A small bubble beside it shows the percentage read. 0.8 s after the scroll settles, thumb and bubble melt away. Fluid, alive and unobtrusive.",
-            "一个列表在滚动，右侧边缘有一个自定义滑块。静止时滑块不可见；一开始滚动，它就以快速弹簧淡入，宽度从 5 pt 变为 8 pt。滑块长度与可见比例成正比，但也会随速度拉长——每帧 30 pt 时最多拉长 60%，并向运动的反方向拖尾——滚动变慢时再回弹（弹簧响应 0.3 秒、阻尼 0.55）。越过两端继续拉动时，它会被挤压在边缘，长度最多减少 70%，同时像水滴一样鼓宽 2 pt。旁边的小气泡显示已读百分比。滚动停下 0.8 秒后，滑块和气泡一起消融。流畅、灵动、不打扰。"
+            "A list scrolls with a custom gradient thumb on its right edge that is invisible at rest; the moment scrolling starts it fades in and widens from 5 to 8 pt on a quick spring. Its position tracks the content exactly, while its shape is liquid: the length, proportional to the visible fraction, stretches up to 60% longer at 30 pt per frame, trailing opposite the motion, and springs back as the scroll slows (response 0.3 s, damping 0.55). Pulled past either end it squashes against the edge like a droplet, losing up to 70% of its length and bulging 2 pt wider, with a small bubble beside it reading the percentage. 0.8 s after the scroll settles, thumb and bubble melt away.",
+            "列表右侧有一个自定义渐变滑块，静止时不可见；一开始滚动，它就以快速弹簧淡入，宽度从 5 pt 变为 8 pt。滑块的位置严格跟随内容，形状却是液态的：长度按可见比例计算，每帧 30 pt 时最多再拉长 60%，朝运动反方向拖尾，滚动变慢时再以弹簧（响应 0.3 秒、阻尼 0.55）缩回。越过两端继续拉时，它像水滴一样被挤扁在边缘，长度最多减少 70%、鼓宽 2 pt，旁边的小气泡显示已读百分比。滚动停下 0.8 秒后，滑块与气泡一起消融。"
         ),
         implementation: L(
             "onScrollGeometryChange reports offset, range and viewport as one Equatable struct; the action derives a per-frame velocity and overscroll that set the thumb's length, anchor and width through an .animation(spring, value:), and onScrollPhaseChange plus a delayed Task controls visibility.",
@@ -125,13 +125,17 @@ private struct ScrollLiquidThumb: View {
         let length = max(baseLength * (1 + speed) * (1 - squash), 10)
         let top = inset + (track - baseLength) * progress
         // Stretch trails behind the motion: grow upward when moving down and vice versa.
-        let y = velocity > 0 ? top + baseLength - length : top
+        let stretchY = velocity > 0 ? baseLength - length : 0
         let width: CGFloat = (visible ? 8 : 5) + squash / 0.7 * 2
         ZStack(alignment: .topTrailing) {
             Capsule()
                 .fill(LinearGradient(colors: [Palette.sky, Palette.violet], startPoint: .top, endPoint: .bottom))
                 .frame(width: width, height: length)
-                .offset(y: y)
+                .offset(y: stretchY)
+                // Only the shape (length, width, trailing stretch) springs; the thumb's
+                // position is applied outside the animation so it tracks the content exactly.
+                .animation(.spring(response: 0.3, dampingFraction: 0.55), value: velocity)
+                .offset(y: top)
             if showsBubble {
                 Text(verbatim: "\(Int((progress * 100).rounded()))%")
                     .font(.caption2.weight(.bold).monospacedDigit())
@@ -144,6 +148,5 @@ private struct ScrollLiquidThumb: View {
         }
         .frame(width: 60, height: metrics.viewport, alignment: .topTrailing)
         .opacity(visible ? 1 : 0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.55), value: velocity)
     }
 }

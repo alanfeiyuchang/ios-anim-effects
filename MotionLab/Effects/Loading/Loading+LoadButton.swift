@@ -49,7 +49,7 @@ private struct LoadButtonDemo: View {
         let showRing = ctx.bool("ring")
         VStack(spacing: 30) {
             Button(action: start) {
-                LoadButtonFace(phase: phase, title: ctx.language == .zh ? "提交订单" : "Place Order")
+                LoadButtonFace(phase: phase, title: ctx.language == .zh ? "提交订单" : "Place Order", preview: ctx.isPreview)
             }
             .buttonStyle(LoadButtonPressStyle())
             .keyframeAnimator(initialValue: LoadPop(), trigger: successCount) { content, pop in
@@ -104,6 +104,7 @@ private struct LoadButtonDemo: View {
 private struct LoadButtonFace: View {
     let phase: LoadPhase
     let title: String
+    let preview: Bool
 
     private let side: CGFloat = 58
     private let successFill = LinearGradient(
@@ -124,7 +125,7 @@ private struct LoadButtonFace: View {
                 .scaleEffect(collapsed ? 0.8 : 1)
                 .blur(radius: collapsed ? 8 : 0)
             if phase == .loading {
-                LoadSpinnerArc()
+                LoadSpinnerArc(preview: preview)
                     .transition(AnyTransition.scale(scale: 0.3).combined(with: .opacity))
             }
             LoadCheckShape()
@@ -153,8 +154,10 @@ private struct LoadButtonFace: View {
 
 /// A 260° white arc with a transparent tail, spinning once every 0.9 s.
 private struct LoadSpinnerArc: View {
+    let preview: Bool
+
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             let angle = t.truncatingRemainder(dividingBy: 0.9) / 0.9 * 360
             Circle()

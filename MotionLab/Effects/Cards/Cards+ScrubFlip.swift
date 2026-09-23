@@ -67,10 +67,10 @@ private struct CardsScrubFlipDemo: View {
     }
 
     /// Rounds to the nearest face, at most three half-turns away from where the drag began.
-    private func land(on projected: Double, from start: Double) {
+    private func land(on projected: Double, from start: Double, haptic: Bool = true) {
         let startFace = (start / 180).rounded()
         let face = ((projected / 180).rounded()).clamped(to: (startFace - 3)...(startFace + 3))
-        Haptics.tap(.light)
+        if haptic && !ctx.isPreview { Haptics.tap(.light) }
         withAnimation(.spring(response: 0.6, dampingFraction: ctx["damping"])) {
             angle = face * 180
             pitch = 0
@@ -81,12 +81,13 @@ private struct CardsScrubFlipDemo: View {
         direction = -direction
         let start = angle
         let dir = direction
+        let muted = Haptics.isMuted || ctx.isPreview
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
             angle = start + 55 * dir
             pitch = 8
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-            land(on: start + 470 * dir, from: start)
+            land(on: start + 470 * dir, from: start, haptic: !muted)
         }
     }
 }

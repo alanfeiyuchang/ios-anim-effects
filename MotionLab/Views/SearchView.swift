@@ -5,7 +5,6 @@ struct SearchView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppNavigator.self) private var navigator
     @Namespace private var categoryChips
-    @Namespace private var interactionChips
 
     /// Keywords that match many effects in both languages (the search haystack is bilingual).
     private static let keywordSuggestions: [LocalizedText] = [
@@ -88,61 +87,51 @@ struct SearchView: View {
         .padding(.top, 24)
     }
 
+    /// One row: the interaction menu first, then the category chips, so results start high on the screen.
     private var filters: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            FilterRowLabel(text: Strings.categoryFilter(language))
-            ScrollViewReader { reader in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        Chip(title: Strings.all(language), isSelected: navigator.category == nil, namespace: categoryChips) {
-                            navigator.category = nil
-                        }
-                        .id(Self.allChipID)
-                        ForEach(EffectCategory.allCases) { item in
-                            Chip(title: item.title(language), symbol: item.symbol, isSelected: navigator.category == item, namespace: categoryChips) {
-                                navigator.category = navigator.category == item ? nil : item
-                            }
-                            .id(item.rawValue)
-                        }
+        ScrollViewReader { reader in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    InteractionMenuChip(selection: navigator.interaction) { item in
+                        navigator.interaction = item
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 4)
+                    .id(Self.interactionChipID)
+                    Capsule()
+                        .fill(Palette.stroke)
+                        .frame(width: 1, height: 22)
+                        .accessibilityHidden(true)
+                    Chip(title: Strings.all(language), isSelected: navigator.category == nil, namespace: categoryChips) {
+                        navigator.category = nil
+                    }
+                    .id(Self.allChipID)
+                    ForEach(EffectCategory.allCases) { item in
+                        Chip(title: item.title(language), symbol: item.symbol, isSelected: navigator.category == item, namespace: categoryChips) {
+                            navigator.category = navigator.category == item ? nil : item
+                        }
+                        .id(item.rawValue)
+                    }
                 }
-                // Filters set from elsewhere (e.g. a tag on a detail page) glide into view.
-                .onChange(of: navigator.category) { _, category in
-                    withAnimation(reduceMotion ? nil : ShellMotion.selection) {
-                        reader.scrollTo(category?.rawValue ?? Self.allChipID, anchor: .center)
-                    }
+                .padding(.horizontal)
+                .padding(.vertical, 4)
+            }
+            // Filters set from elsewhere (e.g. a tag or interaction chip on a detail page) glide into view.
+            .onChange(of: navigator.category) { _, category in
+                withAnimation(reduceMotion ? nil : ShellMotion.selection) {
+                    reader.scrollTo(category?.rawValue ?? Self.allChipID, anchor: .center)
                 }
             }
-            FilterRowLabel(text: Strings.interactionFilter(language))
-                .padding(.top, 4)
-            ScrollViewReader { reader in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        Chip(title: Strings.all(language), isSelected: navigator.interaction == nil, namespace: interactionChips) {
-                            navigator.interaction = nil
-                        }
-                        .id(Self.allChipID)
-                        ForEach(EffectInteraction.allCases) { item in
-                            Chip(title: item.title(language), symbol: item.symbol, isSelected: navigator.interaction == item, namespace: interactionChips) {
-                                navigator.interaction = navigator.interaction == item ? nil : item
-                            }
-                            .id(item.rawValue)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 4)
-                }
-                .onChange(of: navigator.interaction) { _, interaction in
-                    withAnimation(reduceMotion ? nil : ShellMotion.selection) {
-                        reader.scrollTo(interaction?.rawValue ?? Self.allChipID, anchor: .center)
-                    }
+            .onChange(of: navigator.interaction) { _, interaction in
+                guard interaction != nil else { return }
+                withAnimation(reduceMotion ? nil : ShellMotion.selection) {
+                    reader.scrollTo(Self.interactionChipID, anchor: .leading)
                 }
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text(verbatim: "\(Strings.interactionFilter(language)), \(Strings.categoryFilter(language))"))
     }
 
+    private static let interactionChipID = "interaction"
     private static let allChipID = "all"
 
     /// Families whose name matches the query, as a horizontal row of chips above the effect grid.
@@ -164,6 +153,9 @@ struct SearchView: View {
 
     private var suggestions: some View {
         VStack(alignment: .leading, spacing: 10) {
+            AllFamiliesEntry()
+                .padding(.bottom, 4)
+                .appearEntrance(index: 0, distance: 10, scale: 0.96, blur: 3)
             Text(Strings.trySearching, language)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -190,6 +182,111 @@ struct SearchView: View {
         }
         .padding(.horizontal)
         .transition(.opacity.combined(with: .offset(y: -8)))
+    }
+}
+
+/// Menu chip for the interaction filter: "Interaction ▾", or the chosen interaction as a filled pill.
+private struct InteractionMenuChip: View {
+    let selection: EffectInteraction?
+    let onSelect: (EffectInteraction?) -> Void
+    @Environment(\.appLanguage) private var language
+
+    private var binding: Binding<EffectInteraction?> {
+        Binding {
+            selection
+        } set: { value in
+            withAnimation(ShellMotion.selection) { onSelect(value) }
+        }
+    }
+
+    var body: some View {
+        Menu {
+            Picker(Strings.interactionFilter(language), selection: binding) {
+                Label(Strings.anyInteraction(language), systemImage: "circle.dashed")
+                    .tag(EffectInteraction?.none)
+                ForEach(EffectInteraction.allCases) { item in
+                    Label(item.title(language), systemImage: item.symbol)
+                        .tag(Optional(item))
+                }
+            }
+        } label: {
+            label
+        }
+        .sensoryFeedback(.selection, trigger: selection)
+        .accessibilityLabel(Text(verbatim: Strings.interactionFilter(language)))
+        .accessibilityValue(Text(verbatim: selection?.title(language) ?? Strings.anyInteraction(language)))
+    }
+
+    private var label: some View {
+        let selected = selection != nil
+        return HStack(spacing: 5) {
+            Image(systemName: selection?.symbol ?? "line.3.horizontal.decrease")
+                .font(.caption.weight(.semibold))
+                .contentTransition(.symbolEffect(.replace))
+            Text(verbatim: selection?.title(language) ?? Strings.interactionFilter(language))
+                .font(.subheadline.weight(.medium))
+                .lineLimit(1)
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.bold))
+                .opacity(0.7)
+        }
+        .fixedSize()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .foregroundStyle(selected ? Color.white : Color.primary)
+        .background {
+            ZStack {
+                Capsule()
+                    .fill(Palette.chipOnPage)
+                    .overlay(Capsule().strokeBorder(Palette.stroke))
+                    .opacity(selected ? 0 : 1)
+                Capsule()
+                    .fill(Palette.primaryStrong)
+                    .shadow(color: Palette.indigo.opacity(0.28), radius: 6, y: 3)
+                    .opacity(selected ? 1 : 0)
+            }
+        }
+        .contentShape(Capsule())
+        .animation(ShellMotion.selection, value: selected)
+    }
+}
+
+/// "Browse all families · 85" card at the top of the empty-query suggestions.
+private struct AllFamiliesEntry: View {
+    @Environment(\.appLanguage) private var language
+
+    var body: some View {
+        let count = EffectFamilies.all.count
+        NavigationLink(value: Route.families) {
+            HStack(spacing: 12) {
+                Image(systemName: "square.stack.3d.up.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(Palette.primaryStrong, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(Strings.browseAllFamilies, language)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(verbatim: Strings.familiesAndEffects(families: count, effects: EffectLibrary.all.count, language))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                .lineLimit(1)
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding(10)
+            .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous).strokeBorder(Palette.stroke))
+            .contentShape(RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
+        }
+        .buttonStyle(PressableCardStyle())
+        .accessibilityHint(Text(Strings.showAllFamilies, language))
     }
 }
 

@@ -36,7 +36,7 @@ private struct ButtonGlowBorderDemo: View {
             Button {
                 Haptics.tap(.medium)
             } label: {
-                TimelineView(.animation) { timeline in
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                     ButtonGlowFace(
                         angle: angle(at: timeline.date),
                         glow: ctx.cg("glow"),
@@ -84,9 +84,7 @@ private struct ButtonGlowFace: View {
 
     var body: some View {
         ZStack {
-            shape
-                .fill(gradient)
-                .blur(radius: glow)
+            ButtonGlowHalo(angle: angle, glow: glow, colors: colors, shape: shape)
                 .opacity(0.7)
             shape
                 .fill(Color(hex: 0x0E0F1A))
@@ -100,6 +98,31 @@ private struct ButtonGlowFace: View {
             .foregroundStyle(.white)
         }
         .frame(width: 236, height: 62)
+    }
+}
+
+/// The blurred glow: the gradient is blurred once at a fixed angle and only rotated per frame (blur is isotropic,
+/// so rotate∘blur == blur∘rotate), then masked by a soft copy of the button shape.
+private struct ButtonGlowHalo: View {
+    let angle: Angle
+    let glow: CGFloat
+    let colors: [Color]
+    let shape: RoundedRectangle
+
+    var body: some View {
+        // Covers the 236 × 62 face at any rotation (its diagonal is ~244 pt) plus the blur spread.
+        let side: CGFloat = 270 + glow * 4
+        Circle()
+            .fill(AngularGradient(gradient: Gradient(colors: colors), center: .center, angle: .zero))
+            .frame(width: side, height: side)
+            .blur(radius: glow)
+            .drawingGroup()
+            .rotationEffect(angle)
+            .frame(width: 236, height: 62)
+            .mask {
+                shape
+                    .blur(radius: glow)
+            }
     }
 }
 

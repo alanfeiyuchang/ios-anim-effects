@@ -43,6 +43,7 @@ private struct SportLiftDemo: View {
         LiftRow(id: 3, name: "Frau Hitt", status: 2, wait: 0),
     ]
     @State private var flash: Int?
+    @State private var demoStep = 0
 
     private var openCount: Int { 10 + lifts.filter { $0.status == 0 }.count }
 
@@ -58,6 +59,11 @@ private struct SportLiftDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task { await stream() }
+        // Shows the tap interaction too: previews (and the detail intro) cycle one lift's status.
+        .autoplay(ctx.isPreview, every: 2.6, delay: 1.2) {
+            cycle(demoStep % lifts.count)
+            demoStep += 1
+        }
     }
 
     private var card: some View {
@@ -67,7 +73,7 @@ private struct SportLiftDemo: View {
                     .font(.system(size: 20, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.white)
                 Spacer(minLength: 0)
-                LiftLivePill(open: openCount, period: ctx["pulse"], language: ctx.language)
+                LiftLivePill(open: openCount, period: ctx["pulse"], language: ctx.language, preview: ctx.isPreview)
             }
             VStack(spacing: 4) {
                 ForEach(lifts) { lift in
@@ -127,10 +133,11 @@ private struct LiftLivePill: View {
     let open: Int
     let period: Double
     let language: AppLanguage
+    let preview: Bool
 
     var body: some View {
         HStack(spacing: 6) {
-            SportLiveDot(color: Signature.accentHot, size: 6, period: max(period, 0.3))
+            SportLiveDot(color: Signature.accentHot, size: 6, period: max(period, 0.3), preview: preview)
                 .frame(width: 12, height: 12)
             Text(verbatim: "LIVE")
                 .font(.system(size: 10, weight: .heavy, design: .rounded))

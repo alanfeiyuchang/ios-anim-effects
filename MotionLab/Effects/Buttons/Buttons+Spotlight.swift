@@ -20,7 +20,7 @@ extension Effect {
         params: [
             .slider("radius", L("Light radius", "光斑半径"), 40...160, default: 90, decimals: 0, unit: "pt"),
             .slider("intensity", L("Intensity", "亮度"), 0.1...0.8, default: 0.4),
-            .choice("tint", L("Tint", "色调"), [L("Violet", "紫"), L("Sky", "天蓝"), L("Amber", "琥珀")], default: 0),
+            .slider("lag", L("Follow lag", "跟随延迟"), 0.05...0.4, default: 0.15, unit: "s"),
         ]
     ) { ctx in
         ButtonSpotlightDemo(ctx: ctx)
@@ -31,6 +31,7 @@ private struct ButtonSpotlightDemo: View {
     let ctx: DemoContext
     @State private var spot = CGPoint(x: 60, y: 40)
     @State private var active = false
+    @State private var pressed = false
     @State private var step = 0
 
     private let size = CGSize(width: 290, height: 96)
@@ -38,13 +39,7 @@ private struct ButtonSpotlightDemo: View {
         CGPoint(x: 250, y: 30), CGPoint(x: 150, y: 80), CGPoint(x: 30, y: 20), CGPoint(x: 200, y: 60),
     ]
 
-    private var tint: Color {
-        switch ctx.int("tint") {
-        case 1: return Palette.sky
-        case 2: return Palette.amber
-        default: return Palette.violet
-        }
-    }
+    private let tint = Palette.violet
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,7 +50,10 @@ private struct ButtonSpotlightDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.0, delay: 0.2) { previewMove() }
+        .autoplay(ctx.isPreview, every: 1.0, delay: 0.2) {
+            // Previews keep the light roaming; the detail intro sweeps once and switches it off again.
+            if ctx.isPreview { previewMove() } else { introSweep() }
+        }
     }
 
     private var shape: RoundedRectangle {
@@ -75,11 +73,19 @@ private struct ButtonSpotlightDemo: View {
         .frame(width: size.width, height: size.height)
         .clipShape(shape)
         .shadow(color: .black.opacity(0.1), radius: 16, y: 10)
+        .scaleEffect(pressed ? 0.97 : 1)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: pressed)
         .contentShape(shape)
         .gesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { value in move(to: value.location) }
-                .onEnded { _ in withAnimation(.easeOut(duration: 0.3)) { active = false } }
+                .onChanged { value in
+                    if !pressed { pressed = true }
+                    move(to: value.location)
+                }
+                .onEnded { _ in
+                    pressed = false
+                    withAnimation(.easeOut(duration: 0.3)) { active = false }
+                }
         )
         .onContinuousHover { phase in
             switch phase {
@@ -111,9 +117,20 @@ private struct ButtonSpotlightDemo: View {
     private func move(to point: CGPoint) {
         if !active {
             spot = point
+            Haptics.tap(.soft)
             withAnimation(.easeOut(duration: 0.2)) { active = true }
         } else {
-            withAnimation(.smooth(duration: 0.15)) { spot = point }
+            withAnimation(.smooth(duration: max(ctx["lag"], 0.05))) { spot = point }
+        }
+    }
+
+    private func introSweep() {
+        Task { @MainActor in
+            for _ in 0..<3 {
+                previewMove()
+                try? await Task.sleep(for: .seconds(0.9))
+            }
+            withAnimation(.easeOut(duration: 0.3)) { active = false }
         }
     }
 

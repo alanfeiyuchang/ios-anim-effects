@@ -6,16 +6,16 @@ extension Effect {
         category: .scroll,
         interaction: .scroll,
         name: L("Snapping Carousel", "吸附轮播"),
-        summary: L("Center-snapping cards with peeking neighbours that scale down and a stretching page indicator.", "居中吸附的卡片轮播，两侧卡片露出并缩小，页码指示器随之伸缩。"),
+        summary: L("Center-snapping cards whose neighbours lean and dip, with a liquid page indicator scrubbed by the scroll.", "居中吸附的卡片轮播，两侧卡片倾斜下沉，液态页码指示器随滚动拉伸。"),
         prompt: L(
-            "A horizontal carousel of tall gradient cards (210×250 pt, 28 pt corners) is centered in the viewport with the neighbouring cards peeking in from both sides. As a card moves away from the center it scales down continuously toward 86% and fades to ~65% opacity, then scales back up as it approaches, so the focused card always reads as the hero. Releasing a swipe snaps the nearest card to the exact center with the system's deceleration curve. Beneath, a page indicator of 7 pt dots stretches the active dot into a 22 pt gradient capsule, springing between positions (response 0.4 s, damping 0.7). App Store-quality: focused, weighty and effortless.",
-            "一排竖版渐变卡片（210×250 pt，28 pt 圆角）横向排列并在视口中居中，左右两侧露出相邻卡片的一部分。卡片离开中心时连续缩小至 86%、透明度降到约 65%，靠近中心时再放大恢复，因此聚焦的卡片始终是主角。滑动松手后，最近的卡片以系统减速曲线精确吸附到正中。下方的页码指示器由 7 pt 圆点组成，当前页圆点伸长为 22 pt 的渐变胶囊，并在位置间以弹簧（响应 0.4 秒、阻尼 0.7）切换。App Store 级品质：聚焦、有分量、毫不费力。"
+            "A horizontal carousel of tall 210×250 pt gradient cards with 28 pt corners centres one card, with neighbours peeking in from both sides. As a card leaves the centre it scales continuously toward 86%, fades to 65% opacity, leans up to 8° away from the middle around its bottom edge and dips 10 pt, so the neighbours read like cards propped on a shelf; releasing a swipe snaps the nearest card to the exact centre with the system deceleration curve. Beneath, a liquid page indicator of 7 pt dots is scrubbed directly by the scroll: between pages the active gradient capsule stretches its trailing edge to the next dot first, then pulls its leading edge after it. Focused, weighty and effortless.",
+            "一排 210×250 pt、28 pt 圆角的竖版渐变卡片横向轮播，一张居中，左右露出相邻卡片。卡片离开中心时连续缩小到 86%、淡到 65% 不透明度，并以底边为轴向外倾斜最多 8°、下沉 10 pt，两侧卡片像斜靠在架子上；松手后，最近的一张以系统减速曲线精确吸附到正中。下方是由 7 pt 圆点组成的液态页码指示器，直接由滚动驱动：翻页途中，当前的渐变胶囊先把前缘伸到下一颗圆点，再把后缘拉过去。聚焦、有分量、毫不费力。"
         ),
         implementation: L(
-            "A LazyHStack marked scrollTargetLayout with scrollTargetBehavior(.viewAligned) and centered contentMargins; visualEffect scales cards by distance from center, and scrollPosition(id:) feeds the page dots.",
-            "LazyHStack 标记 scrollTargetLayout，配合 scrollTargetBehavior(.viewAligned) 与居中的 contentMargins；visualEffect 按到中心的距离缩放卡片，scrollPosition(id:) 驱动页码圆点。"
+            "A LazyHStack marked scrollTargetLayout with scrollTargetBehavior(.viewAligned) and centered contentMargins; visualEffect scales, tilts and dips cards by their signed distance from center, and onScrollGeometryChange turns the offset into a continuous page position that shapes the liquid indicator.",
+            "LazyHStack 标记 scrollTargetLayout，配合 scrollTargetBehavior(.viewAligned) 与居中的 contentMargins；visualEffect 按到中心的有符号距离缩放、倾斜并下沉卡片，onScrollGeometryChange 把偏移换算为连续页码位置，塑造液态指示器。"
         ),
-        apis: ["scrollTargetBehavior(.viewAligned)", "scrollTargetLayout", "scrollPosition(id:)", "visualEffect", "contentMargins"],
+        apis: ["scrollTargetBehavior(.viewAligned)", "scrollTargetLayout", "scrollPosition(id:)", "visualEffect", "onScrollGeometryChange"],
         tags: ["carousel", "paging", "snap", "page control", "轮播", "分页", "吸附", "指示器"],
         params: [
             .slider("sideScale", L("Side scale", "两侧缩放"), 0.7...1.0, default: 0.86),
@@ -33,6 +33,8 @@ private struct ScrollPagingDemo: View {
     @State private var current: Int? = 1
     @State private var width: CGFloat = 340
     @State private var direction = 1
+    /// Continuous page position (0 = first card centered), drives the liquid page indicator.
+    @State private var progress: CGFloat = 1
 
     private let count = 6
     private let cardWidth: CGFloat = 210
@@ -40,7 +42,7 @@ private struct ScrollPagingDemo: View {
     var body: some View {
         VStack(spacing: 18) {
             carousel
-            ScrollPageDots(count: count, current: current ?? 0)
+            ScrollPageDots(count: count, progress: progress)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.6) { advance() }
@@ -59,9 +61,13 @@ private struct ScrollPagingDemo: View {
                         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                         .visualEffect { content, proxy in
                             let mid = proxy.frame(in: .named(scrollPagingSpace)).midX
-                            let t = min(abs(mid - viewport / 2) / pitch, 1)
+                            let d = ((mid - viewport / 2) / pitch).clamped(to: -1...1)
+                            let t = abs(d)
+                            // Neighbours lean away from the center (±8°) and dip 10 pt per step.
                             return content
                                 .scaleEffect(1 - (1 - CGFloat(sideScale)) * t)
+                                .rotationEffect(.degrees(Double(d) * 8), anchor: .bottom)
+                                .offset(y: 10 * t)
                                 .opacity(1 - Double(t) * 0.35)
                         }
                         .id(i)
@@ -72,6 +78,11 @@ private struct ScrollPagingDemo: View {
         .contentMargins(.horizontal, max((width - cardWidth) / 2, 0), for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $current, anchor: .center)
+        .onScrollGeometryChange(for: CGFloat.self, of: { geometry in
+            (geometry.contentOffset.x + geometry.contentInsets.leading) / max(pitch, 1)
+        }, action: { _, newValue in
+            progress = newValue
+        })
         .scrollIndicators(.hidden)
         // Measure cards against the scroll view's own bounds: with contentMargins
         // the `.scrollView` space is offset by the leading margin, which left the
@@ -92,18 +103,34 @@ private struct ScrollPagingDemo: View {
     }
 }
 
+/// Liquid page indicator: the active capsule is scrubbed by the scroll position. Between two pages its
+/// leading edge waits while the trailing edge races ahead, then the leading edge catches up.
 private struct ScrollPageDots: View {
     let count: Int
-    let current: Int
+    let progress: CGFloat
+
+    private let dot: CGFloat = 7
+    private let gap: CGFloat = 6
 
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(0..<count, id: \.self) { i in
-                Capsule()
-                    .fill(i == current ? AnyShapeStyle(Palette.primary) : AnyShapeStyle(Color.primary.opacity(0.18)))
-                    .frame(width: i == current ? 22 : 7, height: 7)
+        let step = dot + gap
+        let clamped = progress.clamped(to: 0...CGFloat(max(count - 1, 0)))
+        let page = floor(clamped)
+        let f = clamped - page
+        let lead = page * step + max(0, f * 2 - 1) * step
+        let trail = page * step + dot + min(1, f * 2) * step
+        ZStack(alignment: .leading) {
+            HStack(spacing: gap) {
+                ForEach(0..<count, id: \.self) { _ in
+                    Circle()
+                        .fill(Color.primary.opacity(0.18))
+                        .frame(width: dot, height: dot)
+                }
             }
+            Capsule()
+                .fill(Palette.primary)
+                .frame(width: trail - lead, height: dot)
+                .offset(x: lead)
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: current)
     }
 }

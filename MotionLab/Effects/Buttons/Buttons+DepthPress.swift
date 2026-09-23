@@ -19,7 +19,7 @@ extension Effect {
         tags: ["3d", "depth", "keycap", "skeuomorphic", "立体", "按压", "键帽", "拟物"],
         params: [
             .slider("depth", L("Depth", "厚度"), 3...14, default: 8, decimals: 0, unit: "pt"),
-            .choice("color", L("Color", "配色"), [L("Coral", "珊瑚"), L("Indigo", "靛蓝"), L("Mint", "薄荷")], default: 0),
+            .slider("travel", L("Press travel", "按下行程"), 0.6...1.0, default: 0.85),
             .slider("bounce", L("Release damping", "回弹阻尼"), 0.3...1.0, default: 0.55),
         ]
     ) { ctx in
@@ -32,11 +32,7 @@ private struct ButtonDepthPressDemo: View {
     @State private var autoPressed = false
 
     private var colors: (top: Color, bottom: Color, base: Color) {
-        switch ctx.int("color") {
-        case 1: return (Color(hex: 0x8A94FF), Palette.indigo, Color(hex: 0x3F46B8))
-        case 2: return (Color(hex: 0x5BE8C4), Palette.mint, Color(hex: 0x12917A))
-        default: return (Color(hex: 0xFF9A7A), Palette.coral, Color(hex: 0xC2452F))
-        }
+        (Color(hex: 0xFF9A7A), Palette.coral, Color(hex: 0xC2452F))
     }
 
     var body: some View {
@@ -55,6 +51,7 @@ private struct ButtonDepthPressDemo: View {
             .buttonStyle(
                 ButtonDepthStyle(
                     depth: ctx.cg("depth"),
+                    travel: ctx.cg("travel"),
                     top: palette.top,
                     bottom: palette.bottom,
                     base: palette.base,
@@ -67,12 +64,25 @@ private struct ButtonDepthPressDemo: View {
                 .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 0.8) { autoPressed.toggle() }
+        .autoplay(ctx.isPreview, every: 0.8) {
+            // The detail intro presses once and lets go, so the key never stays held down.
+            if ctx.isPreview { autoPressed.toggle() } else { introPress() }
+        }
+    }
+
+    private func introPress() {
+        autoPressed = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.4))
+            autoPressed = false
+        }
     }
 }
 
 private struct ButtonDepthStyle: ButtonStyle {
     let depth: CGFloat
+    /// Fraction of the depth the face travels when pressed (1 = fully bottomed out).
+    let travel: CGFloat
     let top: Color
     let bottom: Color
     let base: Color
@@ -102,7 +112,7 @@ private struct ButtonDepthStyle: ButtonStyle {
                         lineWidth: 1.5
                     )
                 )
-                .offset(y: pressed ? depth * 0.85 : 0)
+                .offset(y: pressed ? depth * travel : 0)
         }
         .frame(width: size.width, height: size.height + depth, alignment: .top)
         .animation(

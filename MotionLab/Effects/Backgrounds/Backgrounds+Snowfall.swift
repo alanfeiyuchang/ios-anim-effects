@@ -18,7 +18,7 @@ extension Effect {
             "Snow is two batched Paths (far crisp, near blurred in a drawLayer) computed from index and time; a small model integrates wind offset so gusts never cause jumps.",
             "雪花由索引与时间计算，合并为两条 Path（远景清晰、近景在 drawLayer 中模糊）；小型模型对风的偏移做积分，确保阵风不会导致跳变。"
         ),
-        apis: ["Canvas", "TimelineView(.animation)", "DragGesture", "GraphicsContext.drawLayer"],
+        apis: ["Canvas", "TimelineView(.animation)", "DragGesture(minimumDistance:)", "GraphicsContext.drawLayer"],
         tags: ["snow", "winter", "weather", "particles", "下雪", "冬天", "天气", "粒子"],
         params: [
             .slider("count", L("Flakes", "雪花数量"), 40...240, default: 130, step: 10, decimals: 0),
@@ -33,6 +33,8 @@ extension Effect {
 private final class SnowModel {
     let clock = BackgroundClock()
     var targetWind: Double = 0
+    /// x where the current horizontal drag was first reported.
+    var dragStartX: CGFloat?
     private(set) var wind: Double = 0
     private(set) var windOffset: Double = 0
 
@@ -65,8 +67,15 @@ private struct SnowfallDemo: View {
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.top, 36)
         }
-        .contentShape(Rectangle())
-        .gesture(gust)
+        // Horizontal-first drag: a vertical swipe on the stage still scrolls the page.
+        .backgroundsTouch { location in
+            let start = model.dragStartX ?? location.x
+            model.dragStartX = start
+            model.targetWind = Double((location.x - start) * 1.4).clamped(to: -260...260)
+        } onEnded: {
+            model.dragStartX = nil
+            model.targetWind = 0
+        }
         .overlay(alignment: .bottom) {
             // The hint sits on the pale snowbank, so it uses dark (light-scheme) secondary text for contrast.
             DemoHint(text: L("Drag sideways to blow wind", "左右拖动吹起风"), ctx: ctx)
@@ -74,14 +83,6 @@ private struct SnowfallDemo: View {
                 .environment(\.colorScheme, .light)
                 .allowsHitTesting(false)
         }
-    }
-
-    private var gust: some Gesture {
-        DragGesture(minimumDistance: 4)
-            .onChanged { value in
-                model.targetWind = Double(value.translation.width * 1.4).clamped(to: -260...260)
-            }
-            .onEnded { _ in model.targetWind = 0 }
     }
 }
 

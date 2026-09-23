@@ -72,9 +72,14 @@ private struct InkDrop {
 }
 
 private final class InkModel {
-    let clock = BackgroundClock()
-    private(set) var drops: [InkDrop] = []
-    private var serial = 0
+    let clock = BackgroundClock(start: 100)
+    /// Two drops already ~1.5 s into their bloom, so a still snapshot (and the first live frame)
+    /// shows ink on the paper instead of a blank page.
+    private(set) var drops: [InkDrop] = [
+        InkDrop(center: CGPoint(x: 0.34, y: 0.5), born: 98.4, color: 1, seed: 10),
+        InkDrop(center: CGPoint(x: 0.66, y: 0.62), born: 98.9, color: 2, seed: 17),
+    ]
+    private var serial = 2
 
     func step(now: Double, speed: Double, life: Double) -> Double {
         let t = clock.advance(to: now, speed: speed)
@@ -134,12 +139,6 @@ private struct InkBloomDemo: View {
             model.drop(at: unit)
         }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-        .onAppear {
-            if model.drops.isEmpty {
-                model.drop(at: CGPoint(x: 0.34, y: 0.5))
-                model.drop(at: CGPoint(x: 0.66, y: 0.62))
-            }
-        }
         .autoplay(ctx.isPreview, every: 1.6, delay: 0.4) {
             model.drop(at: CGPoint(x: Double.random(in: 0.18...0.82), y: Double.random(in: 0.3...0.75)))
         }

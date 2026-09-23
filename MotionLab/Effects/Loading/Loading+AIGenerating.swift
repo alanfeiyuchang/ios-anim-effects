@@ -37,7 +37,7 @@ private struct AIGeneratingDemo: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            AIWritingCard(done: done, period: ctx["period"], glow: ctx.cg("glow"), language: ctx.language)
+            AIWritingCard(done: done, period: ctx["period"], glow: ctx.cg("glow"), language: ctx.language, preview: ctx.isPreview)
             DemoHint(text: L("Tap to regenerate", "点击重新生成"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -64,6 +64,7 @@ private struct AIWritingCard: View {
     let period: Double
     let glow: CGFloat
     let language: AppLanguage
+    let preview: Bool
 
     private let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
 
@@ -71,7 +72,7 @@ private struct AIWritingCard: View {
         VStack(alignment: .leading, spacing: 16) {
             header
             ZStack(alignment: .topLeading) {
-                AIShimmerLines()
+                AIShimmerLines(preview: preview, paused: done)
                     .opacity(done ? 0 : 1)
                     .animation(.easeOut(duration: 0.4), value: done)
                 Text(language == .zh
@@ -91,14 +92,15 @@ private struct AIWritingCard: View {
         .background(Palette.elevated, in: shape)
         .overlay { shape.strokeBorder(Palette.stroke) }
         .overlay {
-            AISpectralBorder(period: period, lineWidth: 2)
+            AISpectralBorder(period: period, lineWidth: 2, preview: preview, paused: done)
                 .opacity(done ? 0 : 1)
                 // The border and glow fade on their own 0.4 s ease-out, independent of the card's spring.
                 .animation(.easeOut(duration: 0.4), value: done)
         }
         .background {
-            AISpectralBorder(period: period, lineWidth: 5)
+            AISpectralBorder(period: period, lineWidth: 5, preview: preview, paused: done)
                 .blur(radius: glow)
+                .drawingGroup()
                 .opacity(done ? 0 : 0.85)
                 .animation(.easeOut(duration: 0.4), value: done)
         }
@@ -133,12 +135,16 @@ private struct AIWritingCard: View {
 private struct AISpectralBorder: View {
     let period: Double
     let lineWidth: CGFloat
+    let preview: Bool
+    let paused: Bool
+    @State private var anchor = Date()
+    @State private var anchorTurn: Double = 0
 
     private let colors: [Color] = [Palette.sky, Palette.violet, Palette.pink, Palette.amber, Palette.mint, Palette.sky]
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let turn = (timeline.date.timeIntervalSinceReferenceDate / max(period, 0.1)).truncatingRemainder(dividingBy: 1)
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: paused)) { timeline in
+            let turn = (anchorTurn + timeline.date.timeIntervalSince(anchor) / max(period, 0.1)).truncatingRemainder(dividingBy: 1)
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .strokeBorder(
                     AngularGradient(colors: colors, center: .center, angle: .degrees(turn * 360)),
@@ -146,16 +152,25 @@ private struct AISpectralBorder: View {
                 )
         }
         .allowsHitTesting(false)
+        .onChange(of: period) { old, _ in
+            // Rebase so a new period changes the speed without jumping the gradient.
+            let now = Date()
+            anchorTurn += now.timeIntervalSince(anchor) / max(old, 0.1)
+            anchor = now
+        }
     }
 }
 
 private struct AIShimmerLines: View {
+    let preview: Bool
+    let paused: Bool
+
     private let widths: [CGFloat] = [250, 232, 244, 150]
 
     var body: some View {
         lines(Color.primary.opacity(0.07))
             .overlay {
-                TimelineView(.animation) { timeline in
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: paused)) { timeline in
                     let x = (timeline.date.timeIntervalSinceReferenceDate / 1.6).truncatingRemainder(dividingBy: 1) * 2.4 - 0.7
                     LinearGradient(
                         stops: [

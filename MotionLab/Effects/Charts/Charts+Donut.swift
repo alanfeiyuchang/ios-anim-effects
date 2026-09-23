@@ -8,15 +8,15 @@ extension Effect {
         name: L("Donut Sweep & Explode", "环形图展开与弹出"),
         summary: L("Rounded donut segments sweep in one by one; tap a slice to pop it out.", "圆角环形分段依次扫入，点击某段即可弹出高亮。"),
         prompt: L(
-            "A 190 pt donut chart built from five round-capped arc segments (26 pt stroke, small angular gaps, palette of indigo, pink, amber, mint and sky). On appear the whole ring rotates from −150° to −90° while each segment sweeps from its start angle to its full length on a spring (response 0.7 s, damping 0.8), staggered 100 ms apart, so the colors unfurl clockwise like a fan. Tapping a segment explodes it: it slides 12 pt outward along its bisector and thickens to 34 pt, the other segments dim to 35% opacity, and the center label switches from the total to that category’s name and percentage with a numeric roll. A three-column legend below (color dot, name, share) mirrors the selection — its other rows dim too — and tapping a legend row selects that slice; tapping it again or the hole restores everything on a snappy spring. A selection haptic marks each change. Tactile, legible and joyful.",
-            "一个 190pt 的环形图，由五段圆角端点的弧线组成（描边 26pt，段间留有细小角度间隙，配色为靛蓝、粉、琥珀、薄荷绿与天蓝）。出现时整环从 −150° 旋转到 −90°，同时每段以弹簧（响应 0.7 秒、阻尼 0.8）从起点扫到完整长度，逐段错开 100ms，色彩如折扇般顺时针展开。点击某段即“弹出”：沿其角平分线向外移动 12pt、描边加粗至 34pt，其余分段降至 35% 透明度，中心标签从总量切换为该类别名称与百分比，数字滚动过渡。下方三列图例（色点、名称、占比）同步反映选中状态，其余行同样变暗；点击图例行也能选中对应分段。再次点击该段或点击中空处，一切以利落的弹簧恢复。每次切换伴随选择触感。可触、清晰、令人愉悦。"
+            "A 190 pt donut of five round-capped arc segments (26 pt stroke, small angular gaps; indigo, pink, amber, mint, sky). On appear the ring rotates from −150° to −90° while each segment sweeps to its full length on a spring (response 0.7 s, damping 0.8), 100 ms apart, so the colors unfurl clockwise like a fan. Tapping a segment explodes it: it slides 12 pt outward along its bisector and thickens to 34 pt with a soft colored shadow, the others dim to 35%, and the center label switches from the total to that category’s name and share with a numeric roll. A three-column legend below mirrors the selection and can select slices too; tapping the slice again or the hole restores everything on a snappy spring. A selection haptic marks each change. Tactile, legible, joyful.",
+            "一个 190pt 的环形图，由五段圆角端点弧线组成（描边 26pt，段间留细小角度间隙，配色为靛蓝、粉、琥珀、薄荷绿、天蓝）。出现时整环从 −150° 转到 −90°，各段同时以弹簧（响应 0.7 秒、阻尼 0.8）扫到完整长度，逐段错开 100ms，色彩如折扇般顺时针展开。点击某段即“弹出”：沿角平分线外移 12pt，描边加粗到 34pt 并带同色柔影，其余分段降至 35% 透明度；中心标签从总量切换为该类别名称与占比，数字滚动过渡。下方三列图例同步高亮，也可直接点选。再点该段或点击中空处，一切以利落的弹簧复原。每次切换伴随选择触感。可触、清晰、令人愉悦。"
         ),
         implementation: L(
             "Each slice is a trimmed Circle stroked with round caps; a per-slice grow value animates with a staggered spring, and taps are mapped to slices by converting the touch location to an angle with onTapGesture’s location.",
             "每段为经 trim 裁切、圆角端点描边的 Circle；每段的生长值以错峰弹簧动画驱动，点击时通过 onTapGesture 提供的位置换算角度来定位分段。"
         ),
         apis: ["Circle.trim(from:to:)", "StrokeStyle(lineCap: .round)", "onTapGesture { location in }", "contentTransition(.numericText)", "spring"],
-        tags: ["donut", "pie chart", "ring", "explode", "segment", "环形图", "饼图", "分段", "弹出"],
+        tags: ["donut", "pie chart", "explode", "segment", "环形图", "饼图", "分段", "弹出"],
         params: [
             .slider("thickness", L("Thickness", "环宽"), 14...40, default: 26, step: 1, decimals: 0, unit: "pt"),
             .slider("explode", L("Explode distance", "弹出距离"), 0...24, default: 12, step: 1, decimals: 0, unit: "pt"),
@@ -44,8 +44,9 @@ private let donutSlices: [DonutSlice] = [
 
 private struct DonutDemo: View {
     let ctx: DemoContext
-    @State private var grow: [Double] = Array(repeating: 0, count: donutSlices.count)
-    @State private var intro: Double = 0
+    /// Seeded fully swept so still snapshots show the ring; `onAppear` folds it and sweeps it in.
+    @State private var grow: [Double] = Array(repeating: 1, count: donutSlices.count)
+    @State private var intro: Double = 1
     @State private var selected: Int?
     @State private var autoStep = 0
 
@@ -71,7 +72,14 @@ private struct DonutDemo: View {
             DemoHint(text: L("Tap a segment", "点击某一分段"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { sweepIn() }
+        .onAppear {
+            ChartEntrance.replay(reset: {
+                grow = Array(repeating: 0, count: donutSlices.count)
+                intro = 0
+            }, then: {
+                sweepIn()
+            })
+        }
         .autoplay(ctx.isPreview, every: 1.5, delay: 1.6) { cycle() }
         .sensoryFeedback(.selection, trigger: selected) { _, _ in !ctx.isPreview }
     }
@@ -117,7 +125,7 @@ private struct DonutDemo: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
-                        Text("\(Int((donutSlices[index].value / total * 100).rounded()))%")
+                        Text(verbatim: "\(Int((donutSlices[index].value / total * 100).rounded()))%")
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
                     }
@@ -136,7 +144,7 @@ private struct DonutDemo: View {
         let number = selected.map { donutSlices[$0].value / total * 100 } ?? total
         let suffix = selected == nil ? "k" : "%"
         return VStack(spacing: 2) {
-            Text("\(Int(number.rounded()))\(suffix)")
+            Text(verbatim: "\(Int(number.rounded()))\(suffix)")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText(value: number))

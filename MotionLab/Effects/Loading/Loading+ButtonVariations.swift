@@ -61,6 +61,7 @@ private struct FillButtonDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 5.2, delay: 0.5) { tap() }
+        .onDisappear { task?.cancel() }
     }
 
     private var title: String {
@@ -80,7 +81,8 @@ private struct FillButtonDemo: View {
             Rectangle()
                 .fill(Palette.primary)
                 .frame(width: fillWidth)
-            Capsule().fill(Palette.green).opacity(done ? 1 : 0)
+            // successStrong keeps the white "Open" label above 4.5:1.
+            Capsule().fill(Palette.successStrong).opacity(done ? 1 : 0)
             label(color: done ? .white : Palette.indigo)
             label(color: .white)
                 .mask(alignment: .leading) {
@@ -178,6 +180,7 @@ private enum DotsSendPhase: Equatable {
 private struct DotsButtonDemo: View {
     let ctx: DemoContext
     @State private var phase: DotsSendPhase = .idle
+    @State private var token = 0
 
     private var rollIn: AnyTransition {
         AnyTransition.asymmetric(
@@ -213,13 +216,13 @@ private struct DotsButtonDemo: View {
         let width: CGFloat = phase == .idle ? 150 : (phase == .sending ? 96 : 136)
         return ZStack {
             Capsule().fill(Palette.primary)
-            Capsule().fill(Palette.green).opacity(phase == .sent ? 1 : 0)
+            Capsule().fill(Palette.successStrong).opacity(phase == .sent ? 1 : 0)
             switch phase {
             case .idle:
                 Label(zh ? "发送" : "Send", systemImage: "paperplane.fill")
                     .transition(rollIn)
             case .sending:
-                SendDots()
+                SendDots(preview: ctx.isPreview)
                     .transition(rollIn)
             case .sent:
                 Label(zh ? "已发送" : "Sent", systemImage: "checkmark")
@@ -238,13 +241,17 @@ private struct DotsButtonDemo: View {
         let spring = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
         let wait = ctx["duration"]
         let live = !ctx.isPreview
+        token += 1
+        let current = token
         if live { Haptics.tap(.medium) }
         withAnimation(spring) { phase = .sending }
         Task {
             try? await Task.sleep(for: .seconds(wait))
+            guard token == current else { return }
             withAnimation(spring) { phase = .sent }
             if live { Haptics.success() }
             try? await Task.sleep(for: .seconds(1.4))
+            guard token == current else { return }
             withAnimation(spring) { phase = .idle }
         }
     }
@@ -265,8 +272,10 @@ private enum DotsBlurTransition {
 }
 
 private struct SendDots: View {
+    let preview: Bool
+
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let t: Double = timeline.date.timeIntervalSinceReferenceDate / 0.6
             HStack(spacing: 6) {
                 ForEach(0..<3, id: \.self) { index in
@@ -325,6 +334,7 @@ private struct TraceButtonDemo: View {
     @State private var started = Date.distantPast
     @State private var closeFrom: Double = 0
     @State private var closed: Double = 0
+    @State private var token = 0
 
     var body: some View {
         VStack(spacing: 22) {
@@ -343,7 +353,7 @@ private struct TraceButtonDemo: View {
             Capsule().fill(Palette.green.opacity(done ? 0.12 : 0))
             Capsule().strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
             if phase == .working {
-                TraceComet(started: started, lap: max(ctx["lap"], 0.2), length: ctx["length"])
+                TraceComet(started: started, lap: max(ctx["lap"], 0.2), length: ctx["length"], preview: ctx.isPreview)
                     .transition(.opacity)
             }
             TraceSlice(from: closeFrom, length: closed)
@@ -383,6 +393,7 @@ private struct TraceButtonDemo: View {
 
     private func tap() {
         if phase == .done {
+            token += 1
             withAnimation(.smooth(duration: 0.35)) {
                 phase = .idle
                 closed = 0
@@ -390,6 +401,8 @@ private struct TraceButtonDemo: View {
             return
         }
         guard phase == .idle else { return }
+        token += 1
+        let current = token
         let live = !ctx.isPreview
         if live { Haptics.tap(.medium) }
         started = .now
@@ -399,6 +412,7 @@ private struct TraceButtonDemo: View {
         let lap = max(ctx["lap"], 0.2)
         Task {
             try? await Task.sleep(for: .seconds(wait))
+            guard token == current else { return }
             // Continue from where the comet's head currently is.
             let elapsed: Double = Date.now.timeIntervalSince(started)
             let head: Double = (elapsed / lap).truncatingRemainder(dividingBy: 1)
@@ -411,6 +425,7 @@ private struct TraceButtonDemo: View {
             if live { Haptics.success() }
             if !live {
                 try? await Task.sleep(for: .seconds(2.2))
+                guard token == current else { return }
                 withAnimation(.smooth(duration: 0.35)) {
                     phase = .idle
                     closed = 0
@@ -424,11 +439,12 @@ private struct TraceComet: View {
     let started: Date
     let lap: Double
     let length: Double
+    let preview: Bool
 
     private let colors: [Color] = [Palette.sky, Palette.sky, Palette.blue, Palette.indigo, Palette.violet, Palette.violet]
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
             let elapsed: Double = timeline.date.timeIntervalSince(started)
             let head: Double = (elapsed / lap).truncatingRemainder(dividingBy: 1)
             ZStack {

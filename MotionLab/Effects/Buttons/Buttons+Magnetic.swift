@@ -37,6 +37,8 @@ private struct ButtonMagneticDemo: View {
     /// 0…1 field influence after the smoothstep falloff.
     @State private var influence: CGFloat = 0
     @State private var step = 0
+    /// Bumped when the finger lifts on the button itself: plays the press pulse.
+    @State private var presses = 0
 
     private static let previewPath: [CGSize] = [
         CGSize(width: 70, height: -40),
@@ -69,6 +71,14 @@ private struct ButtonMagneticDemo: View {
                 influence: influence,
                 title: ctx.language == .zh ? "开始体验" : "Get started"
             )
+            .keyframeAnimator(initialValue: 1.0, trigger: presses) { content, scale in
+                content.scaleEffect(scale)
+            } keyframes: { _ in
+                KeyframeTrack(\.self) {
+                    CubicKeyframe(0.94, duration: 0.08)
+                    SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
+                }
+            }
             fingerDot
             VStack {
                 Spacer()
@@ -84,7 +94,10 @@ private struct ButtonMagneticDemo: View {
             stageSize = newSize
         }
         .gesture(dragGesture)
-        .autoplay(ctx.isPreview, every: 1.1, delay: 0.3) { stepPreview() }
+        .autoplay(ctx.isPreview, every: 1.1, delay: 0.3) {
+            // Previews keep roaming; the detail intro drifts past the button once and then lets go.
+            if ctx.isPreview { stepPreview() } else { introSweep() }
+        }
     }
 
     @ViewBuilder
@@ -103,7 +116,13 @@ private struct ButtonMagneticDemo: View {
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in track(value.location, animateFinger: false) }
-            .onEnded { _ in release() }
+            .onEnded { value in
+                if liftedOnButton(value.location) {
+                    Haptics.tap(.medium)
+                    presses += 1
+                }
+                release()
+            }
     }
 
     private func track(_ point: CGPoint, animateFinger: Bool) {
@@ -113,7 +132,8 @@ private struct ButtonMagneticDemo: View {
         // Full strength inside ~55% of the radius, smoothly fading to zero at the rim — no boundary snap.
         let weight = 1 - Self.smoothstep(radius * 0.55, radius, distance)
         let inside = weight > 0.001
-        if inside != captured && !ctx.isPreview { Haptics.tap(.soft) }
+        // animateFinger marks a simulated finger (previews, the detail intro), which never buzzes.
+        if inside != captured && !ctx.isPreview && !animateFinger { Haptics.tap(.soft) }
         if animateFinger {
             withAnimation(.smooth(duration: 0.8)) { finger = point }
         } else {
@@ -133,6 +153,23 @@ private struct ButtonMagneticDemo: View {
             pull = .zero
         }
         withAnimation(.easeOut(duration: 0.2)) { finger = nil }
+    }
+
+    /// The capsule is 180 × 60 and rides the pull, so test against its displaced frame.
+    private func liftedOnButton(_ point: CGPoint) -> Bool {
+        let dx = point.x - (stageSize.width / 2 + pull.width)
+        let dy = point.y - (stageSize.height / 2 + pull.height)
+        return abs(dx) < 90 && abs(dy) < 30
+    }
+
+    private func introSweep() {
+        Task { @MainActor in
+            for _ in 0..<3 {
+                stepPreview()
+                try? await Task.sleep(for: .seconds(1.0))
+            }
+            release()
+        }
     }
 
     private func stepPreview() {

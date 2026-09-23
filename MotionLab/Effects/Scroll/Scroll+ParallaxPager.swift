@@ -63,7 +63,7 @@ private struct ScrollParallaxPagerDemo: View {
         return ScrollView(.horizontal) {
             LazyHStack(spacing: spacing) {
                 ForEach(0..<count, id: \.self) { i in
-                    ScrollParallaxWindow(index: i, language: ctx.language, side: side, viewport: viewport, pitch: pitch, backdrop: backdrop, lead: lead)
+                    ScrollPagerWindow(index: i, language: ctx.language, side: side, viewport: viewport, pitch: pitch, backdrop: backdrop, lead: lead)
                         .id(i)
                 }
             }
@@ -98,7 +98,7 @@ private struct ScrollParallaxPagerDemo: View {
 }
 
 /// One card with three layers, each shifted by its own share of the card's distance from center.
-private struct ScrollParallaxWindow: View {
+private struct ScrollPagerWindow: View {
     let index: Int
     let language: AppLanguage
     let side: CGFloat

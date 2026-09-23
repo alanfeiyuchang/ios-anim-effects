@@ -16,6 +16,3 @@ struct ScrollStrideSnap: ScrollTargetBehavior {
         }
     }
 }
-
-/// Linear interpolation used by the scroll variations.
-func scrollKitMix(_ a: CGFloat, _ b: CGFloat, _ t: CGFloat) -> CGFloat { a + (b - a) * t }

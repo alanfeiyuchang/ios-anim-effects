@@ -8,8 +8,8 @@ extension Effect {
         name: L("Gravity Toss", "重力抛球"),
         summary: L("Toss a ball: it arcs under gravity, squashes on the floor, bounces lower each time and rolls to a stop.", "抛出小球：在重力下划出抛物线，落地压扁、越弹越低，最后滚动停下。"),
         prompt: L(
-            "A 56 pt beach ball (amber-to-coral gradient with a white band so its spin is visible) rests on the floor of a 300 pt rounded arena, with a soft contact shadow that shrinks and fades as the ball rises. Grab it anywhere and throw: the release velocity becomes its launch velocity, then gravity of 1,800 pt/s² bends it into a true parabola. Each floor impact reflects the vertical speed by a 0.62 restitution, squashes the ball by up to 25% against the floor for ~80 ms and bleeds 8% of the horizontal speed; walls and ceiling reflect it too. On the ground it rolls, spinning at v ∕ r, and friction brings it to rest. Heavy impacts give a soft haptic. Honest, weighty, satisfying physics.",
-            "一个 56pt 的沙滩球（琥珀到珊瑚渐变，带一条白色色带以便看清旋转）静置在 300pt 圆角场地的地面上，下方的接触阴影会随小球升高而缩小变淡。随处抓起小球并抛出：松手速度即为初速度，随后 1800pt/s² 的重力把它拉成一条真实的抛物线。每次落地时竖直速度按 0.62 的恢复系数反弹，小球贴着地面最多压扁 25%、持续约 80ms，水平速度损失 8%；撞到墙壁和顶部同样会反弹。落地后小球以 v ∕ r 的角速度滚动，并在摩擦下逐渐停住。重击地面时伴随柔和触感。真实、有分量、令人满足的物理手感。"
+            "A 56 pt beach ball (amber-to-coral gradient with a white band so its spin is visible) rests on the floor of a 300 pt rounded arena, with a soft contact shadow that shrinks and fades as the ball rises. Grab the ball and throw: the release velocity becomes its launch velocity, then gravity of 1,800 pt/s² bends it into a true parabola. Each floor impact reflects the vertical speed by a 0.62 restitution, squashes the ball by up to 25% against the floor for ~80 ms and bleeds 8% of the horizontal speed; walls and ceiling reflect it too. On the ground it rolls, spinning at v ∕ r, and friction brings it to rest. Heavy impacts give a soft haptic. Honest, weighty, satisfying physics.",
+            "一个 56pt 的沙滩球（琥珀到珊瑚渐变，带一条白色色带以便看清旋转）静置在 300pt 圆角场地的地面上，下方的接触阴影会随小球升高而缩小变淡。抓起小球并抛出：松手速度即为初速度，随后 1800pt/s² 的重力把它拉成一条真实的抛物线。每次落地时竖直速度按 0.62 的恢复系数反弹，小球贴着地面最多压扁 25%、持续约 80ms，水平速度损失 8%；撞到墙壁和顶部同样会反弹。落地后小球以 v ∕ r 的角速度滚动，并在摩擦下逐渐停住。重击地面时伴随柔和触感。真实、有分量、令人满足的物理手感。"
         ),
         implementation: L(
             "A frame-stepped class integrates gravity, restitution, rolling friction and squash inside a TimelineView that sleeps once the ball settles; a DragGesture in a named coordinate space holds the ball and hands its velocity to the model.",
@@ -89,12 +89,12 @@ private final class TossModel {
             if impact > 0 {
                 squash = min(impact / 3200, 0.25)
                 if haptics && impact > 700 { Haptics.tap(.soft) }
-            }
-            velocity.dy = -max(impact, 0) * restitution
-            velocity.dx *= 0.92
-            if abs(velocity.dy) < 60 {
-                velocity.dy = 0
-                onFloor = true
+                velocity.dy = -impact * restitution
+                velocity.dx *= 0.92
+                if abs(velocity.dy) < 60 {
+                    velocity.dy = 0
+                    onFloor = true
+                }
             }
         }
         if position.y < radius {
@@ -145,8 +145,8 @@ private struct GravityTossDemo: View {
                         TossBall(spin: frame.spin, held: held)
                             .frame(width: radius * 2, height: radius * 2)
                             .scaleEffect(x: 1 + frame.squash, y: 1 - frame.squash, anchor: .bottom)
-                            .position(frame.position)
                             .gesture(dragGesture)
+                            .position(frame.position)
                     }
                 }
             }
@@ -183,10 +183,12 @@ private struct GravityTossDemo: View {
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { held = true }
                     if !ctx.isPreview { Haptics.tap(.light) }
                 }
-                guard let grab else { return }
+                guard let offset = grab else { return }
+                let x: CGFloat = value.location.x - offset.width
+                let y: CGFloat = value.location.y - offset.height
                 model.position = CGPoint(
-                    x: (value.location.x - grab.width).clamped(to: radius...(arena.width - radius)),
-                    y: (value.location.y - grab.height).clamped(to: radius...(arena.height - radius))
+                    x: x.clamped(to: radius...(arena.width - radius)),
+                    y: y.clamped(to: radius...(arena.height - radius))
                 )
             }
             .onEnded { value in

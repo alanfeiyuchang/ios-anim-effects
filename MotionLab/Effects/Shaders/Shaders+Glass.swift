@@ -207,20 +207,32 @@ private struct LiquidLensDemo: View {
                 .rotationEffect(.radians(heading))
                 .scaleEffect(pulse ? 1.12 : 1)
                 .position(point)
+            // Only the droplet is interactive, so swipes on the backdrop still scroll the page.
+            Color.clear
+                .frame(width: diameter, height: diameter)
+                .contentShape(Circle())
+                .position(point)
+                .gesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
+                        .onChanged { value in drag(value, current: point, radius: diameter / 2) }
+                        .onEnded { _ in
+                            grab = nil
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { stretch = 0 }
+                        }
+                )
+                .simultaneousGesture(TapGesture().onEnded { flex() })
         }
+        .coordinateSpace(.named(Self.space))
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in drag(value, current: point, radius: diameter / 2) }
-                .onEnded { _ in
-                    grab = nil
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { stretch = 0 }
-                }
-        )
-        .simultaneousGesture(TapGesture().onEnded { flex() })
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Drag or tap the droplet", "拖动或点击水滴"), ctx: ctx)
+                .padding(.bottom, 12)
+                .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 1.6, delay: 0.2) { glide() }
     }
+
+    private static let space = "liquidLensStage"
 
     private func drag(_ value: DragGesture.Value, current: CGPoint, radius: CGFloat) {
         if grab == nil {

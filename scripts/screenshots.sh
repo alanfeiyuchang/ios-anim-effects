@@ -30,7 +30,7 @@ sleep 45
 shoot() { # name, wait, args...
   local name="$1" wait="$2"; shift 2
   xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
-  xcrun simctl launch "$UDID" "$BUNDLE_ID" "$@" >/dev/null
+  xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_noIntro YES "$@" >/dev/null
   sleep "$wait"
   xcrun simctl io "$UDID" screenshot --type=png "$OUT/$name.png" >/dev/null 2>&1
   sips -s format jpeg -s formatOptions 55 -Z 1000 "$OUT/$name.png" --out "$OUT/$name.jpg" >/dev/null && rm "$OUT/$name.png"

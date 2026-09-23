@@ -242,25 +242,40 @@ private struct MagnifierDemo: View {
                 magnify: ctx["strength"],
                 dispersion: ctx["dispersion"]
             ))
+            // Only the lens itself is draggable, so swipes elsewhere still scroll the page.
+            .overlay {
+                Color.clear
+                    .frame(width: radius * 2, height: radius * 2)
+                    .contentShape(Circle())
+                    .position(center ?? home)
+                    .gesture(
+                        DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
+                            .onChanged { value in drag(value, home: home, radius: CGFloat(radius)) }
+                            .onEnded { _ in
+                                grab = nil
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { center = nil }
+                            }
+                    )
+            }
+            .coordinateSpace(.named(Self.space))
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in drag(value, home: home, radius: CGFloat(radius)) }
-                    .onEnded { _ in
-                        grab = nil
-                        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { center = nil }
-                    }
-            )
+            .overlay(alignment: .bottom) {
+                DemoHint(text: L("Drag the lens", "拖动透镜"), ctx: ctx)
+                    .padding(.bottom, 14)
+                    .environment(\.colorScheme, .dark)
+                    .allowsHitTesting(false)
+            }
             .autoplay(ctx.isPreview, every: 1.8, delay: 0.3) { glide(home: home) }
     }
+
+    private static let space = "glassLensStage"
 
     private func drag(_ value: DragGesture.Value, home: CGPoint, radius: CGFloat) {
         let current = center ?? home
         if grab == nil {
             let dx = current.x - value.startLocation.x
             let dy = current.y - value.startLocation.y
-            // Grabbing the lens keeps the finger's offset; touching elsewhere pulls the lens under the finger.
+            // Grabbing the lens keeps the finger's offset, so it never jumps under the finger.
             grab = hypot(dx, dy) <= radius ? CGSize(width: dx, height: dy) : .zero
             Haptics.tap(.soft)
         }

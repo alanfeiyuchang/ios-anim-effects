@@ -135,18 +135,23 @@ private struct ChromaticDemo: View {
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        wake()
-                        model.target = value.translation
-                    }
-                    .onEnded { _ in
-                        model.target = .zero
-                        if !ctx.isPreview { Haptics.tap(.soft) }
-                    }
-            )
+            // Hit area = the card at rest (260 × 300), so swipes around it still scroll the page.
+            .overlay {
+                Color.clear
+                    .frame(width: 260, height: 300)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                wake()
+                                model.target = value.translation
+                            }
+                            .onEnded { _ in
+                                model.target = .zero
+                                if !ctx.isPreview { Haptics.tap(.soft) }
+                            }
+                    )
+            }
             DemoHint(text: L("Drag or flick the card", "拖动或甩动卡片"), ctx: ctx)
         }
         .padding(.bottom, 8)

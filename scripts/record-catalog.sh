@@ -40,21 +40,34 @@ import json
 ids=[e['id'] for e in json.load(open('$OUT/catalog.json'))['effects']]
 print('\n'.join(i for n,i in enumerate(ids) if n % $SHARDS == $SHARD))")
 
+# Runs a command with a time limit (macOS has no GNU timeout); a hung simctl call must not stall the shard.
+limit() { local secs="$1"; shift; perl -e 'alarm shift; exec @ARGV' "$secs" "$@"; }
+
 record() { # id lang
   local id="$1" lang="$2" raw="$OUT/raw/$1.$2.mov"
-  xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
-  xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_stage "$id" -ML_noIntro YES -app.language "$lang" -app.appearance 2 >/dev/null
+  limit 20 xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+  if ! limit 30 xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_stage "$id" -ML_noIntro YES -app.language "$lang" -app.appearance 2 >/dev/null; then
+    echo "skip $id.$lang: launch failed or timed out"; return 0
+  fi
   sleep 1.2
   xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$raw" >/dev/null 2>&1 &
   local rec=$!
   sleep "$CLIP_SECONDS"
   kill -INT "$rec" 2>/dev/null || true
+  # Give the recorder up to 10 s to finalize the file, then kill it.
+  local waited=0
+  while kill -0 "$rec" 2>/dev/null && [ "$waited" -lt 20 ]; do sleep 0.5; waited=$((waited + 1)); done
+  if kill -0 "$rec" 2>/dev/null; then
+    kill -9 "$rec" 2>/dev/null || true
+    echo "skip $id.$lang: recorder hung"; rm -f "$raw"; return 0
+  fi
   wait "$rec" 2>/dev/null || true
+  [ -s "$raw" ] || { echo "skip $id.$lang: empty recording"; return 0; }
   # Square crop from the vertical center, 480 px, 30 fps, small h264 that loops cleanly on the web.
-  ffmpeg -loglevel error -y -i "$raw" -an \
+  limit 60 ffmpeg -loglevel error -y -i "$raw" -an \
     -vf "crop=iw:iw:0:(ih-iw)/2,scale=480:480:flags=lanczos,fps=30,format=yuv420p" \
     -c:v libx264 -preset veryfast -crf 30 -movflags +faststart "$OUT/media/$id.$lang.mp4" || return 0
-  ffmpeg -loglevel error -y -ss 2 -i "$OUT/media/$id.$lang.mp4" -frames:v 1 -q:v 5 "$OUT/media/$id.$lang.jpg" || true
+  limit 30 ffmpeg -loglevel error -y -ss 2 -i "$OUT/media/$id.$lang.mp4" -frames:v 1 -q:v 5 "$OUT/media/$id.$lang.jpg" || true
   rm -f "$raw"
 }
 

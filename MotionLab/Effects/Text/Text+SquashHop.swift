@@ -59,6 +59,8 @@ private struct SquashHopDemo: View {
 
     private func letter(_ char: String, index: Int, pose: HopPose) -> some View {
         let air: CGFloat = ctx.cg("height") > 0 ? pose.lift / ctx.cg("height") : 0
+        let shadowOpacity: Double = 0.18 * (1 - Double(air) * 0.7)
+        let shadowWidth: CGFloat = 30 * (1 - air * 0.5)
         let colors: [Color] = [Palette.coral, Palette.amber, Palette.mint, Palette.sky, Palette.violet, Palette.pink]
         return VStack(spacing: 4) {
             Text(verbatim: char)
@@ -67,8 +69,8 @@ private struct SquashHopDemo: View {
                 .scaleEffect(x: pose.scaleX, y: pose.scaleY, anchor: .bottom)
                 .offset(y: -pose.lift)
             Ellipse()
-                .fill(Color.primary.opacity(0.18 * (1 - air * 0.7)))
-                .frame(width: 30 * (1 - air * 0.5), height: 6)
+                .fill(Color.primary.opacity(shadowOpacity))
+                .frame(width: shadowWidth, height: 6)
                 .blur(radius: 2)
         }
     }

@@ -64,6 +64,7 @@ private struct ContextPopoverDemo: View {
                     PopoverNoteRow(index: index, language: ctx.language)
                         .opacity(open ? 0.55 : 1)
                         .blur(radius: open ? 1.5 : 0)
+                        .allowsHitTesting(false) // taps fall through to the scrim, closing the menu
                 }
             }
         }

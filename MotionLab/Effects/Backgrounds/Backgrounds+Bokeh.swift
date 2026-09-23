@@ -37,7 +37,7 @@ private struct BokehDemo: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0x120A1C), Color(hex: 0x2A1330), Color(hex: 0x1A0B16)], startPoint: .top, endPoint: .bottom)
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: 1)
                 BokehCanvas(t: t, count: ctx.int("count"), blur: ctx.cg("blur"), palette: BokehCanvas.paletteColors(ctx.int("palette")))
             }

@@ -11,5 +11,7 @@ enum CardEffects {
         .cardsPeek,
         .cardsNotificationStack,
         .cardsAccordion,
+        .cardsScratchReveal,
+        .cardsStackingScroll,
     ]
 }

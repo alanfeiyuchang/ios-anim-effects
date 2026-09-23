@@ -35,7 +35,7 @@ private struct SynthwaveDemo: View {
     @State private var clock = BackgroundClock()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
             Canvas { context, size in
                 SynthwaveScene.draw(&context, size: size, t: t, lines: ctx.int("lines"), sun: ctx.bool("sun"))

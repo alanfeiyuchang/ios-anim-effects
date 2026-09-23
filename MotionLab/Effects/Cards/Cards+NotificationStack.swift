@@ -57,7 +57,13 @@ private struct CardsNotificationDemo: View {
                     row(i)
                 }
             }
-            .frame(width: 300, height: 4 * rowHeight + 3 * gap, alignment: .top)
+            // The group's footprint follows its state so the collapsed stack sits centred on the
+            // stage instead of hugging the top of an empty, list-sized frame.
+            .frame(width: 300, height: expanded ? 4 * rowHeight + 3 * gap : rowHeight + 20, alignment: .top)
+            .animation(.spring(response: ctx["response"], dampingFraction: ctx["damping"]), value: expanded)
+            DemoHint(text: L("Tap the stack", "点击通知组"), ctx: ctx)
+                .frame(width: 300)
+                .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.0) { toggle() }

@@ -70,6 +70,9 @@ private struct TravelFogDemo: View {
         ZStack {
             LandscapeArt(seed: 1)
             fog
+            // Soft top scrim keeps the white title legible over the bright frosted glass.
+            LinearGradient(colors: [Color.black.opacity(0.34), .clear], startPoint: .top, endPoint: .center)
+                .allowsHitTesting(false)
             TravelFogChrome(zh: zh, hintVisible: !isDrawing && strokes.isEmpty)
         }
         .frame(width: 280, height: 260)
@@ -246,6 +249,7 @@ private struct TravelFogChrome: View {
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.white)
                 }
+                .shadow(color: .black.opacity(0.3), radius: 6, y: 1)
                 Spacer(minLength: 0)
                 Image(systemName: "cloud.fog.fill")
                     .font(.system(size: 15, weight: .semibold))

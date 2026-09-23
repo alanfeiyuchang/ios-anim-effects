@@ -133,7 +133,7 @@ private struct ParticleRepulsionDemo: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0x070914), Color(hex: 0x10142A)], startPoint: .top, endPoint: .bottom)
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let now = timeline.date.timeIntervalSinceReferenceDate
                 Canvas { context, size in
                     // Previews always wander; the detail stage wanders until the first touch so it never looks empty.

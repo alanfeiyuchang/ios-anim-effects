@@ -41,7 +41,7 @@ private struct FirefliesDemo: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
                 FireflyField(t: t, count: ctx.int("count"), glow: ctx.cg("glow"))
             }

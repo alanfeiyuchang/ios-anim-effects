@@ -41,8 +41,13 @@ private struct TravelMapPin: Identifiable, Equatable {
 
 private struct TravelPinRouteDemo: View {
     let ctx: DemoContext
-    @State private var pins: [TravelMapPin] = [TravelMapPin(id: 0, point: CGPoint(x: 64, y: 176))]
-    @State private var nextID = 1
+    /// Seeded with a short route so the stage reads as a planned trip before the first tap.
+    @State private var pins: [TravelMapPin] = [
+        TravelMapPin(id: 0, point: CGPoint(x: 64, y: 176)),
+        TravelMapPin(id: 1, point: CGPoint(x: 140, y: 92)),
+        TravelMapPin(id: 2, point: CGPoint(x: 228, y: 160)),
+    ]
+    @State private var nextID = 3
 
     private static let demoPoints: [CGPoint] = [
         CGPoint(x: 140, y: 92),

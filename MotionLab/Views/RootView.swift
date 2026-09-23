@@ -19,23 +19,27 @@ extension EnvironmentValues {
 
 struct RootView: View {
     @Environment(\.appLanguage) private var language
-    @State private var tab = LaunchOptions.initialTab
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppNavigator.self) private var navigator
+    @AppStorage("app.animatePreviews") private var animatePreviews = true
 
     var body: some View {
-        TabView(selection: $tab) {
-            Tab(Strings.browse(language), systemImage: "square.grid.2x2.fill", value: 0) {
+        @Bindable var navigator = navigator
+        TabView(selection: $navigator.tab) {
+            Tab(Strings.browse(language), systemImage: "square.grid.2x2.fill", value: AppTab.browse) {
                 RoutedStack(initialPath: LaunchOptions.initialPath) { BrowseView() }
             }
-            Tab(Strings.search(language), systemImage: "magnifyingglass", value: 1) {
-                RoutedStack { SearchView() }
+            Tab(Strings.search(language), systemImage: "magnifyingglass", value: AppTab.search) {
+                RoutedStack(popsToRootOnSearch: true) { SearchView() }
             }
-            Tab(Strings.favorites(language), systemImage: "heart.fill", value: 2) {
+            Tab(Strings.favorites(language), systemImage: "heart.fill", value: AppTab.favorites) {
                 RoutedStack { FavoritesView() }
             }
-            Tab(Strings.settings(language), systemImage: "gearshape.fill", value: 3) {
-                NavigationStack { SettingsView() }
+            Tab(Strings.settings(language), systemImage: "gearshape.fill", value: AppTab.settings) {
+                RoutedStack { SettingsView() }
             }
         }
+        .environment(\.previewMotionEnabled, animatePreviews && !reduceMotion)
     }
 }
 
@@ -64,10 +68,13 @@ enum LaunchOptions {
 struct RoutedStack<Content: View>: View {
     @Namespace private var namespace
     @State private var path: [Route]
+    @Environment(AppNavigator.self) private var navigator
+    private let popsToRootOnSearch: Bool
     private let content: () -> Content
 
-    init(initialPath: [Route] = [], @ViewBuilder content: @escaping () -> Content) {
+    init(initialPath: [Route] = [], popsToRootOnSearch: Bool = false, @ViewBuilder content: @escaping () -> Content) {
         _path = State(initialValue: initialPath)
+        self.popsToRootOnSearch = popsToRootOnSearch
         self.content = content
     }
 
@@ -87,6 +94,9 @@ struct RoutedStack<Content: View>: View {
                 }
         }
         .environment(\.zoomNamespace, namespace)
+        .onChange(of: navigator.searchRevision) {
+            if popsToRootOnSearch { path = [] }
+        }
     }
 }
 
@@ -95,6 +105,8 @@ struct EffectLink<Label: View>: View {
     let effect: Effect
     @ViewBuilder var label: () -> Label
     @Environment(\.zoomNamespace) private var namespace
+    @Environment(\.appLanguage) private var language
+    @Environment(FavoritesStore.self) private var favorites
 
     var body: some View {
         NavigationLink(value: Route.effect(effect.id)) {
@@ -105,14 +117,31 @@ struct EffectLink<Label: View>: View {
             }
         }
         .buttonStyle(PressableCardStyle())
+        .effectContextMenu(effect)
+        // A link is already one VoiceOver stop; give it "<name>, <category>" and the summary as the hint.
+        .accessibilityLabel(Text(verbatim: "\(effect.name(language)), \(effect.category.title(language))"))
+        .accessibilityValue(Text(verbatim: favorites.contains(effect.id) ? Strings.favorited(language) : ""))
+        .accessibilityHint(Text(effect.summary, language))
     }
 }
 
 /// Subtle press-down scale used on every card in the app.
+/// With Reduce Motion on, the press is shown as a dim instead of a scale.
 struct PressableCardStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+        PressableCardBody(label: configuration.label, isPressed: configuration.isPressed)
+    }
+}
+
+private struct PressableCardBody: View {
+    let label: ButtonStyleConfiguration.Label
+    let isPressed: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        label
+            .scaleEffect(isPressed && !reduceMotion ? 0.96 : 1)
+            .opacity(isPressed && reduceMotion ? 0.7 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
     }
 }

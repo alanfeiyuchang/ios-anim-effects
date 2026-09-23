@@ -183,3 +183,119 @@ half4 mlHalftone(float2 position, SwiftUI::Layer layer, float cell) {
     float coverage = 1.0 - smoothstep(radius - 0.8, radius + 0.8, d);
     return c * half(coverage);
 }
+
+// MARK: - Shaded flag wave (layer effect)
+// Same displacement as mlWave, plus fold lighting from the wave's slope: crests catch light, troughs shade.
+
+[[ stitchable ]]
+half4 mlFlagWave(float2 position, SwiftUI::Layer layer, float time, float amplitude, float wavelength, float shade) {
+    float wl = max(wavelength, 1.0);
+    float phaseX = time + position.x / wl;
+    float phaseY = time * 0.8 + position.y / wl;
+    float2 p = position + float2(cos(phaseY) * amplitude * 0.5, sin(phaseX) * amplitude);
+    half4 c = layer.sample(p);
+    float slope = cos(phaseX) * amplitude / wl;
+    float light = clamp(1.0 + shade * slope * 2.2, 0.55, 1.45);
+    c.rgb = min(c.rgb * half(light), half3(c.a));
+    return c;
+}
+
+// MARK: - Chromatic aberration (layer effect)
+// R and B are sampled on either side of G along the motion vector, plus a radial lens fringe toward the edges.
+
+[[ stitchable ]]
+half4 mlChromatic(float2 position, SwiftUI::Layer layer, float2 size, float2 shift, float radial) {
+    float2 center = size * 0.5;
+    float2 fromCenter = (position - center) / max(size.x, 1.0);
+    float2 offset = shift + fromCenter * radial;
+    half4 g = layer.sample(position);
+    half4 r = layer.sample(position + offset);
+    half4 b = layer.sample(position - offset);
+    half a = max(g.a, max(r.a, b.a));
+    return half4(r.r, g.g, b.b, a);
+}
+
+// MARK: - Kaleidoscope (layer effect)
+// Folds the polar angle into mirrored wedges; `spin` turns the sampled wedge (the "tube"), `rotation` the output.
+
+[[ stitchable ]]
+half4 mlKaleidoscope(float2 position, SwiftUI::Layer layer, float2 size, float segments, float rotation, float spin, float zoom) {
+    float2 c = size * 0.5;
+    float2 d = position - c;
+    float r = length(d) * zoom;
+    float seg = 6.2831853 / max(floor(segments), 2.0);
+    float a = atan2(d.y, d.x) + rotation;
+    a = a - seg * floor(a / seg);
+    a = abs(a - seg * 0.5);
+    float2 p = c + float2(cos(a + spin), sin(a + spin)) * r;
+    p = clamp(p, float2(0.5), size - 0.5);
+    return layer.sample(p);
+}
+
+// MARK: - Edge scan (layer effect)
+// Sobel edges on luminance render as neon wireframe above a glowing scan line; below it the original shows.
+
+static float mlLuma(half4 c) {
+    return dot(float3(c.rgb), float3(0.299, 0.587, 0.114));
+}
+
+[[ stitchable ]]
+half4 mlEdgeScan(float2 position, SwiftUI::Layer layer, float scanY, float band, half4 tint, float strength) {
+    half4 base = layer.sample(position);
+    float s = 1.5;
+    float tl = mlLuma(layer.sample(position + float2(-s, -s)));
+    float tc = mlLuma(layer.sample(position + float2(0.0, -s)));
+    float tr = mlLuma(layer.sample(position + float2(s, -s)));
+    float ml = mlLuma(layer.sample(position + float2(-s, 0.0)));
+    float mr = mlLuma(layer.sample(position + float2(s, 0.0)));
+    float bl = mlLuma(layer.sample(position + float2(-s, s)));
+    float bc = mlLuma(layer.sample(position + float2(0.0, s)));
+    float br = mlLuma(layer.sample(position + float2(s, s)));
+    float gx = (tr + 2.0 * mr + br) - (tl + 2.0 * ml + bl);
+    float gy = (bl + 2.0 * bc + br) - (tl + 2.0 * tc + tr);
+    float e = clamp(length(float2(gx, gy)) * strength, 0.0, 1.0);
+
+    half4 dark = half4(0.03h, 0.04h, 0.09h, 1.0h) * base.a;
+    half4 neon = dark + base * 0.08h + half4(tint.rgb, 1.0h) * half(e) * base.a;
+
+    float d = scanY - position.y;
+    float reveal = smoothstep(-1.0, 1.0, d);
+    float glow = exp(-abs(d) / max(band, 1.0));
+    half4 color = mix(base, neon, half(reveal));
+    color += half4(tint.rgb, 1.0h) * half(glow * 0.85) * base.a;
+    color = min(color, half4(1.0h));
+    color.rgb = min(color.rgb, half3(color.a));
+    return color;
+}
+
+// MARK: - Grain gradient (color effect, generative)
+// Three soft colour fields drift over a base colour on domain-warped coordinates, finished with static film grain.
+
+[[ stitchable ]]
+half4 mlGrainGradient(float2 position, half4 color, float2 size, float time, float grain,
+                      half4 c0, half4 c1, half4 c2, half4 c3, float2 focus) {
+    float2 uv = position / max(size, float2(1.0));
+    float2 aspect = float2(size.x / max(size.y, 1.0), 1.0);
+    float2 warp = float2(mlFbm(uv * 2.2 + float2(time * 0.07, 0.0)),
+                         mlFbm(uv * 2.2 + float2(5.2, time * 0.06)));
+    float2 q = uv + 0.14 * (warp - 0.5);
+
+    float2 p1 = float2(0.78 + 0.14 * cos(time * 0.23), 0.28 + 0.16 * sin(time * 0.35));
+    float2 p2 = float2(0.28 + 0.18 * cos(time * 0.19 + 1.7), 0.78 + 0.12 * sin(time * 0.29));
+    float2 d1 = (q - p1) * aspect;
+    float2 d2 = (q - p2) * aspect;
+    float2 d3 = (q - focus) * aspect;
+    float w1 = exp(-dot(d1, d1) * 4.5);
+    float w2 = exp(-dot(d2, d2) * 4.0);
+    float w3 = exp(-dot(d3, d3) * 7.0);
+
+    float3 col = float3(c0.rgb);
+    col = mix(col, float3(c1.rgb), w1);
+    col = mix(col, float3(c2.rgb), w2);
+    col = mix(col, float3(c3.rgb), w3);
+
+    float n = mlHash(floor(position)) - 0.5;
+    col += n * grain * 0.16;
+    col = clamp(col, float3(0.0), float3(1.0));
+    return half4(half3(col), 1.0h) * color.a;
+}

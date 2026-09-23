@@ -36,19 +36,20 @@ extension Effect {
         name: L("Flag Wave", "旗帜波动"),
         summary: L("Continuous sine distortion like fabric in the wind.", "如风中布料般持续起伏的正弦扭曲。"),
         prompt: L(
-            "A card undulates continuously like a flag in a gentle breeze. Every pixel is displaced vertically by a sine wave travelling along the x-axis and horizontally by a slower cosine along the y-axis at half the amplitude, so the surface ripples diagonally rather than bouncing uniformly. The motion loops seamlessly with no easing: amplitude ≈6 pt, a wavelength parameter of 30 pt (≈190 pt crest to crest, i.e. 2π × 30) and a ≈2 s cycle, producing a calm, hypnotic, cloth-like drift ideal for hero artwork or ambient headers.",
-            "卡片像微风中的旗帜一样持续起伏。每个像素在竖直方向受沿 x 轴传播的正弦波推移，在水平方向受沿 y 轴、速度更慢、振幅减半的余弦波推移，使表面呈斜向涟漪而非整体上下跳动。运动无缝循环、无缓动：振幅约 6pt，波长参数 30pt（波峰间距约 190pt，即 2π × 30），周期约 2 秒，呈现平静、催眠般的布料飘动感，适合头图或氛围型标题区。"
+            "A card undulates continuously like a flag in a gentle breeze. Every pixel is displaced vertically by a sine wave travelling along the x-axis and horizontally by a slower cosine along the y-axis at half the amplitude, so the surface ripples diagonally rather than bouncing uniformly. The slope of the wave also lights the fabric: rising faces brighten and falling faces darken by up to ~30%, so folds read as real cloth. The loop is seamless with no easing — amplitude ≈6 pt, a wavelength parameter of 30 pt (≈190 pt crest to crest, i.e. 2π × 30), a ≈2 s cycle — calm and hypnotic, ideal for hero artwork or ambient headers.",
+            "卡片像微风中的旗帜一样持续起伏。每个像素在竖直方向受沿 x 轴传播的正弦波推移，在水平方向受沿 y 轴、速度更慢、振幅减半的余弦波推移，使表面呈斜向涟漪而非整体上下跳动。波形斜率同时为布面打光：迎光面最多提亮约 30%，背光面相应变暗，褶皱因此具有真实布料的体积感。运动无缝循环、无缓动：振幅约 6pt，波长参数 30pt（波峰间距约 190pt，即 2π × 30），周期约 2 秒，平静而催眠，适合头图或氛围型标题区。"
         ),
         implementation: L(
-            "A Metal distortion shader returns a new sample position from sin/cos of position and time; a TimelineView(.animation) feeds the time every frame.",
-            "Metal distortionEffect 着色器依据位置与时间的 sin/cos 返回新的采样坐标，TimelineView(.animation) 逐帧提供时间。"
+            "A Metal layer shader samples the view at a sin/cos-displaced position and scales brightness by the wave's analytic slope for fold shading; a TimelineView(.animation) feeds accumulated, speed-scaled time.",
+            "Metal layerEffect 着色器在经 sin/cos 位移后的坐标采样，并按波形的解析斜率调节亮度形成褶皱明暗；TimelineView(.animation) 提供按速度累积的时间。"
         ),
-        apis: ["distortionEffect", "TimelineView", "ShaderLibrary", "Metal"],
-        tags: ["wave", "flag", "cloth", "distortion", "波浪", "旗帜", "布料", "扭曲"],
+        apis: ["layerEffect", "TimelineView", "ShaderLibrary", "Metal"],
+        tags: ["wave", "flag", "cloth", "distortion", "fabric", "波浪", "旗帜", "布料", "扭曲"],
         params: [
             .slider("amplitude", L("Amplitude", "振幅"), 0...16, default: 6, decimals: 1, unit: "pt"),
             .slider("wavelength", L("Wavelength", "波长"), 10...80, default: 30, decimals: 0, unit: "pt"),
             .slider("speed", L("Speed", "速度"), 0.5...8, default: 3, decimals: 1),
+            .slider("shade", L("Fold shading", "褶皱明暗"), 0...1, default: 0.6),
         ]
     ) { ctx in
         WaveDemo(ctx: ctx)
@@ -203,11 +204,13 @@ private struct WaveDemo: View {
         let amplitude = ctx["amplitude"]
         let wavelength = ctx["wavelength"]
         let speed = ctx["speed"]
-        ShaderClock { time in
+        let shade = ctx["shade"]
+        // Speed scales the accumulated clock (not the shader time), so dragging the slider never jumps the wave.
+        ShaderClock(preview: ctx.isPreview, speed: speed) { time in
             ShaderArtwork(variant: 1)
                 .padding(20)
-                .distortionEffect(
-                    ShaderLibrary.mlWave(.float(time), .float(amplitude), .float(wavelength), .float(speed)),
+                .layerEffect(
+                    ShaderLibrary.mlFlagWave(.float(time), .float(amplitude), .float(wavelength), .float(shade)),
                     maxSampleOffset: CGSize(width: amplitude, height: amplitude)
                 )
         }
@@ -223,7 +226,7 @@ private struct MagnifierDemo: View {
     @State private var size: CGSize = CGSize(width: 340, height: 340)
 
     var body: some View {
-        ShaderClock(paused: !ctx.isPreview) { time in
+        ShaderClock(paused: !ctx.isPreview, preview: ctx.isPreview) { time in
             ShaderGridArtwork()
                 .modifier(BulgeLensModifier(center: currentCenter(time: time), radius: ctx["radius"], strength: ctx["strength"]))
         }

@@ -83,7 +83,7 @@ private struct MeshGradientDemo: View {
     @State private var model = MeshModel()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             MeshGradient(
                 width: 3,
                 height: 3,

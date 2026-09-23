@@ -11,5 +11,7 @@ enum ScrollEffects {
         .scrollProgress,
         .scrollStaggeredEntrance,
         .scrollInsertRemove,
+        .scrollArcDial,
+        .scrollStickySections,
     ]
 }

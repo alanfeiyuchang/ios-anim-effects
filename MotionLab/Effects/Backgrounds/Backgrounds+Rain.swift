@@ -51,7 +51,7 @@ private struct RainDemo: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0x0B1220), Color(hex: 0x14203A), Color(hex: 0x1B2740)], startPoint: .top, endPoint: .bottom)
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let now = timeline.date.timeIntervalSinceReferenceDate
                 let t = model.clock.advance(to: now, speed: ctx["speed"])
                 RainCanvas(t: t, flash: model.flash(at: now), count: ctx.int("count"), wind: ctx["wind"])

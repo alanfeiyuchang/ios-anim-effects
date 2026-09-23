@@ -262,7 +262,7 @@ private struct GlitchDemo: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            ShaderClock { time in
+            ShaderClock(preview: ctx.isPreview) { time in
                 let bursting = Date() < burstUntil
                 let intensity = bursting ? 1.0 : ctx["intensity"]
                 GlitchCard()
@@ -314,7 +314,7 @@ private struct CRTDemo: View {
     var body: some View {
         let curvature = ctx["curvature"]
         let enabled = ctx.bool("enabled")
-        ShaderClock { time in
+        ShaderClock(preview: ctx.isPreview) { time in
             CRTScreen(time: time)
                 .visualEffect { content, proxy in
                     content.layerEffect(
@@ -366,7 +366,7 @@ private struct HalftoneDemo: View {
 
     var body: some View {
         let cell = ctx["cell"]
-        ShaderClock { time in
+        ShaderClock(preview: ctx.isPreview) { time in
             ZStack {
                 AngularGradient(colors: [Palette.pink, Palette.amber, Palette.mint, Palette.sky, Palette.violet, Palette.pink], center: .center, angle: .degrees(time * 30))
                 RadialGradient(colors: [.white, .clear], center: UnitPoint(x: 0.5 + 0.3 * cos(time), y: 0.5 + 0.3 * sin(time * 0.8)), startRadius: 0, endRadius: 160)
@@ -389,11 +389,11 @@ private struct PlasmaDemo: View {
     var body: some View {
         let scale = ctx["scale"]
         let speed = ctx["speed"]
-        ShaderClock { time in
+        ShaderClock(preview: ctx.isPreview, speed: speed) { time in
             Rectangle()
                 .visualEffect { content, proxy in
                     content.colorEffect(
-                        ShaderLibrary.mlPlasma(.float2(proxy.size), .float(time * speed), .float(scale))
+                        ShaderLibrary.mlPlasma(.float2(proxy.size), .float(time), .float(scale))
                     )
                 }
                 .overlay {

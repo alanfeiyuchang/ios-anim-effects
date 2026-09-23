@@ -5,12 +5,16 @@ struct MotionLabApp: App {
     @AppStorage("app.language") private var language: AppLanguage = .zh
     @AppStorage("app.appearance") private var appearance: Int = 0
     @State private var favorites = FavoritesStore()
+    @State private var recents = RecentsStore()
+    @State private var navigator = AppNavigator()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(\.appLanguage, language)
                 .environment(favorites)
+                .environment(recents)
+                .environment(navigator)
                 .preferredColorScheme(colorScheme)
                 .tint(Palette.indigo)
         }
@@ -36,6 +40,8 @@ final class FavoritesStore {
     }
 
     func contains(_ id: String) -> Bool { ids.contains(id) }
+
+    var count: Int { ids.count }
 
     func toggle(_ id: String) {
         if let index = ids.firstIndex(of: id) {

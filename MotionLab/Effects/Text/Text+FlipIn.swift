@@ -46,6 +46,8 @@ private struct FlipInDemo: View {
     let ctx: DemoContext
     @State private var phase: FlipPhase = .hidden
     @State private var index = 0
+    /// Mirrors `index` outside the animation-disabled reset so the chapter dots can glide.
+    @State private var shownIndex = 0
 
     private var words: [String] {
         ctx.language == .zh ? ["让文字跃动", "每帧都讲究", "质感即品牌"] : ["KINETIC", "MOTION", "DELIGHT"]
@@ -53,20 +55,36 @@ private struct FlipInDemo: View {
 
     var body: some View {
         let letters = Array(words[index % words.count])
-        HStack(spacing: ctx.language == .zh ? 2 : 1) {
-            ForEach(0..<letters.count, id: \.self) { i in
-                FlipLetter(
-                    letter: letters[i],
-                    phase: phase,
-                    horizontalAxis: ctx.int("axis") == 0,
-                    size: ctx.language == .zh ? 46 : 54
-                )
-                .animation(letterAnimation(i), value: phase)
+        VStack(spacing: 30) {
+            HStack(spacing: ctx.language == .zh ? 2 : 1) {
+                ForEach(0..<letters.count, id: \.self) { i in
+                    FlipLetter(
+                        letter: letters[i],
+                        phase: phase,
+                        horizontalAxis: ctx.int("axis") == 0,
+                        size: ctx.language == .zh ? 46 : 54
+                    )
+                    .animation(letterAnimation(i), value: phase)
+                }
             }
+            .foregroundStyle(Palette.sunset)
+            .shadow(color: Palette.coral.opacity(0.28), radius: 14, y: 10)
+            pageDots
         }
-        .foregroundStyle(Palette.sunset)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { await loop() }
+    }
+
+    /// Which title card of the sequence is showing — a small chapter marker under the word.
+    private var pageDots: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<words.count, id: \.self) { i in
+                Capsule()
+                    .fill(i == shownIndex % words.count ? AnyShapeStyle(Palette.sunset) : AnyShapeStyle(Color.primary.opacity(0.15)))
+                    .frame(width: i == shownIndex % words.count ? 20 : 6, height: 6)
+            }
+        }
+        .animation(.spring(response: 0.45, dampingFraction: 0.75), value: shownIndex)
     }
 
     private func letterAnimation(_ i: Int) -> Animation {
@@ -78,6 +96,7 @@ private struct FlipInDemo: View {
         try? await Task.sleep(for: .seconds(0.3))
         while !Task.isCancelled {
             phase = .shown
+            shownIndex = index
             try? await Task.sleep(for: .seconds(2.2))
             if Task.isCancelled { return }
             phase = .exited

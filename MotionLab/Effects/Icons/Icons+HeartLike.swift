@@ -6,17 +6,17 @@ extension Effect {
         category: .icons,
         interaction: .tap,
         name: L("Heart Like Burst", "点赞爱心迸发"),
-        summary: L("The heart squashes, fills and bursts with a ring of particles.", "爱心先压缩再填色，伴随一圈粒子迸发。"),
+        summary: L("Tap or double-tap a post: the heart squashes, fills and bursts into particles.", "点击或双击动态：爱心压缩、填色并迸发粒子。"),
         prompt: L(
-            "An outlined heart with a like count beside it. On like, the heart anticipates by squashing to 70%, then springs to 125% as it swaps to a filled red glyph and settles at 100% (≈0.6 s total). At the peak a thin ring expands from the centre to ~2× and fades, and ten small multicoloured dots shoot radially outwards ~56 pt, shrinking and fading on an ease-out, while the count rolls up by one with a medium haptic. Unliking simply replaces back to the outline glyph and the count rolls down with a selection tick. Joyful, rewarding and snappy — the signature social micro-interaction.",
-            "描边爱心旁显示点赞数。点赞时，爱心先预备性压缩到 70%，再弹到 125% 并替换为实心红色，随后回到 100%（全程约 0.6 秒）。在最高点，一道细圆环从中心扩散到约 2 倍并淡出，十颗彩色小圆点沿径向向外射出约 56pt，以缓出曲线缩小并消失，同时点赞数向上滚动加一，伴随中等强度触感。取消点赞时直接替换回描边样式，数字向下滚动，并伴随一次选择触感。欢快、有回报感、干脆利落——社交产品的招牌微交互。"
+            "A photo post card with an outlined heart and like count in its action bar. On like — tapping the heart or double-tapping the photo — the heart anticipates by squashing to 70%, then springs to 125% as it swaps to a filled red glyph and settles at 100% (≈0.6 s). At the peak a thin ring expands to ~2× and fades while ten multicoloured dots shoot ~56 pt outward, shrinking on an ease-out; the count rolls up with a medium haptic. A double-tap also blooms a large white heart over the photo that springs to 115%, holds, then swells and fades. Unliking swaps back to the outline and rolls the count down. Joyful, rewarding, snappy.",
+            "一张图片动态卡片，底部操作栏有描边爱心与点赞数。点赞时（点击爱心或双击图片），爱心先压缩到 70% 蓄力，再弹到 125% 并替换为实心红色，最终回到 100%（约 0.6 秒）。最高点处，一道细圆环扩散到约 2 倍并淡出，十颗彩色小圆点沿径向射出约 56 pt、以缓出曲线缩小消失；点赞数向上滚动加一，伴随中等触感。双击图片时，还会在画面中央绽放一颗白色大爱心：弹到 115%、停留片刻，再放大淡出。取消点赞则换回描边样式、数字回滚。欢快、有回报感、干脆利落。"
         ),
         implementation: L(
             "keyframeAnimator drives heart scale and a 0→1 burst progress (ring + radial dots are invisible at both ends); the glyph swaps via symbolEffect replace and the count uses numericText.",
             "keyframeAnimator 驱动爱心缩放以及 0→1 的迸发进度（圆环与径向粒子在两端都不可见）；图标通过 symbolEffect 替换切换，数字使用 numericText。"
         ),
         apis: ["keyframeAnimator", "contentTransition(.symbolEffect(.replace))", "contentTransition(.numericText(value:))", "KeyframeTrack"],
-        tags: ["like", "heart", "burst", "particles", "点赞", "爱心", "粒子", "喜欢"],
+        tags: ["like", "heart", "burst", "double tap", "particles", "点赞", "爱心", "双击", "粒子", "喜欢"],
         params: [
             .slider("radius", L("Burst radius", "迸发半径"), 30...90, default: 56, decimals: 0, unit: "pt"),
             .slider("count", L("Particles", "粒子数"), 6...16, default: 10, step: 1, decimals: 0),
@@ -25,6 +25,11 @@ extension Effect {
     ) { ctx in
         HeartLikeDemo(ctx: ctx)
     }
+}
+
+private struct HeartPopValues {
+    var scale: Double = 0
+    var opacity: Double = 0
 }
 
 private struct HeartValues {
@@ -37,6 +42,7 @@ private struct HeartLikeDemo: View {
     @State private var liked = false
     @State private var count = 1_284
     @State private var bursts = 0
+    @State private var pops = 0
 
     private var tint: Color {
         switch ctx.int("color") {
@@ -47,19 +53,96 @@ private struct HeartLikeDemo: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            HStack(spacing: 14) {
-                heart
-                Text(verbatim: count.formatted(.number))
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText(value: Double(count)))
-                    .foregroundStyle(liked ? tint : Color.primary)
+        VStack(spacing: 16) {
+            VStack(spacing: 0) {
+                photo
+                actionRow
             }
-            DemoHint(text: L("Tap the heart", "点击爱心"), ctx: ctx)
+            .frame(width: 280)
+            .demoCard(cornerRadius: 24)
+            DemoHint(text: L("Tap the heart or double-tap the photo", "点击爱心或双击图片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.5) { toggle() }
+        .autoplay(ctx.isPreview, every: 1.5) { autoAdvance() }
+    }
+
+    private var photo: some View {
+        LinearGradient(colors: [Palette.amber, Palette.coral, Palette.pink], startPoint: .topLeading, endPoint: .bottomTrailing)
+            .overlay(alignment: .bottomLeading) {
+                Image(systemName: "mountain.2.fill")
+                    .font(.system(size: 74))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .offset(x: 18, y: 14)
+            }
+            .overlay(alignment: .topTrailing) {
+                Circle()
+                    .fill(.white.opacity(0.55))
+                    .frame(width: 34, height: 34)
+                    .blur(radius: 2)
+                    .padding(22)
+            }
+            .overlay {
+                Color.clear.keyframeAnimator(initialValue: HeartPopValues(), trigger: pops) { content, value in
+                    content.overlay {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 64))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+                            .scaleEffect(CGFloat(value.scale))
+                            .opacity(value.opacity)
+                    }
+                } keyframes: { _ in
+                    KeyframeTrack(\.scale) {
+                        SpringKeyframe(1.15, duration: 0.22, spring: .bouncy)
+                        SpringKeyframe(1.0, duration: 0.28, spring: .snappy)
+                        LinearKeyframe(1.0, duration: 0.2)
+                        CubicKeyframe(1.3, duration: 0.2)
+                    }
+                    KeyframeTrack(\.opacity) {
+                        LinearKeyframe(1, duration: 0.08)
+                        LinearKeyframe(1, duration: 0.62)
+                        CubicKeyframe(0, duration: 0.2)
+                    }
+                }
+            }
+            .frame(height: 158)
+            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))
+            .contentShape(Rectangle())
+            .onTapGesture(count: 2) { doubleTap() }
+    }
+
+    private var actionRow: some View {
+        HStack(spacing: 4) {
+            heart
+                .scaleEffect(0.72)
+                .frame(width: 58, height: 58)
+            Text(verbatim: count.formatted(.number))
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .contentTransition(.numericText(value: Double(count)))
+                .foregroundStyle(liked ? tint : Color.primary)
+            Spacer(minLength: 0)
+            Image(systemName: "bubble.right")
+            Image(systemName: "paperplane")
+                .padding(.leading, 14)
+        }
+        .font(.system(size: 19, weight: .medium))
+        .foregroundStyle(.secondary)
+        .padding(.leading, 4)
+        .padding(.trailing, 18)
+    }
+
+    private func doubleTap() {
+        pops += 1
+        if !liked {
+            toggle()
+        } else if !ctx.isPreview {
+            Haptics.tap(.soft)
+        }
+    }
+
+    private func autoAdvance() {
+        if liked { toggle() } else { doubleTap() }
     }
 
     private var heart: some View {

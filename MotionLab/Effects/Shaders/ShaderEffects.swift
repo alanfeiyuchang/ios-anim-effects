@@ -14,6 +14,9 @@ enum ShaderEffects {
         .shaderHalftone,
         .shaderGlassmorphism,
         .shaderLiquidGlassLens,
+        .shaderChromatic,
+        .shaderKaleidoscope,
+        .shaderEdgeScan,
     ]
 }
 
@@ -91,15 +94,19 @@ struct ShaderGridArtwork: View {
 
 // MARK: - Time helper
 
-/// Seconds since the view appeared, refreshed every frame.
+/// Speed-scaled seconds since the view appeared, refreshed every frame.
+/// Time accumulates, so changing `speed` (or resuming after `paused`) never makes the shader jump,
+/// and grid previews (`preview: true`) tick at 30 fps to keep the category grid light.
 struct ShaderClock<Content: View>: View {
     var paused: Bool = false
+    var preview: Bool = false
+    var speed: Double = 1
     @ViewBuilder var content: (Double) -> Content
-    @State private var start = Date()
+    @State private var clock = BackgroundClock(start: 0)
 
     var body: some View {
-        TimelineView(.animation(paused: paused)) { timeline in
-            content(timeline.date.timeIntervalSince(start))
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: paused)) { timeline in
+            content(clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: speed))
         }
     }
 }

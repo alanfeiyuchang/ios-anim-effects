@@ -37,7 +37,7 @@ private struct HalftoneFlowDemo: View {
     var body: some View {
         ZStack {
             Color(hex: 0x0A0A12)
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
                 HalftoneCanvas(t: t, spacing: max(ctx.cg("spacing"), 6), colors: HalftoneCanvas.paletteColors(ctx.int("palette")))
             }

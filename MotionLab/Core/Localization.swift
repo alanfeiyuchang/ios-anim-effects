@@ -76,20 +76,29 @@ enum Strings {
     static let parameters = L("Parameters", "参数调节")
     static let prompt = L("Prompt", "提示词")
     static let promptHint = L("A professional description you can hand to a designer, engineer or AI.", "可直接交给设计师、工程师或 AI 的专业描述。")
-    static let copy = L("Copy", "复制")
     static let copied = L("Copied", "已复制")
     static let implementation = L("Implementation", "实现方式")
     static let apis = L("Key APIs", "关键 API")
     static let tags = L("Tags", "标签")
     static let reset = L("Reset", "重置")
     static let resetParams = L("Restore defaults", "恢复默认")
-    static let interaction = L("Interaction", "交互方式")
     static let language = L("Language", "语言")
     static let appearance = L("Appearance", "外观")
     static let system = L("System", "跟随系统")
     static let light = L("Light", "浅色")
     static let dark = L("Dark", "深色")
-    static let reduceGridMotion = L("Animate previews", "列表预览动画")
+    static let motion = L("Motion", "动态效果")
+    static let animatePreviews = L("Animate previews", "列表预览动画")
+    static let animatePreviewsFooter = L(
+        "Grid thumbnails act out their demos on their own. Turn this off for calmer lists and longer battery life.",
+        "列表缩略图会自动演示交互。关闭后列表更安静，也更省电。"
+    )
+    static let reduceMotionActive = L(
+        "Reduce Motion is on in system settings, so previews stay still.",
+        "系统已开启「减弱动态效果」，列表预览将保持静止。"
+    )
+    static let library = L("Library", "动效库")
+    static let version = L("Version", "版本")
     static let about = L("About", "关于")
     static let aboutBody = L(
         "Every entry is a live, native SwiftUI implementation. Tweak parameters, study the implementation notes, and copy the prompt to describe the motion precisely.",
@@ -97,11 +106,35 @@ enum Strings {
     )
     static let noFavorites = L("No favorites yet", "还没有收藏")
     static let noFavoritesHint = L("Tap the heart on any effect to keep it here.", "在任意动效页点击爱心即可收藏到这里。")
+    static let browseEffects = L("Browse Effects", "去逛逛动效")
     static let noResults = L("No matching effects", "没有匹配的动效")
+    static let noResultsHint = L("Try another keyword, or clear the filters.", "换个关键词，或清除筛选条件试试。")
+    static let clearFilters = L("Clear Filters", "清除筛选")
+    static let trySearching = L("Try searching", "试试搜索")
+    static let popularAPIs = L("Popular APIs", "常用 API")
     static let all = L("All", "全部")
-    static let tapToInteract = L("Interact with the stage above", "在上方舞台中与动效互动")
     static let requires = L("Requires", "需要")
     static let random = L("Surprise me", "随便看看")
     static let featured = L("Featured", "精选")
-    static let sort = L("Sort", "排序")
+    static let recent = L("Recently Viewed", "最近浏览")
+    static let clear = L("Clear", "清除")
+    static let moreInCategory = L("More in This Category", "同类动效")
+    static let seeAll = L("See All", "查看全部")
+    static let addFavorite = L("Add to Favorites", "加入收藏")
+    static let removeFavorite = L("Remove from Favorites", "取消收藏")
+    static let favorited = L("Favorited", "已收藏")
+    static let sharePrompt = L("Share Prompt", "分享提示词")
+    static let copyPrompt = L("Copy Prompt", "复制提示词")
+    static let promptCopied = L("Prompt copied to the clipboard", "提示词已复制到剪贴板")
+    static let searchTag = L("Search for this tag", "搜索此标签")
+    static let openCategory = L("Opens the category", "打开该分类")
+    static let resetDemo = L("Restarts the demo from its initial state", "让演示回到初始状态重新开始")
+
+    /// "1 effect" / "12 effects" / "12 个动效".
+    static func effectCount(_ count: Int, _ language: AppLanguage) -> String {
+        switch language {
+        case .en: return count == 1 ? "1 effect" : "\(count) effects"
+        case .zh: return "\(count) 个动效"
+        }
+    }
 }

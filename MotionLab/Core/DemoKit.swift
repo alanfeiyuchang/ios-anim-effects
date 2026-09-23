@@ -41,11 +41,25 @@ enum Palette {
 
 // MARK: - Autoplay
 
+private struct DemoAutoplayKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    /// Master switch for `.autoplay`. The app shell turns it off for grid thumbnails when
+    /// Reduce Motion is on, when "Animate previews" is disabled, or when a card scrolls away.
+    var demoAutoplayEnabled: Bool {
+        get { self[DemoAutoplayKey.self] }
+        set { self[DemoAutoplayKey.self] = newValue }
+    }
+}
+
 private struct AutoplayModifier: ViewModifier {
     let active: Bool
     let interval: Double
     let initialDelay: Double
     let action: () -> Void
+    @Environment(\.demoAutoplayEnabled) private var enabled
 
     private struct Key: Hashable {
         let active: Bool
@@ -54,8 +68,8 @@ private struct AutoplayModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         // Keyed on the interval too, so interval sliders take effect immediately.
-        content.task(id: Key(active: active, interval: interval)) {
-            guard active else { return }
+        content.task(id: Key(active: active && enabled, interval: interval)) {
+            guard active && enabled else { return }
             try? await Task.sleep(for: .seconds(initialDelay))
             while !Task.isCancelled {
                 // Autoplay only runs in previews: never buzz the user for simulated taps.

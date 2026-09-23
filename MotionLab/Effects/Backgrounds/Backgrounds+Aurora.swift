@@ -41,7 +41,7 @@ private struct AuroraDemo: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
                 AuroraCanvas(t: t, blur: ctx.cg("blur"), intensity: ctx["intensity"])
             }

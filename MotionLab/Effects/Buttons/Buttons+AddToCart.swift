@@ -8,12 +8,12 @@ extension Effect {
         name: L("Add to Bag", "加入购物袋"),
         summary: L("The button morphs into a check while an item arcs into the bag.", "按钮收缩成对勾，商品沿弧线飞入购物袋。"),
         prompt: L(
-            "A wide capsule \"Add to Bag\" button with a bag-plus glyph sits below a bag icon carrying a small count badge. On tap the capsule collapses from 220 pt to a 60 pt circle on a spring (response 0.45 s, damping 0.75) while turning green and cross-fading its label into a bold checkmark that scales in. At the same moment a small accent dot launches from the button and travels along a parabolic arc (rises ~40 pt above the target, ~550 ms, ease-in-out) into the bag, shrinking to half size. As it lands the bag does a symbol bounce, the badge pops and its number rolls up, and a success haptic fires. After ~1.2 s the button springs back to its original pill. Delightful, legible commerce feedback.",
-            "购物袋图标右上角带一个数量角标，下方是一枚写着“加入购物袋”的宽胶囊按钮。点击后，胶囊以弹簧（响应 0.45 秒、阻尼 0.75）从 220pt 宽收缩为 60pt 的圆，同时变为绿色，文字交叉淡出、换成缩放出现的粗对勾。与此同时，一颗强调色小圆点从按钮弹出，沿抛物线（比目标点高约 40pt，约 550 毫秒，缓入缓出）飞进购物袋并缩小一半。落点瞬间购物袋做一次符号弹跳，角标弹起、数字向上滚动，并触发成功触觉。约 1.2 秒后按钮弹回原本的胶囊形态。清晰易懂又令人愉悦的电商反馈。"
+            "A product card (gradient thumbnail, name, rating, price) with a wide capsule \"Add to Bag\" button; a bag icon with a count badge floats at the top-right. On tap the capsule collapses from 220 pt to a 60 pt circle on a spring (response 0.45 s, damping 0.75), turning green as its label cross-fades into a bold checkmark. At the same moment a mini copy of the product image lifts off the thumbnail at 130% and flies a parabolic arc (peaking ~44 pt above the bag, ~600 ms, ease-in-out), shrinking to 40% and tilting 18° as it drops in. On landing the bag does a symbol bounce, the badge pops and its number rolls up, and a success haptic fires. After ~1.2 s the button springs back to its pill. Delightful, legible commerce feedback.",
+            "商品卡片（渐变缩略图、名称、评分、价格）底部是一枚“加入购物袋”宽胶囊按钮，右上角悬浮着带数量角标的购物袋。点击后，胶囊以弹簧（响应 0.45 秒、阻尼 0.75）从 220pt 宽收缩为 60pt 的圆并变绿，文字交叉淡出为粗对勾。与此同时，一枚商品缩略图副本以 130% 从原图上“拎起”，沿抛物线（最高点比购物袋高约 44pt，约 600 毫秒，缓入缓出）飞入购物袋，途中缩到 40% 并倾斜 18°。落袋瞬间购物袋做一次符号弹跳，角标弹起、数字上滚，并触发成功触觉；约 1.2 秒后按钮弹回胶囊形态。清晰易懂又令人愉悦的电商反馈。"
         ),
         implementation: L(
-            "Width, color and label swap animate together with a spring; a KeyframeAnimator view with separate x/y/scale/opacity tracks flies the dot on an arc; the bag uses symbolEffect(.bounce) and the badge numericText.",
-            "宽度、颜色与文字切换由同一弹簧驱动；KeyframeAnimator 视图用独立的 x/y/缩放/透明度轨道让小圆点沿弧线飞行；购物袋使用 symbolEffect(.bounce)，角标使用 numericText。"
+            "Width, color and label swap animate together with a spring; a KeyframeAnimator view with separate x/y/scale/rotation/opacity tracks flies the thumbnail on an arc; the bag uses symbolEffect(.bounce) and the badge numericText.",
+            "宽度、颜色与文字切换由同一弹簧驱动；KeyframeAnimator 视图用独立的 x/y/缩放/旋转/透明度轨道让缩略图沿弧线飞行；购物袋使用 symbolEffect(.bounce)，角标使用 numericText。"
         ),
         apis: ["KeyframeAnimator", "symbolEffect(.bounce)", "numericText", "transition"],
         tags: ["cart", "shop", "morph", "success", "购物车", "加购", "电商", "形变"],
@@ -31,7 +31,29 @@ private struct ButtonFlyFrame {
     var x: Double = 0
     var y: Double = 0
     var scale: Double = 1
+    var spin: Double = 0
     var opacity: Double = 0
+}
+
+/// Product image stand-in: a warm gradient tile with a glyph and a glossy top edge.
+private struct ButtonProductThumb: View {
+    let side: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: side * 0.26, style: .continuous)
+            .fill(LinearGradient(colors: [Palette.amber, Palette.coral, Palette.pink], startPoint: .topLeading, endPoint: .bottomTrailing))
+            .overlay {
+                Image(systemName: "headphones")
+                    .font(.system(size: side * 0.44, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: side * 0.26, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+            }
+            .frame(width: side, height: side)
+            .shadow(color: Palette.coral.opacity(0.3), radius: side * 0.15, y: side * 0.08)
+    }
 }
 
 private struct ButtonAddToCartDemo: View {
@@ -41,31 +63,64 @@ private struct ButtonAddToCartDemo: View {
     @State private var flights = 0
 
     /// Layout anchors relative to the stage center.
-    private let bagCenter = CGPoint(x: 96, y: -96)
-    private let buttonCenter = CGPoint(x: 0, y: 50)
+    private let bagCenter = CGPoint(x: 104, y: -122)
+    private let buttonCenter = CGPoint(x: 0, y: 62)
+    private let thumbCenter = CGPoint(x: -97, y: -30)
 
     var body: some View {
         ZStack {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(Color.clear)
+                .frame(width: 292, height: 210)
+                .demoCard(cornerRadius: 26)
+                .offset(y: 16)
+            productRow
+                .offset(y: thumbCenter.y)
             bag
                 .offset(x: bagCenter.x, y: bagCenter.y)
             button
                 .offset(x: buttonCenter.x, y: buttonCenter.y)
             if ctx.bool("fly") {
-                flyingDot
+                flyingItem
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["hold"] + 1.6, delay: 0.4) { add() }
     }
 
+    private var productRow: some View {
+        HStack(spacing: 14) {
+            ButtonProductThumb(side: 64)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(ctx.language == .zh ? "降噪头戴耳机" : "Studio Headphones")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                HStack(spacing: 3) {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(Palette.amber)
+                    Text("4.9 · 2.1k")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.caption2.weight(.semibold))
+                Text(ctx.language == .zh ? "¥1,299" : "$199")
+                    .font(.system(.headline, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.primary)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(width: 258)
+    }
+
     private var bag: some View {
         Image(systemName: "bag.fill")
-            .font(.system(size: 34, weight: .semibold))
+            .font(.system(size: 26, weight: .semibold))
             .foregroundStyle(.primary)
             .symbolEffect(.bounce, value: count)
-            .frame(width: 64, height: 64)
+            .frame(width: 56, height: 56)
             .background(Palette.elevated, in: Circle())
             .overlay(Circle().strokeBorder(Palette.stroke))
+            .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
             .overlay(alignment: .topTrailing) {
                 Text("\(count)")
                     .font(.caption.weight(.bold).monospacedDigit())
@@ -102,34 +157,38 @@ private struct ButtonAddToCartDemo: View {
         .buttonStyle(.plain)
     }
 
-    private var flyingDot: some View {
-        let start = buttonCenter
+    /// A mini copy of the product image hops from the card into the bag.
+    private var flyingItem: some View {
+        let start = thumbCenter
         let end = bagCenter
         return KeyframeAnimator(initialValue: ButtonFlyFrame(), trigger: flights) { frame in
-            Circle()
-                .fill(Palette.primary)
-                .frame(width: 22, height: 22)
+            ButtonProductThumb(side: 40)
                 .scaleEffect(frame.scale)
+                .rotationEffect(.degrees(frame.spin))
                 .opacity(frame.opacity)
                 .offset(x: frame.x, y: frame.y)
                 .allowsHitTesting(false)
         } keyframes: { _ in
             KeyframeTrack(\.x) {
                 MoveKeyframe(Double(start.x))
-                CubicKeyframe(Double(end.x), duration: 0.55)
+                CubicKeyframe(Double(end.x), duration: 0.6)
             }
             KeyframeTrack(\.y) {
                 MoveKeyframe(Double(start.y))
-                CubicKeyframe(Double(end.y) - 40, duration: 0.3)
-                CubicKeyframe(Double(end.y), duration: 0.25)
+                CubicKeyframe(Double(end.y) - 44, duration: 0.34)
+                CubicKeyframe(Double(end.y), duration: 0.26)
             }
             KeyframeTrack(\.scale) {
-                MoveKeyframe(1)
-                CubicKeyframe(0.5, duration: 0.55)
+                MoveKeyframe(1.3)
+                CubicKeyframe(0.4, duration: 0.6)
+            }
+            KeyframeTrack(\.spin) {
+                MoveKeyframe(0)
+                CubicKeyframe(18, duration: 0.6)
             }
             KeyframeTrack(\.opacity) {
                 MoveKeyframe(1)
-                LinearKeyframe(1, duration: 0.5)
+                LinearKeyframe(1, duration: 0.52)
                 LinearKeyframe(0, duration: 0.08)
             }
         }
@@ -145,7 +204,7 @@ private struct ButtonAddToCartDemo: View {
         withAnimation(.spring(response: response, dampingFraction: 0.75)) { added = true }
         if fly { flights += 1 }
         Task {
-            try? await Task.sleep(for: .seconds(fly ? 0.55 : 0.2))
+            try? await Task.sleep(for: .seconds(fly ? 0.6 : 0.2))
             withAnimation(.bouncy) { count += 1 }
             if !preview { Haptics.success() }
             try? await Task.sleep(for: .seconds(hold))

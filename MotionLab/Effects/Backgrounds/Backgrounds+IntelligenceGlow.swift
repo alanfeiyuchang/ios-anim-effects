@@ -64,7 +64,7 @@ private struct IntelligenceGlowDemo: View {
     var body: some View {
         ZStack {
             Color(hex: 0x08080D)
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = model.step(now: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"], active: active)
                 GlowRing(t: t, energy: model.energy, width: ctx.cg("width"), colors: GlowPalette.colors(ctx.int("style")))
             }

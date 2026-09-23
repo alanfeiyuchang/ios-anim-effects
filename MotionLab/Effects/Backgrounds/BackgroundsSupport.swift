@@ -24,6 +24,14 @@ enum BackgroundMath {
     static let tau: Double = .pi * 2
 }
 
+/// Frame-rate budget for continuously animating demos (backgrounds, shaders, physics).
+/// Grid previews are small and many run side by side, so they tick at 30 fps; the detail stage runs at full rate.
+enum MotionFrameRate {
+    static func interval(preview: Bool) -> Double? {
+        preview ? 1.0 / 30.0 : nil
+    }
+}
+
 /// Accumulates speed-scaled time, so changing a speed parameter (or easing it) never makes a loop jump.
 final class BackgroundClock {
     private var last: Double?

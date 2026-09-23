@@ -8,8 +8,8 @@ extension Effect {
         name: L("Ink Ripple", "墨水涟漪"),
         summary: L("A soft wave of light spreads from the exact touch point.", "从手指触点扩散开的一圈柔光涟漪。"),
         prompt: L(
-            "A rounded-rectangle button with a sky-to-blue gradient and a faint glossy top highlight. Each tap spawns a translucent white circle exactly at the touch point that expands with an ease-out curve until it covers the farthest corner of the button (about 600 ms), while its opacity fades from 35% to zero on an ease-in over the same duration, so the wave dissolves as it reaches the edges. Ripples are clipped to the button shape and can overlap when tapped rapidly. The button itself dips to 96% and springs back with a bouncy keyframe, plus a light haptic. It feels liquid, precise and responsive to exactly where you touched.",
-            "圆角矩形按钮，天蓝到湛蓝渐变，顶部有一道淡淡的高光。每次点击都会在手指的精确落点生成一个半透明白色圆，以缓出曲线扩散到覆盖按钮最远的角（约 600 毫秒）；透明度在同一时长内以缓入曲线从 35% 渐隐到 0，让涟漪在触及边缘时恰好消散。涟漪被裁切在按钮形状内，快速连点时可相互叠加。按钮本身同时下沉到 96% 并以弹性关键帧回弹，伴随轻触觉。整体如液体般细腻，且精准回应触点位置。"
+            "A rounded-rectangle button with a sky-to-blue gradient and a faint glossy top highlight. Each tap spawns a translucent white circle exactly at the touch point that expands with an ease-out curve until it covers the farthest corner of the button (about 600 ms), while its opacity fades from 35% to zero on an ease-in over the same duration, so the wave dissolves as it reaches the edges. Ripples are clipped to the button shape and can overlap when tapped rapidly. A bright 28 pt glint flashes at the touch point and melts within ~300 ms, while a thin sky-blue outline leaves the button's edge, growing 14 pt outward as it fades. The button itself dips to 96% and springs back with a bouncy keyframe, plus a light haptic. It feels liquid, precise and responsive to exactly where you touched.",
+            "圆角矩形按钮，天蓝到湛蓝渐变，顶部有一道淡淡的高光。每次点击都会在手指的精确落点生成一个半透明白色圆，以缓出曲线扩散到覆盖按钮最远的角（约 600 毫秒）；透明度在同一时长内以缓入曲线从 35% 渐隐到 0，让涟漪在触及边缘时恰好消散。涟漪被裁切在按钮形状内，快速连点时可相互叠加。触点处还会闪现一粒 28pt 的亮光，约 300 毫秒内融化；同时一圈天蓝色细描边从按钮边缘脱离，向外扩出 14pt 并淡出。按钮本身下沉到 96% 并以弹性关键帧回弹，伴随轻触觉。整体如液体般细腻，且精准回应触点位置。"
         ),
         implementation: L(
             "onTapGesture's location closure appends a ripple model; each ripple view animates its own scale and opacity on appear and is removed after the duration, all clipped to the button shape.",
@@ -47,7 +47,13 @@ private struct ButtonInkRippleDemo: View {
         let dip = ctx.bool("bounce") ? 0.96 : 1.0
         VStack(spacing: 0) {
             Spacer()
-            face
+            ZStack {
+                ForEach(ripples) { ripple in
+                    ButtonRippleHalo(size: size, cornerRadius: 20, duration: ctx["duration"] * 1.3)
+                        .id(ripple.id)
+                }
+                face
+            }
                 .keyframeAnimator(initialValue: 1.0, trigger: taps) { content, scale in
                     content.scaleEffect(scale)
                 } keyframes: { _ in
@@ -128,18 +134,48 @@ private struct ButtonRippleCircle: View {
     let peak: Double
     @State private var grown = false
     @State private var faded = false
+    @State private var glintFaded = false
 
     var body: some View {
-        Circle()
-            .fill(Color.white)
-            .frame(width: radius * 2, height: radius * 2)
-            .scaleEffect(grown ? 1 : 0.02)
-            .opacity(faded ? 0 : peak)
-            .position(point)
+        ZStack {
+            Circle()
+                .fill(Color.white)
+                .frame(width: radius * 2, height: radius * 2)
+                .scaleEffect(grown ? 1 : 0.02)
+                .opacity(faded ? 0 : peak)
+            // A small, bright glint marks the exact touch point, then melts away quickly.
+            Circle()
+                .fill(RadialGradient(colors: [Color.white, Color.white.opacity(0)], center: .center, startRadius: 0, endRadius: 14))
+                .frame(width: 28, height: 28)
+                .scaleEffect(glintFaded ? 1.6 : 0.6)
+                .opacity(glintFaded ? 0 : 0.9)
+        }
+        .position(point)
+        .allowsHitTesting(false)
+        .onAppear {
+            withAnimation(.easeOut(duration: duration)) { grown = true }
+            withAnimation(.easeIn(duration: duration)) { faded = true }
+            withAnimation(.easeOut(duration: min(duration * 0.5, 0.35))) { glintFaded = true }
+        }
+    }
+}
+
+/// A thin outline that leaves the button's edge on every tap, like a pressure wave escaping the surface.
+private struct ButtonRippleHalo: View {
+    let size: CGSize
+    let cornerRadius: CGFloat
+    let duration: Double
+    @State private var out = false
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .strokeBorder(Palette.sky.opacity(0.7), lineWidth: 1.5)
+            .frame(width: size.width, height: size.height)
+            .scaleEffect(x: out ? 1 + 28 / size.width : 1, y: out ? 1 + 28 / size.height : 1)
+            .opacity(out ? 0 : 0.8)
             .allowsHitTesting(false)
             .onAppear {
-                withAnimation(.easeOut(duration: duration)) { grown = true }
-                withAnimation(.easeIn(duration: duration)) { faded = true }
+                withAnimation(.easeOut(duration: duration)) { out = true }
             }
     }
 }

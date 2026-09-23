@@ -94,7 +94,7 @@ private struct SparklineStreamDemo: View {
         let interval = ctx["interval"]
         let volatility = ctx["volatility"]
         let showFill = ctx.bool("fill")
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             let phase = model.advance(to: timeline.date, interval: interval, volatility: volatility)
             VStack(spacing: 10) {
                 ForEach(streamStyles.indices, id: \.self) { index in

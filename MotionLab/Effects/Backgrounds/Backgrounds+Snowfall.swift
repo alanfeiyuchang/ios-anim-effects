@@ -52,7 +52,7 @@ private struct SnowfallDemo: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0x141B3A), Color(hex: 0x2E3566), Color(hex: 0x6C6A9E)], startPoint: .top, endPoint: .bottom)
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = model.step(now: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"], simulate: ctx.isPreview)
                 SnowCanvas(t: t, windOffset: model.windOffset, count: ctx.int("count"), scale: ctx.cg("size"))
             }

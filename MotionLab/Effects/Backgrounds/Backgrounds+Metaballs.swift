@@ -77,7 +77,7 @@ private struct MetaballsDemo: View {
     @State private var model = GooModel()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             let now = timeline.date.timeIntervalSinceReferenceDate
             let spin = now * 0.35
             let dx = CGFloat(0.5 * cos(spin))

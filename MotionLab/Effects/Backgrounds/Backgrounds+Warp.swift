@@ -57,7 +57,7 @@ private struct WarpDemo: View {
     @State private var model = WarpModel()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             let now = timeline.date.timeIntervalSinceReferenceDate
             let autoBoost = ctx.isPreview && BackgroundMath.fract(now / 6) > 0.62
             let phase = model.step(now: now, base: ctx["speed"], autoBoost: autoBoost)

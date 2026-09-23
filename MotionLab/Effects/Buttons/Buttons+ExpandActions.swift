@@ -8,8 +8,8 @@ extension Effect {
         name: L("Expanding Action Button", "展开式操作按钮"),
         summary: L("A floating plus rotates into a close and fans out quick actions.", "悬浮加号旋转成关闭按钮，并扇形展开快捷操作。"),
         prompt: L(
-            "A 64 pt circular floating action button with an indigo-violet gradient and a plus glyph. On tap the plus rotates 135° into a close mark while the button dips to 92% and rebounds, and three smaller 50 pt action circles (camera, photo, document), each tinted differently, burst out of its center along a 100 pt arc above it. Each action scales from 30% to 100%, fades in and travels outward on a spring (response 0.4 s, damping 0.7) with a 40 ms stagger, so they unfurl like a fan. Closing reverses the stagger order and tucks them back behind the button. A light haptic accompanies each toggle. Playful yet orderly — contextual actions without leaving the screen.",
-            "直径 64pt 的圆形悬浮操作按钮，靛紫渐变，中间是加号。点击后加号旋转 135° 变成关闭符号，按钮同时下沉到 92% 再回弹；三个 50pt 的小圆形操作（相机、照片、文档，各有不同色调）从按钮中心迸出，沿其上方半径 100pt 的弧线排开。每个操作从 30% 缩放到 100%、同时淡入，以弹簧（响应 0.4 秒、阻尼 0.7）向外移动，彼此错开 40 毫秒，如扇面般依次展开。收起时按相反顺序错峰缩回按钮后方。每次切换都有轻触觉反馈。俏皮又有秩序——无需离开当前页面即可调出情境操作。"
+            "A 64 pt circular floating action button with an indigo-violet gradient and a plus glyph. On tap the plus rotates 135° into a close mark while the button dips to 92% and rebounds, and three smaller 50 pt action circles (camera, photo, document), each tinted differently, burst out of its center along a 100 pt arc above it. Each action scales from 30% to 100%, fades in and travels outward on a spring (response 0.4 s, damping 0.7) with a 40 ms stagger, so they unfurl like a fan. Closing reverses the stagger order and tucks them back behind the button. Meanwhile the content behind (a notes card) recedes — scaling to 95%, blurring 6 pt and dimming to 50% over 350 ms — so the actions are the only thing in focus; tapping it closes the menu. A light haptic accompanies each toggle. Playful yet orderly — contextual actions without leaving the screen.",
+            "直径 64pt 的圆形悬浮操作按钮，靛紫渐变，中间是加号。点击后加号旋转 135° 变成关闭符号，按钮同时下沉到 92% 再回弹；三个 50pt 的小圆形操作（相机、照片、文档，各有不同色调）从按钮中心迸出，沿其上方半径 100pt 的弧线排开。每个操作从 30% 缩放到 100%、同时淡入，以弹簧（响应 0.4 秒、阻尼 0.7）向外移动，彼此错开 40 毫秒，如扇面般依次展开。收起时按相反顺序错峰缩回按钮后方。与此同时，背后的内容（一张笔记卡片）在 350 毫秒内缩到 95%、模糊 6pt 并暗到 50%，让操作项成为唯一焦点；点击背景即可收起。每次切换都有轻触觉反馈。俏皮又有秩序——无需离开当前页面即可调出情境操作。"
         ),
         implementation: L(
             "Each action reads a single open flag and applies its own delayed spring via animation(_:value:), with the delay reversed on close; positions come from polar coordinates on an arc or a vertical stack.",
@@ -45,14 +45,49 @@ private struct ButtonExpandActionsDemo: View {
 
     var body: some View {
         ZStack {
-            ForEach(items.indices, id: \.self) { index in
-                actionButton(index)
+            backdrop
+                .scaleEffect(open ? 0.95 : 1)
+                .blur(radius: open ? 6 : 0)
+                .opacity(open ? 0.5 : 1)
+                .animation(.smooth(duration: 0.35), value: open)
+                .onTapGesture { if open { toggle() } }
+            ZStack {
+                ForEach(items.indices, id: \.self) { index in
+                    actionButton(index)
+                }
+                mainButton
             }
-            mainButton
+            .offset(y: 70)
         }
-        .offset(y: 70)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.5, delay: 0.4) { toggle() }
+    }
+
+    /// Stand-in app content (a notes list) that recedes behind a soft blur while the menu is open,
+    /// so the actions read as the only thing in focus.
+    private var backdrop: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(ctx.language == .zh ? "最近笔记" : "Recent notes")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            ForEach(0..<3, id: \.self) { row in
+                HStack(spacing: 12) {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(items[row].color.opacity(0.18))
+                        .frame(width: 40, height: 40)
+                        .overlay {
+                            Image(systemName: items[row].symbol)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(items[row].color)
+                        }
+                    PlaceholderLines(count: 2)
+                }
+            }
+        }
+        .padding(18)
+        .frame(width: 270)
+        .demoCard()
+        .offset(y: -40)
     }
 
     private var mainButton: some View {

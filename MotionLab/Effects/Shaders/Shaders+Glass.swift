@@ -70,7 +70,7 @@ private struct GlassmorphismDemo: View {
         let nx = Double(drag.width / 140).clamped(to: -1...1)
         let ny = Double(drag.height / 140).clamped(to: -1...1)
         ZStack {
-            ShaderClock { time in
+            ShaderClock(preview: ctx.isPreview) { time in
                 GlassOrbs(time: time, parallax: CGSize(width: -nx * 18, height: -ny * 18))
             }
             glassCard(nx: nx, ny: ny)

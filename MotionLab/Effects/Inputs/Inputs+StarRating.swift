@@ -8,8 +8,8 @@ extension Effect {
         name: L("Star Rating", "星级评分"),
         summary: L("Stars fill in a cascading wave and pop with a bounce.", "星星以波浪式依次点亮并弹跳。"),
         prompt: L(
-            "Five 38 pt stars in a row with a caption beneath. Tapping or scrubbing across sets the rating: newly lit stars fill with a warm amber-to-coral gradient one after another with a 50 ms stagger, each punching up to 135% in 120 ms then settling with a bouncy spring, while stars being cleared shrink to 85% and dim back to a soft outline tint. The caption (\"Terrible\" … \"Amazing!\") swaps with a push transition from below. A selection haptic ticks on every change. The cascade makes a single tap feel like a small celebration while keeping the value unmistakable.",
-            "一排五颗 38pt 星星，下方有一行说明文字。点击或横向拖动设置评分：新点亮的星星以 50 毫秒错峰依次填充琥珀到珊瑚色渐变，每颗先在 120 毫秒内弹到 135%，再以弹性弹簧回落；被取消的星星缩到 85% 并褪回柔和的空心色。说明文字（“很差”……“太棒了！”）以自下而上的推入过渡切换。每次评分变化触发一次选择触觉。依次点亮的节奏让一次点击也像一场小小的庆祝，同时数值一目了然。"
+            "A review card (\"How was your stay?\") with five 36 pt stars, a caption and a Submit button. Tapping or scrubbing across sets the rating: newly lit stars fill with a warm amber-to-coral gradient one after another with a 50 ms stagger, each punching up to 135% in 120 ms then settling with a bouncy spring, while stars being cleared shrink to 85% and dim back to a soft outline tint. The caption (\"Terrible\" … \"Amazing!\") swaps with a push transition from below. The Submit capsule wakes from a faint tint to a warm sunset gradient once any star is set. A selection haptic ticks on every change. The cascade makes a single tap feel like a small celebration while keeping the value unmistakable.",
+            "一张评价卡片（“这次入住体验如何？”）：五颗 36pt 星星、一行说明文字与“提交评价”按钮。点击或横向拖动设置评分：新点亮的星星以 50 毫秒错峰依次填充琥珀到珊瑚色渐变，每颗先在 120 毫秒内弹到 135%，再以弹性弹簧回落；被取消的星星缩到 85% 并褪回柔和的空心色。说明文字（“很差”……“太棒了！”）以自下而上的推入过渡切换。一旦有评分，“提交评价”胶囊就从淡灰底色唤醒为温暖的日落渐变。每次评分变化触发一次选择触觉。依次点亮的节奏让一次点击也像一场小小的庆祝，同时数值一目了然。"
         ),
         implementation: L(
             "A zero-distance DragGesture maps x-position to a rating; each star runs a keyframeAnimator on the change trigger with an index-based delay, and a gradient layer fades in with the same delay via animation(_:value:).",
@@ -33,7 +33,7 @@ private struct InputStarRatingDemo: View {
     @State private var changes = 0
     @State private var step = 0
 
-    private let starSize: CGFloat = 38
+    private let starSize: CGFloat = 36
     private let spacing: CGFloat = 12
     private static let previewRatings = [4, 2, 5, 3, 1]
 
@@ -49,22 +49,56 @@ private struct InputStarRatingDemo: View {
     }
 
     var body: some View {
-        VStack(spacing: 22) {
+        VStack(spacing: 0) {
             Spacer()
+            card
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .autoplay(ctx.isPreview, every: 1.3, delay: 0.4) { previewTick() }
+    }
+
+    private var card: some View {
+        VStack(spacing: 18) {
+            HStack(spacing: 12) {
+                Image(systemName: "mountain.2.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Palette.ocean, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("How was your stay?", "这次入住体验如何？"), ctx.language)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text(L("Alpine Lodge · 2 nights", "高山小屋 · 2 晚"), ctx.language)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
             stars
             ZStack {
                 Text(captions[rating], ctx.language)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(rating == 0 ? Color.secondary : Color.primary)
                     .id(rating)
                     .transition(.push(from: .bottom))
             }
             .animation(.snappy, value: rating)
             .clipped()
-            Spacer()
+            Text(L("Submit review", "提交评价"), ctx.language)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(rating > 0 ? Color.white : Color.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background {
+                    Capsule().fill(rating > 0 ? AnyShapeStyle(Palette.sunset) : AnyShapeStyle(Color.primary.opacity(0.06)))
+                }
+                .animation(.smooth(duration: 0.3), value: rating > 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.3, delay: 0.4) { previewTick() }
+        .padding(18)
+        .frame(width: 316)
+        .demoCard(cornerRadius: 24)
     }
 
     private var stars: some View {

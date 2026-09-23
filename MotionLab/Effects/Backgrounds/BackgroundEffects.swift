@@ -17,5 +17,8 @@ enum BackgroundEffects {
         .backgroundsLavaLamp,
         .backgroundsRain,
         .backgroundsSnowfall,
+        .backgroundsGrainGradient,
+        .backgroundsConstellation,
+        .backgroundsFlowField,
     ]
 }

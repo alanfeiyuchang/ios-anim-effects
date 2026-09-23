@@ -61,6 +61,12 @@ private struct CardsFanDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.3) { autoAdvance() }
+        .task {
+            // In the detail stage, deal the fan once on arrival so the stage never opens on a static pile.
+            guard !ctx.isPreview else { return }
+            try? await Task.sleep(for: .seconds(0.55))
+            if !Task.isCancelled && !fanned { fanned = true }
+        }
     }
 
     private func card(_ i: Int) -> some View {

@@ -70,6 +70,12 @@ private struct CardsPeekDemo: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Long-press a tile", "长按任一卡片"), ctx: ctx)
+                .opacity(peeked == nil ? 1 : 0)
+                .padding(.bottom, 10)
+                .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 1.6) { autoAdvance() }
     }
 

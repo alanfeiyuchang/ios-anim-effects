@@ -14,5 +14,8 @@ enum ButtonEffects {
         .buttonsNeonBreath,
         .buttonsSpotlight,
         .buttonsExpandActions,
+        .buttonsFollowMorph,
+        .buttonsLabelRoll,
+        .buttonsGooeySplit,
     ]
 }

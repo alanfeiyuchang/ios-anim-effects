@@ -84,7 +84,7 @@ private struct GooeyDemo: View {
 
         LinearGradient(colors: [Palette.mint, Palette.sky, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
             .mask {
-                TimelineView(.animation) { timeline in
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                     Canvas { context, size in
                         if isPreview {
                             let t = timeline.date.timeIntervalSinceReferenceDate

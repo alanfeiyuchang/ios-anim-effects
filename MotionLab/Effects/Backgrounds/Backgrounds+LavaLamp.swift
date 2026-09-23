@@ -43,7 +43,7 @@ private struct LavaLampDemo: View {
                 startRadius: 0,
                 endRadius: 280
             )
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
                 LinearGradient(
                     colors: [Color(hex: 0xFFD36B), Color(hex: 0xFF8A3D), Color(hex: 0xFF3C7A)],

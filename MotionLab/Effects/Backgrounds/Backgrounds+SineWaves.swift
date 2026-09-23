@@ -44,7 +44,7 @@ private struct SineWavesDemo: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: sky, startPoint: .top, endPoint: .bottom)
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t = clock.advance(to: timeline.date.timeIntervalSinceReferenceDate, speed: ctx["speed"])
                 WaveCanvas(t: t, layers: ctx.int("layers"), amplitude: ctx.cg("amplitude"), dark: scheme == .dark)
             }

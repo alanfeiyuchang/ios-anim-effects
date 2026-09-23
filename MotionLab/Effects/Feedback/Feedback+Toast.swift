@@ -116,8 +116,8 @@ extension Effect {
         name: L("Island Expansion", "灵动岛展开"),
         summary: L("A black pill that stretches into a rich live-activity card.", "黑色胶囊弹性伸展为信息丰富的实时活动卡片。"),
         prompt: L(
-            "A pure-black 124 × 36 pt pill sits at the top center, showing a tiny tinted glyph on the left and a mini progress ring on the right. On tap it stretches into a 300 × 84 pt continuous-corner card (corner radius 19 → 34 pt) on an under-damped spring (response 0.5 s, damping 0.72), overshooting slightly in both width and height like elastic material, while its shadow deepens. The compact glyphs fade out immediately; the expanded content — a 44 pt icon, title, subtitle and a larger ring — fades in 120 ms later from a 6 pt blur and 90% scale. Tapping again reverses it with the content leaving first. Organic, fluid and alive.",
-            "顶部居中是一枚纯黑 124 × 36 pt 胶囊，左侧显示着色小图标，右侧是一枚迷你进度环。点击后它以欠阻尼弹簧（响应 0.5 秒、阻尼 0.72）伸展为 300 × 84 pt 的连续圆角卡片（圆角 19 → 34 pt），宽高都带轻微过冲，像有弹性的材质，投影同时加深。紧凑态图标立即淡出；展开内容——44 pt 图标、标题、副标题与更大的进度环——延迟 120 毫秒后从 6 pt 模糊、90% 缩放中浮现。再次点击则反向收回，内容先行退场。有机、流畅、充满生命力。"
+            "On a 316 × 300 pt lock screen (gradient wallpaper, date, large rounded 9:41 clock, flashlight and camera buttons), a pure-black 124 × 36 pt pill sits at the top center, showing a tiny tinted glyph on the left and a mini progress ring on the right. On tap it stretches into a 300 × 84 pt continuous-corner card (corner radius 19 → 34 pt) on an under-damped spring (response 0.5 s, damping 0.72), overshooting slightly in both width and height like elastic material, while its shadow deepens. The compact glyphs fade out immediately; the expanded content — a 44 pt icon, title, subtitle and a larger ring — fades in 120 ms later from a 6 pt blur and 90% scale. Tapping again reverses it with the content leaving first. Organic, fluid and alive.",
+            "在一块 316 × 300 pt 的锁屏上（渐变壁纸、日期、大号圆体 9:41 时钟、手电筒与相机按钮），顶部居中是一枚纯黑 124 × 36 pt 胶囊，左侧显示着色小图标，右侧是一枚迷你进度环。点击后它以欠阻尼弹簧（响应 0.5 秒、阻尼 0.72）伸展为 300 × 84 pt 的连续圆角卡片（圆角 19 → 34 pt），宽高都带轻微过冲，像有弹性的材质，投影同时加深。紧凑态图标立即淡出；展开内容——44 pt 图标、标题、副标题与更大的进度环——延迟 120 毫秒后从 6 pt 模糊、90% 缩放中浮现。再次点击则反向收回，内容先行退场。有机、流畅、充满生命力。"
         ),
         implementation: L(
             "A RoundedRectangle's frame and corner radius animate on a spring; compact and expanded layers cross-fade with separate delayed animations.",
@@ -156,13 +156,19 @@ private struct IslandDemo: View {
 
     var body: some View {
         let activity = IslandActivity.all[min(max(ctx.int("content"), 0), IslandActivity.all.count - 1)]
-        VStack(spacing: 0) {
-            IslandPill(expanded: expanded, activity: activity, language: ctx.language)
-                .onTapGesture { toggle() }
-                .padding(.top, 34)
-            Spacer()
+        let screen = RoundedRectangle(cornerRadius: 44, style: .continuous)
+        VStack(spacing: 14) {
+            ZStack(alignment: .top) {
+                IslandLockScreen(language: ctx.language)
+                IslandPill(expanded: expanded, activity: activity, language: ctx.language)
+                    .onTapGesture { toggle() }
+                    .padding(.top, 11)
+            }
+            .frame(width: 316, height: 300)
+            .clipShape(screen)
+            .overlay { screen.strokeBorder(Color.black.opacity(0.12), lineWidth: 1) }
+            .shadow(color: Color(hex: 0x4B3AA8).opacity(0.28), radius: 24, y: 14)
             DemoHint(text: L("Tap the island", "点击灵动岛"), ctx: ctx)
-                .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.2, delay: 0.6) { toggle() }
@@ -171,6 +177,47 @@ private struct IslandDemo: View {
     private func toggle() {
         if !ctx.isPreview { Haptics.tap(.soft) }
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { expanded.toggle() }
+    }
+}
+
+/// Lock-screen wallpaper, clock and quick buttons so the island has a real home.
+private struct IslandLockScreen: View {
+    let language: AppLanguage
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(hex: 0x2B2F77), Color(hex: 0x6E4BD8), Color(hex: 0xE86BB0)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            RadialGradient(colors: [.white.opacity(0.28), .clear], center: UnitPoint(x: 0.85, y: 0.1), startRadius: 0, endRadius: 220)
+            VStack(spacing: 0) {
+                Text(language == .zh ? "9月23日 星期三" : "Wednesday, September 23")
+                    .font(.subheadline.weight(.semibold))
+                Text(verbatim: "9:41")
+                    .font(.system(size: 66, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                Spacer(minLength: 0)
+                HStack {
+                    quickButton("flashlight.off.fill")
+                    Spacer()
+                    quickButton("camera.fill")
+                }
+                .padding(.horizontal, 26)
+                .padding(.bottom, 20)
+            }
+            .foregroundStyle(.white.opacity(0.92))
+            .padding(.top, 108)
+        }
+    }
+
+    private func quickButton(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 44, height: 44)
+            .background(Color.black.opacity(0.28), in: Circle())
     }
 }
 

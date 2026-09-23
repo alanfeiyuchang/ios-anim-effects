@@ -292,14 +292,14 @@ extension Effect {
         name: L("Indeterminate Bar", "不确定进度条"),
         summary: L("Two segments race across a track with offset easing.", "两段色条以错位缓动在轨道上追逐。"),
         prompt: L(
-            "A 240 × 5 pt capsule track under a 'Connecting…' caption. Within each 1.8 s cycle a first segment sweeps from off-screen left to off-screen right over 65% of the cycle, its head and tail on staggered cubic ease-in-out curves so it stretches to about a third of the track mid-flight and compresses at the edges; at 45% a second segment launches with an ease-out head and ease-in tail, shooting out into a long streak that spans nearly the whole track before its tail whips after it. Both are filled with the brand gradient, clipped to the track, and cast a soft colored glow. The overlapping rhythm signals 'working' without implying a duration.",
-            "“正在连接…”说明文字下方是一条 240 × 5 pt 的胶囊轨道。每个 1.8 秒周期内，第一段色条用周期的 65% 从左侧画外扫到右侧画外，头尾分别走错开的三次缓入缓出曲线，行至中段拉长到约三分之一轨道、到两端又被压缩；周期进行到 45% 时第二段出发，头部缓出、尾部缓入，先猛地拉成几乎横贯整条轨道的长光带，尾部再“嗖”地追上。两段都填充品牌渐变、裁切在轨道内，并带有柔和的彩色辉光。交错的节奏传达“正在处理”，却不暗示具体时长。"
+            "A 240 × 5 pt capsule track in a floating card, under a 42 pt gradient Wi-Fi tile whose arcs light up one by one (iterative variable color), a 'Joining “Studio 5G”' title and a 'Connecting…' caption. Within each 1.8 s cycle a first segment sweeps from off-screen left to off-screen right over 65% of the cycle, its head and tail on staggered cubic ease-in-out curves so it stretches to about a third of the track mid-flight and compresses at the edges; at 45% a second segment launches with an ease-out head and ease-in tail, shooting out into a long streak that spans nearly the whole track before its tail whips after it. Both are filled with the brand gradient, clipped to the track, and cast a soft colored glow. The overlapping rhythm signals 'working' without implying a duration.",
+            "悬浮卡片里，一枚 42 pt 渐变 Wi-Fi 图块（信号弧逐格点亮的可变色符号动画）、“加入 “Studio 5G””标题与“正在连接…”说明的下方，是一条 240 × 5 pt 的胶囊轨道。每个 1.8 秒周期内，第一段色条用周期的 65% 从左侧画外扫到右侧画外，头尾分别走错开的三次缓入缓出曲线，行至中段拉长到约三分之一轨道、到两端又被压缩；周期进行到 45% 时第二段出发，头部缓出、尾部缓入，先猛地拉成几乎横贯整条轨道的长光带，尾部再“嗖”地追上。两段都填充品牌渐变、裁切在轨道内，并带有柔和的彩色辉光。交错的节奏传达“正在处理”，却不暗示具体时长。"
         ),
         implementation: L(
-            "A TimelineView computes eased head/tail fractions for two segments and positions capsules inside a clipped track.",
-            "TimelineView 为两段色条计算缓动后的头尾位置，并在裁切后的轨道内摆放胶囊。"
+            "A TimelineView computes eased head/tail fractions for two segments and positions capsules inside a clipped track; the Wi-Fi glyph runs symbolEffect(.variableColor.iterative).",
+            "TimelineView 为两段色条计算缓动后的头尾位置，并在裁切后的轨道内摆放胶囊；Wi-Fi 图标使用 symbolEffect(.variableColor.iterative)。"
         ),
-        apis: ["TimelineView", "clipShape(Capsule())", "offset(x:)", "shadow"],
+        apis: ["TimelineView", "clipShape(Capsule())", "offset(x:)", "symbolEffect(.variableColor)"],
         tags: ["indeterminate", "linear", "progress", "material", "不确定", "线性进度", "连接中", "加载条"],
         params: [
             .slider("period", L("Cycle", "周期"), 1.0...3.5, default: 1.8, decimals: 1, unit: "s"),
@@ -315,14 +315,23 @@ private struct IndeterminateDemo: View {
     private let width: CGFloat = 240
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .foregroundStyle(Palette.indigo)
-                Text(ctx.language == .zh ? "正在连接…" : "Connecting…")
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 12) {
+                Image(systemName: "wifi")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .symbolEffect(.variableColor.iterative, isActive: true)
+                    .frame(width: 42, height: 42)
+                    .background(Palette.primary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .shadow(color: Palette.indigo.opacity(0.3), radius: 8, y: 4)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(ctx.language == .zh ? "加入 “Studio 5G”" : "Joining “Studio 5G”")
+                        .font(.subheadline.weight(.semibold))
+                    Text(ctx.language == .zh ? "正在连接…" : "Connecting…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
-            .font(.subheadline.weight(.semibold))
             IndeterminateTrack(period: ctx["period"], width: width, height: ctx.cg("height"))
         }
         .frame(width: width)

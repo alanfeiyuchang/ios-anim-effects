@@ -137,7 +137,7 @@ private struct ButtonRollingLabel: View {
                 .frame(height: lineHeight)
                 .offset(y: rolled ? -lineHeight * direction : 0)
                 .animation(
-                    rolled ? .spring(response: response, dampingFraction: 0.85).delay(Double(index) * stagger) : nil,
+                    rolled ? Animation.spring(response: response, dampingFraction: 0.85).delay(Double(index) * stagger) : nil,
                     value: rolled
                 )
             }
@@ -154,7 +154,7 @@ private struct ButtonRollingArrow: View {
     let response: Double
 
     var body: some View {
-        let animation: Animation? = rolled ? .spring(response: response, dampingFraction: 0.85).delay(delay) : nil
+        let animation: Animation? = rolled ? Animation.spring(response: response, dampingFraction: 0.85).delay(delay) : nil
         ZStack {
             Image(systemName: "arrow.right")
                 .offset(x: rolled ? 22 : 0)

@@ -10,8 +10,8 @@ extension Effect {
         name: L("Badge Bounce", "角标弹跳"),
         summary: L("A notification badge that hops and rolls its number on every change.", "通知角标随数字变化弹跳并滚动计数。"),
         prompt: L(
-            "An 84 pt app tile with a white bell glyph carries a red capsule badge at its top-right corner, outlined by a 2.5 pt ring in the background color so it cuts cleanly out of the tile. Each new notification makes the bell wiggle, the badge hop up 6 pt and swell to 135% in 120 ms, then drop back with a bouncy spring, while the digits roll vertically to the new value and the capsule widens smoothly for two-digit counts. Clearing scales the badge down to nothing; the first notification pops it back in from zero. Playful, legible and instantly noticeable.",
-            "一枚 84 pt 的应用图块，中间是白色铃铛图标，右上角挂着红色胶囊角标，外圈有一道 2.5 pt 的背景色描边，使其干净地“切”出图块。每来一条新通知，铃铛左右摇晃，角标在 120 毫秒内上跳 6 pt 并膨胀到 135%，再以弹性弹簧落回；数字同时纵向滚动到新值，两位数时胶囊宽度平滑变宽。清零时角标缩小至消失，第一条通知到来时再从零弹出。俏皮、清晰、一眼可见。"
+            "An 84 pt app tile with a white bell glyph carries a red capsule badge at its top-right corner, outlined by a 2.5 pt ring in the background color so it cuts cleanly out of the tile. Each new notification makes the bell wiggle, the badge hop up 6 pt and swell to 135% in 120 ms, then drop back with a bouncy spring while a thin red ring radiates from it to 210% and fades over 0.55 s; the digits roll vertically to the new value and the capsule widens smoothly for two-digit counts. Clearing scales the badge down to nothing; the first notification pops it back in from zero. Playful, legible and instantly noticeable.",
+            "一枚 84 pt 的应用图块，中间是白色铃铛图标，右上角挂着红色胶囊角标，外圈有一道 2.5 pt 的背景色描边，使其干净地“切”出图块。每来一条新通知，铃铛左右摇晃，角标在 120 毫秒内上跳 6 pt 并膨胀到 135%，再以弹性弹簧落回，同时一圈细红光环从角标向外扩散到 210% 并在 0.55 秒内消散；数字纵向滚动到新值，两位数时胶囊宽度平滑变宽。清零时角标缩小至消失，第一条通知到来时再从零弹出。俏皮、清晰、一眼可见。"
         ),
         implementation: L(
             "keyframeAnimator keyed on the count drives the hop and swell; contentTransition(.numericText) rolls the digits and symbolEffect(.wiggle) shakes the bell.",
@@ -31,6 +31,8 @@ extension Effect {
 private struct BadgePop {
     var scale: CGFloat = 1
     var y: CGFloat = 0
+    var ring: CGFloat = 1
+    var ringOpacity: Double = 0
 }
 
 private struct BadgeDemo: View {
@@ -123,6 +125,12 @@ private struct BadgeTile: View {
                 content
                     .scaleEffect(pop.scale)
                     .offset(y: pop.y)
+                    .background {
+                        Capsule()
+                            .stroke(Palette.red, lineWidth: 2)
+                            .scaleEffect(pop.ring)
+                            .opacity(pop.ringOpacity)
+                    }
             } keyframes: { _ in
                 KeyframeTrack(\.scale) {
                     CubicKeyframe(swell, duration: 0.12)
@@ -131,6 +139,14 @@ private struct BadgeTile: View {
                 KeyframeTrack(\.y) {
                     CubicKeyframe(-6, duration: 0.12)
                     SpringKeyframe(0, duration: 0.5, spring: Spring(duration: 0.5, bounce: bounce))
+                }
+                KeyframeTrack(\.ring) {
+                    MoveKeyframe(1)
+                    CubicKeyframe(2.1, duration: 0.55)
+                }
+                KeyframeTrack(\.ringOpacity) {
+                    MoveKeyframe(0.7)
+                    CubicKeyframe(0, duration: 0.55)
                 }
             }
     }
@@ -146,8 +162,8 @@ extension Effect {
         name: L("Stacked Notifications", "堆叠通知"),
         summary: L("New banners drop onto a depth stack that fans out when tapped.", "新通知落入有纵深的堆叠，点击即展开成列表。"),
         prompt: L(
-            "Notification banners — 18 pt continuous-corner cards with an app glyph, app name, 'now' timestamp and a one-line message — rest in a collapsed stack: each card behind the front one is offset 11 pt down, scaled 5% smaller and dimmed 20% more, so only slivers peek out. A new banner drops in from 80 pt above, scaling from 92% and fading in on a spring (response 0.5 s, damping 0.78), pushing the others one step back; the oldest dissolves once more than three exist. Tapping the stack fans the cards out into a full list with 10 pt gaps on the same spring, and tapping again folds them back. Layered, orderly and tactile.",
-            "通知横幅——18 pt 连续圆角卡片，包含应用图标、应用名、“现在”时间戳与一行消息——平时收拢成一叠：前卡之后的每张卡片下移 11 pt、缩小 5%、再暗 20%，只露出细细的边缘。新横幅从上方 80 pt 处落入，同时从 92% 放大并淡入，弹簧参数为响应 0.5 秒、阻尼 0.78，把其余卡片各往后推一层；超过三张时最旧的一张溶解消失。点击堆叠，卡片以同样的弹簧展开成间距 10 pt 的完整列表，再次点击则收拢回去。层次分明、井然有序、富有触感。"
+            "Notification banners — 18 pt continuous-corner cards with an app glyph, app name, 'now' timestamp and a one-line message — rest in a collapsed stack: each card behind the front one is offset 11 pt down, scaled 5% smaller and dimmed 20% more, so only slivers peek out. A new banner drops in from 80 pt above, scaling from 92% and fading in on a spring (response 0.5 s, damping 0.78), pushing the others one step back; the oldest dissolves once more than three exist. Tapping the stack fans the cards out into a full list with 10 pt gaps on the same spring — the container grows with them so the controls below glide down — and tapping again folds them back. Layered, orderly and tactile.",
+            "通知横幅——18 pt 连续圆角卡片，包含应用图标、应用名、“现在”时间戳与一行消息——平时收拢成一叠：前卡之后的每张卡片下移 11 pt、缩小 5%、再暗 20%，只露出细细的边缘。新横幅从上方 80 pt 处落入，同时从 92% 放大并淡入，弹簧参数为响应 0.5 秒、阻尼 0.78，把其余卡片各往后推一层；超过三张时最旧的一张溶解消失。点击堆叠，卡片以同样的弹簧展开成间距 10 pt 的完整列表，容器随之增高、下方按钮一同顺滑下移；再次点击则收拢回去。层次分明、井然有序、富有触感。"
         ),
         implementation: L(
             "A ZStack of cards derives offset, scale, opacity and zIndex from each card's index; insertion uses an asymmetric offset + scale + opacity transition.",
@@ -200,7 +216,8 @@ private struct StackedBannersDemo: View {
     var body: some View {
         VStack(spacing: 18) {
             stack
-                .frame(width: 300, height: cardHeight * 3 + 24, alignment: .top)
+                // The frame grows with the fan-out, so the button below reflows on the same spring.
+                .frame(width: 300, height: expanded ? cardHeight * 3 + 24 : cardHeight + ctx.cg("peek") * 2 + 10, alignment: .top)
                 .contentShape(Rectangle())
                 .onTapGesture { toggle() }
             HStack(spacing: 12) {

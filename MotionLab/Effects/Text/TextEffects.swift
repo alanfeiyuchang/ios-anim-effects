@@ -14,5 +14,8 @@ enum TextEffects {
         .textFlipIn,
         .textHighlighter,
         .textMarquee,
+        .textLyrics,
+        .textMaskedLines,
+        .textCircularBadge,
     ]
 }

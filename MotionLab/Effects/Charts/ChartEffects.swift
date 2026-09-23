@@ -11,5 +11,8 @@ enum ChartEffects {
         .chartsSparklineStream,
         .chartsBarRace,
         .chartsRadarMorph,
+        .chartsRangeMorph,
+        .chartsLiquidFill,
+        .chartsDonutToBars,
     ]
 }

@@ -14,5 +14,8 @@ enum InputEffects {
         .inputsChipSelect,
         .inputsPasswordStrength,
         .inputsExpandingSearch,
+        .inputsElasticSlider,
+        .inputsSwatchPicker,
+        .inputsPasscodePad,
     ]
 }

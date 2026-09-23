@@ -100,7 +100,7 @@ private struct ButtonGooeySplitDemo: View {
                     .offset(x: open ? action.side * spread : 0)
                     .scaleEffect(open ? 1 : 0.3)
                     .opacity(open ? 1 : 0)
-                    .animation(open ? spring.delay(0.08) : .easeIn(duration: 0.12), value: open)
+                    .animation(open ? spring.delay(0.08) : Animation.easeIn(duration: 0.12), value: open)
             }
         }
         .frame(width: 320, height: 110)

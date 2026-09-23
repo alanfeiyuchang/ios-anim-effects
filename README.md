@@ -9,7 +9,7 @@ and a professional **prompt** (written separately in English and Chinese) that d
 
 ## Features · 功能
 
-- **14 categories · 14 个分类**: Buttons, Inputs & Controls, Loading & Progress, Feedback & Alerts,
+- **196 effects in 15 categories · 15 个分类共 196 个动效**: Signature Interactions (dark premium widget cards · 质感交互精选), Buttons, Inputs & Controls, Loading & Progress, Feedback & Alerts,
   Transitions & Morphing, Navigation & Menus, Cards, Scroll & Lists, Text & Numbers, Icons & Symbols,
   Gestures & Physics, Data & Charts, Backgrounds & Ambience, Shaders & Materials.
 - **Live previews · 实时预览**: every card in a grid plays its own animation. Tap-driven demos autoplay in thumbnails.
@@ -21,6 +21,15 @@ and a professional **prompt** (written separately in English and Chinese) that d
   full-text search across names, summaries, APIs and bilingual tags, favorites, and a "surprise me" dice.
 - **Bilingual UI · 中英双语**: switch language at runtime in Settings; light / dark / system appearance.
 - **iOS 18 zoom navigation transition** from each card into its detail page.
+
+## Screenshots · 截图
+
+| Browse | Category | Detail |
+|---|---|---|
+| ![](docs/screenshots/home/browse-zh-light.jpg) | ![](docs/screenshots/category/showcase.jpg) | ![](docs/screenshots/effect/showcase.slide-to-start.jpg) |
+| ![](docs/screenshots/home/browse-en-dark.jpg) | ![](docs/screenshots/category/backgrounds.jpg) | ![](docs/screenshots/effect/charts.kpi-count-up.jpg) |
+
+All screens and every effect: [`docs/screenshots/`](docs/screenshots). Sign-off report: [`docs/SIGNOFF.md`](docs/SIGNOFF.md).
 
 ## Requirements · 环境要求
 

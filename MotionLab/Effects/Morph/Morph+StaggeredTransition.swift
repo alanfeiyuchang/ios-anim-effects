@@ -92,8 +92,16 @@ private struct StaggeredTransitionDemo: View {
             .buttonStyle(.plain)
         }
         .padding(18)
+        .padding(.top, 32) // clear the stage's reset button
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.0, delay: 0.3) { toggle() }
+        .task {
+            // Play the entrance once on the detail page so the stage doesn't open empty.
+            guard !ctx.isPreview else { return }
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled, !shown else { return }
+            withAnimation(.spring(response: ctx["response"], dampingFraction: 0.82)) { shown = true }
+        }
     }
 
     private func transition(for index: Int) -> AnyTransition {

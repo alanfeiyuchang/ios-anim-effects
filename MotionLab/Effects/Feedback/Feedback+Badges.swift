@@ -226,7 +226,12 @@ private struct StackedBannersDemo: View {
     private var stack: some View {
         ZStack(alignment: .top) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                BannerCard(sample: BannerSample.all[item.id % BannerSample.all.count], language: ctx.language)
+                BannerCard(
+                    sample: BannerSample.all[item.id % BannerSample.all.count],
+                    language: ctx.language,
+                    // Collapsed back cards are blank plates; otherwise their icons peek out under the front card.
+                    showsContent: expanded || index == 0
+                )
                     .frame(height: cardHeight)
                     .scaleEffect(expanded ? 1 : 1 - 0.05 * CGFloat(index), anchor: .top)
                     .brightness(expanded ? 0 : -0.04 * Double(index))
@@ -261,6 +266,7 @@ private struct StackedBannersDemo: View {
 private struct BannerCard: View {
     let sample: BannerSample
     let language: AppLanguage
+    var showsContent: Bool = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -284,6 +290,7 @@ private struct BannerCard: View {
                     .lineLimit(1)
             }
         }
+        .opacity(showsContent ? 1 : 0)
         .padding(.horizontal, 13)
         .frame(maxHeight: .infinity)
         .background(Palette.elevated, in: RoundedRectangle(cornerRadius: 18, style: .continuous))

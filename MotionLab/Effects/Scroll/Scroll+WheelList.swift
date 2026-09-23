@@ -12,10 +12,10 @@ extension Effect {
             "一列城市名称（行高 44 pt，22 pt 圆体字）被塑造成可转动的滚筒。位于中心的一行平正、加粗、完全不透明，落在一条含蓄的圆角选中带内；越远离中心的行绕水平轴以透视向后倾斜，最多约 60°，同时最多缩小 12% 并淡出到约 25% 透明度，整列看起来就像圆柱表面。滚动时总有一行精确吸附到选中带中，每次切换选中项都伴随选择触感，上方标签随之更新为所选城市。点击某行会将其滚入选中带。精准、机械、富有触感，就像 iOS 的时间选择器。"
         ),
         implementation: L(
-            "Each row's visualEffect maps its distance from the fixed viewport center to rotation3DEffect, scale and opacity; vertical contentMargins plus scrollTargetBehavior(.viewAligned) and scrollPosition(id:) handle snapping and selection, with sensoryFeedback(.selection).",
-            "每行的 visualEffect 将其到固定视口中心的距离映射为 rotation3DEffect、缩放与透明度；纵向 contentMargins 配合 scrollTargetBehavior(.viewAligned) 与 scrollPosition(id:) 实现吸附与选中，并通过 sensoryFeedback(.selection) 提供触感。"
+            "Each row's visualEffect maps its distance from the fixed viewport center to rotation3DEffect, scale and opacity; spacer padding centers the first and last rows, a custom ScrollTargetBehavior snaps the offset to whole rows, onScrollGeometryChange derives the selection and ScrollPosition drives programmatic scrolls, with sensoryFeedback(.selection).",
+            "每行的 visualEffect 将其到固定视口中心的距离映射为 rotation3DEffect、缩放与透明度；上下留白让首尾行也能居中，自定义 ScrollTargetBehavior 将偏移吸附到整行，onScrollGeometryChange 推算选中项，ScrollPosition 负责程序化滚动，并通过 sensoryFeedback(.selection) 提供触感。"
         ),
-        apis: ["visualEffect", "rotation3DEffect", "scrollTargetBehavior(.viewAligned)", "scrollPosition(id:)", "sensoryFeedback"],
+        apis: ["visualEffect", "rotation3DEffect", "ScrollTargetBehavior", "onScrollGeometryChange", "ScrollPosition", "sensoryFeedback"],
         tags: ["wheel", "picker", "drum", "3D list", "滚轮", "选择器", "滚筒", "三维列表"],
         params: [
             .slider("curve", L("Curvature", "弯曲度"), 0...80, default: 60, step: 1, decimals: 0, unit: "°"),
@@ -33,9 +33,19 @@ private let scrollWheelCities: [LocalizedText] = [
     L("Dubai", "迪拜"), L("Rome", "罗马"),
 ]
 
+/// Snaps the resting offset to a whole row, so one row always lands in the band.
+private struct ScrollWheelSnap: ScrollTargetBehavior {
+    let rowHeight: CGFloat
+
+    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
+        target.rect.origin.y = (target.rect.minY / rowHeight).rounded() * rowHeight
+    }
+}
+
 private struct ScrollWheelDemo: View {
     let ctx: DemoContext
-    @State private var current: Int? = 4
+    @State private var current = 4
+    @State private var position = ScrollPosition(edge: .top)
     @State private var direction = 1
 
     private let rowHeight: CGFloat = 44
@@ -46,7 +56,7 @@ private struct ScrollWheelDemo: View {
             HStack(spacing: 6) {
                 Image(systemName: "airplane.departure")
                     .foregroundStyle(Palette.primary)
-                Text(scrollWheelCities[current ?? 0], ctx.language)
+                Text(scrollWheelCities[current], ctx.language)
                     .contentTransition(.interpolate)
                     .animation(.snappy, value: current)
             }
@@ -58,10 +68,16 @@ private struct ScrollWheelDemo: View {
         .autoplay(ctx.isPreview, every: 1.3) { advance() }
     }
 
+    // Plain spacer padding (instead of contentMargins) keeps the scroll offset,
+    // the `.scrollView` coordinate space and the snapping all in one frame of
+    // reference: at offset `i * rowHeight`, row `i` sits exactly in the band.
     private var wheel: some View {
         let curve = ctx["curve"]
         let fade = ctx["fade"]
         let height = viewport
+        let pad = (viewport - rowHeight) / 2
+        let count = scrollWheelCities.count
+        let row = rowHeight
         return ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(scrollWheelCities.indices, id: \.self) { i in
@@ -80,17 +96,20 @@ private struct ScrollWheelDemo: View {
                                 .scaleEffect(1 - abs(t) * 0.12)
                                 .opacity(1 - Double(abs(t)) * fade)
                         }
-                        .id(i)
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { current = i }
-                        }
+                        .onTapGesture { select(i) }
                 }
             }
-            .scrollTargetLayout()
+            .padding(.vertical, pad)
         }
-        .contentMargins(.vertical, (viewport - rowHeight) / 2, for: .scrollContent)
-        .scrollTargetBehavior(.viewAligned)
-        .scrollPosition(id: $current, anchor: .center)
+        .scrollTargetBehavior(ScrollWheelSnap(rowHeight: rowHeight))
+        .scrollPosition($position)
+        .onScrollGeometryChange(for: Int.self, of: { geometry in
+            let offset = geometry.contentOffset.y + geometry.contentInsets.top
+            return Int((offset / row).rounded()).clamped(to: 0...(count - 1))
+        }, action: { _, newValue in
+            current = newValue
+        })
+        .onAppear { position.scrollTo(y: CGFloat(current) * rowHeight) }
         .scrollIndicators(.hidden)
         .frame(height: viewport)
         .background {
@@ -102,13 +121,18 @@ private struct ScrollWheelDemo: View {
         }
     }
 
+    private func select(_ i: Int) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+            position.scrollTo(y: CGFloat(i) * rowHeight)
+        }
+    }
+
     private func advance() {
-        let now = current ?? 0
         let count = scrollWheelCities.count
         let stepSize = 2
-        if now + direction * stepSize >= count || now + direction * stepSize < 0 { direction = -direction }
+        if current + direction * stepSize >= count || current + direction * stepSize < 0 { direction = -direction }
         withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) {
-            current = now + direction * stepSize
+            position.scrollTo(y: CGFloat(current + direction * stepSize) * rowHeight)
         }
     }
 }

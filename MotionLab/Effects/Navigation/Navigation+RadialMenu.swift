@@ -71,6 +71,13 @@ private struct RadialMenuDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .top) { chosenBadge }
+        .overlay {
+            DemoHint(text: L("Press + and slide to an item", "按住 + 并滑向选项"), ctx: ctx)
+                .offset(y: -40)
+                .opacity(open || chosen != nil ? 0 : 1)
+                .animation(.easeOut(duration: 0.2), value: open)
+                .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 0.9) { advancePreview() }
     }
 

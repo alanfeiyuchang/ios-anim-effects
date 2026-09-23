@@ -150,16 +150,18 @@ private struct FlapFace: View, Animatable {
 
     var body: some View {
         let p = progress
+        // Shade the moving flap only lightly: the tile is already ~0.2 white,
+        // so heavier (additive) brightness crushed it to solid black bars.
         ZStack {
             FlapHalf(character: current, top: true)
             FlapHalf(character: previous, top: false)
             if p < 0.5 {
                 FlapHalf(character: previous, top: true)
-                    .brightness(-p * 0.6)
+                    .brightness(-p * 0.25)
                     .rotation3DEffect(.degrees(-p * 180), axis: (x: 1, y: 0, z: 0), anchor: .center, perspective: 0.5)
             } else {
                 FlapHalf(character: current, top: false)
-                    .brightness(-(1 - p) * 0.6)
+                    .brightness(-(1 - p) * 0.25)
                     .rotation3DEffect(.degrees((1 - p) * 180), axis: (x: 1, y: 0, z: 0), anchor: .center, perspective: 0.5)
             }
             Rectangle()

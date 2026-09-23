@@ -48,6 +48,13 @@ private struct FabMenuDemo: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
+            FabBackdrop()
+            DemoHint(text: L("Tap the + button", "点击“+”按钮"), ctx: ctx)
+                .padding(.leading, 24)
+                .padding(.bottom, 44)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                .opacity(open ? 0 : 1)
+                .allowsHitTesting(false)
             Color.black
                 .opacity(open ? 0.16 : 0)
                 .allowsHitTesting(open)
@@ -134,5 +141,25 @@ private struct FabPanel: View {
             return .spring(response: 0.42, dampingFraction: 0.85).delay(0.06 + fromBottom * ctx["stagger"])
         }
         return .easeOut(duration: 0.12)
+    }
+}
+
+/// Faint note-list placeholder so the FAB sits over an app screen rather than an empty stage.
+private struct FabBackdrop: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            ForEach(0..<3, id: \.self) { _ in
+                HStack(spacing: 12) {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.primary.opacity(0.07))
+                        .frame(width: 38, height: 38)
+                    PlaceholderLines(count: 2)
+                }
+            }
+        }
+        .padding(.horizontal, 22)
+        .padding(.top, 56)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .allowsHitTesting(false)
     }
 }

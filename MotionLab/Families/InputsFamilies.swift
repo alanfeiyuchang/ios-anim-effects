@@ -69,27 +69,55 @@ enum InputsFamilies {
         // Toggle
         "inputs.squash-toggle": "inputs.toggle",
         "inputs.day-night-toggle": "inputs.toggle",
+        "inputs.inchworm-toggle": "inputs.toggle",
+        "inputs.rolling-toggle": "inputs.toggle",
+        "inputs.rocker-switch": "inputs.toggle",
+        "inputs.pull-cord-toggle": "inputs.toggle",
+        "inputs.flood-toggle": "inputs.toggle",
         // Slider
         "inputs.velocity-slider": "inputs.slider",
         "inputs.elastic-slider": "inputs.slider",
         "inputs.range-slider": "inputs.slider",
+        "inputs.liquid-slider": "inputs.slider",
+        "inputs.magnetic-tick-slider": "inputs.slider",
+        "inputs.drum-slider": "inputs.slider",
+        "inputs.segmented-slider": "inputs.slider",
+        "inputs.grow-scrubber": "inputs.slider",
         // Dials & wheels
         "inputs.dial-knob": "inputs.dial",
         "inputs.wheel-picker": "inputs.dial",
+        "inputs.jog-wheel": "inputs.dial",
+        "inputs.thermostat-dial": "inputs.dial",
+        "inputs.wind-up-timer": "inputs.dial",
         // Text field
         "inputs.floating-label": "inputs.text-field",
         "inputs.password-strength": "inputs.text-field",
         "inputs.expanding-search": "inputs.text-field",
+        "inputs.char-drop-field": "inputs.text-field",
+        "inputs.token-field": "inputs.text-field",
         // Code & passcode
         "inputs.otp-code": "inputs.code-entry",
         "inputs.passcode-pad": "inputs.code-entry",
+        "inputs.merge-pin": "inputs.code-entry",
+        "inputs.slot-reel-code": "inputs.code-entry",
+        "inputs.secure-flip-code": "inputs.code-entry",
         // Stepper
         "inputs.rolling-stepper": "inputs.stepper",
+        "inputs.expanding-stepper": "inputs.stepper",
+        "inputs.accelerating-stepper": "inputs.stepper",
+        "inputs.drag-stepper": "inputs.stepper",
+        "inputs.delta-stepper": "inputs.stepper",
         // Rating
         "inputs.star-rating": "inputs.rating",
+        "inputs.emoji-face-rating": "inputs.rating",
+        "inputs.fill-rating": "inputs.rating",
+        "inputs.thumbs-rating": "inputs.rating",
+        "inputs.nps-scale": "inputs.rating",
         // Checkboxes & chips
         "inputs.checkbox-draw": "inputs.selection",
         "inputs.chip-select": "inputs.selection",
         "inputs.swatch-picker": "inputs.selection",
+        "inputs.radio-travel": "inputs.selection",
+        "inputs.todo-check": "inputs.selection",
     ]
 }

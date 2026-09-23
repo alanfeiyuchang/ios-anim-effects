@@ -86,9 +86,9 @@ private struct LiquidSliderDemo: View {
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let t: Double = timeline.date.timeIntervalSinceReferenceDate * speed
                 ZStack {
-                    LiquidSurface(level: CGFloat(level), amplitude: amp * 0.8, phase: t + 1.7, waves: 1.3)
+                    LiquidLevelShape(level: CGFloat(level), amplitude: amp * 0.8, phase: t + 1.7, waves: 1.3)
                         .fill(Palette.sky.opacity(0.45))
-                    LiquidSurface(level: CGFloat(level), amplitude: amp, phase: t, waves: 1.0)
+                    LiquidLevelShape(level: CGFloat(level), amplitude: amp, phase: t, waves: 1.0)
                         .fill(LinearGradient(colors: [Palette.sky, Palette.blue], startPoint: .top, endPoint: .bottom))
                 }
             }
@@ -158,7 +158,7 @@ private struct LiquidSliderDemo: View {
 }
 
 /// Filled water body whose top edge is a sine wave.
-private struct LiquidSurface: Shape {
+private struct LiquidLevelShape: Shape {
     var level: CGFloat
     var amplitude: CGFloat
     var phase: Double

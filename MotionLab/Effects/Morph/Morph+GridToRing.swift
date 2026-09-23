@@ -60,7 +60,10 @@ private struct GridToRingDemo: View {
     }
 
     private var centerLabel: some View {
-        VStack(spacing: 2) {
+        let reveal: Animation = ring
+            ? .spring(response: 0.45, dampingFraction: 0.7).delay(ctx["stagger"] * Double(count))
+            : .easeOut(duration: 0.15)
+        return VStack(spacing: 2) {
             Text("\(count)")
                 .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
             Text(L("apps", "个应用"), ctx.language)
@@ -69,12 +72,15 @@ private struct GridToRingDemo: View {
         }
         .scaleEffect(ring ? 1 : 0.6)
         .opacity(ring ? 1 : 0)
-        .animation(ring ? .spring(response: 0.45, dampingFraction: 0.7).delay(ctx["stagger"] * Double(count)) : .easeOut(duration: 0.15), value: ring)
+        .animation(reveal, value: ring)
     }
 
     private func tile(_ index: Int) -> some View {
         let position = ring ? ringPoint(index) : gridPoint(index)
-        let angle: Double = ring && ctx.bool("orient") ? ringAngle(index) + 90 : 0
+        let outward: Double = ringAngle(index) + 90
+        // Turn the short way round (e.g. −30° rather than 330°).
+        let shortest: Double = outward > 180 ? outward - 360 : outward
+        let angle: Double = ring && ctx.bool("orient") ? shortest : 0
         let order: Int = ring ? index : count - 1 - index
         let delay: Double = Double(order) * ctx["stagger"]
         let color = Palette.spectrum[index % Palette.spectrum.count]

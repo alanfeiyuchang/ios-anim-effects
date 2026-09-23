@@ -112,14 +112,14 @@ private struct FeatherStage: View, Animatable {
                 WipeCard(article: to, language: language)
                     .offset(x: parallax * (1 - t))
             }
-                .mask {
-                    Rectangle()
-                        .frame(width: maskWidth, height: height * 3)
-                        .rotationEffect(.degrees(angle))
-                        .offset(x: edge - maskWidth / 2)
-                        .blur(radius: feather)
-                        .frame(width: width, height: height)
-                }
+            .mask {
+                Rectangle()
+                    .frame(width: maskWidth, height: height * 3)
+                    .rotationEffect(.degrees(angle))
+                    .offset(x: edge - maskWidth / 2)
+                    .blur(radius: feather)
+                    .frame(width: width, height: height)
+            }
         }
         .frame(width: width, height: height)
     }

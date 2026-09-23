@@ -11,8 +11,8 @@ extension Effect {
             "黑色状态胶囊先横向拉宽、再向下展开为实时活动卡片。"
         ),
         prompt: L(
-            "A 126 × 37 pt black capsule sits at the top of the screen showing a compact ride status (car glyph, \"4m\"). A tap expands it on two axes in sequence: the width springs out to 300 pt first (response ≈0.42 s, damping 0.72, a small sideways overshoot), then ≈90 ms later the height drops to 156 pt on a slightly softer spring while the corner radius grows from 18.5 to 42 pt. The compact glyphs fade out immediately; the expanded content — driver row, a large \"4 min\" and a progress track — fades in with a 8 pt blur-to-sharp and a 90% → 100% scale anchored at the top, starting two stagger steps later. Collapsing runs in reverse: content leaves first, height retracts, width follows. It feels like one elastic piece of hardware, not a view swap.",
-            "屏幕顶部一枚 126 × 37pt 的黑色胶囊，显示紧凑的行程状态（车辆图标与「4m」）。点击后按两个轴依次展开：宽度先以弹簧（响应约 0.42 秒、阻尼 0.72，带一点横向过冲）拉到 300pt，约 90 毫秒后高度再以稍柔的弹簧下拉到 156pt，圆角同时从 18.5pt 增至 42pt。紧凑图标立刻淡出；展开内容（司机信息行、大号「4 分钟」与进度条）晚两个错峰步长出现，伴随 8pt 模糊到清晰、以顶部为锚点 90% → 100% 的缩放。收起时顺序相反：内容先离场，高度回收，宽度最后收拢。整体像一块有弹性的硬件，而非视图替换。"
+            "A 126 × 37 pt black capsule sits at the top of the screen showing a compact ride status (car glyph, \"4m\"). A tap expands it on two axes in sequence: the width springs out to 300 pt first (response ≈0.42 s, damping 0.72, a small sideways overshoot), then ≈90 ms later the height drops to 156 pt on a slightly softer spring while the corner radius grows from 18.5 to 42 pt. The compact glyphs fade out immediately; the expanded content — driver row, a large \"4 min\" and a progress track — fades in with a 8 pt blur-to-sharp and a 90% → 100% scale anchored at the top, starting two stagger steps later. Collapsing runs in reverse. One elastic piece of hardware, not a view swap.",
+            "屏幕顶部一枚 126 × 37pt 的黑色胶囊，显示紧凑的行程状态（车辆图标与「4m」）。点击后按两个轴依次展开：宽度先以弹簧（响应约 0.42 秒、阻尼 0.72，带一点横向过冲）拉到 300pt，约 90 毫秒后高度再以稍柔的弹簧下拉到 156pt，圆角同时从 18.5pt 增至 42pt。紧凑图标立刻淡出；展开内容（司机信息行、大号「4 分钟」与进度条）晚两个错峰步长出现，伴随 8pt 模糊到清晰、以顶部为锚点 90% → 100% 的缩放。收起时顺序相反。整体像一块有弹性的硬件，而非视图替换。"
         ),
         implementation: L(
             "Three booleans (wide, tall, content) are each flipped in their own withAnimation with increasing delays; the capsule is a RoundedRectangle whose frame and corner radius follow them, clipping two content layers that cross-fade with blur and scale.",
@@ -96,7 +96,7 @@ private struct IslandExpandDemo: View {
                     Text(L("Arriving in", "即将到达"), ctx.language)
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.white.opacity(0.6))
-                    Text(L("Grey Model 3 · 7KD 214", "灰色 Model 3 · 7KD 214"), ctx.language)
+                    Text(L("Grey sedan · 7KD 214", "灰色轿车 · 7KD 214"), ctx.language)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.white)
                         .lineLimit(1)

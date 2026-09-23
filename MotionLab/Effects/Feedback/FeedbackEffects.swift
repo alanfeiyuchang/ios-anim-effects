@@ -15,5 +15,28 @@ enum FeedbackEffects {
         .feedbackCopy,
         .feedbackReactionPicker,
         .feedbackPullRefresh,
+        // Toast variations
+        .feedbackHingeToast,
+        .feedbackMorphToast,
+        // Success variations
+        .feedbackSparkBurst,
+        .feedbackStamp,
+        // Error variations
+        .feedbackJellyDeny,
+        .feedbackLimitBounce,
+        .feedbackFaceIDFail,
+        // Badge variations
+        .feedbackCartFly,
+        .feedbackPresencePing,
+        .feedbackFloatingHearts,
+        // Overlay variations
+        .feedbackRecedingSheet,
+        .feedbackTipPopover,
+        .feedbackDropAlert,
+        // Refresh variations
+        .feedbackGooRefresh,
+        .feedbackSunRefresh,
+        .feedbackLetterRefresh,
+        .feedbackDotsRefresh,
     ]
 }

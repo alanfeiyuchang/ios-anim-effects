@@ -67,9 +67,12 @@ private struct ScrollMinimapDemo: View {
     @State private var down = false
 
     var body: some View {
-        HStack(spacing: 10) {
-            page
-            minimap
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                page
+                minimap
+            }
+            DemoHint(text: L("Scroll the page, or drag on the minimap", "滚动页面，或在缩略图上拖动"), ctx: ctx)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -133,7 +136,7 @@ private struct ScrollMinimapDemo: View {
     private func scrub(scale: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                let maxOffset = max(metrics.content + scrollMinimapPadding * 2 - metrics.viewport, 0)
+                let maxOffset = max(metrics.content - metrics.viewport, 0)
                 let target = (value.location.y / max(scale, 0.01) - metrics.viewport / 2).clamped(to: 0...maxOffset)
                 let bucket = Int(target / 80)
                 if bucket != lastJump {
@@ -181,13 +184,15 @@ private struct ScrollMinimapDocument: View {
         case .heading:
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(Color.primary.opacity(0.75))
+                .frame(maxWidth: .infinity)
                 .frame(height: height)
-                .containerRelativeFrame(.horizontal) { length, _ in length * block.width }
+                .scaleEffect(x: block.width, y: 1, anchor: .leading)
         case .text:
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(Color.primary.opacity(0.14))
+                .frame(maxWidth: .infinity)
                 .frame(height: height)
-                .containerRelativeFrame(.horizontal) { length, _ in length * block.width }
+                .scaleEffect(x: block.width, y: 1, anchor: .leading)
         case .image:
             RoundedRectangle(cornerRadius: radius * 2, style: .continuous)
                 .fill(LinearGradient(colors: ScrollKit.colors(block.color), startPoint: .topLeading, endPoint: .bottomTrailing))

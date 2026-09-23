@@ -58,20 +58,37 @@ enum FeedbackFamilies {
         "feedback.connection-banner": "feedback.toast",
         "feedback.undo-snackbar": "feedback.toast",
         "feedback.stacked-banners": "feedback.toast",
+        "feedback.hinge-toast": "feedback.toast",
+        "feedback.morph-toast": "feedback.toast",
         // Success
         "feedback.success-check": "feedback.success",
         "feedback.confetti": "feedback.success",
         "feedback.copy-confirm": "feedback.success",
+        "feedback.spark-burst": "feedback.success",
+        "feedback.stamp-approve": "feedback.success",
         // Errors & validation
         "feedback.error-shake": "feedback.error",
         "feedback.inline-validation": "feedback.error",
+        "feedback.jelly-deny": "feedback.error",
+        "feedback.limit-bounce": "feedback.error",
+        "feedback.faceid-fail": "feedback.error",
         // Badges & reactions
         "feedback.badge-bounce": "feedback.badge",
         "feedback.reaction-picker": "feedback.badge",
+        "feedback.cart-fly": "feedback.badge",
+        "feedback.presence-ping": "feedback.badge",
+        "feedback.floating-hearts": "feedback.badge",
         // Alerts & overlays
         "feedback.alert-pop": "feedback.overlay",
         "feedback.coach-spotlight": "feedback.overlay",
+        "feedback.receding-sheet": "feedback.overlay",
+        "feedback.tip-popover": "feedback.overlay",
+        "feedback.drop-alert": "feedback.overlay",
         // Pull to refresh
         "feedback.pull-refresh": "feedback.refresh",
+        "feedback.goo-refresh": "feedback.refresh",
+        "feedback.sun-refresh": "feedback.refresh",
+        "feedback.letter-refresh": "feedback.refresh",
+        "feedback.dots-refresh": "feedback.refresh",
     ]
 }

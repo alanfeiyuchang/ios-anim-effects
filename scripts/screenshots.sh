@@ -80,7 +80,7 @@ def shot(name, wait, args):
 
 def effect_wait(effect_id):
     # The first Metal shader compile is slow.
-    return 4 if effect_id.startswith("shader.") else 3
+    return 6 if effect_id.startswith("shader.") else 5
 
 # Home screens
 shot("home/browse-zh-light", 4, ZH)
@@ -154,7 +154,7 @@ suspicious() { # name → 0 when the shot looks blank or repeats the previous on
   [[ -f "$file" ]] || return 0
   size=$(stat -f%z "$file")
   sum=$(md5 -q "$file")
-  (( size < 14000 )) && return 0
+  (( size < 20000 )) && return 0  # blank pages are ~15 KB at this quality, real ones > 30 KB
   [[ -n "$PREVIOUS_SUM" && "$sum" == "$PREVIOUS_SUM" ]] && return 0
   return 1
 }

@@ -133,7 +133,11 @@ struct EffectDetailView: View {
                 .accessibilityLabel(Text(isFavorite ? Strings.removeFavorite : Strings.addFavorite, language))
             }
         }
-        .onAppear { recents.record(effect.id) }
+        .onAppear {
+            // Let the stage and the page entrance have the main thread before thumbnails rasterise.
+            SnapshotGate.hold(for: .milliseconds(900))
+            recents.record(effect.id)
+        }
         .onDisappear {
             copyFeedback?.cancel()
             copied = false

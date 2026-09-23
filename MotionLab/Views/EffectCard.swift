@@ -59,7 +59,9 @@ struct PreviewStage: View {
                         // screenful of new cards never rasterises in one scroll frame.
                         await SnapshotGate.waitForTurn()
                         guard !Task.isCancelled else { return }
+                        let started = ContinuousClock.now
                         renderSnapshot(key: key, pixelsPerPoint: scale * displayScale)
+                        SnapshotGate.didRender(taking: ContinuousClock.now - started)
                     }
                 }
             }
@@ -182,8 +184,11 @@ final class PreviewSnapshotCache: @unchecked Sendable {
     }
 }
 
-/// Spaces out snapshot renders: at most one `ImageRenderer` pass per ~frame across the whole app,
-/// so heavy demos (particle fields, flow fields) never stack up inside a single scroll frame.
+/// Spaces out snapshot renders so they never starve the main thread:
+/// - after each `ImageRenderer` pass the next one waits at least twice as long as that pass took
+///   (min 20 ms), so the UI always gets most of the frames even when a demo is expensive to draw;
+/// - `hold(for:)` pauses all renders while a page plays its entrance (the detail page calls it),
+///   so thumbnails in the Variations row never compete with the stage and the page's own motion.
 @MainActor
 enum SnapshotGate {
     private static var nextSlot = ContinuousClock.now
@@ -199,6 +204,17 @@ enum SnapshotGate {
             }
             try? await Task.sleep(until: nextSlot, clock: clock)
         }
+    }
+
+    static func didRender(taking duration: Duration) {
+        let breathing = max(duration * 2, .milliseconds(20))
+        let candidate = ContinuousClock.now + breathing
+        if candidate > nextSlot { nextSlot = candidate }
+    }
+
+    static func hold(for duration: Duration) {
+        let candidate = ContinuousClock.now + duration
+        if candidate > nextSlot { nextSlot = candidate }
     }
 }
 

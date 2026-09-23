@@ -42,6 +42,8 @@ struct FamilyView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("app.familyMode") private var mode: FamilyViewMode = .grid
     @State private var badgeBounce = 0
+    /// Each variation's stage flies between its grid card and its compare card.
+    @Namespace private var stages
 
     var body: some View {
         let effects = EffectFamilies.effects(in: family)
@@ -55,11 +57,11 @@ struct FamilyView: View {
                         .appearEntrance(index: 2, distance: 10, blur: 0)
                 }
                 if comparing {
-                    FamilyCompareList(effects: effects)
+                    FamilyCompareList(effects: effects, stageNamespace: reduceMotion ? nil : stages)
                         .padding(.horizontal)
                         .transition(.opacity)
                 } else {
-                    EffectGrid(effects: effects, source: "family")
+                    EffectGrid(effects: effects, source: "family", stageNamespace: reduceMotion ? nil : stages)
                         .padding(.horizontal)
                         .transition(.opacity)
                 }
@@ -67,6 +69,7 @@ struct FamilyView: View {
             .padding(.vertical)
             .animation(reduceMotion ? Animation.easeInOut(duration: 0.2) : ShellMotion.reveal, value: comparing)
         }
+        .shellPageScroll()
         .background(Palette.pageBackground)
         .navigationTitle(family.name(language))
         .task {
@@ -110,13 +113,13 @@ struct FamilyView: View {
     }
 
     private var modePicker: some View {
-        Picker(Strings.familyViewMode(language), selection: $mode) {
-            ForEach(FamilyViewMode.allCases) { item in
-                Text(item.title, language).tag(item)
-            }
-        }
-        .pickerStyle(.segmented)
-        .sensoryFeedback(.selection, trigger: mode)
+        ShellSegmentedControl(
+            label: Strings.familyViewMode(language),
+            segments: FamilyViewMode.allCases.map { item in
+                ShellSegmentedControl<FamilyViewMode>.Segment(value: item, title: item.title(language))
+            },
+            selection: $mode
+        )
     }
 }
 
@@ -127,6 +130,8 @@ struct FamilyView: View {
 /// but never with Reduce Motion.
 private struct FamilyCompareList: View {
     let effects: [Effect]
+    /// Shared with the grid so each stage flies between layouts (nil with Reduce Motion).
+    let stageNamespace: Namespace.ID?
     @Environment(\.appLanguage) private var language
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -147,15 +152,17 @@ private struct FamilyCompareList: View {
         let compact = sizeClass != .regular && !dynamicTypeSize.isAccessibilitySize
         let replays = self.replays
         let pulses = !reduceMotion
+        let stageNamespace = self.stageNamespace
         VStack(alignment: .leading, spacing: 12) {
             header
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(Array(effects.enumerated()), id: \.element.id) { index, effect in
                     EffectLink(effect: effect, source: "compare") {
-                        CompareCard(effect: effect, position: index + 1, total: total, compact: compact, replays: replays)
+                        CompareCard(effect: effect, position: index + 1, total: total, compact: compact, replays: replays,
+                                    stageNamespace: stageNamespace)
                     }
                     .modifier(ReplayPulse(trigger: replays, delay: ShellMotion.stagger(index, step: 0.04, cap: 8), enabled: pulses))
-                    .scrollReveal(delay: ShellMotion.stagger(index, step: 0.04, cap: 4))
+                    .scrollReveal(delay: ShellMotion.stagger(index, step: 0.04, cap: 4), blur: 0)
                 }
             }
         }
@@ -206,11 +213,11 @@ private struct ReplayAllButton: View {
             }
             .font(.footnote.weight(.semibold))
             .lineLimit(1)
-            .foregroundStyle(.white)
+            .foregroundStyle(Palette.onAccent)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(Palette.primaryStrong, in: Capsule())
-            .shadow(color: Palette.indigo.opacity(0.25), radius: 6, y: 3)
+            .background(Palette.accentFill, in: Capsule())
+            .shadow(color: Palette.accentGlow, radius: 6, y: 3)
             .contentShape(Capsule())
         }
         .buttonStyle(PressableCardStyle())
@@ -248,6 +255,7 @@ private struct CompareCard: View {
     let compact: Bool
     /// Replay All count; a new value rebuilds the stage so the demo restarts.
     let replays: Int
+    let stageNamespace: Namespace.ID?
     @Environment(\.appLanguage) private var language
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -257,6 +265,7 @@ private struct CompareCard: View {
             title
             PreviewStage(effect: effect, cornerRadius: compact ? 14 : CornerRadius.thumbnail)
                 .id(replays)
+                .modifier(StageGeometryLink(effectID: effect.id, namespace: stageNamespace))
             if !compact {
                 Text(effect.summary, language)
                     .font(.caption)
@@ -267,9 +276,7 @@ private struct CompareCard: View {
             }
         }
         .padding(compact ? 8 : 10)
-        .background(Palette.cardBackground, in: shape)
-        .overlay(shape.strokeBorder(Palette.stroke))
-        .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
+        .glossCard(cornerRadius: compact ? CornerRadius.section : CornerRadius.card, tint: effect.category.gradient.first)
         .contentShape(shape)
     }
 
@@ -278,10 +285,10 @@ private struct CompareCard: View {
         return HStack(alignment: .center, spacing: compact ? 6 : 8) {
             Text(verbatim: "\(position)")
                 .font(.caption2.weight(.bold).monospacedDigit())
-                .foregroundStyle(.white)
+                .foregroundStyle(Palette.onAccent)
                 .frame(minWidth: compact ? 20 : 24, minHeight: compact ? 20 : 24)
                 .padding(.horizontal, 2)
-                .background(Palette.primaryStrong, in: Capsule())
+                .background(Palette.accentFill, in: Capsule())
                 .accessibilityLabel(Text(verbatim: Strings.variationPosition(position, of: total, language)))
             Text(effect.name, language)
                 .font(compact ? Font.caption.weight(.semibold) : Font.headline)
@@ -373,9 +380,7 @@ struct FamilyCard: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.cardBackground, in: shape)
-        .overlay(shape.strokeBorder(Palette.stroke))
-        .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
+        .glossCard(cornerRadius: CornerRadius.card, tint: family.category.gradient.first)
         .contentShape(shape)
     }
 }
@@ -383,9 +388,14 @@ struct FamilyCard: View {
 /// Up to `slots` equal square previews; empty slots are dashed placeholders so every tile keeps its height.
 ///
 /// Only one slot plays live at a time: a "spotlight" (with a softly glowing ring that glides between
-/// slots) moves to the next variation every few seconds with a crossfade, while the others show still
-/// frames. A category page therefore runs one live demo per visible family card instead of three,
-/// and none at all while the strip is scrolled away.
+/// slots) moves to the next variation every few seconds, while the others show still frames. A category
+/// page therefore runs one live demo per visible family card instead of three, and none at all while
+/// the strip is scrolled away.
+///
+/// No tile ever flashes blank on a hand-off: every slot keeps its still frame as a permanent base
+/// layer; the lit slot mounts its live demo above it, invisible, and fades it in only once the demo
+/// has had time to draw and start moving; the slot the spotlight leaves fades its live layer out over
+/// that same still instead of swapping views.
 struct FamilyPreviewStrip: View {
     let effects: [Effect]
     var slots = 3
@@ -404,8 +414,7 @@ struct FamilyPreviewStrip: View {
         let lit = shown.isEmpty ? 0 : spotlight % shown.count
         HStack(spacing: 8) {
             ForEach(Array(shown.enumerated()), id: \.element.id) { index, effect in
-                PreviewStage(effect: effect, cornerRadius: 14)
-                    .environment(\.previewMotionEnabled, live && index == lit)
+                StripSlot(effect: effect, isLit: live && index == lit)
                     .overlay {
                         if live && index == lit && shown.count > 1 {
                             SpotlightRing(namespace: ring)
@@ -420,7 +429,7 @@ struct FamilyPreviewStrip: View {
             }
             ForEach(0..<empty, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Palette.stroke, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                    .strokeBorder(Palette.edge, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                     .aspectRatio(1, contentMode: .fit)
                     .frame(maxWidth: .infinity)
             }
@@ -435,19 +444,61 @@ struct FamilyPreviewStrip: View {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(Self.dwell))
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.4)) { spotlight = (spotlight + 1) % count }
+                withAnimation(.smooth(duration: 0.55)) { spotlight = (spotlight + 1) % count }
             }
         }
     }
 }
 
-/// Thin accent ring on the live slot of a preview strip; glides to the next slot.
+/// One tile of a preview strip: the still frame, always, with the live demo layered over it while lit.
+/// Demos that cannot be rasterised have no still; their single (live) stage just toggles autoplay.
+private struct StripSlot: View {
+    let effect: Effect
+    let isLit: Bool
+
+    var body: some View {
+        let layered = PreviewSnapshotCache.canSnapshot(effect)
+        ZStack {
+            PreviewStage(effect: effect, cornerRadius: 14)
+                .environment(\.previewMotionEnabled, layered ? false : isLit)
+            if layered && isLit {
+                PreviewStage(effect: effect, cornerRadius: 14)
+                    .modifier(LiveLayerFadeIn())
+                    .environment(\.previewMotionEnabled, true)
+                    .transition(.asymmetric(
+                        insertion: .identity,
+                        removal: .opacity.animation(.easeInOut(duration: 0.4))
+                    ))
+            }
+        }
+    }
+}
+
+/// Keeps a freshly mounted live demo invisible (the still below shows) until it has drawn its first
+/// frames and its autoplay has begun, then fades it in, so a tile never shows a demo's empty
+/// initial state.
+private struct LiveLayerFadeIn: ViewModifier {
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .task {
+                try? await Task.sleep(for: .seconds(0.7))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.4)) { shown = true }
+            }
+    }
+}
+
+/// Thin ember ring with a soft glow on the live slot of a preview strip; glides to the next slot.
 private struct SpotlightRing: View {
     let namespace: Namespace.ID
 
     var body: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .strokeBorder(Palette.accent.opacity(0.6), lineWidth: 1.5)
+            .strokeBorder(Palette.accentFill, lineWidth: 1.5)
+            .shadow(color: Palette.accentGlow, radius: 5)
             .matchedGeometryEffect(id: "spotlight", in: namespace)
             .allowsHitTesting(false)
     }
@@ -496,7 +547,7 @@ struct FamilyResultChip: View {
             .padding(.trailing, 12)
             .padding(.vertical, 6)
             .background(Palette.chipOnPage, in: RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous).strokeBorder(Palette.stroke))
+            .overlay(RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous).strokeBorder(Palette.edge))
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
         }
         .buttonStyle(PressableCardStyle())
@@ -602,7 +653,7 @@ private struct StepChevron: View {
                 .symbolEffect(.bounce, value: taps)
                 .frame(width: 24, height: 24)
                 .background(Palette.chipOnPage, in: Circle())
-                .overlay(Circle().strokeBorder(Palette.stroke))
+                .overlay(Circle().strokeBorder(Palette.edge))
                 .padding(4)
                 .contentShape(Circle())
         }
@@ -629,7 +680,8 @@ private struct VariationThumb: View {
                     .background {
                         if isCurrent {
                             RoundedRectangle(cornerRadius: 17, style: .continuous)
-                                .strokeBorder(Palette.primaryStrong, lineWidth: 2.5)
+                                .strokeBorder(Palette.accentFill, lineWidth: 2.5)
+                                .shadow(color: Palette.accentGlow, radius: 5)
                                 .matchedGeometryEffect(id: "variation.ring", in: ring)
                         }
                     }

@@ -166,17 +166,21 @@ extension View {
 
 // MARK: - Insert / remove
 
-/// Cards joining or leaving a grid (search results, favorites): scale + blur + fade.
+/// Cards joining or leaving a grid (search results, favorites): scale + fade, plus an optional blur.
+/// Pass `blur: 0` for cards that hold live demos (a blur over animating content re-renders offscreen
+/// every frame).
 struct CardSwapTransition: Transition {
     var reduceMotion: Bool
+    var blur: CGFloat = 8
 
     func body(content: Content, phase: TransitionPhase) -> some View {
         let hidden = !phase.isIdentity
         let moves = hidden && !reduceMotion
+        let radius: CGFloat = moves ? blur : 0
         return content
             .opacity(hidden ? 0 : 1)
             .scaleEffect(moves ? 0.88 : 1)
-            .blur(radius: moves ? 8 : 0)
+            .blur(radius: radius)
     }
 }
 

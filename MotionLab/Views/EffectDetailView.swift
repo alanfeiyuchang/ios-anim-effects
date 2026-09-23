@@ -25,6 +25,12 @@ struct EffectDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// +1 when the last variation switch moved forward, -1 backward (stage slide direction).
     @State private var swapDirection: CGFloat = 1
+    /// Visible height of the scroll view (without bars and insets) and the stage's top edge in the
+    /// page content: the stage shrinks (down to `StageMetrics.detailMinHeight`) so it fits above the fold.
+    @State private var visibleHeight: CGFloat = 0
+    @State private var stageTop: CGFloat = 0
+
+    private static let contentSpace = "detail.content"
 
     init(effect: Effect) {
         _effect = State(initialValue: effect)
@@ -57,6 +63,7 @@ struct EffectDetailView: View {
         let fullPrompt = effect.fullPrompt(language, params: params)
         let variations = self.variations
         let swap = VariationSwapTransition(direction: swapDirection, reduceMotion: reduceMotion)
+        let stageHeight = fittedStageHeight
         ScrollViewReader { reader in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -71,17 +78,25 @@ struct EffectDetailView: View {
                         )
                         .appearEntrance(delay: 0.08, distance: 10, blur: 0)
                     }
-                    VStack(spacing: 10) {
-                        ZStack {
-                            stage(fullPrompt: fullPrompt)
-                                // A new variation slides in; the old one sinks away (see VariationSwapTransition).
-                                .id(effect.id)
-                                .transition(swap)
-                        }
-                        // Rises into place with a spring as the page arrives.
-                        .appearEntrance(delay: 0.12, distance: 36, scale: 0.94, blur: 0)
-                        stageControls
-                            .appearEntrance(delay: 0.24, distance: 10, blur: 0)
+                    ZStack {
+                        stage(fullPrompt: fullPrompt, height: stageHeight)
+                            // A new variation slides in; the old one sinks away (see VariationSwapTransition).
+                            .id(effect.id)
+                            .transition(swap)
+                    }
+                    // Reset lives inside the stage (a small glass button), so nothing the demo needs
+                    // sits below it where the fold or a bar could cover it.
+                    .overlay(alignment: .topTrailing) {
+                        resetButton
+                            .appearEntrance(delay: 0.3, distance: 0, scale: 0.6, blur: 0)
+                    }
+                    // Rises into place with a spring as the page arrives.
+                    .appearEntrance(delay: 0.12, distance: 36, scale: 0.94, blur: 0)
+                    // Measured outside the entrance's offset/scale, in page-content coordinates.
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.frame(in: .named(Self.contentSpace)).minY
+                    } action: { top in
+                        if abs(top - stageTop) > 0.5 { stageTop = top }
                     }
                     if !effect.params.isEmpty { parameters.scrollReveal() }
                     promptCard(fullPrompt).id("prompt").scrollReveal()
@@ -90,10 +105,16 @@ struct EffectDetailView: View {
                     relatedCard
                 }
                 .padding()
-                .padding(.bottom, 24)
                 // Comfortable reading width on iPad; centred.
                 .frame(maxWidth: 700)
                 .frame(maxWidth: .infinity)
+                .coordinateSpace(.named(Self.contentSpace))
+            }
+            .shellPageScroll()
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.containerSize.height - geometry.contentInsets.top - geometry.contentInsets.bottom
+            } action: { _, height in
+                if abs(height - visibleHeight) > 0.5 { visibleHeight = height }
             }
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y + geometry.contentInsets.top > 72
@@ -107,6 +128,9 @@ struct EffectDetailView: View {
             }
         }
         .background(Palette.pageBackground)
+        // The stage is the page: the floating tab bar (and the search orb) step aside so they never
+        // cover its bottom edge, its hint or its controls.
+        .toolbarVisibility(.hidden, for: .tabBar)
         .navigationTitle(effect.name(language))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -162,8 +186,8 @@ struct EffectDetailView: View {
                     .lineLimit(1)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background((effect.category.gradient.first ?? Palette.indigo).opacity(0.16), in: Capsule())
-                    .overlay(Capsule().strokeBorder(Palette.stroke))
+                    .background((effect.category.gradient.first ?? Palette.ember).opacity(0.16), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Palette.edge))
                     .contentShape(Capsule())
                 }
                 .buttonStyle(PressableCardStyle())
@@ -180,7 +204,7 @@ struct EffectDetailView: View {
                         .padding(.vertical, 5)
                         .foregroundStyle(.secondary)
                         .background(Palette.chipOnPage, in: Capsule())
-                        .overlay(Capsule().strokeBorder(Palette.stroke))
+                        .overlay(Capsule().strokeBorder(Palette.edge))
                         .contentShape(Capsule())
                 }
                 .buttonStyle(PressableCardStyle())
@@ -225,18 +249,26 @@ struct EffectDetailView: View {
             }
     }
 
+    /// Stage height that keeps the whole stage above the fold when the page opens: the full
+    /// `detailHeight` when it fits, never less than `detailMinHeight` (the demos' authored canvas).
+    private var fittedStageHeight: CGFloat {
+        guard visibleHeight > 0, stageTop > 0 else { return StageMetrics.detailHeight }
+        let available: CGFloat = visibleHeight - stageTop - 12
+        return min(max(available, StageMetrics.detailMinHeight), StageMetrics.detailHeight)
+    }
+
     /// The live demo. Each demo draws its own specific instruction (`DemoHint`) inside the stage.
-    private func stage(fullPrompt: String) -> some View {
+    private func stage(fullPrompt: String, height: CGFloat) -> some View {
         EffectDemoView(effect: effect, context: DemoContext(params: params, isPreview: false, language: language))
             // Tap-driven demos play once on arrival (and again after Reset, which rebuilds the view).
             .environment(\.demoIntroPlay, true)
             .id(resetToken)
             .frame(maxWidth: .infinity)
-            .frame(height: StageMetrics.detailHeight)
+            .frame(height: height)
             .background(StageBackground())
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.stage, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: CornerRadius.stage, style: .continuous).strokeBorder(Palette.stroke))
-            .shadow(color: .black.opacity(0.05), radius: 14, y: 6)
+            .overlay(StageRim(cornerRadius: CornerRadius.stage))
+            .glossCard(cornerRadius: CornerRadius.stage)
             // A container named "<name>, <summary>" with the interaction type as the hint and
             // Reset / Copy Prompt as custom actions; the demo's own controls (legend chips, range
             // pickers, buttons) stay individually reachable inside it.
@@ -247,32 +279,26 @@ struct EffectDetailView: View {
             .accessibilityAction(named: Text(Strings.copyPrompt, language)) { copyPrompt(fullPrompt) }
     }
 
-    /// Sits under the stage so it never collides with demo content.
-    private var stageControls: some View {
-        HStack {
-            Spacer(minLength: 0)
-            Button(action: resetDemo) {
-                Label {
-                    Text(Strings.reset, language)
-                } icon: {
-                    // One full counter-clockwise turn per reset, settling with a spring.
-                    Image(systemName: "arrow.counterclockwise")
-                        .rotationEffect(.degrees(reduceMotion ? 0 : Double(resetToken) * -360))
-                        .animation(.spring(response: 0.6, dampingFraction: 0.72), value: resetToken)
-                }
-                .font(.footnote.weight(.semibold))
-                .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .background(Palette.chipOnPage, in: Capsule())
-                .overlay(Capsule().strokeBorder(Palette.stroke))
-                .contentShape(Capsule())
-            }
-            .buttonStyle(PressableCardStyle())
-            .fixedSize()
-            .accessibilityHint(Text(Strings.resetDemo, language))
+    /// Small glass button in the stage's top-trailing corner; the arrow makes one full
+    /// counter-clockwise turn per reset, settling with a spring.
+    private var resetButton: some View {
+        let turns: Double = reduceMotion ? 0 : Double(resetToken) * -360
+        return Button(action: resetDemo) {
+            Image(systemName: "arrow.counterclockwise")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.primary)
+                .rotationEffect(.degrees(turns))
+                .animation(.spring(response: 0.6, dampingFraction: 0.72), value: resetToken)
+                .frame(width: 34, height: 34)
+                .modifier(GlassCircleBackground())
+                // 44 pt hit target around the 34 pt disc.
+                .padding(5)
+                .contentShape(Rectangle())
         }
-        .padding(.horizontal, 4)
+        .buttonStyle(PressableCardStyle())
+        .padding(5)
+        .accessibilityLabel(Text(Strings.reset, language))
+        .accessibilityHint(Text(Strings.resetDemo, language))
     }
 
     private var parameters: some View {
@@ -308,9 +334,9 @@ struct EffectDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(14)
                     .padding(.leading, 4)
-                    .background(Palette.indigo.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Palette.ember.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(alignment: .leading) {
-                        Capsule().fill(Palette.primary).frame(width: 3).padding(.vertical, 10)
+                        Capsule().fill(Palette.accentFill).frame(width: 3).padding(.vertical, 10)
                     }
                 copyButton(fullPrompt)
             }
@@ -323,8 +349,9 @@ struct EffectDetailView: View {
         let copied = self.copied
         let maxWidth: CGFloat? = copied ? nil : CGFloat.infinity
         let radius: CGFloat = copied ? 24 : CornerRadius.chip
-        let fill: AnyShapeStyle = copied ? AnyShapeStyle(Palette.successStrong) : AnyShapeStyle(Palette.primaryStrong)
-        let glow: Color = copied ? Palette.green.opacity(0.35) : Palette.indigo.opacity(0.25)
+        let fill: AnyShapeStyle = copied ? AnyShapeStyle(Palette.successStrong) : AnyShapeStyle(Palette.accentFill)
+        let ink: Color = copied ? Color.white : Palette.onAccent
+        let glow: Color = copied ? Palette.green.opacity(0.35) : Palette.accentGlow
         return Button {
             copyPrompt(fullPrompt)
         } label: {
@@ -341,7 +368,7 @@ struct EffectDetailView: View {
             .padding(.horizontal, 22)
             .frame(maxWidth: maxWidth)
             .padding(.vertical, 12)
-            .foregroundStyle(.white)
+            .foregroundStyle(ink)
             .background(fill, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .shadow(color: glow, radius: 10, y: 5)
             .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
@@ -535,7 +562,7 @@ private struct DetailSection<Content: View>: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Palette.accent)
                     .frame(width: 30, height: 30)
-                    .background(Palette.indigo.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .background(Palette.ember.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                     .accessibilityHidden(true)
                 Text(title)
                     .font(.headline)
@@ -546,7 +573,7 @@ private struct DetailSection<Content: View>: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.section, style: .continuous))
+        .glossCard(cornerRadius: CornerRadius.section)
     }
 }
 

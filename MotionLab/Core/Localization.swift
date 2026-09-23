@@ -189,6 +189,7 @@ enum Strings {
     )
     static let showAllFamilies = L("Shows every family, grouped by category", "按分类查看全部系列")
     static let browseAllFamilies = L("Browse all families", "浏览全部系列")
+    static let browseByFamily = L("Browse by Family", "按系列浏览")
     static let searchFamilies = L("Search families", "搜索系列")
     static let noFamilyResults = L("No matching families", "没有匹配的系列")
     static let noFamilyResultsHint = L("Try another name, such as slider, spinner or toggle.", "换个名称试试，比如滑块、加载或开关。")

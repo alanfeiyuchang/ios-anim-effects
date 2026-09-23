@@ -40,10 +40,34 @@ enum Palette {
 
     // MARK: App-shell tokens (demos keep using the colours above)
 
-    /// Brand accent for small tinted text, icons and buttons. Darker than `indigo` in light mode
-    /// (#4B57E0, 5.6:1 on white) and lighter in dark mode (#8A94FF), from the AccentColor asset.
+    /// Brand accent for small tinted text, icons, links and system controls (the app tint), from the
+    /// AccentColor asset: a burnt orange in light mode (#B94A00, 5.2:1 on white, 4.7:1 on the grouped
+    /// page) and the Signature orange in dark mode (#FF8A1F, 7:1+ on the dark cards).
     static let accent = Color("AccentColor")
-    /// White text on this gradient stays above 4.5:1 (selected chips, primary buttons).
+    /// Vivid ember orange of the app shell (filled controls, rings, glows). Mode-independent.
+    static let ember = Color(hex: 0xFF7A1A)
+    /// Hot end of the ember gradient.
+    static let emberHot = Color(hex: 0xFF5E3A)
+    /// Filled shell controls (selected chips, primary buttons, badges, rings): #FF7A1A → #FF5E3A.
+    /// Carries `onAccent` (near-black) text, 6.3:1 or better across the whole gradient.
+    static let accentFill = LinearGradient(
+        colors: [ember, emberHot],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    /// Text and glyphs on `accentFill`.
+    static let onAccent = Color(hex: 0x1A0A00)
+    /// Soft coloured glow under `accentFill` controls.
+    static let accentGlow = Color(hex: 0xFF6A2A, opacity: 0.32)
+    /// Large accent numerals (stat counters): readable orange gradient in both modes
+    /// (light #C24E00 → #A83A0C, dark #FFA04A → #FF6A3A; large text, 3:1+ everywhere).
+    static let accentInk = LinearGradient(
+        colors: [Color.adaptive(light: 0xC24E00, dark: 0xFFA04A), Color.adaptive(light: 0xA83A0C, dark: 0xFF6A3A)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    /// Indigo → violet gradient kept for demos that still use it (the shell uses `accentFill`).
+    /// White text on it stays above 4.5:1.
     static let primaryStrong = LinearGradient(
         colors: [Color(hex: 0x4B57E0), Color(hex: 0x7A45D6)],
         startPoint: .topLeading,
@@ -54,14 +78,19 @@ enum Palette {
     /// Violet for small text such as the "iOS 26" badge.
     static let violetText = Color.adaptive(light: 0x7A45D6, dark: 0xC4A0FF)
 
-    /// Grouped page background (behind cards).
-    static let pageBackground = Color(uiColor: .systemGroupedBackground)
-    /// Cards and sections sitting on the page.
-    static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    /// Page background behind cards: grouped grey in light mode, near-black ink in dark mode
+    /// (the glossy widget cards sit on it like the Signature demos).
+    static let pageBackground = Color.adaptive(light: 0xF2F2F7, dark: 0x0B0B0D)
+    /// Flat card colour (the shell's cards use `GlossCardBackground`, which starts from this tone).
+    static let cardBackground = Color.adaptive(light: 0xFFFFFF, dark: 0x17171A)
     /// Chips and pills placed directly on the page background.
-    static let chipOnPage = Color(uiColor: .secondarySystemGroupedBackground)
-    /// Chips and tags placed inside a card (`cardBackground`).
-    static let chipOnCard = Color(uiColor: .tertiarySystemGroupedBackground)
+    static let chipOnPage = Color.adaptive(light: 0xFFFFFF, dark: 0x1C1C21)
+    /// Chips and tags placed inside a card.
+    static let chipOnCard = Color.adaptive(light: 0xF2F2F7, dark: 0x26262C)
+    /// Hairline edge for shell chips and pills: a dark hairline in light mode, a faint rim light in dark.
+    static let edge = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(white: 1, alpha: 0.10) : UIColor(white: 0, alpha: 0.07)
+    })
     /// Demo stage fill: a slightly recessed well in light mode so it separates from both the
     /// grouped page and white cards; the regular secondary surface in dark mode.
     static let stage = Color.adaptive(light: 0xEBEBF1, dark: 0x1C1C1E)

@@ -27,12 +27,15 @@ struct BrowseView: View {
                     header(reader)
                     featured
                         .entrance(revealed, delay: 0.3, distance: 26, scale: 0.98, blur: 0)
+                    familiesRow
+                        .entrance(revealed, delay: 0.36, distance: 22, scale: 0.98, blur: 0)
                     if !recents.ids.isEmpty { recent }
                     categories.id(Self.categoriesAnchor)
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, 8)
                 .animation(.smooth, value: recents.ids)
             }
+            .shellPageScroll()
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y + geometry.contentInsets.top > 44
             } action: { _, isPastTitle in
@@ -52,19 +55,28 @@ struct BrowseView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 if let randomID {
-                    NavigationLink(value: Route.effect(randomID)) {
+                    // The surprise effect zooms out of the dice.
+                    NavigationLink(value: Route.effect(randomID, source: Self.diceSource)) {
                         Image(systemName: "dice.fill")
                             .symbolEffect(.bounce, value: diceRolls)
+                            .modifier(ZoomSource(id: Route.zoomID(effect: randomID, source: Self.diceSource)))
                     }
                     .accessibilityLabel(Strings.random(language))
                 }
             }
         }
         .onAppear {
-            randomID = EffectLibrary.all.randomElement()?.id
             isAppeared = true
-            if !reduceMotion { diceRolls += 1 }
             if !introActive { playReveal() }
+        }
+        .task(id: isAppeared) {
+            // Re-roll once a pop back from the surprise effect has settled, so its zoom can still
+            // land on the dice it came from.
+            guard isAppeared else { return }
+            try? await Task.sleep(for: .seconds(0.6))
+            guard !Task.isCancelled else { return }
+            randomID = EffectLibrary.all.randomElement()?.id
+            if !reduceMotion { diceRolls += 1 }
         }
         .onDisappear { isAppeared = false }
         .onChange(of: introActive) { _, active in
@@ -73,6 +85,14 @@ struct BrowseView: View {
     }
 
     private static let categoriesAnchor = "categories"
+    private static let diceSource = "dice"
+
+    /// "Browse by Family" row: each category's largest family, in catalog order.
+    private static let spotlightFamilies: [EffectFamily] = EffectCategory.allCases.compactMap { category in
+        EffectFamilies.families(in: category).max { lhs, rhs in
+            EffectFamilies.effects(in: lhs).count < EffectFamilies.effects(in: rhs).count
+        }
+    }
 
     /// Starts the one-time header choreography (each element animates itself off `revealed`).
     private func playReveal() {
@@ -89,9 +109,6 @@ struct BrowseView: View {
     // MARK: Header
 
     private func header(_ reader: ScrollViewProxy) -> some View {
-        let effectCount = EffectLibrary.all.count
-        let categoryCount = EffectCategory.allCases.count
-        let familyCount = EffectFamilies.all.count
         let revealed = self.revealed
         // Counters roll up from zero on first reveal (never with Reduce Motion).
         let countsShown = revealed || reduceMotion
@@ -102,25 +119,14 @@ struct BrowseView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .entrance(revealed, delay: 0.3, distance: 8)
-            // Wraps to a second row at large text sizes instead of truncating.
-            FlowLayout(spacing: 10) {
-                StatPill(value: countsShown ? effectCount : 0, unit: Strings.effects(language)) {
-                    // "235 effects" → the whole catalog in Search.
-                    navigator.search("")
+            // One balanced row; wraps to a second row only when it cannot fit (large text sizes).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    statPills(countsShown: countsShown, reader: reader)
                 }
-                .accessibilityLabel(Text(verbatim: Strings.effectCount(effectCount, language)))
-                .accessibilityHint(Text(Strings.showAllEffects, language))
-                StatPill(value: countsShown ? categoryCount : 0, unit: Strings.categoriesUnit(language)) {
-                    withAnimation(reduceMotion ? nil : Animation.smooth) {
-                        reader.scrollTo(Self.categoriesAnchor, anchor: .top)
-                    }
+                FlowLayout(spacing: 8) {
+                    statPills(countsShown: countsShown, reader: reader)
                 }
-                .accessibilityLabel(Text(verbatim: Strings.categoryCount(categoryCount, language)))
-                .accessibilityHint(Text(Strings.jumpToCategories, language))
-                // "85 families" → the All Families index.
-                StatPill(value: countsShown ? familyCount : 0, unit: Strings.familiesUnit(language), route: .families)
-                    .accessibilityLabel(Text(verbatim: Strings.familyCount(familyCount, language)))
-                    .accessibilityHint(Text(Strings.showAllFamilies, language))
             }
             .entrance(revealed, delay: 0.38, distance: 10)
         }
@@ -148,6 +154,30 @@ struct BrowseView: View {
         .onScrollVisibilityChange(threshold: 0.02) { visible in
             if heroOnScreen != visible { heroOnScreen = visible }
         }
+    }
+
+    @ViewBuilder
+    private func statPills(countsShown: Bool, reader: ScrollViewProxy) -> some View {
+        let effectCount = EffectLibrary.all.count
+        let categoryCount = EffectCategory.allCases.count
+        let familyCount = EffectFamilies.all.count
+        StatPill(value: countsShown ? effectCount : 0, unit: Strings.effects(language)) {
+            // "235 effects" → the whole catalog in Search.
+            navigator.search("")
+        }
+        .accessibilityLabel(Text(verbatim: Strings.effectCount(effectCount, language)))
+        .accessibilityHint(Text(Strings.showAllEffects, language))
+        StatPill(value: countsShown ? categoryCount : 0, unit: Strings.categoriesUnit(language)) {
+            withAnimation(reduceMotion ? nil : Animation.smooth) {
+                reader.scrollTo(Self.categoriesAnchor, anchor: .top)
+            }
+        }
+        .accessibilityLabel(Text(verbatim: Strings.categoryCount(categoryCount, language)))
+        .accessibilityHint(Text(Strings.jumpToCategories, language))
+        // "85 families" → the All Families index, zooming out of the pill.
+        StatPill(value: countsShown ? familyCount : 0, unit: Strings.familiesUnit(language), route: .families(source: "statPill"))
+            .accessibilityLabel(Text(verbatim: Strings.familyCount(familyCount, language)))
+            .accessibilityHint(Text(Strings.showAllFamilies, language))
     }
 
     // MARK: Featured
@@ -182,6 +212,52 @@ struct BrowseView: View {
             }
             // A soft detent as each card snaps into focus.
             .sensoryFeedback(.selection, trigger: focusedFeatured)
+            .pausesSnapshotsWhileScrolling()
+        }
+    }
+
+    // MARK: Families
+
+    /// Families are the catalog's main organising layer, so Browse surfaces them right under
+    /// Featured: one live family card per category, plus "See All" into the All Families index.
+    private var familiesRow: some View {
+        let items = Self.spotlightFamilies
+        return VStack(alignment: .leading, spacing: 12) {
+            SectionTitle(text: Strings.browseByFamily(language)) {
+                ZoomRouteLink(route: Route.families(source: "familiesSeeAll")) {
+                    HStack(spacing: 3) {
+                        Text(Strings.seeAll, language)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.bold))
+                            .accessibilityHidden(true)
+                    }
+                    .foregroundStyle(Palette.accent)
+                    .lineLimit(1)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableCardStyle())
+                .accessibilityHint(Text(Strings.showAllFamilies, language))
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: 14) {
+                    ForEach(items) { family in
+                        let members = EffectFamilies.effects(in: family)
+                        ZoomRouteLink(route: Route.family(family.id, source: "browseFamily")) {
+                            FamilyCard(family: family, effects: members)
+                                .frame(width: FamilyRowMetrics.cardWidth)
+                        }
+                        .buttonStyle(PressableCardStyle())
+                        .accessibilityLabel(Text(verbatim: "\(family.name(language)), \(Strings.variationCount(members.count, language))"))
+                        .accessibilityHint(Text(family.summary, language))
+                    }
+                }
+                .scrollTargetLayout()
+                .padding(.horizontal)
+            }
+            .scrollTargetBehavior(.viewAligned)
+            // Lets the cards' shadows spill below the row.
+            .scrollClipDisabled()
+            .pausesSnapshotsWhileScrolling()
         }
     }
 
@@ -189,7 +265,7 @@ struct BrowseView: View {
 
     private var recent: some View {
         let motion = !reduceMotion
-        let swap = CardSwapTransition(reduceMotion: reduceMotion)
+        let swap = CardSwapTransition(reduceMotion: reduceMotion, blur: 0)
         return VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: Strings.recent(language)) {
                 Button(Strings.clear(language)) {
@@ -214,6 +290,8 @@ struct BrowseView: View {
                 }
                 .padding(.horizontal)
             }
+            .scrollClipDisabled()
+            .pausesSnapshotsWhileScrolling()
         }
         .transition(.opacity)
     }
@@ -251,6 +329,10 @@ struct BrowseView: View {
 }
 
 // MARK: - Featured carousel geometry
+
+private enum FamilyRowMetrics {
+    static let cardWidth: CGFloat = 300
+}
 
 private enum FeaturedMetrics {
     static let cardWidth: CGFloat = 260
@@ -290,7 +372,7 @@ private struct CoverFlowEffect: ViewModifier {
 // MARK: - Pieces
 
 /// Tappable "235 effects" style pill on the Browse header; the number rolls up on first reveal.
-/// Runs `action`, or pushes `route` when one is given.
+/// Runs `action`, or pushes `route` (zooming out of the pill) when one is given.
 private struct StatPill: View {
     let value: Int
     let unit: String
@@ -299,7 +381,7 @@ private struct StatPill: View {
 
     var body: some View {
         if let route {
-            NavigationLink(value: route) { label }
+            ZoomRouteLink(route: route) { label }
                 .buttonStyle(PressableCardStyle())
                 .simultaneousGesture(TapGesture().onEnded { Haptics.selection() })
         } else {
@@ -317,22 +399,19 @@ private struct StatPill: View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(verbatim: "\(value)")
                 .font(.title3.weight(.bold).monospacedDigit())
-                .foregroundStyle(Palette.primaryStrong)
+                .foregroundStyle(Palette.accentInk)
                 .contentTransition(.numericText(value: Double(value)))
                 .animation(ShellMotion.count.delay(0.35), value: value)
             Text(verbatim: unit)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Image(systemName: "chevron.right")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
         }
         .lineLimit(1)
-        .padding(.horizontal, 12)
+        .fixedSize()
+        .padding(.horizontal, 11)
         .padding(.vertical, 6)
         .background(.regularMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(Palette.stroke))
+        .overlay(Capsule().strokeBorder(Palette.edge))
         .contentShape(Capsule())
     }
 }
@@ -400,15 +479,10 @@ private struct FeaturedCard: View {
         .frame(width: FeaturedMetrics.cardWidth, alignment: .leading)
         .background {
             // The snapped card lifts: its shadow deepens as it settles into focus.
-            shape
-                .fill(Palette.cardBackground)
-                .shadow(
-                    color: Color.black.opacity(isFocused ? 0.13 : 0.03),
-                    radius: isFocused ? 18 : 6,
-                    y: isFocused ? 10 : 3
-                )
+            GlossCardBackground(cornerRadius: CornerRadius.featuredCard, tint: effect.category.gradient.first, lifted: isFocused)
                 .animation(.smooth(duration: 0.45), value: isFocused)
         }
+        .contentShape(shape)
     }
 }
 
@@ -432,7 +506,7 @@ private struct CompactEffectCard: View {
                 .padding(.horizontal, 2)
         }
         .padding(8)
-        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.section, style: .continuous))
+        .glossCard(cornerRadius: CornerRadius.section)
     }
 }
 
@@ -467,18 +541,8 @@ private struct CategoryTile: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            ZStack {
-                Palette.cardBackground
-                RadialGradient(
-                    colors: [(category.gradient.first ?? Palette.indigo).opacity(0.16), .clear],
-                    center: .topTrailing,
-                    startRadius: 0,
-                    endRadius: 150
-                )
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.section, style: .continuous))
+        // The pressable tile style draws (and compresses) the shadow.
+        .glossCard(cornerRadius: CornerRadius.section, tint: category.gradient.first, shadow: false)
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.section, style: .continuous))
     }
 }
@@ -527,6 +591,7 @@ struct CategoryView: View {
             .padding(.vertical)
             .animation(reduceMotion ? Animation.easeInOut(duration: 0.2) : ShellMotion.reveal, value: showsFamilies)
         }
+        .shellPageScroll()
         .background(Palette.pageBackground)
         .navigationTitle(category.title(language))
         .task {
@@ -557,14 +622,20 @@ struct CategoryView: View {
     }
 
     private func modePicker(effectCount: Int, familyCount: Int) -> some View {
-        Picker(Strings.browseMode(language), selection: $mode) {
-            Text(verbatim: "\(CategoryBrowseMode.families.title(language)) \(familyCount)")
-                .tag(CategoryBrowseMode.families)
-            Text(verbatim: "\(CategoryBrowseMode.all.title(language)) \(effectCount)")
-                .tag(CategoryBrowseMode.all)
-        }
-        .pickerStyle(.segmented)
-        .sensoryFeedback(.selection, trigger: mode)
+        ShellSegmentedControl(
+            label: Strings.browseMode(language),
+            segments: [
+                ShellSegmentedControl<CategoryBrowseMode>.Segment(
+                    value: .families,
+                    title: "\(CategoryBrowseMode.families.title(language)) \(familyCount)"
+                ),
+                ShellSegmentedControl<CategoryBrowseMode>.Segment(
+                    value: .all,
+                    title: "\(CategoryBrowseMode.all.title(language)) \(effectCount)"
+                ),
+            ],
+            selection: $mode
+        )
     }
 
     // MARK: Families
@@ -585,8 +656,8 @@ struct CategoryView: View {
                 .buttonStyle(PressableCardStyle())
                 .accessibilityLabel(Text(verbatim: "\(family.name(language)), \(Strings.variationCount(members.count, language))"))
                 .accessibilityHint(Text(family.summary, language))
-                .appearEntrance(index: index, delay: 0.12, distance: 22, scale: 0.96)
-                .scrollReveal()
+                .appearEntrance(index: index, delay: 0.12, distance: 22, scale: 0.96, blur: 0)
+                .scrollReveal(blur: 0)
             }
         }
         .padding(.horizontal)

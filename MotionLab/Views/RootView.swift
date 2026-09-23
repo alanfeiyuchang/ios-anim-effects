@@ -6,8 +6,8 @@ enum Route: Hashable {
     case category(EffectCategory, source: String = "")
     /// A family of variations (`EffectFamily.id`), e.g. "inputs.slider".
     case family(String, source: String = "")
-    /// Every family, grouped by category.
-    case families
+    /// Every family, grouped by category (`source` as for `.family`).
+    case families(source: String = "")
     /// `source` names the placement the link lives in (e.g. "featured", "recent", "grid") so the
     /// zoom transition's source id is unique even when one effect is visible in two places at once.
     /// An empty source (dice, launch arguments) pushes without a zoom source.
@@ -21,7 +21,7 @@ enum Route: Hashable {
         switch self {
         case .category(let category, _): return "category:\(category.rawValue)"
         case .family(let id, _): return "family:\(id)"
-        case .families: return "families"
+        case .families(_): return "families"
         case .effect(let id, _): return "effect:\(id)"
         }
     }
@@ -29,8 +29,7 @@ enum Route: Hashable {
     /// Placement of the link that opened this route ("" when it has no zoom source).
     var source: String {
         switch self {
-        case .category(_, let source), .family(_, let source), .effect(_, let source): return source
-        case .families: return ""
+        case .category(_, let source), .family(_, let source), .effect(_, let source), .families(let source): return source
         }
     }
 
@@ -76,6 +75,21 @@ struct RouteLink<Label: View>: View {
             }
         } else {
             NavigationLink(value: route) { label() }
+        }
+    }
+}
+
+/// Marks a view as the zoom-transition source with `id` (when a zoom namespace is available).
+struct ZoomSource: ViewModifier {
+    let id: String
+    @Environment(\.zoomNamespace) private var namespace
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let namespace {
+            content.matchedTransitionSource(id: id, in: namespace)
+        } else {
+            content
         }
     }
 }
@@ -159,8 +173,26 @@ struct RootView: View {
             }
         }
         .environment(\.previewMotionEnabled, animatePreviews && !reduceMotion)
+        // iOS 26: the floating tab bar tucks away while reading down a page.
+        .modifier(TabBarMinimizeOnScroll())
         // A light detent tick on every tab switch (tap or programmatic, e.g. a tag search).
         .sensoryFeedback(.selection, trigger: navigator.tab)
+    }
+}
+
+/// On iOS 26 the floating tab bar minimises while scrolling down; earlier systems are unchanged.
+private struct TabBarMinimizeOnScroll: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            content.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
     }
 }
 
@@ -181,7 +213,7 @@ enum LaunchOptions {
 
     /// Parses "effect:<id>", "category:<id>", "family:<id>" or "families"; nil for unknown ids.
     static func route(from raw: String) -> Route? {
-        if raw == "families" { return .families }
+        if raw == "families" { return .families() }
         if raw.hasPrefix("effect:") {
             let id = String(raw.dropFirst("effect:".count))
             return EffectLibrary.effect(id: id) == nil ? nil : .effect(id)
@@ -257,8 +289,9 @@ struct RoutedStack<Content: View>: View {
                 FamilyView(family: family)
                     .modifier(ZoomDestination(route: route, namespace: namespace))
             }
-        case .families:
+        case .families(_):
             AllFamiliesView()
+                .modifier(ZoomDestination(route: route, namespace: namespace))
         case .effect(let id, _):
             if let effect = EffectLibrary.effect(id: id) {
                 EffectDetailView(effect: effect)
@@ -358,9 +391,11 @@ private struct PressDepth: ViewModifier {
             let radius: CGFloat = isPressed ? depth * 0.35 : depth
             let y: CGFloat = isPressed ? depth * 0.15 : depth * 0.5
             let dim: Double = isPressed ? (isDark ? 0.05 : -0.035) : 0
+            // Deeper on the ink page so glossy tiles still float in dark mode.
+            let opacity: Double = isDark ? (isPressed ? 0.3 : 0.5) : (isPressed ? 0.05 : 0.09)
             content
                 .brightness(dim)
-                .shadow(color: Color.black.opacity(isPressed ? 0.05 : 0.09), radius: radius, y: y)
+                .shadow(color: Color.black.opacity(opacity), radius: radius, y: y)
         } else {
             content
         }

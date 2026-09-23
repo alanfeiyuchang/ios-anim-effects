@@ -5,6 +5,8 @@ import UIKit
 enum StageMetrics {
     static let previewCanvas: CGFloat = 340
     static let detailHeight: CGFloat = 400
+    /// The detail stage may shrink to fit above the fold, but never below the authored canvas.
+    static let detailMinHeight: CGFloat = 340
 }
 
 /// Non-interactive thumbnail of an effect's demo.
@@ -27,7 +29,9 @@ struct PreviewStage: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
-    @State private var isOnScreen = true
+    /// Starts off: lazy grids build cells slightly outside the viewport, and those must not mount
+    /// their live demo. `onScrollVisibilityChange` reports `true` on first layout for visible cells.
+    @State private var isOnScreen = false
     /// Last snapshot this view rendered (kept so an NSCache eviction never blanks a visible card).
     @State private var snapshot: UIImage?
     @State private var snapshotKey: String?
@@ -71,6 +75,7 @@ struct PreviewStage: View {
         .aspectRatio(1, contentMode: .fit)
         .background(StageBackground())
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(StageRim(cornerRadius: cornerRadius))
         .animation(.easeInOut(duration: 0.25), value: isOnScreen)
         .onScrollVisibilityChange(threshold: 0.01) { visible in
             if isOnScreen != visible { isOnScreen = visible }
@@ -188,15 +193,32 @@ final class PreviewSnapshotCache: @unchecked Sendable {
 /// - after each `ImageRenderer` pass the next one waits at least twice as long as that pass took
 ///   (min 20 ms), so the UI always gets most of the frames even when a demo is expensive to draw;
 /// - `hold(for:)` pauses all renders while a page plays its entrance (the detail page calls it),
-///   so thumbnails in the Variations row never compete with the stage and the page's own motion.
+///   so thumbnails in the Variations row never compete with the stage and the page's own motion;
+/// - no render starts while any scroll view is moving (`pausesSnapshotsWhileScrolling()` reports
+///   scroll phases here), and the first one after a scroll waits for the deceleration to settle.
 @MainActor
 enum SnapshotGate {
     private static var nextSlot = ContinuousClock.now
+    /// Scroll views currently tracking, decelerating or animating.
+    private static var activeScrolls: Set<UUID> = []
+
+    static func beginScroll(_ id: UUID) {
+        activeScrolls.insert(id)
+    }
+
+    static func endScroll(_ id: UUID) {
+        guard activeScrolls.remove(id) != nil else { return }
+        if activeScrolls.isEmpty { hold(for: .milliseconds(150)) }
+    }
 
     static func waitForTurn() async {
         await Task.yield()
         let clock = ContinuousClock()
         while !Task.isCancelled {
+            if !activeScrolls.isEmpty {
+                try? await Task.sleep(for: .milliseconds(80))
+                continue
+            }
             let now = clock.now
             if now >= nextSlot {
                 nextSlot = now + .milliseconds(20)
@@ -226,7 +248,8 @@ struct StageBackground: View {
         ZStack {
             Palette.stage
             RadialGradient(
-                colors: [Color.white.opacity(scheme == .dark ? 0.06 : 0.6), .clear],
+                // Dark mode lifts the centre a little more, so dark demos keep a readable edge.
+                colors: [Color.white.opacity(scheme == .dark ? 0.10 : 0.6), .clear],
                 center: .top,
                 startRadius: 0,
                 endRadius: 320
@@ -237,6 +260,8 @@ struct StageBackground: View {
 
 struct EffectCard: View {
     let effect: Effect
+    /// Shared with the family page's Compare cards so a variation's stage flies between layouts.
+    var stageNamespace: Namespace.ID? = nil
     @Environment(\.appLanguage) private var language
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(FavoritesStore.self) private var favorites
@@ -245,6 +270,7 @@ struct EffectCard: View {
         let isLarge = dynamicTypeSize.isAccessibilitySize
         VStack(alignment: .leading, spacing: 10) {
             PreviewStage(effect: effect)
+                .modifier(StageGeometryLink(effectID: effect.id, namespace: stageNamespace))
                 .overlay(alignment: .topTrailing) {
                     if favorites.contains(effect.id) {
                         Image(systemName: "heart.fill")
@@ -279,10 +305,23 @@ struct EffectCard: View {
         }
         .padding(8)
         .padding(.bottom, 4)
-        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous).strokeBorder(Palette.stroke))
-        .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
+        .glossCard(cornerRadius: CornerRadius.card, tint: effect.category.gradient.first)
         .contentShape(RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+    }
+}
+
+/// Matched geometry between the same variation's stage in two layouts (family Grid ↔ Compare).
+struct StageGeometryLink: ViewModifier {
+    let effectID: String
+    let namespace: Namespace.ID?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let namespace {
+            content.matchedGeometryEffect(id: "stage.\(effectID)", in: namespace)
+        } else {
+            content
+        }
     }
 }
 
@@ -307,11 +346,15 @@ struct RequirementBadge: View {
 ///
 /// Motion: the cards on screen when the grid first appears rise in with a short stagger; cards
 /// scrolled into view later are revealed by an animated scroll transition; cards joining or leaving
-/// (search results, favorites) scale/blur in and out. Reduce Motion reduces all of it to fades.
+/// (search results, favorites) scale and fade in and out. Reduce Motion reduces all of it to fades.
+/// None of these wrap the cards in a blur: the cards hold live demos, and a blur over animating
+/// content would cost an offscreen pass every frame.
 struct EffectGrid: View {
     let effects: [Effect]
     /// Zoom-transition placement name; give each grid on one screen its own.
     var source = "grid"
+    /// See `EffectCard.stageNamespace`.
+    var stageNamespace: Namespace.ID? = nil
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Flips once, on first appearance; cards created later start already in place.
@@ -326,14 +369,15 @@ struct EffectGrid: View {
 
     var body: some View {
         let entered = self.entered
-        let swap = CardSwapTransition(reduceMotion: reduceMotion)
+        let swap = CardSwapTransition(reduceMotion: reduceMotion, blur: 0)
+        let stageNamespace = self.stageNamespace
         LazyVGrid(columns: columns, spacing: 14) {
             ForEach(Array(effects.enumerated()), id: \.element.id) { index, effect in
                 EffectLink(effect: effect, source: source) {
-                    EffectCard(effect: effect)
+                    EffectCard(effect: effect, stageNamespace: stageNamespace)
                 }
-                .entrance(entered, delay: ShellMotion.stagger(index, step: 0.05, cap: 8), distance: 22, scale: 0.95)
-                .scrollReveal()
+                .entrance(entered, delay: ShellMotion.stagger(index, step: 0.05, cap: 8), distance: 22, scale: 0.95, blur: 0)
+                .scrollReveal(blur: 0)
                 .transition(swap)
             }
         }
@@ -407,21 +451,21 @@ struct Chip: View {
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                 if let count {
-                    Text("\(count)")
+                    Text(verbatim: "\(count)")
                         .font(.caption.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.secondary)
+                        .foregroundStyle(isSelected ? Palette.onAccent.opacity(0.72) : Color.secondary)
                         .contentTransition(.numericText(value: Double(count)))
                 }
             }
             .fixedSize()
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
+            .foregroundStyle(isSelected ? Palette.onAccent : Color.primary)
             .background {
                 ZStack {
                     Capsule()
                         .fill(Palette.chipOnPage)
-                        .overlay(Capsule().strokeBorder(Palette.stroke))
+                        .overlay(Capsule().strokeBorder(Palette.edge))
                         .opacity(isSelected ? 0 : 1)
                     if isSelected { selectionPill }
                 }
@@ -438,8 +482,8 @@ struct Chip: View {
     @ViewBuilder
     private var selectionPill: some View {
         let pill = Capsule()
-            .fill(Palette.primaryStrong)
-            .shadow(color: Palette.indigo.opacity(0.28), radius: 6, y: 3)
+            .fill(Palette.accentFill)
+            .shadow(color: Palette.accentGlow, radius: 6, y: 3)
         if let namespace {
             pill.matchedGeometryEffect(id: "chip.selection", in: namespace)
         } else {
@@ -460,7 +504,7 @@ struct TagLabel: View {
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
             .background(Palette.chipOnCard, in: Capsule())
-            .overlay(Capsule().strokeBorder(Palette.stroke))
+            .overlay(Capsule().strokeBorder(Palette.edge))
             .foregroundStyle(.secondary)
     }
 }

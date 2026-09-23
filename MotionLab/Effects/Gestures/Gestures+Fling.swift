@@ -119,8 +119,8 @@ private struct FlingDemo: View {
             ZStack(alignment: .topLeading) {
                 ArenaBackground()
                 TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-                    let frame = model.step(to: timeline.date, bounds: bounds, glide: glide, restitution: restitution, haptics: haptics)
-                    FlingLayer(frame: frame, puck: puck, isDragging: isDragging)
+                    let snapshot = model.step(to: timeline.date, bounds: bounds, glide: glide, restitution: restitution, haptics: haptics)
+                    FlingLayer(snapshot: snapshot, puck: puck, isDragging: isDragging)
                 }
                 .allowsHitTesting(false)
             }
@@ -185,17 +185,17 @@ private struct FlingDemo: View {
 }
 
 private struct FlingLayer: View {
-    let frame: FlingFrame
+    let snapshot: FlingFrame
     let puck: CGFloat
     let isDragging: Bool
 
     var body: some View {
-        let sx = frame.squash.dx
-        let sy = frame.squash.dy
+        let sx = snapshot.squash.dx
+        let sy = snapshot.squash.dy
         ZStack(alignment: .topLeading) {
             Canvas { context, _ in
-                let count = frame.trail.count
-                for (index, point) in frame.trail.enumerated() {
+                let count = snapshot.trail.count
+                for (index, point) in snapshot.trail.enumerated() {
                     let t = CGFloat(index + 1) / CGFloat(max(count, 1))
                     let r = puck / 2 * (0.35 + 0.5 * t)
                     let rect = CGRect(x: point.x + puck / 2 - r, y: point.y + puck / 2 - r, width: r * 2, height: r * 2)
@@ -205,7 +205,7 @@ private struct FlingLayer: View {
             PuckView(isDragging: isDragging)
                 .frame(width: puck, height: puck)
                 .scaleEffect(x: 1 - sx + sy * 0.5, y: 1 - sy + sx * 0.5)
-                .offset(x: frame.position.x, y: frame.position.y)
+                .offset(x: snapshot.position.x, y: snapshot.position.y)
         }
     }
 }

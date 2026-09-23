@@ -6,6 +6,8 @@ enum NavigationEffects {
         .navigationCollapsingTabBar,
         .navigationPageDots,
         .navigationSideDrawer,
+        .navigationSidebarRail,
+        .navigationPushParallax,
         .navigationBottomSheet,
         .navigationRadialMenu,
         .navigationContextPopover,

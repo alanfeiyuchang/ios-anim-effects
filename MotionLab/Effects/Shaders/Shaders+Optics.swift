@@ -46,7 +46,7 @@ extension Effect {
         tags: ["kaleidoscope", "mirror", "symmetry", "polar", "pattern", "万花筒", "镜像", "对称", "花纹"],
         params: [
             .slider("segments", L("Mirrors", "镜面数"), 3...12, default: 8, step: 1, decimals: 0),
-            .slider("speed", L("Turn speed", "旋转速度"), 0...2, default: 0.6, unit: "×"),
+            .slider("speed", L("Turn speed", "旋转速度"), 0...2, default: 1.0, unit: "×"),
             .slider("zoom", L("Zoom", "缩放"), 0.5...1.6, default: 1.0, unit: "×"),
         ]
     ) { ctx in

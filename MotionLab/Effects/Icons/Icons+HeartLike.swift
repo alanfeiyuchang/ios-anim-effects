@@ -63,7 +63,11 @@ private struct HeartLikeDemo: View {
     }
 
     private var heart: some View {
-        Button { toggle() } label: {
+        let liked = self.liked
+        let tint = self.tint
+        let radius = ctx.cg("radius")
+        let particles = ctx.int("count")
+        return Button { toggle() } label: {
             Color.clear
                 .frame(width: 80, height: 80)
                 .keyframeAnimator(initialValue: HeartValues(), trigger: bursts) { content, value in
@@ -72,8 +76,8 @@ private struct HeartLikeDemo: View {
                             liked: liked,
                             value: value,
                             tint: tint,
-                            radius: ctx.cg("radius"),
-                            particles: ctx.int("count")
+                            radius: radius,
+                            particles: particles
                         )
                     }
                 } keyframes: { _ in

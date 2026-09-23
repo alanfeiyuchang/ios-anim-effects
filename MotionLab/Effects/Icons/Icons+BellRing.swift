@@ -39,6 +39,7 @@ private struct BellRingDemo: View {
     @State private var badge = 2
 
     var body: some View {
+        let badge = self.badge
         VStack(spacing: 24) {
             Color.clear
                 .frame(width: 180, height: 150)

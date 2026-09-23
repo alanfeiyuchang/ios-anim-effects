@@ -16,17 +16,24 @@ struct EffectDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                stage
-                if !effect.params.isEmpty { parameters }
-                promptCard
-                implementationCard
-                if !effect.tags.isEmpty { tagsCard }
+        ScrollViewReader { reader in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    header
+                    stage
+                    if !effect.params.isEmpty { parameters }
+                    promptCard.id("prompt")
+                    implementationCard
+                    if !effect.tags.isEmpty { tagsCard }
+                }
+                .padding()
+                .padding(.bottom, 24)
             }
-            .padding()
-            .padding(.bottom, 24)
+            .onAppear {
+                if let anchor = LaunchOptions.detailAnchor {
+                    reader.scrollTo(anchor, anchor: .top)
+                }
+            }
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle(effect.name(language))

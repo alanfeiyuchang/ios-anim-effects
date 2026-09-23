@@ -19,32 +19,60 @@ extension EnvironmentValues {
 
 struct RootView: View {
     @Environment(\.appLanguage) private var language
+    @State private var tab = LaunchOptions.initialTab
 
     var body: some View {
-        TabView {
-            Tab(Strings.browse(language), systemImage: "square.grid.2x2.fill") {
-                RoutedStack { BrowseView() }
+        TabView(selection: $tab) {
+            Tab(Strings.browse(language), systemImage: "square.grid.2x2.fill", value: 0) {
+                RoutedStack(initialPath: LaunchOptions.initialPath) { BrowseView() }
             }
-            Tab(Strings.search(language), systemImage: "magnifyingglass") {
+            Tab(Strings.search(language), systemImage: "magnifyingglass", value: 1) {
                 RoutedStack { SearchView() }
             }
-            Tab(Strings.favorites(language), systemImage: "heart.fill") {
+            Tab(Strings.favorites(language), systemImage: "heart.fill", value: 2) {
                 RoutedStack { FavoritesView() }
             }
-            Tab(Strings.settings(language), systemImage: "gearshape.fill") {
+            Tab(Strings.settings(language), systemImage: "gearshape.fill", value: 3) {
                 NavigationStack { SettingsView() }
             }
         }
     }
 }
 
+/// Launch arguments used for automated screenshots, e.g.
+/// `-ML_route effect:shader.ripple`, `-ML_route category:buttons`, `-ML_tab 3`, `-ML_anchor prompt`.
+/// (`-app.language en` / `-app.appearance 2` also work because @AppStorage reads the argument domain.)
+enum LaunchOptions {
+    static var initialTab: Int { UserDefaults.standard.integer(forKey: "ML_tab") }
+
+    static var initialPath: [Route] {
+        guard let raw = UserDefaults.standard.string(forKey: "ML_route") else { return [] }
+        if raw.hasPrefix("effect:") {
+            let id = String(raw.dropFirst("effect:".count))
+            return EffectLibrary.effect(id: id) == nil ? [] : [.effect(id)]
+        }
+        if raw.hasPrefix("category:"), let category = EffectCategory(rawValue: String(raw.dropFirst("category:".count))) {
+            return [.category(category)]
+        }
+        return []
+    }
+
+    static var detailAnchor: String? { UserDefaults.standard.string(forKey: "ML_anchor") }
+}
+
 /// A NavigationStack that knows how to show categories and effects with a zoom transition.
 struct RoutedStack<Content: View>: View {
     @Namespace private var namespace
-    @ViewBuilder var content: () -> Content
+    @State private var path: [Route]
+    private let content: () -> Content
+
+    init(initialPath: [Route] = [], @ViewBuilder content: @escaping () -> Content) {
+        _path = State(initialValue: initialPath)
+        self.content = content
+    }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             content()
                 .navigationDestination(for: Route.self) { route in
                     switch route {

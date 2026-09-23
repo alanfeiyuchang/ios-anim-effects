@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      screenshots:
+        description: "Capture simulator screenshots of every screen and effect"
+        type: boolean
+        default: true
 
 jobs:
   build:
@@ -13,18 +18,20 @@ jobs:
         include:
           - runner: macos-15
             name: Xcode 16
+            xcode: "Xcode_16"
           - runner: macos-26
             name: Xcode 26
+            xcode: "Xcode_26"
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select latest Xcode
+      - name: Select Xcode
         run: |
-          LATEST=$(ls -d /Applications/Xcode_*.app | grep -v beta | sort -V | tail -n 1)
-          echo "Using $LATEST"
-          sudo xcode-select -s "$LATEST"
+          PICK=$(ls -d /Applications/${{ matrix.xcode }}*.app | grep -v -i beta | sort -V | tail -n 1)
+          echo "Using $PICK"
+          sudo xcode-select -s "$PICK"
           xcodebuild -version
 
       - name: Build for iOS Simulator
@@ -44,5 +51,29 @@ jobs:
               grep -E "error:" build.log | sed -E 's#^.*/MotionLab/#MotionLab/#' | sort -u | head -n 300
               exit 1
             }
-          grep -E "warning:" build.log | sort -u | head -n 100 || true
+          echo "================ WARNINGS ================"
+          grep -E "warning:" build.log | grep -v appintents | sed -E 's#^.*/MotionLab/#MotionLab/#' | sort -u | head -n 100 || true
           echo "Build succeeded"
+
+  screenshots:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[shots]')
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          PICK=$(ls -d /Applications/Xcode_26*.app | grep -v -i beta | sort -V | tail -n 1)
+          sudo xcode-select -s "$PICK"
+          xcodebuild -version
+
+      - name: Capture screenshots
+        run: PROMPTS=0 scripts/screenshots.sh screenshots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots
+          retention-days: 7

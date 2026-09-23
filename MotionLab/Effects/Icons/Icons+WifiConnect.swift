@@ -131,7 +131,7 @@ private struct WifiConnectDemo: View {
             Haptics.tap(.light)
             withAnimation(.snappy) { state = .searching }
             let current = token
-            let muted = Haptics.isMuted
+            let muted = Haptics.isMuted || ctx.isPreview
             DispatchQueue.main.asyncAfter(deadline: .now() + ctx["search"]) {
                 guard current == token, state == .searching else { return }
                 if !muted { Haptics.success() }

@@ -100,7 +100,7 @@ private struct BatteryChargeDemo: View {
     private func toggle() {
         token += 1
         let current = token
-        let muted = Haptics.isMuted
+        let muted = Haptics.isMuted || ctx.isPreview
         let duration: Double = ctx["duration"]
         if plugged {
             Haptics.tap(.light)

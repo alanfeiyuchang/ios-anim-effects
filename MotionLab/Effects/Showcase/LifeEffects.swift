@@ -6,5 +6,6 @@ enum ShowcaseLifeEffects {
     static let all: [Effect] = [
         .showcaseFinanceCard,
         .showcaseSleepTimeline,
+        .showcaseEvCharge,
     ]
 }

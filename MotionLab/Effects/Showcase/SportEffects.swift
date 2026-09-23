@@ -12,6 +12,7 @@ enum ShowcaseSportEffects {
         .showcasePhotoPlay,
         .showcaseSpotsGrid,
         .showcaseGoCountdown,
+        .showcaseSummitBadge,
         .showcaseAltitudeRuler,
         .showcaseLiftStatus,
         .showcaseHeartZone,

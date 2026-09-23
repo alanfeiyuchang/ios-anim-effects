@@ -63,6 +63,7 @@ enum ShowcaseFamilies {
         "showcase.run-summary": "showcase.live-stats",
         "showcase.weather-widget": "showcase.live-stats",
         "showcase.flip-clock": "showcase.live-stats",
+        "showcase.ev-charge": "showcase.live-stats",
         // Photo & media cards
         "showcase.board-card": "showcase.media-cards",
         "showcase.photo-play": "showcase.media-cards",
@@ -82,10 +83,12 @@ enum ShowcaseFamilies {
         "showcase.flight-path": "showcase.routes",
         "showcase.pin-route": "showcase.routes",
         "showcase.itinerary": "showcase.routes",
+        "showcase.transit-line": "showcase.routes",
         // Moments & CTAs
         "showcase.go-countdown": "showcase.moments",
         "showcase.get-started": "showcase.moments",
         "showcase.boarding-pass": "showcase.moments",
         "showcase.save-burst": "showcase.moments",
+        "showcase.summit-badge": "showcase.moments",
     ]
 }

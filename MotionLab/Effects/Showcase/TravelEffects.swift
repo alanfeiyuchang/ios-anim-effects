@@ -12,6 +12,7 @@ enum ShowcaseTravelEffects {
         .showcaseBoardingPass,
         .showcasePinRoute,
         .showcaseItinerary,
+        .showcaseTransitLine,
         .showcaseSaveBurst,
         .showcaseDateRange,
         .showcasePolaroidFan,

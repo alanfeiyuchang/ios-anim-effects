@@ -49,19 +49,33 @@ enum CardsFamilies {
         "cards.tilt-3d": "cards.tilt",
         "cards.holographic": "cards.tilt",
         "cards.parallax-layers": "cards.tilt",
+        "cards.press-tilt": "cards.tilt",
+        "cards.rim-light": "cards.tilt",
         // Flip & reveal
         "cards.flip": "cards.flip",
         "cards.scratch-reveal": "cards.flip",
+        "cards.hinge-reveal": "cards.flip",
+        "cards.tile-flip": "cards.flip",
+        "cards.scrub-flip": "cards.flip",
         // Card swipe
         "cards.swipe-stack": "cards.swipe",
         "cards.shuffle": "cards.swipe",
+        "cards.jelly-swipe": "cards.swipe",
+        "cards.turn-swipe": "cards.swipe",
+        "cards.toss-swipe": "cards.swipe",
+        "cards.tear-off": "cards.swipe",
+        "cards.rewind-swipe": "cards.swipe",
         // Stacks & decks
         "cards.wallet-stack": "cards.stack",
         "cards.fan-deck": "cards.stack",
         "cards.notification-stack": "cards.stack",
         "cards.stacking-scroll": "cards.stack",
+        "cards.cascade-spread": "cards.stack",
         // Expand & peek
         "cards.peek": "cards.expand",
         "cards.accordion": "cards.expand",
+        "cards.bento-expand": "cards.expand",
+        "cards.detent-expand": "cards.expand",
+        "cards.origami-unfold": "cards.expand",
     ]
 }

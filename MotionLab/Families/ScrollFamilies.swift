@@ -49,20 +49,33 @@ enum ScrollFamilies {
         "scroll.cover-flow": "scroll.carousel",
         "scroll.paging-carousel": "scroll.carousel",
         "scroll.infinite-carousel": "scroll.carousel",
+        "scroll.stack-carousel": "scroll.carousel",
+        "scroll.cube-carousel": "scroll.carousel",
+        "scroll.parallax-pager": "scroll.carousel",
+        "scroll.fan-carousel": "scroll.carousel",
         // Scroll headers
         "scroll.stretchy-header": "scroll.header",
         "scroll.collapsing-header": "scroll.header",
         "scroll.sticky-sections": "scroll.header",
+        "scroll.hiding-header": "scroll.header",
+        "scroll.pill-header": "scroll.header",
         // List motion
         "scroll.transition-list": "scroll.list-motion",
         "scroll.parallax-cards": "scroll.list-motion",
         "scroll.staggered-entrance": "scroll.list-motion",
         "scroll.insert-remove": "scroll.list-motion",
+        "scroll.elastic-list": "scroll.list-motion",
         // Wheels & dials
         "scroll.wheel-list": "scroll.wheel",
         "scroll.arc-dial": "scroll.wheel",
+        "scroll.ruler-picker": "scroll.wheel",
+        "scroll.rotary-wheel": "scroll.wheel",
+        "scroll.slot-reels": "scroll.wheel",
         // Progress & index
         "scroll.progress-indicator": "scroll.indicator",
         "scroll.index-scrubber": "scroll.indicator",
+        "scroll.minimap": "scroll.indicator",
+        "scroll.chapter-rail": "scroll.indicator",
+        "scroll.liquid-scrollbar": "scroll.indicator",
     ]
 }

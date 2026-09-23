@@ -11,8 +11,8 @@ extension Effect {
             "手指划过即可擦去照片上的雾气，停手后玻璃又慢慢重新起雾。"
         ),
         prompt: L(
-            "A full-bleed travel photo card (280×260 pt, 26 pt continuous corners) sits beneath a frosted fog layer — a system blur material that frosts the photo beneath it, washed with ~20% white — with a small “Drag anywhere to wipe the fog” pill at the bottom. As the finger moves, a soft round brush (~44 pt wide, edges feathered by a ~10 pt blur) erases the fog along the exact stroke path, revealing the crisp photo like wiping a steamed-up window; a soft haptic ticks as each stroke begins and the hint pill fades out over 300 ms. Each cleared stroke holds for 1.2 s, then fades back linearly over ~3.5 s so the glass re-fogs on its own. It feels tactile, playful and invites exploration.",
-            "一张全幅旅行照片卡片（280×260pt，26pt 连续圆角）上盖着一层磨砂雾气：系统模糊材质把下方照片磨成毛玻璃，再叠约 20% 白色，底部是「随意拖动，擦去雾气」的提示胶囊。手指滑动时，一支约 44pt 宽、边缘经约 10pt 模糊羽化的圆形笔刷沿轨迹实时擦掉雾层，露出清晰的原图，就像擦拭起雾的车窗。每次落笔都有一下轻柔触感，提示胶囊在 300 毫秒内淡出。每道擦痕保留 1.2 秒，再用约 3.5 秒线性回凝，玻璃自己慢慢重新起雾。触感真实、俏皮，让人忍不住想多擦几下。"
+            "A full-bleed travel photo card (280×260 pt, 26 pt continuous corners) sits beneath a frosted fog layer — a system blur material that frosts the photo beneath it, washed with ~15% white — with a small “Drag anywhere to wipe the fog” pill at the bottom. As the finger moves, a soft round brush (~44 pt wide, edges feathered by a ~10 pt blur) erases the fog along the exact stroke path, revealing the crisp photo like wiping a steamed-up window; a soft haptic ticks as each stroke begins and the hint pill fades out over 300 ms. Each cleared stroke holds for 1.2 s, then fades back linearly over ~3.5 s so the glass re-fogs on its own. It feels tactile, playful and invites exploration.",
+            "一张全幅旅行照片卡片（280×260pt，26pt 连续圆角）上盖着一层磨砂雾气：系统模糊材质把下方照片磨成毛玻璃，再叠约 15% 白色，底部是「随意拖动，擦去雾气」的提示胶囊。手指滑动时，一支约 44pt 宽、边缘经约 10pt 模糊羽化的圆形笔刷沿轨迹实时擦掉雾层，露出清晰的原图，就像擦拭起雾的车窗。每次落笔都有一下轻柔触感，提示胶囊在 300 毫秒内淡出。每道擦痕保留 1.2 秒，再用约 3.5 秒线性回凝，玻璃自己慢慢重新起雾。触感真实、俏皮，让人忍不住想多擦几下。"
         ),
         implementation: L(
             "The fog is a blurred copy of the photo masked by a Rectangle minus a Canvas of accumulated drag strokes (blendMode(.destinationOut) inside compositingGroup); a TimelineView fades each stroke back by age.",
@@ -22,7 +22,7 @@ extension Effect {
         tags: ["fog", "wipe", "scratch", "reveal", "mask", "擦除", "雾气", "刮刮乐", "揭示"],
         params: [
             .slider("brush", L("Brush size", "笔刷大小"), 20...80, default: 44, decimals: 0, unit: "pt"),
-            .slider("frost", L("Fog density", "雾气浓度"), 4...30, default: 16, decimals: 0),
+            .slider("frost", L("Fog density", "雾气浓度"), 4...30, default: 9, decimals: 0),
             .toggle("regrow", L("Fog regrows", "雾气回凝"), default: true),
             .slider("regrowTime", L("Regrow time", "回凝时长"), 1...8, default: 3.5, decimals: 1, unit: "s"),
         ]

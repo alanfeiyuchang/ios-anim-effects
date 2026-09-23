@@ -105,13 +105,14 @@ private struct LiquidBarsDemo: View {
         let since = max(date.timeIntervalSince(kick), 0)
         let amplitude = CGFloat(1.5 + ctx["wave"] * exp(-since * 2.5))
         let labels = ctx.language == .zh ? liquidDaysZH : liquidDaysEN
-        return HStack(alignment: .bottom, spacing: 12) {
+        return HStack(alignment: .bottom, spacing: 10) {
             ForEach(0..<7, id: \.self) { index in
                 VStack(spacing: 6) {
                     Text(String(format: "%.1f", Double(levels[index]) * 3))
                         .font(.system(size: 9, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
+                        .contentTransition(.numericText(value: Double(levels[index])))
                     LiquidTube(level: levels[index], phase: t * 3 + Double(index) * 0.9, amplitude: amplitude)
                         .frame(width: 28, height: 170)
                     Text(labels[index])

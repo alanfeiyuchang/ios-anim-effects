@@ -1,0 +1,115 @@
+import SwiftUI
+
+extension Effect {
+    static let buttonsDepthPress = Effect(
+        id: "buttons.depth-press",
+        category: .buttons,
+        interaction: .tap,
+        name: L("3D Depth Press", "立体按压"),
+        summary: L("The face sinks into its base like a physical keycap.", "按钮面板像实体键帽一样按进底座。"),
+        prompt: L(
+            "A chunky, game-like button built from two stacked layers: a saturated gradient face and a darker base of the same hue peeking out 8 pt below it, giving a solid extruded look with a soft ground shadow. On touch-down the face travels straight down about 85% of the depth in ~120 ms on a stiff, near-critically-damped spring, the visible base collapses and the ground shadow shrinks and tightens, so the key reads as pushed in. On release the face pops back up on a bouncier spring (response 0.35 s, damping 0.55) with a tiny overshoot, accompanied by a medium impact haptic. It feels mechanical, chunky and satisfying, like a keyboard key or arcade button.",
+            "由两层叠成的厚实游戏风按钮：上层是饱和渐变的面板，下层是同色系更深的底座，从面板下方露出 8pt，形成立体挤出感，并带柔和的落地投影。手指按下时，面板在约 120 毫秒内以接近临界阻尼的硬弹簧垂直下沉约 85% 的厚度，露出的底座随之消失，落地投影缩小收紧，读起来就是“按进去了”。松手时面板以更有弹性的弹簧（响应 0.35 秒、阻尼 0.55）弹回并轻微过冲，伴随一次中等强度的触觉反馈。手感机械、厚实、爽快，如同键盘键帽或街机按钮。"
+        ),
+        implementation: L(
+            "A ButtonStyle stacks a base shape offset by the depth under the label's face; configuration.isPressed offsets the face down and picks a stiff spring for press and a bouncy one for release.",
+            "ButtonStyle 在按钮面板下叠放一个按深度偏移的底座；configuration.isPressed 让面板下移，并在按下和松手时分别选用硬弹簧与弹性弹簧。"
+        ),
+        apis: ["ButtonStyle", "offset", "spring(response:dampingFraction:)", "ZStack"],
+        tags: ["3d", "depth", "keycap", "skeuomorphic", "立体", "按压", "键帽", "拟物"],
+        params: [
+            .slider("depth", L("Depth", "厚度"), 3...14, default: 8, decimals: 0, unit: "pt"),
+            .choice("color", L("Color", "配色"), [L("Coral", "珊瑚"), L("Indigo", "靛蓝"), L("Mint", "薄荷")], default: 0),
+            .slider("bounce", L("Release damping", "回弹阻尼"), 0.3...1.0, default: 0.55),
+        ]
+    ) { ctx in
+        ButtonDepthPressDemo(ctx: ctx)
+    }
+}
+
+private struct ButtonDepthPressDemo: View {
+    let ctx: DemoContext
+    @State private var autoPressed = false
+
+    private var colors: (top: Color, bottom: Color, base: Color) {
+        switch ctx.int("color") {
+        case 1: return (Color(hex: 0x8A94FF), Palette.indigo, Color(hex: 0x3F46B8))
+        case 2: return (Color(hex: 0x5BE8C4), Palette.mint, Color(hex: 0x12917A))
+        default: return (Color(hex: 0xFF9A7A), Palette.coral, Color(hex: 0xC2452F))
+        }
+    }
+
+    var body: some View {
+        let palette = colors
+        VStack(spacing: 0) {
+            Spacer()
+            Button {
+                Haptics.tap(.medium)
+            } label: {
+                Text(ctx.language == .zh ? "开始游戏" : "PLAY NOW")
+                    .font(.system(size: 20, weight: .heavy, design: .rounded))
+                    .tracking(1)
+                    .foregroundStyle(.white)
+                    .shadow(color: palette.base.opacity(0.6), radius: 0, y: 1.5)
+            }
+            .buttonStyle(
+                ButtonDepthStyle(
+                    depth: ctx.cg("depth"),
+                    top: palette.top,
+                    bottom: palette.bottom,
+                    base: palette.base,
+                    releaseDamping: ctx["bounce"],
+                    forcePressed: autoPressed
+                )
+            )
+            Spacer()
+            DemoHint(text: L("Press the key", "按下这个键"), ctx: ctx)
+                .padding(.bottom, 18)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .autoplay(ctx.isPreview, every: 0.8) { autoPressed.toggle() }
+    }
+}
+
+private struct ButtonDepthStyle: ButtonStyle {
+    let depth: CGFloat
+    let top: Color
+    let bottom: Color
+    let base: Color
+    let releaseDamping: Double
+    let forcePressed: Bool
+
+    private let size = CGSize(width: 220, height: 62)
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed || forcePressed
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        return ZStack(alignment: .top) {
+            shape
+                .fill(base)
+                .frame(width: size.width, height: size.height)
+                .offset(y: depth)
+                .shadow(color: base.opacity(pressed ? 0.25 : 0.45), radius: pressed ? 4 : 14, y: pressed ? 2 : 10)
+            configuration.label
+                .frame(width: size.width, height: size.height)
+                .background(
+                    LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom),
+                    in: shape
+                )
+                .overlay(
+                    shape.strokeBorder(
+                        LinearGradient(colors: [Color.white.opacity(0.5), .clear], startPoint: .top, endPoint: .center),
+                        lineWidth: 1.5
+                    )
+                )
+                .offset(y: pressed ? depth * 0.85 : 0)
+        }
+        .frame(width: size.width, height: size.height + depth, alignment: .top)
+        .animation(
+            pressed
+                ? .spring(response: 0.12, dampingFraction: 0.9)
+                : .spring(response: 0.35, dampingFraction: releaseDamping),
+            value: pressed
+        )
+    }
+}

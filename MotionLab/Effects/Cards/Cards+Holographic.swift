@@ -1,0 +1,207 @@
+import SwiftUI
+
+extension Effect {
+    static let cardsHolographic = Effect(
+        id: "cards.holographic",
+        category: .cards,
+        interaction: .gesture,
+        name: L("Holographic Foil", "镭射全息卡"),
+        summary: L("A collectible card whose rainbow foil shifts and sparkles as you tilt it.", "收藏卡片的彩虹镭射箔随倾斜流动、闪烁。"),
+        prompt: L(
+            "A dark collectible trading card (190×264 pt, 16 pt corners) with a glowing emblem is covered by a holographic foil layer: a rainbow angular gradient visible through diagonal bands, composited in screen blend. Dragging tilts the card up to ~12° in perspective, and the foil responds continuously — the gradient's center slides with the finger and its hue angle rotates up to 120°, while the bands drift sideways — so colors sweep across the surface like real prismatic foil. A narrow white specular sheen travels diagonally in plus-lighter blend, scattered sparkle glyphs twinkle out of phase, and a violet under-glow shifts opposite the tilt. Release eases everything back on a soft spring (≈0.6 s). Rich, luminous, collectible.",
+            "一张深色收藏卡（190×264 pt，16 pt 圆角）中央有发光徽记，表面覆盖一层镭射箔：彩虹角向渐变透过斜向条纹显现，以滤色模式叠加。拖动时卡片以透视方式最多倾斜约 12°，镭射层实时响应——渐变中心随手指滑动、色相角最多旋转 120°，条纹也横向漂移，使色彩像真实棱镜箔一样在卡面流转。一道窄白色镜面光带以加亮模式沿对角线扫过，散落的星芒错相闪烁，紫色底光朝倾斜反方向偏移。松手后所有元素以柔和弹簧（约 0.6 秒）回到原位。华丽、通透，极具收藏感。"
+        ),
+        implementation: L(
+            "An AngularGradient masked by striped LinearGradient bands is blended with .screen over the card; its center/angle, a .plusLighter sheen and the rotation3DEffect tilt are all driven by the normalised drag position.",
+            "用条纹 LinearGradient 作为遮罩的 AngularGradient 以 .screen 混合在卡面上；其中心与角度、.plusLighter 光带及 rotation3DEffect 倾斜均由归一化拖动位置驱动。"
+        ),
+        apis: ["AngularGradient", "blendMode(.screen)", "mask", "rotation3DEffect", "DragGesture"],
+        tags: ["holographic", "foil", "rainbow", "iridescent", "镭射", "全息", "彩虹", "闪卡"],
+        params: [
+            .slider("intensity", L("Foil intensity", "镭射强度"), 0...1, default: 0.8),
+            .slider("angle", L("Max tilt", "最大倾角"), 0...25, default: 12, step: 1, decimals: 0, unit: "°"),
+            .toggle("sparkle", L("Sparkles", "星芒"), default: true),
+        ]
+    ) { ctx in
+        CardsHoloDemo(ctx: ctx)
+    }
+}
+
+private struct CardsHoloDemo: View {
+    let ctx: DemoContext
+    @State private var point: CGSize = .zero
+
+    var body: some View {
+        VStack(spacing: 22) {
+            if ctx.isPreview {
+                TimelineView(.animation) { timeline in
+                    let t = timeline.date.timeIntervalSinceReferenceDate
+                    CardsHoloCard(
+                        point: CGSize(width: sin(t * 0.9) * 0.9, height: sin(t * 1.4) * 0.6),
+                        intensity: ctx["intensity"],
+                        maxAngle: ctx["angle"],
+                        sparkle: ctx.bool("sparkle")
+                    )
+                }
+            } else {
+                CardsHoloCard(point: point, intensity: ctx["intensity"], maxAngle: ctx["angle"], sparkle: ctx.bool("sparkle"))
+                    .gesture(drag)
+            }
+            DemoHint(text: L("Drag to tilt the foil", "拖动让镭射流动"), ctx: ctx)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var drag: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                let size = CardsHoloCard.size
+                let x = (value.location.x / size.width - 0.5) * 2
+                let y = (value.location.y / size.height - 0.5) * 2
+                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8)) {
+                    point = CGSize(width: x.clamped(to: -1...1), height: y.clamped(to: -1...1))
+                }
+            }
+            .onEnded { _ in
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                    point = .zero
+                }
+            }
+    }
+}
+
+private struct CardsHoloCard: View {
+    static let size = CGSize(width: 190, height: 264)
+    static let rainbow: [Color] = [
+        Color(hex: 0xFF5E7E), Color(hex: 0xFFB86B), Color(hex: 0xFFF06B), Color(hex: 0x6BFFB0),
+        Color(hex: 0x6BD5FF), Color(hex: 0x8F6BFF), Color(hex: 0xFF6BE0), Color(hex: 0xFF5E7E),
+    ]
+    static let stripeStops: [Gradient.Stop] = (0...12).map { i in
+        Gradient.Stop(color: .white.opacity(i.isMultiple(of: 2) ? 0.95 : 0.2), location: Double(i) / 12)
+    }
+
+    let point: CGSize
+    let intensity: Double
+    let maxAngle: Double
+    let sparkle: Bool
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 16, style: .continuous) }
+
+    var body: some View {
+        CardsHoloFace()
+            .overlay { foil }
+            .overlay { sheen }
+            .overlay { if sparkle { CardsHoloSparkles(phase: Double(point.width + point.height)) } }
+            .clipShape(shape)
+            .overlay { shape.strokeBorder(Color.white.opacity(0.35), lineWidth: 1) }
+            .rotation3DEffect(.degrees(-Double(point.height) * maxAngle), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
+            .rotation3DEffect(.degrees(Double(point.width) * maxAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+            .shadow(color: Palette.violet.opacity(0.4), radius: 26, x: -point.width * 14, y: 14 - point.height * 6)
+    }
+
+    private var foil: some View {
+        AngularGradient(
+            colors: CardsHoloCard.rainbow,
+            center: UnitPoint(x: 0.5 + point.width * 0.6, y: 0.5 + point.height * 0.6),
+            angle: .degrees(Double(point.width) * 120 + Double(point.height) * 60)
+        )
+        .mask {
+            LinearGradient(
+                stops: CardsHoloCard.stripeStops,
+                startPoint: UnitPoint(x: -0.3 + point.width * 0.3, y: 0),
+                endPoint: UnitPoint(x: 1.3 + point.width * 0.3, y: 1)
+            )
+        }
+        .blendMode(.screen)
+        .opacity(intensity * 0.75)
+        .allowsHitTesting(false)
+    }
+
+    private var sheen: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .clear, location: 0.38),
+                .init(color: .white.opacity(0.45), location: 0.5),
+                .init(color: .clear, location: 0.62),
+            ],
+            startPoint: UnitPoint(x: -0.4 + point.width * 0.6, y: -0.4 + point.height * 0.4),
+            endPoint: UnitPoint(x: 1.4 + point.width * 0.6, y: 1.4 + point.height * 0.4)
+        )
+        .blendMode(.plusLighter)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct CardsHoloFace: View {
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Text(verbatim: "PRISM")
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .tracking(2)
+                Spacer(minLength: 0)
+                Text(verbatim: "No. 042")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .opacity(0.7)
+            }
+            emblem
+                .frame(maxHeight: .infinity)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(verbatim: "Voltage Sprite")
+                    .font(.system(size: 13, weight: .bold))
+                PlaceholderLines(count: 2, color: .white.opacity(0.22))
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(16)
+        .frame(width: 190, height: 264)
+        .background(
+            LinearGradient(
+                colors: [Color(hex: 0x1B1A3A), Color(hex: 0x2A1F4F), Color(hex: 0x14142B)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+    }
+
+    private var emblem: some View {
+        ZStack {
+            Circle()
+                .fill(RadialGradient(colors: [Palette.violet.opacity(0.9), Palette.indigo.opacity(0.15)], center: .center, startRadius: 4, endRadius: 70))
+            Circle()
+                .strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
+            Image(systemName: "bolt.fill")
+                .font(.system(size: 54, weight: .bold))
+                .foregroundStyle(.white)
+                .shadow(color: Palette.pink.opacity(0.8), radius: 12)
+        }
+        .frame(width: 128, height: 128)
+    }
+}
+
+private struct CardsHoloSparkles: View {
+    let phase: Double
+
+    private static let spots: [CGPoint] = [
+        CGPoint(x: -62, y: -92), CGPoint(x: 58, y: -70), CGPoint(x: -40, y: -20), CGPoint(x: 70, y: 6),
+        CGPoint(x: -70, y: 48), CGPoint(x: 30, y: 60), CGPoint(x: -10, y: 104), CGPoint(x: 64, y: 100),
+        CGPoint(x: 8, y: -110), CGPoint(x: -78, y: -50),
+    ]
+
+    var body: some View {
+        ZStack {
+            ForEach(CardsHoloSparkles.spots.indices, id: \.self) { i in
+                let spot = CardsHoloSparkles.spots[i]
+                let twinkle = abs(sin(Double(i) * 1.7 + phase * 3.2))
+                Image(systemName: "sparkle")
+                    .font(.system(size: CGFloat(7 + (i % 3) * 3), weight: .bold))
+                    .foregroundStyle(.white)
+                    .opacity(0.15 + 0.85 * twinkle)
+                    .scaleEffect(0.6 + 0.4 * twinkle)
+                    .offset(x: spot.x, y: spot.y)
+            }
+        }
+        .blendMode(.plusLighter)
+        .allowsHitTesting(false)
+    }
+}

@@ -89,7 +89,7 @@ private struct MarqueeRow<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .clipped()
-        .mask(edgeFade)
+        .mask { edgeFade }
     }
 
     private var strip: some View {

@@ -113,6 +113,8 @@ private struct LifeSleepDemo: View {
     @State private var scrub: Double?
     @State private var runID = 0
     @State private var step = 0
+    /// Only a real finger on the chart ticks the selection haptic; the preview scrub stays silent.
+    @State private var userScrubbing = false
 
     private static let chartSize = CGSize(width: 264, height: 108)
     private static let previewScrubs: [Double?] = [0.12, 0.3, 0.55, nil, 0.87, nil]
@@ -133,8 +135,12 @@ private struct LifeSleepDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task(id: runID) { await play() }
-        .sensoryFeedback(.selection, trigger: ctx.isPreview ? nil : focusStage)
+        .sensoryFeedback(.selection, trigger: focusStage) { old, new in
+            userScrubbing && new != nil && old != new
+        }
         .autoplay(ctx.isPreview, every: 1.1, delay: 2.0) { previewTick() }
+        // The reveal already plays on appear; the detail stage must not start a preview scrub that never clears.
+        .environment(\.demoIntroPlay, false)
     }
 
     private var card: some View {
@@ -308,6 +314,7 @@ private struct LifeSleepDemo: View {
     private var scrubGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                userScrubbing = true
                 let fraction = Double(value.location.x / Self.chartSize.width).clamped(to: 0...0.999)
                 if scrub == nil {
                     withAnimation(.easeOut(duration: 0.15)) { scrub = fraction }
@@ -316,6 +323,7 @@ private struct LifeSleepDemo: View {
                 }
             }
             .onEnded { _ in
+                userScrubbing = false
                 withAnimation(.easeOut(duration: 0.2)) { scrub = nil }
             }
     }

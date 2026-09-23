@@ -49,6 +49,8 @@ private struct SportSnowDemo: View {
         }
         .task(id: runID) { await refresh() }
         .autoplay(ctx.isPreview, every: 3.4, delay: 3.4) { runID += 1 }
+        // The first refresh already runs on appear, so the detail stage skips its one-shot intro replay.
+        .environment(\.demoIntroPlay, false)
     }
 
     private var card: some View {
@@ -94,7 +96,8 @@ private struct SportSnowDemo: View {
                 bars[i] = next[i]
             }
         }
-        if !ctx.isPreview { Haptics.tap(.soft) }
+        // Only user refreshes buzz; the arrival run and preview loops stay silent.
+        if !ctx.isPreview && !isFirst { Haptics.tap(.soft) }
 
         let steps = 10
         for step in 1...steps {

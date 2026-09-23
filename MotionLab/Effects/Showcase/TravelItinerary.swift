@@ -82,12 +82,8 @@ private struct TravelItineraryDemo: View {
             .padding(.top, ctx.isPreview ? 6 : 26)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // In the detail stage the one-shot intro play unfolds the card once on arrival.
         .autoplay(ctx.isPreview, every: 2.6, delay: 0.3) { toggle() }
-        .task {
-            guard !ctx.isPreview else { return }
-            try? await Task.sleep(for: .milliseconds(350))
-            if !open { toggle() }
-        }
     }
 
     private var header: some View {

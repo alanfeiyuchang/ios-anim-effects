@@ -136,6 +136,8 @@ private struct SportSpeedDemo: View {
         }
         .task(id: runID) { await play() }
         .autoplay(ctx.isPreview, every: 4.4, delay: 4.4) { runID += 1 }
+        // The run already starts on appear, so the detail stage skips its one-shot intro replay.
+        .environment(\.demoIntroPlay, false)
     }
 
     private var card: some View {

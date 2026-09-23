@@ -95,6 +95,8 @@ private struct SportBestLineDemo: View {
         }
         .task(id: runID) { await play() }
         .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: ctx["duration"] + 1.8) { runID += 1 }
+        // The trail already draws on appear, so the detail stage skips its one-shot intro replay.
+        .environment(\.demoIntroPlay, false)
     }
 
     private var scrubGesture: some Gesture {
@@ -109,6 +111,7 @@ private struct SportBestLineDemo: View {
     }
 
     private func play() async {
+        let silent = ctx.isPreview || runID == 0
         var reset = Transaction()
         reset.disablesAnimations = true
         withTransaction(reset) { progress = 0 }
@@ -117,7 +120,7 @@ private struct SportBestLineDemo: View {
         withAnimation(.easeInOut(duration: ctx["duration"])) { progress = 1 }
         try? await Task.sleep(for: .seconds(ctx["duration"]))
         guard !Task.isCancelled else { return }
-        if !ctx.isPreview { Haptics.success() }
+        if !silent { Haptics.success() }
     }
 }
 

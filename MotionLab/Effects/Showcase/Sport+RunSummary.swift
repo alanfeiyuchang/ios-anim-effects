@@ -117,6 +117,8 @@ private struct SportRunSummaryDemo: View {
         }
         .task(id: runID) { await replay() }
         .autoplay(ctx.isPreview, every: 3.8, delay: 3.8) { runID += 1 }
+        // The bento already assembles on appear, so the detail stage skips its one-shot intro replay.
+        .environment(\.demoIntroPlay, false)
     }
 
     private var bento: some View {
@@ -151,6 +153,7 @@ private struct SportRunSummaryDemo: View {
     }
 
     private func replay() async {
+        let silent = ctx.isPreview || runID == 0
         if assembled {
             assembled = false
             try? await Task.sleep(for: .milliseconds(320))
@@ -159,7 +162,7 @@ private struct SportRunSummaryDemo: View {
         }
         guard !Task.isCancelled else { return }
         assembled = true
-        if !ctx.isPreview { Haptics.tap(.soft) }
+        if !silent { Haptics.tap(.soft) }
     }
 }
 

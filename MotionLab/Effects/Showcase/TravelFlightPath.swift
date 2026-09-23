@@ -80,6 +80,8 @@ private struct TravelFlightDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: 0.1) { launch = Date() }
+        // The first flight already launches on appear, so the detail stage skips its one-shot intro replay.
+        .environment(\.demoIntroPlay, false)
         .task(id: launch) {
             running = true
             try? await Task.sleep(for: .seconds(max(ctx["duration"], 0.1) + 2.2))
@@ -89,7 +91,7 @@ private struct TravelFlightDemo: View {
     }
 
     private var card: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: !running)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !running)) { timeline in
             TravelFlightScene(
                 elapsed: timeline.date.timeIntervalSince(launch),
                 duration: max(ctx["duration"], 0.1),

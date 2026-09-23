@@ -119,7 +119,8 @@ private struct PiPSnapDemo: View {
         return CGPoint(x: origin.x + dx, y: origin.y + dy)
     }
 
-    private func snap(to next: Int) {
+    /// Simulated throws (previews, arrival intro) finish in a Task, outside the muted autoplay call, so they pass `haptic: false`.
+    private func snap(to next: Int, haptic: Bool = true) {
         let changed = next != corner
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             corner = next
@@ -127,7 +128,7 @@ private struct PiPSnapDemo: View {
             drag = .zero
             isDragging = false
         }
-        if changed && !ctx.isPreview { Haptics.tap(.medium) }
+        if changed && haptic && !ctx.isPreview { Haptics.tap(.medium) }
     }
 
     private func autoThrow() {
@@ -139,7 +140,7 @@ private struct PiPSnapDemo: View {
         }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.35))
-            snap(to: next)
+            snap(to: next, haptic: false)
         }
     }
 }

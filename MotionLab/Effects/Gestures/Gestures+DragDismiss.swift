@@ -83,8 +83,9 @@ private struct DragDismissDemo: View {
             }
     }
 
-    private func dismiss() {
-        if !ctx.isPreview { Haptics.tap(.medium) }
+    /// Simulated pulls dismiss from a Task (outside the muted autoplay call), so they pass `haptic: false`.
+    private func dismiss(haptic: Bool = true) {
+        if haptic && !ctx.isPreview { Haptics.tap(.medium) }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
             dismissed = true
             drag = .zero
@@ -100,7 +101,7 @@ private struct DragDismissDemo: View {
         withAnimation(.easeInOut(duration: 0.6)) { drag = CGSize(width: 14, height: 170) }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.65))
-            dismiss()
+            dismiss(haptic: false)
         }
     }
 }

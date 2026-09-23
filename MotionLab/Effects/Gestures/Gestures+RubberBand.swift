@@ -86,12 +86,13 @@ private struct RubberBandDemo: View {
             .onEnded { _ in release() }
     }
 
-    private func release() {
+    /// Simulated drags release from a Task (outside the muted autoplay call), so they pass `haptic: false`.
+    private func release(haptic: Bool = true) {
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             drag = .zero
             isDragging = false
         }
-        if !ctx.isPreview { Haptics.tap(.soft) }
+        if haptic && !ctx.isPreview { Haptics.tap(.soft) }
     }
 
     private func simulate() {
@@ -102,7 +103,7 @@ private struct RubberBandDemo: View {
         }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))
-            release()
+            release(haptic: false)
         }
     }
 }

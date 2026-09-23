@@ -38,6 +38,9 @@ private struct BottomSheetDemo: View {
     @State private var drag: CGFloat = 0
     @State private var stageHeight: CGFloat = 340
     @State private var autoStep = 0
+    /// Resets on system cancellation too (scroll takeover, Control Center pull), so the sheet never floats between detents.
+    @GestureState private var dragging = false
+    @State private var tracking = false
 
     private func height(for index: Int) -> CGFloat { sheetDetents[index] * stageHeight }
     private var minHeight: CGFloat { height(for: 0) }
@@ -120,22 +123,34 @@ private struct BottomSheetDemo: View {
         }
         .contentShape(Rectangle())
         .gesture(dragGesture)
+        .onChange(of: dragging) { _, active in
+            if !active { settle(projected: nil) }
+        }
     }
 
     private var dragGesture: some Gesture {
         // Global space: the sheet moves under the finger, so local translation would feed back and jitter.
         DragGesture(coordinateSpace: .global)
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
+                tracking = true
                 drag = value.translation.height
             }
             .onEnded { value in
-                let projected = height(for: detent) - value.predictedEndTranslation.height
-                var best = 0
-                for index in sheetDetents.indices where abs(height(for: index) - projected) < abs(height(for: best) - projected) {
-                    best = index
-                }
-                snap(to: best)
+                settle(projected: height(for: detent) - value.predictedEndTranslation.height)
             }
+    }
+
+    /// Normal release (with the flick's projected height) or cancellation (current height); runs once per drag.
+    private func settle(projected: CGFloat?) {
+        guard tracking else { return }
+        tracking = false
+        let target: CGFloat = projected ?? currentHeight
+        var best = 0
+        for index in sheetDetents.indices where abs(height(for: index) - target) < abs(height(for: best) - target) {
+            best = index
+        }
+        snap(to: best)
     }
 
     private func snap(to index: Int) {

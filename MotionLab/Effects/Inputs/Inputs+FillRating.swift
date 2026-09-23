@@ -33,6 +33,8 @@ private struct FillRatingDemo: View {
     @State private var fingerX: CGFloat?
     @State private var beats: [Int] = Array(repeating: 0, count: 5)
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let heart: CGFloat = 40
     private let spacing: CGFloat = 10
@@ -94,6 +96,7 @@ private struct FillRatingDemo: View {
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { value in
                     let x: CGFloat = value.location.x.clamped(to: 0...rowWidth)
                     withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.8)) {
@@ -103,6 +106,9 @@ private struct FillRatingDemo: View {
                 }
                 .onEnded { _ in release(silent: false) }
         )
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { release(silent: false) }
+        }
     }
 
     private func ratingAt(_ x: CGFloat) -> Double {
@@ -158,7 +164,9 @@ private struct FillRatingDemo: View {
         }
     }
 
+    /// Single cleanup for a lifted or cancelled finger and the preview's scripted drag.
     private func release(silent: Bool) {
+        guard fingerX != nil else { return }
         let snapped = ((rating / snapStep).rounded() * snapStep).clamped(to: 0...5)
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.7)) {
             fingerX = nil

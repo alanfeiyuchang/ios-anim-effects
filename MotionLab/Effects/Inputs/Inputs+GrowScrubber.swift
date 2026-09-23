@@ -56,6 +56,8 @@ private struct GrowScrubberDemo: View {
     @State private var rate: ScrubRate = .full
     @State private var lastX: CGFloat = 0
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let width: CGFloat = 270
     private let duration = 222
@@ -136,11 +138,15 @@ private struct GrowScrubberDemo: View {
         .frame(height: 30)
         .contentShape(Rectangle())
         .gesture(drag)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endScrub() }
+        }
         .animation(.spring(response: ctx["response"], dampingFraction: 0.8), value: grabbed)
     }
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 if !grabbed {
                     grabbed = true
@@ -157,12 +163,16 @@ private struct GrowScrubberDemo: View {
                 let delta: Double = Double(dx / width) * rate.factor
                 progress = (progress + delta).clamped(to: 0...1)
             }
-            .onEnded { _ in
-                withAnimation(.smooth(duration: 0.35)) {
-                    grabbed = false
-                    rate = .full
-                }
-            }
+            .onEnded { _ in endScrub() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func endScrub() {
+        guard grabbed else { return }
+        withAnimation(.smooth(duration: 0.35)) {
+            grabbed = false
+            rate = .full
+        }
     }
 
     private func rateFor(depth: CGFloat) -> ScrubRate {

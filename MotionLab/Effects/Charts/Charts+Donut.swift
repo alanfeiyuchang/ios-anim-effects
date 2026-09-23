@@ -82,7 +82,6 @@ private struct DonutDemo: View {
         }
         // The sweep already runs in onAppear, so the detail stage's one-shot intro is turned off.
         .autoplay(ctx.isPreview, every: 1.5, delay: 1.6, intro: false) { cycle() }
-        .sensoryFeedback(.selection, trigger: selected) { _, _ in !ctx.isPreview }
     }
 
     private func bounds(_ index: Int) -> (start: Double, end: Double) {
@@ -176,6 +175,8 @@ private struct DonutDemo: View {
     }
 
     private func select(_ index: Int?) {
+        // Haptics.* (not .sensoryFeedback) so the detail page's arrival quiet window applies.
+        if index != selected && !ctx.isPreview { Haptics.selection() }
         withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { selected = index }
     }
 

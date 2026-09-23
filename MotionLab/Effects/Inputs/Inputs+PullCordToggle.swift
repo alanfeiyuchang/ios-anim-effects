@@ -33,6 +33,8 @@ private struct PullCordToggleDemo: View {
     @State private var pull: CGFloat = 0
     @State private var sway: Double = 0
     @State private var armed = false
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let restLength: CGFloat = 80
 
@@ -121,6 +123,9 @@ private struct PullCordToggleDemo: View {
                 .padding(16)
                 .contentShape(Rectangle())
                 .gesture(drag)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { cancelPull() }
+        }
                 .padding(-16)
         }
         .rotationEffect(.degrees(sway), anchor: .top)
@@ -129,6 +134,7 @@ private struct PullCordToggleDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 let down: CGFloat = max(value.translation.height, 0)
                 pull = rubberBand(down, limit: 110, coefficient: 0.9)
@@ -154,6 +160,17 @@ private struct PullCordToggleDemo: View {
         if fire {
             if !ctx.isPreview && !silent { Haptics.tap() }
             isOn.toggle()
+        }
+    }
+
+    /// A cancelled pull (no `onEnded`) lets the cord spring back without switching the lamp.
+    /// After a normal release everything is already at rest, so this does nothing.
+    private func cancelPull() {
+        guard pull != 0 || sway != 0 || armed else { return }
+        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+            pull = 0
+            sway = 0
+            armed = false
         }
     }
 

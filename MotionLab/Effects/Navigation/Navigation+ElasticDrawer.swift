@@ -62,7 +62,7 @@ private struct ElasticDrawerDemo: View {
             .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
             .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
             .contentShape(Rectangle())
-            .gesture(drag)
+            .pageSafeHorizontalDrag(onChanged: dragChanged, onEnded: dragEnded)
             DemoHint(text: L("Drag from the left edge", "从左边缘向右拖动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -111,25 +111,24 @@ private struct ElasticDrawerDemo: View {
         .allowsHitTesting(false)
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 4)
-            .onChanged { value in
-                let start = dragStart ?? width
-                if dragStart == nil { dragStart = width }
-                let raw: CGFloat = start + value.translation.width * 0.8
-                let clamped: CGFloat = min(max(raw, 0), openWidth + 20)
-                let lead: CGFloat = value.location.x - clamped
-                let limit: CGFloat = ctx.cg("bulge")
-                width = clamped
-                bulge = min(max(lead * 0.5, -limit * 0.6), limit)
-                bulgeY = min(max(value.location.y, 40), frameSize.height - 40)
-            }
-            .onEnded { value in
-                let start = dragStart ?? width
-                dragStart = nil
-                let projected: CGFloat = start + value.predictedEndTranslation.width * 0.8
-                settle(open: projected > openWidth / 2)
-            }
+    private func dragChanged(_ value: DragGesture.Value) {
+        let start = dragStart ?? width
+        if dragStart == nil { dragStart = width }
+        let raw: CGFloat = start + value.translation.width * 0.8
+        let clamped: CGFloat = min(max(raw, 0), openWidth + 20)
+        let lead: CGFloat = value.location.x - clamped
+        let limit: CGFloat = ctx.cg("bulge")
+        width = clamped
+        bulge = min(max(lead * 0.5, -limit * 0.6), limit)
+        bulgeY = min(max(value.location.y, 40), frameSize.height - 40)
+    }
+
+    /// Release projects the flick; a system cancellation (`nil`) settles from the current width and drops the bulge.
+    private func dragEnded(_ value: DragGesture.Value?) {
+        let start = dragStart ?? width
+        dragStart = nil
+        let projected: CGFloat = value.map { start + $0.predictedEndTranslation.width * 0.8 } ?? width
+        settle(open: projected > openWidth / 2)
     }
 
     private func settle(open: Bool, buzz: Bool = true) {

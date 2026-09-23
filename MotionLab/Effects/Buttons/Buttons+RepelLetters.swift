@@ -33,6 +33,8 @@ private struct ButtonRepelLettersDemo: View {
     @State private var step = 0
     /// The detail intro's scripted sweep; cancelled by the first real touch and on disappear.
     @State private var introTask: Task<Void, Never>?
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let size = CGSize(width: 290, height: 68)
 
@@ -86,6 +88,7 @@ private struct ButtonRepelLettersDemo: View {
         .contentShape(Capsule())
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { value in
                     stopIntro()
                     if finger == nil { Haptics.tap() }
@@ -93,6 +96,10 @@ private struct ButtonRepelLettersDemo: View {
                 }
                 .onEnded { _ in finger = nil }
         )
+        .onChange(of: touching) { _, isTouching in
+            // A cancelled touch never reaches `onEnded`; let the letters regroup anyway.
+            if !isTouching && introTask == nil { finger = nil }
+        }
         .accessibilityAddTraits(.isButton)
     }
 

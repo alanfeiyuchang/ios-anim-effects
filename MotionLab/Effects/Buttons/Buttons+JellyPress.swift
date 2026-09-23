@@ -36,6 +36,8 @@ private struct ButtonJellyPressDemo: View {
     let ctx: DemoContext
     @State private var pressed = false
     @State private var releases = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -113,9 +115,13 @@ private struct ButtonJellyPressDemo: View {
         .contentShape(Capsule())
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { _ in press() }
                 .onEnded { _ in release() }
         )
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { release() }
+        }
         .accessibilityAddTraits(.isButton)
     }
 

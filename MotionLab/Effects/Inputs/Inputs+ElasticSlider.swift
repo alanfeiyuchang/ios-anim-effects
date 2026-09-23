@@ -38,6 +38,8 @@ private struct InputElasticSliderDemo: View {
     /// snap-back wobbles around the same fixed anchor instead of flipping to the opposite end.
     @State private var anchoredAtLeading = true
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let width: CGFloat = 280
     private let height: CGFloat = 56
@@ -111,10 +113,14 @@ private struct InputElasticSliderDemo: View {
         .shadow(color: Palette.blue.opacity(pressing ? 0.28 : 0.14), radius: pressing ? 16 : 10, y: 6)
         .contentShape(shape)
         .gesture(drag)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { release() }
+        }
     }
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { gesture in
                 if !pressing {
                     startValue = value
@@ -139,7 +145,9 @@ private struct InputElasticSliderDemo: View {
             .onEnded { _ in release() }
     }
 
+    /// Single cleanup for a lifted or cancelled finger and the preview's overshoot.
     private func release() {
+        guard pressing || stretch != 0 || atEdge else { return }
         atEdge = false
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             stretch = 0

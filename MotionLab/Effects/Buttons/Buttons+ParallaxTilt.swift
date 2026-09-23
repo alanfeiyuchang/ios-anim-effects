@@ -35,6 +35,8 @@ private struct ButtonParallaxTiltDemo: View {
     @State private var step = 0
     /// The detail intro's scripted sweep; cancelled by the first real touch and on disappear.
     @State private var introTask: Task<Void, Never>?
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let size = CGSize(width: 260, height: 120)
 
@@ -87,12 +89,16 @@ private struct ButtonParallaxTiltDemo: View {
         .contentShape(shape)
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { value in
                     stopIntro()
                     track(value.location)
                 }
                 .onEnded { _ in release() }
         )
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { release() }
+        }
         .accessibilityAddTraits(.isButton)
     }
 
@@ -138,7 +144,9 @@ private struct ButtonParallaxTiltDemo: View {
         }
     }
 
+    /// Single cleanup for a lifted or cancelled finger and the scripted path's final step.
     private func release() {
+        guard active || tilt != .zero else { return }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) {
             active = false
             tilt = .zero

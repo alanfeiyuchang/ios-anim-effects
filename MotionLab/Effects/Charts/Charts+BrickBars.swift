@@ -36,6 +36,8 @@ private struct BrickBarsDemo: View {
     @State private var counts: [Int] = [5, 8, 6, 10, 7, 4, 9]
     @State private var shown = true
     @State private var dropping = false
+    /// Bumped by every replay; an older pending drop bails out so rapid taps never change counts while shown.
+    @State private var generation = 0
 
     var body: some View {
         let total = counts.reduce(0, +)
@@ -97,12 +99,16 @@ private struct BrickBarsDemo: View {
             dropping = true
         }
         if haptic && !ctx.isPreview { Haptics.tap(.light) }
+        generation += 1
+        let current = generation
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.22))
+            guard current == generation else { return }
             // Park the (invisible) bricks above the chart in a separate, unanimated update…
             counts = (0..<brickColumns).map { _ in Int.random(in: 3...brickRows) }
             dropping = false
             try? await Task.sleep(for: .seconds(0.03))
+            guard current == generation else { return }
             // …so they rain in from there.
             withAnimation(.snappy) { shown = true }
         }

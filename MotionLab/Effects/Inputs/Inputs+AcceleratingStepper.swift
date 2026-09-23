@@ -37,6 +37,9 @@ private struct AcceleratingStepperDemo: View {
     @State private var step = 0
     /// Ends a simulated hold; a real press cancels it so it can't cut the user's hold short.
     @State private var introTask: Task<Void, Never>?
+    /// The real finger's hold direction (−1 / 0 / +1). `@GestureState` also resets when the system
+    /// cancels the touch (Control Center pull, incoming call), so the repeat loop can never run away.
+    @GestureState private var held = 0
 
     private let range: ClosedRange<Int> = 0...9990
     private let firstDelay: Double = 0.4
@@ -53,6 +56,16 @@ private struct AcceleratingStepperDemo: View {
         .onDisappear {
             repeatTask?.cancel()
             introTask?.cancel()
+        }
+        .onChange(of: held) { _, direction in
+            if direction == 0 {
+                end()
+            } else {
+                // A real press takes over a simulated hold, even in the same direction.
+                introTask?.cancel()
+                introTask = nil
+                begin(direction)
+            }
         }
         .autoplay(ctx.isPreview, every: 3.4, delay: 0.3) { previewHold() }
     }
@@ -141,25 +154,24 @@ private struct AcceleratingStepperDemo: View {
         .contentShape(Circle())
         .gesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    if let intro = introTask {
-                        // A real press takes over a simulated hold, even in the same direction.
-                        intro.cancel()
-                        introTask = nil
-                        begin(direction)
-                    } else if holding != direction {
-                        begin(direction)
-                    }
-                }
-                .onEnded { _ in end() }
+                .updating($held) { _, state, _ in state = direction }
         )
     }
 
-    private func apply(_ delta: Int, muted: Bool) {
+    /// Steps the value; returns false once it rests on a range bound, so the repeat loop stops there
+    /// (one rigid tick on reaching the limit instead of a silent loop that keeps spinning).
+    @discardableResult
+    private func apply(_ delta: Int, muted: Bool) -> Bool {
         let target = (value + delta).clamped(to: range)
-        guard target != value else { return }
-        if !muted { Haptics.tap(.soft) }
+        guard target != value else {
+            // Only a fresh press can land here (the loop stops at the bound): one tick per limit contact.
+            if !muted { Haptics.tap(.rigid) }
+            return false
+        }
+        let atLimit = target == range.lowerBound || target == range.upperBound
+        if !muted { Haptics.tap(atLimit ? .rigid : .soft) }
         value = target
+        return !atLimit
     }
 
     private func begin(_ direction: Int) {
@@ -169,7 +181,7 @@ private struct AcceleratingStepperDemo: View {
         multiplier = 1
         // Captured before the repeat Task: a simulated hold (preview or detail intro) must not buzz ~20 times.
         let muted = ctx.isPreview || Haptics.isMuted
-        apply(direction * 10, muted: muted)
+        guard apply(direction * 10, muted: muted) else { return }
         let decay = ctx["acceleration"]
         let fastest = ctx["fastest"]
         let start = firstDelay
@@ -181,7 +193,11 @@ private struct AcceleratingStepperDemo: View {
                 repeats += 1
                 let size = repeats > 20 ? 10 : (repeats > 8 ? 5 : 1)
                 if size != multiplier { multiplier = size }
-                apply(direction * 10 * size, muted: muted)
+                guard apply(direction * 10 * size, muted: muted) else {
+                    speed = 0
+                    multiplier = 1
+                    return
+                }
                 interval = max(interval * decay, fastest)
                 speed = ((start - interval) / (start - fastest)).clamped(to: 0...1)
                 try? await Task.sleep(for: .seconds(interval))

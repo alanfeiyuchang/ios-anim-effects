@@ -31,6 +31,8 @@ private struct InputSquashToggleDemo: View {
     let ctx: DemoContext
     @State private var isOn = false
     @State private var pressing = false
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let trackSize = CGSize(width: 84, height: 48)
     private let inset: CGFloat = 5
@@ -129,9 +131,13 @@ private struct InputSquashToggleDemo: View {
         .contentShape(Capsule())
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { _ in press() }
                 .onEnded { _ in release() }
         )
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { cancelPress() }
+        }
     }
 
     private func press() {
@@ -145,6 +151,13 @@ private struct InputSquashToggleDemo: View {
             isOn.toggle()
             pressing = false
         }
+    }
+
+    /// A cancelled touch (no `onEnded`) springs the knob back without flipping the switch.
+    /// After a normal lift `release()` has already cleared `pressing`, so this does nothing.
+    private func cancelPress() {
+        guard pressing else { return }
+        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { pressing = false }
     }
 
     private func simulateTap() {

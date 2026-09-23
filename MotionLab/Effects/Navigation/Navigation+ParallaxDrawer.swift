@@ -61,7 +61,7 @@ private struct ParallaxDrawerDemo: View {
             .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
             .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
             .contentShape(Rectangle())
-            .gesture(drag)
+            .pageSafeHorizontalDrag(onChanged: dragChanged, onEnded: dragEnded)
             DemoHint(text: L("Drag the page right", "向右拖动页面"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -105,26 +105,25 @@ private struct ParallaxDrawerDemo: View {
         .offset(x: travel * progress)
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 8)
-            .onChanged { value in
-                let start = dragStart ?? progress
-                if dragStart == nil { dragStart = progress }
-                let raw: CGFloat = start + value.translation.width / travel
-                if raw > 1 {
-                    progress = 1 + rubberBand((raw - 1) * travel, limit: 30) / travel
-                } else if raw < 0 {
-                    progress = rubberBand(raw * travel, limit: 16) / travel
-                } else {
-                    progress = raw
-                }
-            }
-            .onEnded { value in
-                let start = dragStart ?? progress
-                dragStart = nil
-                let projected: CGFloat = start + value.predictedEndTranslation.width / travel
-                settle(open: projected > 0.5)
-            }
+    private func dragChanged(_ value: DragGesture.Value) {
+        let start = dragStart ?? progress
+        if dragStart == nil { dragStart = progress }
+        let raw: CGFloat = start + value.translation.width / travel
+        if raw > 1 {
+            progress = 1 + rubberBand((raw - 1) * travel, limit: 30) / travel
+        } else if raw < 0 {
+            progress = rubberBand(raw * travel, limit: 16) / travel
+        } else {
+            progress = raw
+        }
+    }
+
+    /// Release projects the flick; a system cancellation (`nil`) settles from where the page is.
+    private func dragEnded(_ value: DragGesture.Value?) {
+        let start = dragStart ?? progress
+        dragStart = nil
+        let projected: CGFloat = value.map { start + $0.predictedEndTranslation.width / travel } ?? progress
+        settle(open: projected > 0.5)
     }
 
     private func settle(open: Bool) {

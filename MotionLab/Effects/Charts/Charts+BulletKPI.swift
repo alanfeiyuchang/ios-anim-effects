@@ -12,10 +12,10 @@ extension Effect {
             "一张目标卡片含三条子弹图（营收、NPS、可用率）：每行有三段灰色定性区间（60 / 80 / 100%）、一条 10pt 高的实绩胶囊与一根 3 × 26pt 目标标记。刷新时实绩条以减速曲线（0.2, 0.8, 0.2, 1，1.2 秒）从零生长，行间错开 150ms。标记跟随动画中实时插值的进度，而非最终数值：越过目标的那一帧，标记立即变绿，以弹簧（响应 0.3 秒、阻尼 0.45）弹跳放大到 1.5 倍并触发轻触感；未达标的行保持琥珀色。百分比同步计数，汇总胶囊滚动为“3 项中 2 项达标”。"
         ),
         implementation: L(
-            "Each row is an Animatable view whose animatableData is the measure, so its body sees every interpolated frame and derives crossed = measure ≥ target; an inner .animation(value: crossed) pops the marker and sensoryFeedback(trigger: crossed) fires the haptic mid-animation.",
-            "每一行是 Animatable 视图，animatableData 为实绩值，因此 body 能看到每一帧的插值并得出 crossed = 实绩 ≥ 目标；内部的 .animation(value: crossed) 让标记弹跳，sensoryFeedback(trigger: crossed) 在动画途中触发触感。"
+            "Each row is an Animatable view whose animatableData is the measure, so its body sees every interpolated frame and derives crossed = measure ≥ target; an inner .animation(value: crossed) pops the marker and onChange(of: crossed) fires a light Haptics tap mid-animation.",
+            "每一行是 Animatable 视图，animatableData 为实绩值，因此 body 能看到每一帧的插值并得出 crossed = 实绩 ≥ 目标；内部的 .animation(value: crossed) 让标记弹跳，onChange(of: crossed) 在动画途中触发一次轻触感（Haptics）。"
         ),
-        apis: ["Animatable", "timingCurve", "animation(_:value:)", "sensoryFeedback", "contentTransition(.numericText)"],
+        apis: ["Animatable", "timingCurve", "animation(_:value:)", "onChange(of:)", "contentTransition(.numericText)"],
         tags: ["bullet chart", "target", "goal", "kpi", "子弹图", "目标", "达成", "指标"],
         params: [
             .slider("duration", L("Grow duration", "生长时长"), 0.6...2.4, default: 1.2, unit: "s"),
@@ -168,8 +168,9 @@ private struct BulletRow: View, Animatable {
             }
             .frame(width: trackWidth, height: 26)
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: crossed) { _, newValue in
-            newValue && haptics
+        // Haptics.* (not .sensoryFeedback) so the detail page's arrival quiet window applies.
+        .onChange(of: crossed) { _, isCrossed in
+            if isCrossed && haptics { Haptics.tap(.light) }
         }
     }
 

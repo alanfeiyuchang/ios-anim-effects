@@ -34,6 +34,9 @@ private struct DragStepperDemo: View {
     @State private var engaged = 0
     @State private var repeatTask: Task<Void, Never>?
     @State private var step = 0
+    /// True while a real finger is down; `@GestureState` also resets on system cancellation,
+    /// which is what releases the knob and stops the repeat loop when `onEnded` never comes.
+    @GestureState private var touching = false
 
     private let range: ClosedRange<Int> = 0...20
     private let limit: CGFloat = 90
@@ -56,6 +59,9 @@ private struct DragStepperDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onDisappear { repeatTask?.cancel() }
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { release() }
+        }
         .autoplay(ctx.isPreview, every: 1.3, delay: 0.3) { previewFlick() }
     }
 
@@ -101,6 +107,7 @@ private struct DragStepperDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { gesture in
                 let dx: CGFloat = gesture.translation.width
                 offset = rubberBand(dx, limit: limit, coefficient: 1.0)
@@ -111,32 +118,36 @@ private struct DragStepperDemo: View {
                     if side != 0 { startRepeating(side) }
                 }
             }
-            .onEnded { _ in release() }
     }
 
-    private func change(_ delta: Int, silent: Bool = false) {
+    /// Steps the value. Returns false once it rests on a range bound, so the repeat loop stops there:
+    /// pushing against a bound gives one rigid tick per contact, never a buzz every 350 ms.
+    @discardableResult
+    private func change(_ delta: Int, silent: Bool = false) -> Bool {
         let target = (value + delta).clamped(to: range)
         let muted = ctx.isPreview || silent
         guard target != value else {
             if !muted { Haptics.tap(.rigid) }
-            return
+            return false
         }
         if !muted { Haptics.tap(.medium) }
         withAnimation(.snappy(duration: 0.25)) { value = target }
+        return target != range.lowerBound && target != range.upperBound
     }
 
     private func startRepeating(_ side: Int) {
-        change(side)
+        guard change(side) else { return }
         repeatTask = Task { @MainActor in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(350))
-                guard !Task.isCancelled else { return }
-                change(side)
+                guard !Task.isCancelled, change(side) else { return }
             }
         }
     }
 
+    /// Single cleanup for a normal end, a cancelled touch and the preview flick.
     private func release() {
+        guard engaged != 0 || offset != 0 || repeatTask != nil else { return }
         repeatTask?.cancel()
         repeatTask = nil
         engaged = 0

@@ -60,6 +60,7 @@ struct SearchView: View {
             .animation(.smooth(duration: 0.25), value: navigator.query.isEmpty)
         }
         .scrollDismissesKeyboard(.immediately)
+        .shellPageScroll()
         .background(Palette.pageBackground)
         .navigationTitle(Strings.search(language))
         .searchable(text: $navigator.query, placement: .navigationBarDrawer(displayMode: .always), prompt: Strings.searchPrompt(language))
@@ -97,7 +98,7 @@ struct SearchView: View {
                     }
                     .id(Self.interactionChipID)
                     Capsule()
-                        .fill(Palette.stroke)
+                        .fill(Palette.edge)
                         .frame(width: 1, height: 22)
                         .accessibilityHidden(true)
                     Chip(title: Strings.all(language), isSelected: navigator.category == nil, namespace: categoryChips) {
@@ -233,16 +234,16 @@ private struct InteractionMenuChip: View {
         .fixedSize()
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
-        .foregroundStyle(selected ? Color.white : Color.primary)
+        .foregroundStyle(selected ? Palette.onAccent : Color.primary)
         .background {
             ZStack {
                 Capsule()
                     .fill(Palette.chipOnPage)
-                    .overlay(Capsule().strokeBorder(Palette.stroke))
+                    .overlay(Capsule().strokeBorder(Palette.edge))
                     .opacity(selected ? 0 : 1)
                 Capsule()
-                    .fill(Palette.primaryStrong)
-                    .shadow(color: Palette.indigo.opacity(0.28), radius: 6, y: 3)
+                    .fill(Palette.accentFill)
+                    .shadow(color: Palette.accentGlow, radius: 6, y: 3)
                     .opacity(selected ? 1 : 0)
             }
         }
@@ -251,19 +252,21 @@ private struct InteractionMenuChip: View {
     }
 }
 
-/// "Browse all families · 85" card at the top of the empty-query suggestions.
+/// "Browse all families · 85" card at the top of the empty-query suggestions; the All Families
+/// page zooms out of it.
 private struct AllFamiliesEntry: View {
     @Environment(\.appLanguage) private var language
 
     var body: some View {
         let count = EffectFamilies.all.count
-        NavigationLink(value: Route.families) {
+        ZoomRouteLink(route: Route.families(source: "searchEntry")) {
             HStack(spacing: 12) {
                 Image(systemName: "square.stack.3d.up.fill")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Palette.onAccent)
                     .frame(width: 38, height: 38)
-                    .background(Palette.primaryStrong, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    .background(Palette.accentFill, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    .shadow(color: Palette.accentGlow, radius: 5, y: 2)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(Strings.browseAllFamilies, language)
@@ -281,8 +284,7 @@ private struct AllFamiliesEntry: View {
                     .accessibilityHidden(true)
             }
             .padding(10)
-            .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous).strokeBorder(Palette.stroke))
+            .glossCard(cornerRadius: CornerRadius.chip + 2)
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
         }
         .buttonStyle(PressableCardStyle())
@@ -327,7 +329,7 @@ private struct SuggestionChip: View {
             .padding(.horizontal, 11)
             .padding(.vertical, 7)
             .background(Palette.chipOnPage, in: Capsule())
-            .overlay(Capsule().strokeBorder(Palette.stroke))
+            .overlay(Capsule().strokeBorder(Palette.edge))
             .contentShape(Capsule())
         }
         .buttonStyle(PressableCardStyle())

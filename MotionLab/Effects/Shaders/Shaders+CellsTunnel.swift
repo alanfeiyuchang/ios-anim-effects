@@ -42,14 +42,14 @@ extension Effect {
             "穿行于无尽的霓虹隧道，拖动操控消失点，按住即可进入曲速。"
         ),
         prompt: L(
-            "An endless neon tunnel rushes toward the viewer. The wall is a polar-coordinate grid: depth is 0.28 / r plus time, so rings stream outward from the vanishing point and speed up as they approach, while 12 longitudinal lanes twist gently with depth. Line color cycles through a cosine rainbow along the tunnel, the far end fades into a soft white-violet core, and the near wall carries a faint tint. Touching steers: the vanishing point eases toward the finger (exponential follow, ≈ 200 ms) and drifts back to center on release, and while the finger is down the travel speed eases up to 3.2× (≈ 400 ms time constant) — a warp readout at the top shows the multiplier. Immersive, fast and arcade-bright.",
-            "一条无尽的霓虹隧道迎面冲来。隧道壁是极坐标网格：深度为 0.28 / r 加上时间，于是光环从消失点不断向外涌出、越靠近越快，12 条纵向轨道随深度轻轻扭转。线条颜色沿隧道按余弦彩虹循环，远端融入柔和的白紫色光核，近处墙面带一层淡淡的色调。触摸即可操控：消失点以指数跟随（约 200 毫秒）缓向手指，松手后漂回中心；手指按住期间，行进速度缓升至 3.2 倍（时间常数约 400 毫秒），顶部的曲速读数实时显示倍率。沉浸、迅疾、街机般明亮。"
+            "An endless neon tunnel rushes toward the viewer. The wall is a polar-coordinate grid: depth is 0.28 / r plus time, so rings stream outward from the vanishing point and speed up as they approach, while 12 longitudinal lanes twist gently with depth. Line color cycles through a cosine rainbow along the tunnel, the far end fades into a soft white-violet core, and the near wall carries a faint tint. Pressing and holding goes to warp: while the finger is down the travel speed eases up to 3.2× (≈ 400 ms time constant) with a medium haptic thump, and a sideways drag steers, easing the vanishing point toward the finger (exponential follow, ≈ 200 ms) and drifting back to center on release — a warp readout at the top shows the multiplier. Immersive, fast and arcade-bright.",
+            "一条无尽的霓虹隧道迎面冲来。隧道壁是极坐标网格：深度为 0.28 / r 加上时间，于是光环从消失点不断向外涌出、越靠近越快，12 条纵向轨道随深度轻轻扭转。线条颜色沿隧道按余弦彩虹循环，远端融入柔和的白紫色光核，近处墙面带一层淡淡的色调。按住即进入曲速：手指按住期间伴随一次中等触感，行进速度缓升至 3.2 倍（时间常数约 400 毫秒）；横向拖动可转向，消失点以指数跟随（约 200 毫秒）缓向手指，松手后漂回中心；顶部的曲速读数实时显示倍率。沉浸、迅疾、街机般明亮。"
         ),
         implementation: L(
-            "A [[stitchable]] color shader maps each pixel to (angle, 0.28 / r + time), draws anti-aliased lane and ring lines with fract() and colors them with a cosine palette; a small model accumulates warp-scaled time and smooths the vanishing point toward the touch every TimelineView frame.",
-            "[[stitchable]] colorEffect 着色器把每个像素映射为（角度，0.28 / r + 时间），用 fract() 绘制抗锯齿的轨道线与环线，并以余弦调色板上色；小型模型在每个 TimelineView 帧中累积按曲速缩放的时间，并让消失点平滑跟随触点。"
+            "A [[stitchable]] color shader maps each pixel to (angle, 0.28 / r + time), draws anti-aliased lane and ring lines with fract() and colors them with a cosine palette; a small model accumulates warp-scaled time and smooths the vanishing point toward the touch every TimelineView frame, while a never-completing long press reports the hold that drives warp.",
+            "[[stitchable]] colorEffect 着色器把每个像素映射为（角度，0.28 / r + 时间），用 fract() 绘制抗锯齿的轨道线与环线，并以余弦调色板上色；小型模型在每个 TimelineView 帧中累积按曲速缩放的时间，并让消失点平滑跟随触点；一个永不完成的长按手势报告按住状态以驱动曲速。"
         ),
-        apis: ["colorEffect", "visualEffect", "TimelineView(.animation)", "DragGesture", "Metal"],
+        apis: ["colorEffect", "visualEffect", "TimelineView(.animation)", "DragGesture", "onLongPressGesture(onPressingChanged:)", "Metal"],
         tags: ["tunnel", "warp", "hyperspace", "neon", "隧道", "曲速", "超空间", "霓虹"],
         params: [
             .slider("speed", L("Cruise speed", "巡航速度"), 0.3...3.0, default: 1.2, unit: "×"),
@@ -119,6 +119,8 @@ private struct TunnelState {
 private final class TunnelModel {
     let clock = BackgroundClock(start: 0)
     var touch: CGPoint?
+    /// True while a stationary press-and-hold is down (the never-completing long press).
+    var pressing = false
     private var center: CGPoint?
     private var warp: Double = 1
 
@@ -135,7 +137,7 @@ private final class TunnelModel {
         let k = CGFloat(clock.follow(rate: 5))
         let next = CGPoint(x: current.x + (target.x - current.x) * k, y: current.y + (target.y - current.y) * k)
         center = next
-        let goal: Double = touch == nil ? 1 : 3.2
+        let goal: Double = (touch != nil || pressing) ? 3.2 : 1
         warp += (goal - warp) * clock.follow(rate: 2.5)
         return TunnelState(time: t, center: next, warp: warp)
     }
@@ -160,8 +162,16 @@ private struct TunnelDemo: View {
             TunnelSurface(state: state, twist: twist, lanes: lanes)
         }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
+        .contentShape(Rectangle())
+        // A long press that never completes reports pressing while the finger stays down and fails as soon as
+        // it moves 10 pt, so the page can still scroll (same pattern as Starfield Warp and Synthwave).
+        // Sideways drags keep steering through backgroundsTouch, which also holds warp while engaged.
+        .onLongPressGesture(minimumDuration: 60, maximumDistance: 10, perform: {}, onPressingChanged: { pressing in
+            if pressing && !model.pressing { Haptics.tap(.medium) }
+            model.pressing = pressing
+        })
         .backgroundsTouch { location in model.touch = location } onEnded: { model.touch = nil }
-        .backgroundsHint(L("Tap or drag sideways to steer and warp", "点击或横向拖动以转向并加速"), ctx)
+        .backgroundsHint(L("Hold to warp · drag sideways to steer", "按住进入曲速 · 横向拖动转向"), ctx)
     }
 }
 

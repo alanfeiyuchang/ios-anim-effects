@@ -43,6 +43,8 @@ private struct BarGrowDemo: View {
     /// Seeded with a settled week so still snapshots show data; `onAppear` rewinds and plays.
     @State private var bars: [BarDatum] = barSeed.enumerated().map { BarDatum(id: $0.offset, value: $0.element, shown: true) }
     @State private var total: Double = barSeed.reduce(0, +)
+    /// Bumped by every replay; an older pending regrow bails out so rapid taps never hard-cut bar heights.
+    @State private var generation = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -122,8 +124,11 @@ private struct BarGrowDemo: View {
         }
         let stagger = ctx["stagger"]
         let spring = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
+        generation += 1
+        let current = generation
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.22))
+            guard current == generation else { return }
             let values = (0..<7).map { _ in Double(Int.random(in: 28...100)) }
             for index in bars.indices { bars[index].value = values[index] }
             withAnimation(.snappy) { total = values.reduce(0, +) }

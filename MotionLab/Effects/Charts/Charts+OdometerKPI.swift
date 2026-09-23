@@ -35,6 +35,8 @@ private struct OdometerKPIDemo: View {
     @State private var previous = 45_830
     @State private var points: [CGFloat] = [0.32, 0.38, 0.35, 0.44, 0.41, 0.5, 0.47, 0.55, 0.52, 0.6, 0.57, 0.66, 0.63, 0.7, 0.74, 0.8]
     @State private var drawn: CGFloat = 1
+    /// Bumped by every refresh; an older pending redraw bails out so rapid taps never swap points mid-draw.
+    @State private var generation = 0
 
     var body: some View {
         let digits = String(value).compactMap { $0.wholeNumberValue }
@@ -104,8 +106,11 @@ private struct OdometerKPIDemo: View {
     private func refresh(haptic: Bool) {
         withAnimation(.easeIn(duration: 0.15)) { drawn = 0 }
         if haptic && !ctx.isPreview { Haptics.tap(.light) }
+        generation += 1
+        let current = generation
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.18))
+            guard current == generation else { return }
             let factor = Double.random(in: 0.8...1.25)
             let next = Int((Double(value) * factor).rounded()).clamped(to: 21_000...98_000)
             var walk: [CGFloat] = []

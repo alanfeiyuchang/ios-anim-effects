@@ -35,6 +35,8 @@ private struct ButtonSpotlightDemo: View {
     @State private var step = 0
     /// The detail intro's scripted sweep; cancelled by the first real touch and on disappear.
     @State private var introTask: Task<Void, Never>?
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let size = CGSize(width: 290, height: 96)
     private static let previewPoints: [CGPoint] = [
@@ -81,16 +83,17 @@ private struct ButtonSpotlightDemo: View {
         .contentShape(shape)
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($touching) { _, state, _ in state = true }
                 .onChanged { value in
                     stopIntro()
                     if !pressed { pressed = true }
                     move(to: value.location)
                 }
-                .onEnded { _ in
-                    pressed = false
-                    withAnimation(.easeOut(duration: 0.3)) { active = false }
-                }
+                .onEnded { _ in endTouch() }
         )
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endTouch() }
+        }
         .onContinuousHover { phase in
             switch phase {
             case .active(let point):
@@ -126,6 +129,13 @@ private struct ButtonSpotlightDemo: View {
         } else {
             withAnimation(.smooth(duration: max(ctx["lag"], 0.05))) { spot = point }
         }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func endTouch() {
+        guard pressed else { return }
+        pressed = false
+        withAnimation(.easeOut(duration: 0.3)) { active = false }
     }
 
     private func introSweep() {

@@ -35,6 +35,8 @@ private struct FloatingSheetDemo: View {
     @State private var height: CGFloat = 72
     @State private var dragStart: CGFloat?
     @State private var autoStep = 0
+    /// Resets on system cancellation too, so a cancelled drag still settles and never leaves a stale `dragStart`.
+    @GestureState private var dragging = false
 
     private let frameSize = CGSize(width: 250, height: 330)
     private var detents: [CGFloat] { [72, 190, frameSize.height - 30] }
@@ -88,11 +90,15 @@ private struct FloatingSheetDemo: View {
             .contentShape(Rectangle())
             .gesture(drag)
             .onTapGesture { cycle() }
+            .onChange(of: dragging) { _, active in
+                if !active { finish(projected: nil) }
+            }
     }
 
     private var drag: some Gesture {
         // Global space: the sheet's top edge rises with the finger, so local translation would feed back.
         DragGesture(minimumDistance: 6, coordinateSpace: .global)
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 let start = dragStart ?? height
                 if dragStart == nil { dragStart = height }
@@ -108,12 +114,18 @@ private struct FloatingSheetDemo: View {
                 }
             }
             .onEnded { value in
-                let start = dragStart ?? height
-                dragStart = nil
-                let projected: CGFloat = start - value.predictedEndTranslation.height
-                let nearest: CGFloat = detents.min { abs($0 - projected) < abs($1 - projected) } ?? detents[0]
-                snap(to: nearest)
+                let start: CGFloat = dragStart ?? height
+                finish(projected: start - value.predictedEndTranslation.height)
             }
+    }
+
+    /// Normal release (flick-projected height) or cancellation (current height); runs once per drag.
+    private func finish(projected: CGFloat?) {
+        guard dragStart != nil else { return }
+        dragStart = nil
+        let target: CGFloat = projected ?? height
+        let nearest: CGFloat = detents.min { abs($0 - target) < abs($1 - target) } ?? detents[0]
+        snap(to: nearest)
     }
 
     private func cycle() {

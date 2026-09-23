@@ -34,6 +34,8 @@ private struct InputVelocitySliderDemo: View {
     @State private var dragging = false
     @State private var step = 0
     @State private var settleTask: Task<Void, Never>?
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let width: CGFloat = 260
     private static let previewTargets: [Double] = [0.82, 0.22, 0.64, 0.1, 0.5]
@@ -117,10 +119,14 @@ private struct InputVelocitySliderDemo: View {
         .frame(width: width, height: 44)
         .contentShape(Rectangle())
         .gesture(drag)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endDrag() }
+        }
     }
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { gesture in
                 let newValue = Double(gesture.location.x / width).clamped(to: 0...1)
                 if Int(newValue * 10) != Int(value * 10) { Haptics.selection() }
@@ -132,10 +138,14 @@ private struct InputVelocitySliderDemo: View {
                 }
                 scheduleRest()
             }
-            .onEnded { _ in
-                settleTask?.cancel()
-                settle()
-            }
+            .onEnded { _ in endDrag() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func endDrag() {
+        guard dragging else { return }
+        settleTask?.cancel()
+        settle()
     }
 
     /// DragGesture only reports movement, so a finger that stops keeps its last velocity.

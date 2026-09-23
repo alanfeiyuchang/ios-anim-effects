@@ -15,8 +15,8 @@ extension Effect {
             "按住卡片时，指尖下方会隆起一个柔软的玻璃质圆顶：在 95pt 半径内，内容以 (1 − t²)² 的衰减向触点放大，边缘看不到任何接缝；圆顶受左上方光照，读起来就是一个凸起。按下时它以弹簧（响应 0.28 秒、阻尼 0.62）鼓起，并以交互弹簧跟随手指，同时像黏稠凝胶一样，沿拖动速度的反方向拖出最多 28pt 的拖影。松手后强度以强欠阻尼弹簧（响应 0.55 秒、阻尼 0.3）回到零，会越过零点变成凹陷、再弹回，反复数次才平息——这就是果冻般的颤动。软糯、可触、令人愉悦。"
         ),
         implementation: L(
-            "A [[stitchable]] layer shader pulls samples toward the center by d·strength·(1 − t²)² and offsets them by the velocity smear, shading by the dome's slope; center, strength and smear live in an Animatable modifier so springs (including negative overshoot) drive the shader. The drag is attached simultaneously, so the page can still scroll.",
-            "[[stitchable]] layerEffect 着色器按 d·strength·(1 − t²)² 把采样点拉向中心，并叠加速度拖影偏移，再依据圆顶斜率打光；中心、强度与拖影放在 Animatable 修饰器中，由弹簧（包括越过零点的负向过冲）驱动着色器。拖动手势以 simultaneousGesture 附加，页面仍可滚动。"
+            "A [[stitchable]] layer shader pulls samples toward the center by d·strength·(1 − t²)² and offsets them by the velocity smear, shading by the dome's slope; center, strength and smear live in an Animatable modifier so springs (including negative overshoot) drive the shader. The drag is attached simultaneously and arms the dome only after an 80 ms hold or a sideways move (a quick tap pops it on lift), so a page scroll starting on the card never buzzes.",
+            "[[stitchable]] layerEffect 着色器按 d·strength·(1 − t²)² 把采样点拉向中心，并叠加速度拖影偏移，再依据圆顶斜率打光；中心、强度与拖影放在 Animatable 修饰器中，由弹簧（包括越过零点的负向过冲）驱动着色器。拖动手势以 simultaneousGesture 附加，且仅在按住 80 毫秒或横向移动后才鼓起圆顶（快速轻点在抬指时弹出），因此从卡片上开始的页面滚动不会误触震动。"
         ),
         apis: ["layerEffect", "Animatable", "DragGesture.Value.velocity", "spring(response:dampingFraction:)", "Metal"],
         tags: ["jelly", "bulge", "wobble", "squishy", "果冻", "凸起", "颤动", "按压"],
@@ -36,6 +36,12 @@ private struct JellyPressDemo: View {
     @State private var strength: Double = 0
     @State private var smear: CGSize = .zero
     @State private var pressing = false
+    /// Bumped on every touch-down and lift; a pending arm only fires if its token is still current.
+    @State private var armToken = 0
+    @State private var armScheduled = false
+    /// Set when the touch starts moving vertically before the dome is armed: the page is scrolling.
+    @State private var vetoed = false
+    @State private var lastLocation = CGPoint(x: 130, y: 150)
     /// Resets itself if the system cancels the touch (e.g. the page starts scrolling), so the dome never sticks.
     @GestureState private var touching = false
 
@@ -43,14 +49,12 @@ private struct JellyPressDemo: View {
         VStack(spacing: 14) {
             ShaderArtwork(variant: 1)
                 .modifier(JellyModifier(center: center, strength: strength, smear: smear, radius: ctx["radius"]))
-                // Simultaneous, so a vertical swipe that starts on the card still scrolls the page;
-                // a tap still pops a dome because the drag reports touch-down immediately.
+                // Simultaneous, so a vertical swipe that starts on the card still scrolls the page. The dome is
+                // armed only after an 80 ms hold or a horizontal-first move, so a scroll never buzzes or flashes it;
+                // a quick tap pops a dome on lift.
                 .simultaneousGesture(press)
                 .onChange(of: touching) { _, isTouching in
-                    if !isTouching && pressing {
-                        pressing = false
-                        release()
-                    }
+                    if !isTouching { endTouch() }
                 }
             DemoHint(text: L("Press, hold and drag, then let go", "按住拖动，然后松手"), ctx: ctx)
         }
@@ -62,11 +66,22 @@ private struct JellyPressDemo: View {
         DragGesture(minimumDistance: 0)
             .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
+                lastLocation = value.location
                 if !pressing {
-                    pressing = true
-                    center = value.location
-                    Haptics.tap(.soft)
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.62)) { strength = ctx["depth"] }
+                    guard !vetoed else { return }
+                    let dx: CGFloat = abs(value.translation.width)
+                    let dy: CGFloat = abs(value.translation.height)
+                    if dy > 6 && dy >= dx {
+                        vetoed = true
+                        armToken += 1
+                        return
+                    }
+                    if dx > 6 && dx > dy {
+                        arm(at: value.location)
+                    } else {
+                        scheduleArm()
+                        return
+                    }
                 }
                 let sx = (value.velocity.width * 0.02).clamped(to: -28...28)
                 let sy = (value.velocity.height * 0.02).clamped(to: -28...28)
@@ -75,11 +90,48 @@ private struct JellyPressDemo: View {
                     smear = CGSize(width: sx, height: sy)
                 }
             }
-            .onEnded { _ in
-                guard pressing else { return }
-                pressing = false
-                release()
+            .onEnded { value in
+                let dx: CGFloat = abs(value.translation.width)
+                let dy: CGFloat = abs(value.translation.height)
+                let wasTap = !pressing && !vetoed && dx < 6 && dy < 6
+                endTouch()
+                if wasTap {
+                    // A quick tap never reached the 80 ms arm: pop and release the dome now.
+                    Haptics.tap(.soft)
+                    poke(at: value.location)
+                }
             }
+    }
+
+    private func scheduleArm() {
+        guard !armScheduled else { return }
+        armScheduled = true
+        armToken += 1
+        let token = armToken
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(80))
+            guard token == armToken, !pressing, !vetoed else { return }
+            arm(at: lastLocation)
+        }
+    }
+
+    private func arm(at location: CGPoint) {
+        armToken += 1
+        pressing = true
+        center = location
+        Haptics.tap(.soft)
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.62)) { strength = ctx["depth"] }
+    }
+
+    /// Normal lift or system cancellation: cancels a pending arm and wobbles out an armed dome.
+    private func endTouch() {
+        armToken += 1
+        armScheduled = false
+        vetoed = false
+        if pressing {
+            pressing = false
+            release()
+        }
     }
 
     private func release() {
@@ -92,7 +144,11 @@ private struct JellyPressDemo: View {
 
     /// Simulated press: pop a dome somewhere on the card, hold briefly, then let it wobble out.
     private func poke() {
-        center = CGPoint(x: CGFloat.random(in: 70...190), y: CGFloat.random(in: 80...220))
+        poke(at: CGPoint(x: CGFloat.random(in: 70...190), y: CGFloat.random(in: 80...220)))
+    }
+
+    private func poke(at point: CGPoint) {
+        center = point
         withAnimation(.spring(response: 0.28, dampingFraction: 0.62)) { strength = ctx["depth"] }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.55))

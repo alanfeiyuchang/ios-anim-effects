@@ -50,6 +50,7 @@ enum MorphFamilies {
         "morph.fab-menu": "morph.container",
         "morph.zoom-sheet": "morph.container",
         "morph.search-expand": "morph.container",
+        "morph.island-expand": "morph.container",
         // Hero & zoom
         "morph.hero-card": "morph.hero",
         "morph.native-zoom": "morph.hero",
@@ -59,12 +60,20 @@ enum MorphFamilies {
         // Shape morph
         "morph.shape-morph": "morph.shape",
         "morph.liquid-glass": "morph.shape",
+        "morph.polygon-sides": "morph.shape",
+        "morph.corner-cascade": "morph.shape",
+        "morph.line-to-ring": "morph.shape",
         // Reveal & replace
         "morph.circular-reveal": "morph.reveal",
         "morph.blur-replace": "morph.reveal",
+        "morph.blinds-reveal": "morph.reveal",
+        "morph.feather-wipe": "morph.reveal",
+        "morph.tile-mosaic": "morph.reveal",
         // Layout transitions
         "morph.staggered-transition": "morph.layout",
         "morph.list-grid": "morph.layout",
         "morph.cube-transition": "morph.layout",
+        "morph.grid-to-ring": "morph.layout",
+        "morph.sort-hop": "morph.layout",
     ]
 }

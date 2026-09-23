@@ -32,7 +32,7 @@ enum BackgroundsFamilies {
             id: "backgrounds.weather",
             category: .backgrounds,
             name: L("Weather", "天气氛围"),
-            summary: L("Rain, snow and storms falling in layered depth.", "分层纵深飘落的雨、雪与风暴。"),
+            summary: L("Rain, snow, fog and wind in layered depth.", "分层纵深的雨、雪、雾与风。"),
             symbol: "cloud.rain.fill"
         ),
         EffectFamily(
@@ -50,6 +50,9 @@ enum BackgroundsFamilies {
         "backgrounds.intelligence-glow": "backgrounds.gradient",
         "backgrounds.aurora": "backgrounds.gradient",
         "backgrounds.grain-gradient": "backgrounds.gradient",
+        "backgrounds.conic-halo": "backgrounds.gradient",
+        "backgrounds.light-leak": "backgrounds.gradient",
+        "backgrounds.wave-band": "backgrounds.gradient",
         // Particle fields
         "backgrounds.particle-repulsion": "backgrounds.particles",
         "backgrounds.fireflies": "backgrounds.particles",
@@ -60,13 +63,19 @@ enum BackgroundsFamilies {
         "backgrounds.metaballs": "backgrounds.liquid",
         "backgrounds.glow-orb": "backgrounds.liquid",
         "backgrounds.lava-lamp": "backgrounds.liquid",
+        "backgrounds.ink-bloom": "backgrounds.liquid",
+        "backgrounds.slosh-tank": "backgrounds.liquid",
         // Weather
         "backgrounds.rain": "backgrounds.weather",
         "backgrounds.snowfall": "backgrounds.weather",
+        "backgrounds.window-droplets": "backgrounds.weather",
+        "backgrounds.rolling-fog": "backgrounds.weather",
+        "backgrounds.autumn-wind": "backgrounds.weather",
         // Waves, grids & warp
         "backgrounds.starfield-warp": "backgrounds.waves-grids",
         "backgrounds.halftone-flow": "backgrounds.waves-grids",
         "backgrounds.sine-waves": "backgrounds.waves-grids",
         "backgrounds.synthwave-grid": "backgrounds.waves-grids",
+        "backgrounds.shockwave-grid": "backgrounds.waves-grids",
     ]
 }

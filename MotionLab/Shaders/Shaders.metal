@@ -471,3 +471,267 @@ half4 mlCaustics(float2 position, SwiftUI::Layer layer, float time, float intens
     rgb = min(rgb, float3(floorColor.a));
     return half4(half3(rgb), floorColor.a);
 }
+
+// MARK: - Jelly press (layer effect)
+// A soft dome under the finger: strength > 0 pulls samples toward the center (bulge), strength < 0 pushes
+// them out (dent), so a spring that overshoots through zero reads as a wobbling jelly. `stretch` smears the
+// dome's content opposite to the drag velocity. The falloff (1 − t²)² has zero slope at the rim, so no seam.
+// Max displacement ≈ 0.29 · radius · |strength| + |stretch|.
+
+[[ stitchable ]]
+half4 mlJellyPress(float2 position, SwiftUI::Layer layer, float2 center, float radius, float strength, float2 stretch) {
+    float rad = max(radius, 1.0);
+    float2 d = position - center;
+    float dist = length(d);
+    if (dist >= rad) {
+        return layer.sample(position);
+    }
+    float t = dist / rad;
+    float fall = (1.0 - t * t) * (1.0 - t * t);
+    float2 p = position - d * strength * fall - stretch * fall;
+    half4 c = layer.sample(p);
+    float2 dir = dist > 0.001 ? d / dist : float2(0.0);
+    float slope = strength * 4.0 * t * (1.0 - t * t);
+    float light = clamp(1.0 + 0.35 * slope * dot(dir, float2(-0.6, -0.8)), 0.6, 1.4);
+    c.rgb = min(c.rgb * half(light), half3(c.a));
+    return c;
+}
+
+// MARK: - Liquid wipe (layer effect, applied to the outgoing scene)
+// A wavy liquid surface rises from the bottom; below it the outgoing scene is transparent (the incoming scene
+// sits underneath), just above it the content is pulled toward the surface like a meniscus, and a bright rim
+// traces the waterline. Wave height follows sin(π · progress), so the surface starts and ends flat.
+// Samples move up to `amplitude` points vertically.
+
+[[ stitchable ]]
+half4 mlLiquidWipe(float2 position, SwiftUI::Layer layer, float2 size, float progress, float amplitude, float time) {
+    float pr = clamp(progress, 0.0, 1.0);
+    float a = amplitude * sin(3.14159265 * pr);
+    float span = size.y + amplitude * 4.0;
+    float level = size.y + amplitude * 2.0 - pr * span;
+    float wave = sin(position.x * 0.034 + time * 4.2) * a
+               + sin(position.x * 0.079 - time * 2.7) * a * 0.45;
+    float d = position.y - (level + wave);
+    float above = max(-d, 0.0);
+    float lens = exp(-above / 16.0);
+    float2 p = position - float2(0.0, lens * a * 0.9);
+    half4 c = layer.sample(p);
+    float keep = 1.0 - smoothstep(-0.8, 0.8, d);
+    c *= half(keep);
+    float mask = float(layer.sample(position).a);
+    float live = smoothstep(0.0, 0.08, pr) * (1.0 - smoothstep(0.92, 1.0, pr));
+    float rim = exp(-abs(d) / 2.2) * mask * live;
+    c += half4(half3(half(rim * 0.9)), half(rim * 0.9));
+    c = min(c, half4(1.0h));
+    c.rgb = min(c.rgb, half3(c.a));
+    return c;
+}
+
+// MARK: - Tile scatter (layer effect)
+// The view is cut into square tiles. A wave front leaves `origin`; each tile starts when it arrives
+// (delay ∝ distance · spread), flashes briefly, then shrinks to nothing while turning by a random angle.
+// Rotation grows with e², so a turning tile never pokes outside its own cell. Samples stay inside the cell.
+
+[[ stitchable ]]
+half4 mlTileScatter(float2 position, SwiftUI::Layer layer, float2 size, float2 origin, float progress,
+                    float tile, float spread) {
+    float s = max(tile, 4.0);
+    float2 cell = floor(position / s);
+    float2 center = (cell + 0.5) * s;
+    float reach = max(length(size), 1.0);
+    float delay = length(center - origin) / reach * spread;
+    float local = clamp(progress * (1.0 + spread) - delay, 0.0, 1.0);
+    float e = local * local * (3.0 - 2.0 * local);
+    float scale = 1.0 - e;
+    if (scale <= 0.002) {
+        return half4(0.0h);
+    }
+    float spin = (mlHash(cell + 7.1) - 0.5) * 2.4 * e * e;
+    float cs = cos(spin);
+    float sn = sin(spin);
+    float2 lp = position - center;
+    float2 q = float2(cs * lp.x + sn * lp.y, -sn * lp.x + cs * lp.y) / scale;
+    float hs = s * 0.5;
+    if (abs(q.x) > hs || abs(q.y) > hs) {
+        return half4(0.0h);
+    }
+    half4 c = layer.sample(center + q);
+    float flash = smoothstep(0.0, 0.15, e) * (1.0 - smoothstep(0.15, 0.6, e));
+    c.rgb = min(c.rgb + half3(half(flash * 0.35)) * c.a, half3(c.a));
+    c *= half(1.0 - e * e);
+    return c;
+}
+
+// MARK: - Reeded glass (layer effect)
+// A vertical panel of fluted glass centered at `panelX`. Each rib of width `rib` acts as a cylindrical lens:
+// the sample shifts by u · rib · strength (u ∈ −0.5…0.5 across the rib), so every flute shows a squeezed,
+// mirrored slice. A 5-tap vertical smear (`frost`) softens it; rib shading, a specular line per flute and a
+// bright bevel at both panel edges sell the material. Samples move ≤ rib · strength / 2 horizontally, 4 · frost vertically.
+
+[[ stitchable ]]
+half4 mlReededGlass(float2 position, SwiftUI::Layer layer, float panelX, float panelWidth, float rib,
+                    float strength, float frost) {
+    float left = panelX - panelWidth * 0.5;
+    float local = position.x - left;
+    if (local < 0.0 || local > panelWidth) {
+        return layer.sample(position);
+    }
+    float w = max(rib, 2.0);
+    float u = fract(local / w) - 0.5;
+    float2 p = position + float2(u * w * strength, 0.0);
+    float f = max(frost, 0.0);
+    half4 c = layer.sample(p) * 0.36h
+            + layer.sample(p + float2(0.0, 2.0 * f)) * 0.2h
+            + layer.sample(p - float2(0.0, 2.0 * f)) * 0.2h
+            + layer.sample(p + float2(0.0, 4.0 * f)) * 0.12h
+            + layer.sample(p - float2(0.0, 4.0 * f)) * 0.12h;
+    float shade = 0.9 + 0.1 * cos(u * 6.2831853);
+    float su = u + 0.28;
+    float spec = exp(-(su * su) / 0.004) * 0.32;
+    float edge = min(local, panelWidth - local);
+    spec += exp(-edge / 1.2) * 0.45;
+    c.rgb = c.rgb * half(shade) + half(spec) * c.a;
+    c.rgb += half3(0.03h, 0.035h, 0.05h) * c.a;
+    c = min(c, half4(1.0h));
+    c.rgb = min(c.rgb, half3(c.a));
+    return c;
+}
+
+// MARK: - Ordered dither (layer effect)
+// Pixelates to `pixel`-point cells, then quantizes each cell's luminance to `levels` tones with a 4×4 Bayer
+// threshold matrix and maps the result onto a two-color ramp (dark → light), like 1-bit / Game Boy screens.
+
+[[ stitchable ]]
+half4 mlDither(float2 position, SwiftUI::Layer layer, float pixel, float levels, half4 dark, half4 light) {
+    float s = max(pixel, 1.0);
+    float2 cell = max(floor(position / s), float2(0.0));
+    half4 c = layer.sample((cell + 0.5) * s);
+    if (c.a < 0.01h) {
+        return half4(0.0h);
+    }
+    float3 rgb = float3(c.rgb) / float(c.a);
+    float l = dot(rgb, float3(0.299, 0.587, 0.114));
+    uint x = uint(cell.x) & 3u;
+    uint y = uint(cell.y) & 3u;
+    uint x0 = x & 1u;
+    uint y0 = y & 1u;
+    uint x1 = (x >> 1u) & 1u;
+    uint y1 = (y >> 1u) & 1u;
+    uint bayer = 4u * (((x0 ^ y0) << 1u) | y0) + (((x1 ^ y1) << 1u) | y1);
+    float threshold = (float(bayer) + 0.5) / 16.0;
+    float n = max(floor(levels), 2.0) - 1.0;
+    float q = clamp(floor(l * n + threshold) / n, 0.0, 1.0);
+    float3 col = mix(float3(dark.rgb), float3(light.rgb), q);
+    return half4(half3(col), 1.0h) * c.a;
+}
+
+// MARK: - VHS tape (layer effect)
+// Per-scanline horizontal wobble from animated value noise, a noisy tracking band rolling down the frame,
+// head-switching noise in the bottom 14 pt, chroma delayed to the right while luma stays sharp, tape snow in
+// the band and soft scanlines. Horizontal sample offsets stay below wobble/2 + 20·tracking + 12 + 2·chroma.
+
+[[ stitchable ]]
+half4 mlVHS(float2 position, SwiftUI::Layer layer, float2 size, float time, float tracking, float wobble, float chroma) {
+    float y = position.y;
+    float dx = (mlNoise(float2(y * 0.35, time * 18.0)) - 0.5) * wobble;
+    float bandY = fract(time * 0.13) * (size.y + 80.0) - 40.0;
+    float bw = 10.0 + 30.0 * tracking;
+    float bd = (y - bandY) / bw;
+    float inBand = exp(-bd * bd);
+    float tear = mlHash(float2(floor(y * 0.5), floor(fract(time) * 30.0))) - 0.5;
+    dx += inBand * tracking * tear * 40.0;
+    float head = smoothstep(size.y - 14.0, size.y, y);
+    dx += head * 12.0 * sin(y * 0.9 + time * 40.0);
+    float2 p = position + float2(dx, 0.0);
+    half4 base = layer.sample(p);
+    half4 cr = layer.sample(p + float2(chroma, 0.0));
+    half4 cb = layer.sample(p + float2(chroma * 2.0, 0.0));
+    float3 weights = float3(0.299, 0.587, 0.114);
+    float luma = dot(float3(base.rgb), weights);
+    float3 shifted = float3(float(cr.r), float(base.g), float(cb.b));
+    float3 col = shifted + (luma - dot(shifted, weights));
+    float2 snowSeed = position * 0.7 + float2(fract(time * 7.3) * 100.0, fract(time * 3.1) * 100.0);
+    float snow = mlHash(snowSeed);
+    col = mix(col, float3(snow), inBand * tracking * 0.55 * float(base.a));
+    col *= 0.94 + 0.06 * sin(y * 3.14159);
+    col = clamp(col, float3(0.0), float3(float(base.a)));
+    return half4(half3(col), base.a);
+}
+
+// MARK: - Voronoi cells (color effect, generative)
+// Animated Worley cells: each feature point wobbles inside its grid cell, borders (F2 − F1 ≈ 0) glow, and each
+// cell takes a hashed color. A tap sends a ring (320 pt/s, fading over ~2 s) that shoves the cells outward and
+// brightens them as it passes. `pulse` < 0 means no ring.
+
+[[ stitchable ]]
+half4 mlVoronoiCells(float2 position, half4 color, float2 size, float time, float density, float2 touch,
+                     float pulse, float glow) {
+    float2 fromTouch = position - touch;
+    float dist = length(fromTouch);
+    float ring = 0.0;
+    if (pulse >= 0.0) {
+        float rd = (dist - pulse * 320.0) / 26.0;
+        ring = exp(-rd * rd) * exp(-pulse * 1.6);
+    }
+    float2 uv = position / max(size.y, 1.0) * density;
+    uv += (dist > 0.5 ? fromTouch / dist : float2(0.0)) * ring * 0.25;
+    float2 g = floor(uv);
+    float2 f = fract(uv);
+    float d1 = 8.0;
+    float d2 = 8.0;
+    float2 best = g;
+    for (int j = -1; j <= 1; j++) {
+        for (int i = -1; i <= 1; i++) {
+            float2 o = float2(float(i), float(j));
+            float2 h = float2(mlHash(g + o), mlHash(g + o + 17.31));
+            float2 pt = o + 0.5 + 0.38 * sin(time * (0.6 + h * 0.9) + 6.2831853 * h);
+            float d = length(pt - f);
+            if (d < d1) {
+                d2 = d1;
+                d1 = d;
+                best = g + o;
+            } else if (d < d2) {
+                d2 = d;
+            }
+        }
+    }
+    float edge = d2 - d1;
+    float tone = mlHash(best * 1.37 + 3.1);
+    float3 base = mix(float3(0.10, 0.08, 0.28), float3(0.20, 0.55, 0.95), tone);
+    base = mix(base, float3(1.0, 0.45, 0.65), smoothstep(0.72, 1.0, tone));
+    float border = exp(-edge * 18.0) * glow;
+    float core = (1.0 - smoothstep(0.0, 0.5, d1)) * 0.35;
+    float3 col = base * (0.55 + core);
+    col += float3(0.55, 0.85, 1.0) * border * (0.55 + ring * 2.0);
+    col += base * ring * 0.8;
+    col = clamp(col, float3(0.0), float3(1.0));
+    return half4(half3(col), 1.0h) * color.a;
+}
+
+// MARK: - Hyperspace tunnel (color effect, generative)
+// Polar-coordinate tunnel: depth z = 0.28 / r + time scrolls toward the viewer, the angle is twisted by depth,
+// and a grid of `lanes` longitudinal lines × rings is drawn on the wall with a cosine hue ramp along z.
+// The far end fades into a white-violet core so the dense center never aliases.
+
+[[ stitchable ]]
+half4 mlTunnel(float2 position, half4 color, float2 size, float time, float2 center, float twist, float lanes) {
+    float2 d = (position - center) / max(size.y, 1.0);
+    float r = max(length(d), 0.0001);
+    float a = atan2(d.y, d.x) / 6.2831853;
+    float z = 0.28 / r + time;
+    float u = a + twist * 0.05 * z;
+    float n = max(floor(lanes), 3.0);
+    float gu = fract(u * n);
+    float gz = fract(z * 1.5);
+    float lu = 1.0 - smoothstep(0.0, 0.07, min(gu, 1.0 - gu));
+    float lz = 1.0 - smoothstep(0.0, 0.07, min(gz, 1.0 - gz));
+    float line = max(lu, lz);
+    float3 hue = 0.5 + 0.5 * cos(6.2831853 * (z * 0.06 + float3(0.0, 0.33, 0.67)));
+    float fog = smoothstep(0.015, 0.22, r);
+    float3 col = float3(0.02, 0.015, 0.06);
+    col += hue * line * fog * 1.1;
+    col += hue * 0.12 * fog;
+    col += float3(0.9, 0.85, 1.0) * exp(-r * 9.0) * 0.9;
+    col = clamp(col, float3(0.0), float3(1.0));
+    return half4(half3(col), 1.0h) * color.a;
+}

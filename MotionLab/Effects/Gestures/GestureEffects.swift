@@ -16,5 +16,27 @@ enum GestureEffects {
         .gesturesVerletRope,
         .gesturesNewtonsCradle,
         .gesturesPhotoViewer,
+        // Drag & spring variations
+        .gesturesMagneticSnap,
+        .gesturesElasticTether,
+        .gesturesPendulumSwing,
+        // Throw & snap variations
+        .gesturesGravityToss,
+        .gesturesDetentSheet,
+        // Physics toys
+        .gesturesCoilSpring,
+        .gesturesOrbitSlingshot,
+        // List gestures
+        .gesturesSwipeComplete,
+        .gesturesStagedSwipe,
+        .gesturesDragSelect,
+        // Pinch & zoom
+        .gesturesPinchGrid,
+        .gesturesPinchOpen,
+        // Slide to confirm
+        .gesturesStretchSlide,
+        .gesturesNotchSlide,
+        .gesturesArcSlide,
+        .gesturesPullCord,
     ]
 }

@@ -18,5 +18,24 @@ enum TextEffects {
         .textMaskedLines,
         .textCircularBadge,
         .textVariableWeight,
+        // Number counter variations
+        .textSlotReel,
+        .textGravityDigits,
+        .textCountUp,
+        .textSevenSegment,
+        // Text reveal variations
+        .textElasticLetters,
+        .textLightSweep,
+        .textTrackingIn,
+        // Kinetic type variations
+        .textSpringChain,
+        .textSquashHop,
+        // Light & emphasis variations
+        .textScribbleCircle,
+        .textNeonSign,
+        // Rotating & ticker variations
+        .textNewsTicker,
+        .textWordDrum,
+        .textTypeCycle,
     ]
 }

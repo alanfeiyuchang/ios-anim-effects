@@ -1,0 +1,169 @@
+import SwiftUI
+
+extension Effect {
+    static let gesturesCoilSpring = Effect(
+        id: "gestures.coil-spring",
+        category: .gestures,
+        interaction: .gesture,
+        name: L("Hooke's Coil Spring", "胡克弹簧振子"),
+        summary: L("Pull a weight hanging from a coil spring and watch it bob with real mass, stiffness and damping.", "拉下挂在弹簧上的砝码，看它按真实的质量、劲度与阻尼上下振荡。"),
+        prompt: L(
+            "A 64 × 56 pt weight (continuous 16 pt corners, indigo-to-violet gradient, “1 kg” label) hangs from a ceiling bar on a steel-grey coil spring of 9 turns, 130 pt long at rest. Dragging the weight moves it vertically only, rubber-banded toward 150 pt of stretch and 90 pt of compression; the coil re-draws every frame, its turns spreading apart as it lengthens and its diameter narrowing up to 25% to conserve volume. A pointer on a tick ruler to the right tracks the weight. On release the weight is driven by a physical spring with mass 1, stiffness 90 and damping 3.5 (ζ ≈ 0.18), so it bobs through the rest line five or six times at ~1.5 Hz before settling, with a rigid haptic scaled to the pull. A physics-lab demo made tactile.",
+            "一个 64 × 56pt 的砝码（16pt 连续圆角，靛蓝到紫色渐变，标注“1 kg”）通过一根 9 圈的钢灰色螺旋弹簧挂在顶部横梁上，弹簧自然长度 130pt。拖动砝码时只能竖直移动，拉伸与压缩均带橡皮筋阻尼，分别趋近 150pt 与 90pt 的上限；弹簧每帧重绘，拉长时圈距拉开，直径最多收窄 25% 以保持体积感。右侧刻度尺上的指针同步指示砝码位置。松手后砝码由质量 1、劲度 90、阻尼 3.5（阻尼比约 0.18）的物理弹簧驱动，以约 1.5Hz 的频率穿过平衡位置五六次后才停稳，并按拉伸幅度触发硬朗触感。把物理实验室搬进指尖。"
+        ),
+        implementation: L(
+            "An Animatable coil Shape redraws its zigzag from the current length; release uses Animation.interpolatingSpring(mass:stiffness:damping:), so the three physical constants are exposed directly as parameters.",
+            "可动画的弹簧 Shape 根据当前长度重绘折线；松手使用 Animation.interpolatingSpring(mass:stiffness:damping:)，三个物理常数直接作为参数开放。"
+        ),
+        apis: ["interpolatingSpring(mass:stiffness:damping:)", "Shape", "animatableData", "DragGesture", "rubberBand"],
+        tags: ["spring", "hooke", "oscillation", "mass", "physics", "弹簧", "胡克定律", "振荡", "物理"],
+        params: [
+            .slider("mass", L("Mass", "质量"), 0.4...3.0, default: 1),
+            .slider("stiffness", L("Stiffness", "劲度"), 30...300, default: 90, step: 1, decimals: 0),
+            .slider("damping", L("Damping", "阻尼"), 0.5...20, default: 3.5, decimals: 1),
+        ]
+    ) { ctx in
+        CoilSpringDemo(ctx: ctx)
+    }
+}
+
+private let coilCeilingY: CGFloat = -140
+private let coilRestLength: CGFloat = 130
+
+private struct CoilShape: Shape {
+    var length: CGFloat
+    let turns: Int
+    let diameter: CGFloat
+
+    var animatableData: CGFloat {
+        get { length }
+        set { length = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let lead: CGFloat = 12
+        let top = CGPoint(x: rect.midX, y: rect.midY + coilCeilingY)
+        let usable: CGFloat = max(length - lead * 2, 8)
+        let ratio: CGFloat = (coilRestLength / max(length, 1)).squareRoot()
+        let width: CGFloat = diameter * min(max(ratio, 0.75), 1.2)
+        let segments = turns * 2
+        let pitch: CGFloat = usable / CGFloat(segments)
+        var path = Path()
+        path.move(to: top)
+        path.addLine(to: CGPoint(x: top.x, y: top.y + lead))
+        for index in 0..<segments {
+            let side: CGFloat = index % 2 == 0 ? 1 : -1
+            let y: CGFloat = top.y + lead + pitch * (CGFloat(index) + 0.5)
+            path.addLine(to: CGPoint(x: top.x + side * width / 2, y: y))
+        }
+        path.addLine(to: CGPoint(x: top.x, y: top.y + lead + usable))
+        path.addLine(to: CGPoint(x: top.x, y: top.y + length))
+        return path
+    }
+}
+
+private struct CoilSpringDemo: View {
+    let ctx: DemoContext
+    @State private var stretch: CGFloat = 0
+    @State private var dragging = false
+
+    var body: some View {
+        let length = coilRestLength + stretch
+        let weightY = coilCeilingY + length + 28
+        ZStack {
+            ruler
+            Capsule()
+                .fill(Color.primary.opacity(0.7))
+                .frame(width: 120, height: 8)
+                .offset(y: coilCeilingY - 4)
+            CoilShape(length: length, turns: 9, diameter: 44)
+                .stroke(
+                    LinearGradient(colors: [Color.gray.opacity(0.95), Color.gray.opacity(0.55)], startPoint: .leading, endPoint: .trailing),
+                    style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
+                )
+            weight
+                .offset(y: weightY)
+                .gesture(dragGesture)
+            pointer
+                .offset(x: 110, y: weightY)
+        }
+        .frame(width: 320, height: 320)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Pull the weight down and let go", "把砝码往下拉再松手"), ctx: ctx)
+                .padding(.bottom, 4)
+        }
+        .autoplay(ctx.isPreview, every: 3.6, delay: 0.4) { simulate() }
+    }
+
+    private var weight: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(Palette.primary)
+            .frame(width: 64, height: 56)
+            .overlay {
+                Text("1 kg")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+            .overlay(alignment: .top) {
+                Circle()
+                    .strokeBorder(Color.gray, lineWidth: 3)
+                    .frame(width: 14, height: 14)
+                    .offset(y: -9)
+            }
+            .scaleEffect(dragging ? 1.05 : 1)
+            .shadow(color: Palette.indigo.opacity(0.35), radius: dragging ? 16 : 10, y: dragging ? 10 : 6)
+    }
+
+    private var ruler: some View {
+        VStack(spacing: 9) {
+            ForEach(0..<24, id: \.self) { index in
+                Capsule()
+                    .fill(Color.primary.opacity(index % 4 == 0 ? 0.35 : 0.15))
+                    .frame(width: index % 4 == 0 ? 16 : 9, height: 1.5)
+                    .frame(width: 16, alignment: .trailing)
+            }
+        }
+        .offset(x: 130)
+    }
+
+    private var pointer: some View {
+        Image(systemName: "arrowtriangle.right.fill")
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(Palette.violet)
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                if !dragging {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = true }
+                }
+                let dy = value.translation.height
+                stretch = dy >= 0 ? rubberBand(dy, limit: 150, coefficient: 0.8) : rubberBand(dy, limit: 90, coefficient: 0.8)
+            }
+            .onEnded { _ in release(haptic: true) }
+    }
+
+    private func release(haptic: Bool) {
+        let pulled = abs(stretch)
+        withAnimation(.interpolatingSpring(mass: ctx["mass"], stiffness: ctx["stiffness"], damping: ctx["damping"])) {
+            stretch = 0
+        }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { dragging = false }
+        if haptic && !ctx.isPreview && pulled > 20 {
+            Haptics.tap(pulled > 70 ? .rigid : .light)
+        }
+    }
+
+    private func simulate() {
+        withAnimation(.easeInOut(duration: 0.55)) {
+            stretch = CGFloat.random(in: 70...100)
+            dragging = true
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.7))
+            release(haptic: false)
+        }
+    }
+}

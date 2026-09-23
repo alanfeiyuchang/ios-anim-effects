@@ -19,6 +19,14 @@ enum ShaderEffects {
         .shaderEdgeScan,
         .shaderProgressiveBlur,
         .shaderCaustics,
+        .shaderJellyPress,
+        .shaderLiquidWipe,
+        .shaderTileScatter,
+        .shaderReededGlass,
+        .shaderDither,
+        .shaderVHS,
+        .shaderVoronoiCells,
+        .shaderTunnel,
     ]
 }
 

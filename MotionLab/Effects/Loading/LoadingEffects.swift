@@ -17,5 +17,30 @@ enum LoadingEffects {
         .loadingSquareGrid,
         .loadingIndeterminateBar,
         .loadingActivityPetals,
+        // Spinner variations
+        .loadingGooeyOrbit,
+        .loadingGyroscope,
+        .loadingFlipTile,
+        .loadingInfinityComet,
+        // Dots & pulses
+        .loadingHeartbeat,
+        // Progress bar variations
+        .loadingSegmentBar,
+        .loadingLiquidBar,
+        .loadingTooltipBar,
+        .loadingCandyStripes,
+        // Progress ring variations
+        .loadingTickRing,
+        .loadingInstallPie,
+        .loadingElasticRing,
+        .loadingRingToCheck,
+        .loadingDashFlowRing,
+        // Loading button variations
+        .loadingFillButton,
+        .loadingDotsButton,
+        .loadingTraceButton,
+        // Placeholder variations
+        .loadingBreathingSkeleton,
+        .loadingMosaicResolve,
     ]
 }

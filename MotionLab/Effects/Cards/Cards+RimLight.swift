@@ -1,0 +1,135 @@
+import SwiftUI
+
+extension Effect {
+    static let cardsRimLight = Effect(
+        id: "cards.rim-light",
+        category: .cards,
+        interaction: .gesture,
+        name: L("Rim Light Tilt", "边缘光倾斜"),
+        summary: L("Drag a light around a dark card: its edge catches the light and a specular band sweeps across.", "拖动光源绕着深色卡片移动：卡片边缘被点亮，镜面光带随之扫过。"),
+        prompt: L(
+            "A midnight-blue 250×158 pt card floats on the stage. The finger acts as a light source: wherever it is, the nearest edge of the card lights up with a 2.5 pt white rim (plus a 6 pt blurred glow) that fades out within ±60° around the border, a soft specular band slides across the face in the opposite direction, and the card turns up to 8° toward the light while its shadow falls away from it. The card follows through a heavy, lagging spring (response 0.55 s, damping 0.72), so it feels massive and turns a beat after the finger. On release it eases back to a third of its tilt. Before the first touch the light orbits the card slowly. Moody, cinematic, product-shot quality.",
+            "一张 250×158 pt 的午夜蓝卡片悬浮在舞台上。手指就是光源：无论移到哪里，离它最近的卡片边缘都会亮起 2.5 pt 的白色轮廓光（外加 6 pt 模糊辉光），并沿边框在 ±60° 范围内渐隐；一条柔和的镜面光带朝反方向滑过卡面，卡片最多向光源转动 8°，阴影落向背光一侧。卡片通过厚重、滞后的弹簧（响应 0.55 秒、阻尼 0.72）跟随，显得有分量，总比手指慢半拍。松手后倾斜缓缓回落到三分之一。首次触摸前，光源会缓慢绕卡片旋转。氛围感强，宛如产品大片。"
+        ),
+        implementation: L(
+            "The light position (−1…1) sets an AngularGradient stroke whose peak angle is atan2 of the light, an offset specular stripe with plusLighter blending and two rotation3DEffects; a TimelineView orbits the light until the first touch.",
+            "光源位置（−1…1）决定 AngularGradient 描边的峰值角度（取 atan2），并驱动以 plusLighter 混合的偏移镜面光带与两个 rotation3DEffect；首次触摸前由 TimelineView 让光源环绕。"
+        ),
+        apis: ["AngularGradient(stops:center:angle:)", "rotation3DEffect", "blendMode(.plusLighter)", "TimelineView", "DragGesture"],
+        tags: ["rim light", "glare", "tilt", "specular", "轮廓光", "高光", "倾斜", "光泽"],
+        params: [
+            .slider("lag", L("Follow lag", "跟随滞后"), 0.2...1.0, default: 0.55, unit: "s"),
+            .slider("rim", L("Rim intensity", "轮廓光强度"), 0...1, default: 0.9),
+            .slider("angle", L("Max tilt", "最大倾斜"), 0...16, default: 8, step: 1, decimals: 0, unit: "°"),
+        ]
+    ) { ctx in
+        CardsRimLightDemo(ctx: ctx)
+    }
+}
+
+private struct CardsRimLightDemo: View {
+    let ctx: DemoContext
+    @State private var light: CGSize = CGSize(width: 0.6, height: -0.5)
+    @State private var touched = false
+
+    private let size = CGSize(width: 250, height: 158)
+
+    var body: some View {
+        VStack(spacing: 30) {
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: touched)) { timeline in
+                let orbit = idleLight(at: timeline.date.timeIntervalSinceReferenceDate)
+                CardsRimLitCard(
+                    light: touched ? light : orbit,
+                    rim: ctx["rim"],
+                    maxAngle: ctx["angle"]
+                )
+            }
+            .gesture(drag)
+            DemoHint(text: L("Drag around the card to move the light", "在卡片周围拖动以移动光源"), ctx: ctx)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func idleLight(at t: Double) -> CGSize {
+        CGSize(width: cos(t * 0.9), height: sin(t * 0.9) * 0.9)
+    }
+
+    private var drag: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                if !touched {
+                    light = idleLight(at: Date().timeIntervalSinceReferenceDate)
+                    touched = true
+                    Haptics.tap(.soft)
+                }
+                let x = (value.location.x / size.width - 0.5) * 2
+                let y = (value.location.y / size.height - 0.5) * 2
+                withAnimation(.spring(response: ctx["lag"], dampingFraction: 0.72)) {
+                    light = CGSize(width: x.clamped(to: -1...1), height: y.clamped(to: -1...1))
+                }
+            }
+            .onEnded { _ in
+                withAnimation(.spring(response: 0.9, dampingFraction: 0.8)) {
+                    light = CGSize(width: light.width / 3, height: light.height / 3)
+                }
+            }
+    }
+}
+
+/// Animatable so the rim angle and the specular band travel with the lagging spring, not just the tilt.
+private struct CardsRimLitCard: View, Animatable {
+    var light: CGSize
+    let rim: Double
+    let maxAngle: Double
+
+    var animatableData: CGSize.AnimatableData {
+        get { light.animatableData }
+        set { light.animatableData = newValue }
+    }
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 18, style: .continuous) }
+
+    var body: some View {
+        let peak: Double = atan2(Double(light.height), Double(light.width))
+        let strength = min(Double(hypot(light.width, light.height)), 1)
+        let shadowX: CGFloat = -light.width * 18
+        let shadowY: CGFloat = 16 - light.height * 10
+        CardsCreditCard(theme: 1, last4: "5530")
+            .overlay { specular }
+            .clipShape(shape)
+            .overlay { rimStroke(peak: peak, strength: strength) }
+            .rotation3DEffect(.degrees(-Double(light.height) * maxAngle), axis: (x: 1, y: 0, z: 0), perspective: 0.55)
+            .rotation3DEffect(.degrees(Double(light.width) * maxAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
+            .shadow(color: .black.opacity(0.3), radius: 20, x: shadowX, y: shadowY)
+    }
+
+    private var specular: some View {
+        LinearGradient(
+            colors: [.clear, Color.white.opacity(0.22 * rim), .clear],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .frame(width: 90, height: 320)
+        .rotationEffect(.degrees(24))
+        .offset(x: -light.width * 120, y: -light.height * 40)
+        .blendMode(.plusLighter)
+        .allowsHitTesting(false)
+    }
+
+    private func rimStroke(peak: Double, strength: Double) -> some View {
+        let stops: [Gradient.Stop] = [
+            .init(color: .clear, location: 0),
+            .init(color: .clear, location: 1.0 / 3.0),
+            .init(color: Color.white.opacity(rim * (0.35 + 0.65 * strength)), location: 0.5),
+            .init(color: .clear, location: 2.0 / 3.0),
+            .init(color: .clear, location: 1),
+        ]
+        // The gradient peaks at location 0.5, i.e. 180° after its start angle.
+        let gradient = AngularGradient(stops: stops, center: .center, angle: .radians(peak - Double.pi))
+        return ZStack {
+            shape.strokeBorder(gradient, lineWidth: 6).blur(radius: 6)
+            shape.strokeBorder(gradient, lineWidth: 2.5)
+        }
+        .allowsHitTesting(false)
+    }
+}

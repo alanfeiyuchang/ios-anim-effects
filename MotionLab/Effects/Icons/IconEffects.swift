@@ -18,5 +18,19 @@ enum IconEffects {
         .iconsTrashDelete,
         .iconsPaperPlane,
         .iconsPadlock,
+        // SF Symbol effects variations
+        .iconsAppearDisappear,
+        // Ambient variations
+        .iconsRadarPing,
+        .iconsAISparkle,
+        // Glyph morph variations
+        .iconsPlusClose,
+        .iconsChevronFlip,
+        .iconsSearchClose,
+        // Status variations
+        .iconsWifiConnect,
+        .iconsBatteryCharge,
+        // Action variations
+        .iconsBookmarkSave,
     ]
 }

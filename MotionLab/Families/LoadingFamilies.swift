@@ -56,24 +56,43 @@ enum LoadingFamilies {
         "loading.arc-spinner": "loading.spinner",
         "loading.orbit-dots": "loading.spinner",
         "loading.activity-petals": "loading.spinner",
+        "loading.gooey-orbit": "loading.spinner",
+        "loading.gyroscope": "loading.spinner",
+        "loading.flip-tile": "loading.spinner",
+        "loading.infinity-comet": "loading.spinner",
         // Dots & pulses
         "loading.dot-bounce": "loading.pulse",
         "loading.audio-wave": "loading.pulse",
         "loading.pulse-rings": "loading.pulse",
         "loading.square-grid": "loading.pulse",
+        "loading.heartbeat": "loading.pulse",
         // Progress bar
         "loading.glow-bar": "loading.progress-bar",
         "loading.story-bars": "loading.progress-bar",
         "loading.indeterminate-bar": "loading.progress-bar",
+        "loading.segment-bar": "loading.progress-bar",
+        "loading.liquid-bar": "loading.progress-bar",
+        "loading.tooltip-bar": "loading.progress-bar",
+        "loading.candy-stripes": "loading.progress-bar",
         // Progress ring
         "loading.progress-ring": "loading.progress-ring",
         "loading.liquid-fill": "loading.progress-ring",
+        "loading.tick-ring": "loading.progress-ring",
+        "loading.install-pie": "loading.progress-ring",
+        "loading.elastic-ring": "loading.progress-ring",
+        "loading.ring-to-check": "loading.progress-ring",
+        "loading.dash-flow-ring": "loading.progress-ring",
         // Loading button
         "loading.load-button": "loading.button",
         "loading.download-button": "loading.button",
+        "loading.fill-button": "loading.button",
+        "loading.dots-button": "loading.button",
+        "loading.trace-button": "loading.button",
         // Placeholders
         "loading.skeleton-shimmer": "loading.placeholder",
         "loading.blur-up": "loading.placeholder",
         "loading.ai-generating": "loading.placeholder",
+        "loading.breathing-skeleton": "loading.placeholder",
+        "loading.mosaic-resolve": "loading.placeholder",
     ]
 }

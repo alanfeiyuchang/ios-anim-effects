@@ -53,14 +53,14 @@ extension Effect {
         name: L("LED Segment Bar", "LED 分段进度条"),
         summary: L("Twenty discrete cells light up one by one with a springy pop and a tick.", "二十个独立格子逐个点亮，带弹性跳动与细微触感。"),
         prompt: L(
-            "A backup card shows a title, a rolling percentage and a row of 20 rounded 9 × 24 pt cells with 3 pt gaps. Unlit cells sit at 8% label color and 55% height. As progress arrives in irregular chunks, each newly covered cell snaps to full height on an under-damped spring (response 0.32 s, damping 0.5) so it pops past 100% and settles, brightens into a mint → sky → indigo gradient across the row, and a selection haptic ticks for every cell. The last lit cell glows softly as the leading edge. On completion the whole row flashes once in green. Digital, countable, satisfying.",
-            "备份卡片中有标题、滚动的百分比，以及一排 20 个 9 × 24 pt 的圆角格子，间距 3 pt。未点亮的格子为 8% 文字色、高度 55%。进度以不规则分段到达，每个新覆盖的格子以欠阻尼弹簧（响应 0.32 秒、阻尼 0.5）跳到满高度，先冲过 100% 再落定，同时亮起沿整排从薄荷绿 → 天蓝 → 靛蓝过渡的颜色，每亮一格伴随一次选择触感。最新点亮的格子作为前沿带柔光。完成时整排统一闪一次绿色。数字感强、可数、令人满足。"
+            "A backup card shows a title, a rolling percentage and a row of 20 rounded 10 × 24 pt cells with 3 pt gaps. Unlit cells sit at 8% label color and 55% height. As progress arrives in irregular chunks, each newly covered cell snaps to full height on an under-damped spring (response 0.32 s, damping 0.5) so it pops past 100% and settles, brightens into a mint → sky → indigo gradient across the row, and a selection haptic ticks for every cell. The last lit cell glows softly as the leading edge. On completion the whole row flashes once in green. Digital, countable, satisfying.",
+            "备份卡片中有标题、滚动的百分比，以及一排 20 个 10 × 24 pt 的圆角格子，间距 3 pt。未点亮的格子为 8% 文字色、高度 55%。进度以不规则分段到达，每个新覆盖的格子以欠阻尼弹簧（响应 0.32 秒、阻尼 0.5）跳到满高度，先冲过 100% 再落定，同时亮起沿整排从薄荷绿 → 天蓝 → 靛蓝过渡的颜色，每亮一格伴随一次选择触感。最新点亮的格子作为前沿带柔光。完成时整排统一闪一次绿色。数字感强、可数、令人满足。"
         ),
         implementation: L(
             "Each cell compares its index with progress × count; the lit flag drives a spring on frame height and color, and onChange of the lit count plays Haptics.selection().",
             "每个格子比较自身序号与 进度 × 格数；点亮标志以弹簧驱动高度与颜色，onChange 监听点亮数并调用 Haptics.selection()。"
         ),
-        apis: ["spring(response:dampingFraction:)", "onChange(of:)", "contentTransition(.numericText)", "sensoryFeedback"],
+        apis: ["spring(response:dampingFraction:)", "onChange(of:)", "contentTransition(.numericText)", "UISelectionFeedbackGenerator"],
         tags: ["segmented", "led", "cells", "steps", "分段", "格子", "进度条", "备份"],
         params: [
             .slider("count", L("Cells", "格数"), 10...28, default: 20, step: 1, decimals: 0),
@@ -86,7 +86,7 @@ private struct SegmentBarDemo: View {
             VStack(alignment: .leading, spacing: 16) {
                 BarVarHeader(symbol: "externaldrive.fill", title: zh ? "正在备份" : "Backing up", value: progress, done: progress >= 1)
                 SegmentRow(count: count, lit: lit, damping: ctx["damping"], flash: flash)
-                Text(zh ? "iPhone · 12.4 GB" : "iPhone · 12.4 GB")
+                Text(verbatim: "iPhone · 12.4 GB")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -165,8 +165,8 @@ extension Effect {
         name: L("Liquid Slosh Bar", "液体晃动进度条"),
         summary: L("A water-filled capsule whose wavy front sloshes every time you add more.", "装满水的胶囊进度条，每次加水前沿都会晃荡。"),
         prompt: L(
-            "A 264 × 44 pt capsule in a hydration card holds sky-to-blue water whose leading edge is a living meniscus: a vertical sine wave with a 5 pt amplitude that drifts continuously. Tapping '+ 250 ml' moves the level 1/8 of the way on a spring (response 0.6 s, damping 0.7) and kicks the wave to 14 pt amplitude, which decays exponentially over about 1.2 s — a slosh that settles. Small bubbles rise and wobble inside the water only. The liter readout rolls, and when the goal is reached the card's check fills green with a success haptic; the next tap drains it smoothly. Fresh, physical, rewarding.",
-            "一张饮水卡片中有一枚 264 × 44 pt 的胶囊，装着天蓝到蓝色的水，水的前沿是一道活的弯液面：振幅 5 pt 的竖向正弦波持续漂移。点击“+ 250 ml”，水位以弹簧（响应 0.6 秒、阻尼 0.7）前进 1/8，同时把波浪振幅猛地推到 14 pt，再在约 1.2 秒内指数衰减——像水晃了一下又平静下来。小气泡只在水中上升、左右摇摆。升数读数滚动变化，达到目标时卡片上的对勾变成绿色并伴随成功触感；再次点击会平滑排空。清新、有物理感、令人满足。"
+            "A 264 × 44 pt capsule in a hydration card holds sky-to-blue water whose leading edge is a living meniscus: a vertical sine wave with a 5 pt amplitude that drifts continuously. Tapping '+ 250 ml' moves the level 1/8 of the way on a spring (response 0.6 s, damping 0.7) and kicks 14 pt of extra amplitude into the wave, which decays exponentially over about 1.2 s — a slosh that settles. Small bubbles rise and wobble inside the water only. The liter readout rolls, and when the goal is reached the card's check fills green with a success haptic; the next tap drains it smoothly. Fresh, physical, rewarding.",
+            "一张饮水卡片中有一枚 264 × 44 pt 的胶囊，装着天蓝到蓝色的水，水的前沿是一道活的弯液面：振幅 5 pt 的竖向正弦波持续漂移。点击“+ 250 ml”，水位以弹簧（响应 0.6 秒、阻尼 0.7）前进 1/8，同时给波浪额外注入 14 pt 振幅，再在约 1.2 秒内指数衰减——像水晃了一下又平静下来。小气泡只在水中上升、左右摇摆。升数读数滚动变化，达到目标时卡片上的对勾变成绿色并伴随成功触感；再次点击会平滑排空。清新、有物理感、令人满足。"
         ),
         implementation: L(
             "An Animatable Shape interpolates the fill level while a TimelineView supplies the wave phase and the decaying slosh amplitude (exp of time since the last tap); bubbles are masked by the same shape.",
@@ -347,8 +347,8 @@ extension Effect {
         name: L("Swinging Tooltip Bar", "摆动气泡进度条"),
         summary: L("A percentage bubble rides the knob and swings like a pendulum on each jump.", "百分比气泡骑在滑块上，每次跃进都像钟摆一样摆动。"),
         prompt: L(
-            "Under a 16:9 video thumbnail, a 6 pt export bar carries a 16 pt white knob, and above the knob hangs a dark 54 × 30 pt speech bubble with a small caret, showing the rolling percentage. Each progress chunk glides over 0.45 s, and because the bubble is pinned at its caret it swings like a pendulum: first tilting 12° back against the motion over 0.12 s, then swinging 6° forward and settling through a spring in about 0.5 s. The fill uses the sunset gradient. At 100% the bubble inflates to 115%, turns green and shows a check, with a success haptic. Playful yet readable.",
-            "一张 16:9 视频缩略图下方，是一条 6 pt 的导出进度条和一颗 16 pt 白色滑块；滑块上方悬挂着一枚 54 × 30 pt 的深色气泡，带小尖角，显示滚动的百分比。每段进度用 0.45 秒滑行，由于气泡以尖角为支点，它会像钟摆一样摆动：先在 0.12 秒内逆着运动方向后仰 12°，再向前摆 6°，并在约 0.5 秒内经弹簧落定。填充使用日落渐变。到达 100% 时气泡膨胀到 115%、变成绿色并显示对勾，伴随成功触感。俏皮又清晰易读。"
+            "Under a 16:9 video thumbnail, a 6 pt export bar carries a 16 pt white knob, and above the knob hangs an indigo 54 × 30 pt speech bubble with a small caret, showing the rolling percentage. Each progress chunk glides over 0.45 s, and because the bubble is pinned at its caret it swings like a pendulum: first tilting 12° back against the motion over 0.12 s, then swinging 6° forward and settling through a spring in about 0.5 s. The fill uses the sunset gradient. At 100% the bubble inflates to 115%, turns green and shows a check, with a success haptic. Playful yet readable.",
+            "一张 16:9 视频缩略图下方，是一条 6 pt 的导出进度条和一颗 16 pt 白色滑块；滑块上方悬挂着一枚 54 × 30 pt 的靛蓝气泡，带小尖角，显示滚动的百分比。每段进度用 0.45 秒滑行，由于气泡以尖角为支点，它会像钟摆一样摆动：先在 0.12 秒内逆着运动方向后仰 12°，再向前摆 6°，并在约 0.5 秒内经弹簧落定。填充使用日落渐变。到达 100% 时气泡膨胀到 115%、变成绿色并显示对勾，伴随成功触感。俏皮又清晰易读。"
         ),
         implementation: L(
             "Progress animates with .smooth; a keyframeAnimator keyed on the step counter rotates the bubble around its bottom anchor with cubic and spring keyframes.",
@@ -453,10 +453,10 @@ private struct TooltipTrack: View {
             }
             .foregroundStyle(.white)
             .frame(width: 54, height: 30)
-            .background(done ? Palette.green : Color(white: 0.16), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(done ? Palette.green : Palette.indigo, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             Image(systemName: "arrowtriangle.down.fill")
                 .font(.system(size: 9))
-                .foregroundStyle(done ? Palette.green : Color(white: 0.16))
+                .foregroundStyle(done ? Palette.green : Palette.indigo)
                 .offset(y: -3)
         }
         .frame(width: 54)

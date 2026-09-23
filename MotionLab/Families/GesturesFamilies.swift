@@ -18,21 +18,21 @@ enum GesturesFamilies {
             id: "gestures.throw",
             category: .gestures,
             name: L("Throw & Snap", "抛掷与吸附"),
-            summary: L("Flick with velocity: glide, bounce off walls, snap to corners or dismiss.", "带速度甩出：滑行、撞墙反弹、吸附角落或关闭。"),
+            summary: L("Flick with velocity: glide, arc under gravity, snap to corners or detents, or dismiss.", "带速度甩出：滑行、受重力划出抛物线、吸附角落或档位，或直接关闭。"),
             symbol: "arrow.up.forward.circle.fill"
         ),
         EffectFamily(
             id: "gestures.physics",
             category: .gestures,
             name: L("Physics Toys", "物理模拟"),
-            summary: L("Simulated ropes, pendulums and charge-ups you can play with.", "可以把玩的绳索、摆球与蓄力模拟。"),
+            summary: L("Simulated ropes, pendulums, springs, orbits and charge-ups you can play with.", "可以把玩的绳索、摆球、弹簧、轨道与蓄力模拟。"),
             symbol: "atom"
         ),
         EffectFamily(
             id: "gestures.list",
             category: .gestures,
             name: L("List Gestures", "列表手势"),
-            summary: L("Swipe actions and drag-to-reorder on list rows.", "列表行上的左滑操作与拖拽排序。"),
+            summary: L("Swipe actions, swipe-to-complete, drag-select and reorder on list rows.", "列表行上的滑动操作、滑动完成、滑动多选与拖拽排序。"),
             symbol: "arrow.up.arrow.down"
         ),
         EffectFamily(
@@ -46,7 +46,7 @@ enum GesturesFamilies {
             id: "gestures.slide-confirm",
             category: .gestures,
             name: L("Slide to Confirm", "滑动确认"),
-            summary: L("Tracks whose knob must travel the full length to commit.", "需把滑块拖到尽头才会执行的确认轨道。"),
+            summary: L("Tracks, arcs and cords that must be pulled all the way to commit.", "必须完整拖到底才会执行的滑轨、弧线与拉绳。"),
             symbol: "chevron.right.2"
         ),
     ]
@@ -57,22 +57,38 @@ enum GesturesFamilies {
         "gestures.jelly-stretch": "gestures.drag-spring",
         "gestures.spring-chain": "gestures.drag-spring",
         "gestures.gooey-blobs": "gestures.drag-spring",
+        "gestures.magnetic-snap": "gestures.drag-spring",
+        "gestures.elastic-tether": "gestures.drag-spring",
+        "gestures.pendulum-swing": "gestures.drag-spring",
         // Throw & snap
         "gestures.fling-inertia": "gestures.throw",
         "gestures.pip-snap": "gestures.throw",
         "gestures.drag-dismiss": "gestures.throw",
+        "gestures.gravity-toss": "gestures.throw",
+        "gestures.detent-sheet": "gestures.throw",
         // Physics toys
         "gestures.charge-burst": "gestures.physics",
         "gestures.verlet-rope": "gestures.physics",
         "gestures.newtons-cradle": "gestures.physics",
+        "gestures.coil-spring": "gestures.physics",
+        "gestures.orbit-slingshot": "gestures.physics",
         // List gestures
         "gestures.swipe-actions": "gestures.list",
         "gestures.drag-reorder": "gestures.list",
+        "gestures.swipe-complete": "gestures.list",
+        "gestures.staged-swipe": "gestures.list",
+        "gestures.drag-select": "gestures.list",
         // Pinch, zoom & loupe
         "gestures.pinch-rotate": "gestures.pinch",
         "gestures.magnifier-loupe": "gestures.pinch",
         "gestures.photo-viewer": "gestures.pinch",
+        "gestures.pinch-grid": "gestures.pinch",
+        "gestures.pinch-open": "gestures.pinch",
         // Slide to confirm
         "gestures.slide-to-confirm": "gestures.slide-confirm",
+        "gestures.stretch-slide": "gestures.slide-confirm",
+        "gestures.notch-slide": "gestures.slide-confirm",
+        "gestures.arc-slide": "gestures.slide-confirm",
+        "gestures.pull-cord": "gestures.slide-confirm",
     ]
 }

@@ -33,14 +33,14 @@ enum ShadersFamilies {
             id: "shaders.retro",
             category: .shaders,
             name: L("Retro & Print", "复古与印刷"),
-            summary: L("Glitches, CRT scanlines and halftone screens.", "故障、CRT 扫描线与半色调网屏。"),
+            summary: L("Glitches, CRT and VHS scanlines, halftone and dither screens.", "故障、CRT 与 VHS 扫描线、半色调与抖动网屏。"),
             symbol: "tv"
         ),
         EffectFamily(
             id: "shaders.generative",
             category: .shaders,
             name: L("Generative Light", "生成光效"),
-            summary: L("Endless procedural fields: plasma, kaleidoscopes and caustics.", "无尽的程序化光场：等离子、万花筒与焦散。"),
+            summary: L("Endless procedural fields: plasma, kaleidoscopes, caustics, cells and tunnels.", "无尽的程序化光场：等离子、万花筒、焦散、细胞与隧道。"),
             symbol: "sun.haze.fill"
         ),
     ]
@@ -51,22 +51,30 @@ enum ShadersFamilies {
         "shader.wave": "shaders.distortion",
         "shader.swirl": "shaders.distortion",
         "shader.chromatic-drag": "shaders.distortion",
+        "shader.jelly-press": "shaders.distortion",
         // Shader transitions
         "shader.pixelate": "shaders.transition",
         "shader.dissolve": "shaders.transition",
         "shader.edge-scan": "shaders.transition",
+        "shader.liquid-wipe": "shaders.transition",
+        "shader.tile-scatter": "shaders.transition",
         // Glass & lens
         "shader.magnifier": "shaders.glass",
         "shader.glassmorphism": "shaders.glass",
         "shader.liquid-glass-lens": "shaders.glass",
         "shader.progressive-blur": "shaders.glass",
+        "shader.reeded-glass": "shaders.glass",
         // Retro & print
         "shader.glitch": "shaders.retro",
         "shader.crt": "shaders.retro",
         "shader.halftone": "shaders.retro",
+        "shader.dither": "shaders.retro",
+        "shader.vhs": "shaders.retro",
         // Generative light
         "shader.plasma": "shaders.generative",
         "shader.kaleidoscope": "shaders.generative",
         "shader.caustics": "shaders.generative",
+        "shader.voronoi-cells": "shaders.generative",
+        "shader.tunnel": "shaders.generative",
     ]
 }

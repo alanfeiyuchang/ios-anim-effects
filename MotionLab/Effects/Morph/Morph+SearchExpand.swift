@@ -52,7 +52,7 @@ private struct SearchExpandDemo: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            SearchBackdrop()
+            SearchBackdrop(language: ctx.language)
                 .blur(radius: expanded ? 8 : 0)
                 .opacity(expanded ? 0.5 : 1)
             VStack(spacing: 10) {
@@ -212,14 +212,36 @@ private struct SearchPanel: View {
     }
 }
 
+/// A "Browse" grid of category tiles so the blur has real content to soften.
 private struct SearchBackdrop: View {
+    let language: AppLanguage
+
+    private let tiles: [(String, [Color], LocalizedText)] = [
+        ("hand.tap.fill", [Palette.indigo, Palette.violet], L("Buttons", "按钮")),
+        ("rectangle.stack.fill", [Palette.pink, Palette.coral], L("Cards", "卡片")),
+        ("hourglass", [Palette.mint, Palette.sky], L("Loading", "加载")),
+        ("textformat", [Palette.amber, Palette.coral], L("Text", "文字")),
+    ]
+
     var body: some View {
         let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
         return LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(0..<4, id: \.self) { index in
+            ForEach(0..<tiles.count, id: \.self) { index in
+                let tile = tiles[index]
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Palette.spectrum[index % Palette.spectrum.count].opacity(0.22))
+                    .fill(LinearGradient(colors: tile.1, startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .overlay(alignment: .bottomLeading) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Image(systemName: tile.0)
+                                .font(.system(size: 20, weight: .semibold))
+                            Text(tile.2, language)
+                                .font(.subheadline.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(12)
+                    }
                     .frame(height: 100)
+                    .shadow(color: tile.1[0].opacity(0.25), radius: 10, y: 5)
             }
         }
         .padding(18)

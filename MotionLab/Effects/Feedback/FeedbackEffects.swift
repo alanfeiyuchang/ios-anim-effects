@@ -5,12 +5,14 @@ enum FeedbackEffects {
         .feedbackErrorShake,
         .feedbackConfetti,
         .feedbackIsland,
+        .feedbackConnectionBanner,
         .feedbackBadgeBounce,
         .feedbackUndoSnackbar,
         .feedbackAlertPop,
         .feedbackStackedBanners,
         .feedbackSpotlight,
         .feedbackCopy,
+        .feedbackReactionPicker,
         .feedbackPullRefresh,
     ]
 }

@@ -13,5 +13,7 @@ enum GestureEffects {
         .gesturesSlideToConfirm,
         .gesturesMagnifierLoupe,
         .gesturesGooeyBlobs,
+        .gesturesVerletRope,
+        .gesturesNewtonsCradle,
     ]
 }

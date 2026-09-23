@@ -118,7 +118,7 @@ private struct TextLyricsColumn: View {
         let text = lines[((i % lines.count) + lines.count) % lines.count]
         let far = min(abs(distance), 3)
         return TextLyricsLine(text: text, fill: fill, glow: glow && isActive)
-            .scaleEffect(1 - 0.08 * min(far, 1), anchor: .leading)
+            .scaleEffect(CGFloat(1 - 0.08 * min(far, 1)), anchor: .leading)
             .opacity(isActive ? 1 : max(0.75 - far * 0.2, 0.1))
             .blur(radius: isActive ? 0 : CGFloat(far * blur))
             .offset(y: CGFloat(distance) * lineHeight + lineHeight * 0.9)
@@ -155,8 +155,8 @@ private struct TextLyricsLine: View {
                     .mask {
                         LinearGradient(
                             stops: [
-                                .init(color: .black, location: max(edge, 0)),
-                                .init(color: .clear, location: min(max(edge + soft, 0.0001), 1)),
+                                .init(color: .black, location: CGFloat(max(edge, 0))),
+                                .init(color: .clear, location: CGFloat(min(max(edge + soft, 0.0001), 1))),
                             ],
                             startPoint: .leading,
                             endPoint: .trailing

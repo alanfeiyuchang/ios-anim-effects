@@ -15,5 +15,8 @@ enum IconEffects {
         .iconsRippleGrid,
         .iconsWeather,
         .iconsDrawOn,
+        .iconsTrashDelete,
+        .iconsPaperPlane,
+        .iconsPadlock,
     ]
 }

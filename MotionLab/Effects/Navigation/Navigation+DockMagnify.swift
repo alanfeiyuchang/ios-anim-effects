@@ -11,8 +11,8 @@ extension Effect {
             "手指沿程序坞滑动，附近的图标像 macOS 程序坞一样膨胀放大。"
         ),
         prompt: L(
-            "A frosted dock holding seven 32 pt app icons with 8 pt gaps. As the finger slides along it, each icon's size follows a smooth cosine falloff of its distance to the finger — up to 1.6× directly under the touch, easing back to 1× about 100 pt away — so a gentle wave of magnification travels with the finger. Icons grow upward from a shared baseline and push their neighbours outward, the dock's frosted backing widening to fit; motion tracks the finger through a tight interactive spring (response ≈0.2 s). The icon under the finger lifts a label tooltip above it and a selection tick fires as it changes. On release everything settles back to rest on a softer spring.",
-            "一条磨砂程序坞中排列着七个 32pt 的应用图标，间距 8pt。手指沿程序坞滑动时，每个图标的尺寸按照它与手指距离的平滑余弦衰减变化——正下方最大放大到 1.6 倍，约 100pt 外回落到 1 倍——一道柔和的放大波随手指移动。图标以共同的底线为基准向上生长，并把相邻图标向两侧推开，磨砂底座随之变宽；运动通过紧致的交互式弹簧（响应约 0.2 秒）跟手。手指下方的图标会在上方弹出名称提示，每次切换时触发选择触觉。松手后一切以更柔和的弹簧回到静止状态。"
+            "A frosted dock holding seven 32 pt app icons with 8 pt gaps, resting on a miniature desktop (soft gradient wallpaper, menu bar and a floating window). As the finger slides along it, each icon's size follows a smooth cosine falloff of its distance to the finger — up to 1.6× directly under the touch, easing back to 1× about 100 pt away — so a gentle wave of magnification travels with the finger. Icons grow upward from a shared baseline and push their neighbours outward, the dock's frosted backing widening to fit; motion tracks the finger through a tight interactive spring (response ≈0.2 s). The icon under the finger lifts a label tooltip above it and a selection tick fires as it changes. On release everything settles back to rest on a softer spring.",
+            "一条磨砂程序坞停在一块迷你桌面上（柔和渐变壁纸、菜单栏与一扇悬浮窗口），其中排列着七个 32pt 的应用图标，间距 8pt。手指沿程序坞滑动时，每个图标的尺寸按照它与手指距离的平滑余弦衰减变化——正下方最大放大到 1.6 倍，约 100pt 外回落到 1 倍——一道柔和的放大波随手指移动。图标以共同的底线为基准向上生长，并把相邻图标向两侧推开，磨砂底座随之变宽；运动通过紧致的交互式弹簧（响应约 0.2 秒）跟手。手指下方的图标会在上方弹出名称提示，每次切换时触发选择触觉。松手后一切以更柔和的弹簧回到静止状态。"
         ),
         implementation: L(
             "Icon sizes are computed from the finger's x against each icon's resting centre with a cosine falloff; positions are accumulated manually so the row widens symmetrically. Previews drive the finger with a TimelineView sine sweep.",
@@ -54,18 +54,24 @@ private struct DockMagnifyDemo: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            if ctx.isPreview {
-                TimelineView(.animation) { timeline in
-                    let t = timeline.date.timeIntervalSinceReferenceDate
-                    DockRow(fingerX: canvas.width / 2 + 120 * CGFloat(sin(t * 1.3)), ctx: ctx, canvas: canvas)
-                }
-                .frame(width: canvas.width, height: canvas.height)
-            } else {
-                DockRow(fingerX: fingerX, ctx: ctx, canvas: canvas)
+            ZStack(alignment: .bottom) {
+                DockDesktop(language: ctx.language)
+                if ctx.isPreview {
+                    TimelineView(.animation) { timeline in
+                        let t = timeline.date.timeIntervalSinceReferenceDate
+                        DockRow(fingerX: canvas.width / 2 + 120 * CGFloat(sin(t * 1.3)), ctx: ctx, canvas: canvas)
+                    }
                     .frame(width: canvas.width, height: canvas.height)
-                    .contentShape(Rectangle())
-                    .gesture(drag)
+                } else {
+                    DockRow(fingerX: fingerX, ctx: ctx, canvas: canvas)
+                        .frame(width: canvas.width, height: canvas.height)
+                        .contentShape(Rectangle())
+                        .gesture(drag)
+                }
             }
+            .frame(width: canvas.width, height: 250)
+            .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .shadow(color: .black.opacity(0.14), radius: 20, y: 10)
             DemoHint(text: L("Slide along the dock", "沿程序坞滑动手指"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -185,5 +191,57 @@ private struct DockIcon: View {
                     .scaleEffect(showLabel ? 1 : 0.7, anchor: .bottom)
                     .animation(.spring(response: 0.25, dampingFraction: 0.8), value: showLabel)
             }
+    }
+}
+
+/// Miniature desktop behind the dock: wallpaper, menu bar and a floating window.
+private struct DockDesktop: View {
+    let language: AppLanguage
+    @Environment(\.colorScheme) private var scheme
+
+    private var wallpaper: [Color] {
+        scheme == .dark
+            ? [Color(hex: 0x1D2671), Color(hex: 0x4B3AA8), Color(hex: 0x8A3F7E)]
+            : [Color(hex: 0x9CCBFF), Color(hex: 0xC3B4FF), Color(hex: 0xFFC2D9)]
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            LinearGradient(colors: wallpaper, startPoint: .topLeading, endPoint: .bottomTrailing)
+            HStack(spacing: 12) {
+                Circle().fill(.white.opacity(0.9)).frame(width: 9, height: 9)
+                Text(language == .zh ? "访达" : "Finder")
+                    .font(.caption2.weight(.bold))
+                Text(language == .zh ? "文件" : "File")
+                    .font(.caption2)
+                Text(language == .zh ? "编辑" : "Edit")
+                    .font(.caption2)
+                Spacer()
+                Text(verbatim: "9:41")
+                    .font(.caption2.weight(.semibold).monospacedDigit())
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .frame(height: 22)
+            .background(.black.opacity(0.12))
+            window
+                .padding(.top, 36)
+                .padding(.leading, 34)
+        }
+    }
+
+    private var window: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 5) {
+                Circle().fill(Palette.red).frame(width: 7, height: 7)
+                Circle().fill(Palette.amber).frame(width: 7, height: 7)
+                Circle().fill(Palette.green).frame(width: 7, height: 7)
+            }
+            PlaceholderLines(count: 2, color: .primary.opacity(0.1))
+        }
+        .padding(10)
+        .frame(width: 170, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
     }
 }

@@ -8,8 +8,8 @@ extension Effect {
         name: L("Bell Ring", "铃铛摇响"),
         summary: L("A pendulum swing with decaying keyframes and a popping badge.", "钟摆式摇动，关键帧逐渐衰减，角标随之弹出。"),
         prompt: L(
-            "A notification bell hangs from its top hinge. On a new alert it rings like a real pendulum: it swings to +18°, −15°, +11°, −7°, +3° and back to rest, each swing slightly shorter (≈0.12 s apart) with cubic easing so the energy visibly decays, while the whole bell pulses to 112% on the first strike. Sound-wave arcs flare out on both sides, hold for a beat and fade out by ~0.55 s, while the red count badge punches up to 125% and springs back to 100% as the number rolls up. A medium haptic lands on the first strike — lively, physical and attention-getting without being alarming.",
-            "通知铃铛以顶部为铰点悬挂。收到新提醒时，它像真正的钟摆一样摇响：依次摆到 +18°、−15°、+11°、−7°、+3° 再回到静止，每次摆幅递减（间隔约 0.12 秒），使用三次缓动让能量肉眼可见地衰减；第一下敲击时整个铃铛放大到 112%。两侧声波弧线向外迸发，短暂停留后在约 0.55 秒时完全淡出；红色计数角标同时弹大到 125% 再回落到 100%，数字同步向上滚动。第一下敲击伴随中等强度触感——生动、有物理感、引人注意却不令人紧张。"
+            "A notification bell hangs from its top hinge. On a new alert it rings like a real pendulum: it swings to +18°, −15°, +11°, −7°, +3° and back to rest, each swing slightly shorter (≈0.12 s apart) with cubic easing so the energy visibly decays, while the whole bell pulses to 112% on the first strike. Sound-wave arcs flare out on both sides, hold for a beat and fade out by ~0.55 s, while the red count badge punches up to 125% and springs back to 100% as the number rolls up, and a frosted notification pill drops in 18 pt from above (scaling from 92%) as the previous one sinks away. A medium haptic lands on the first strike — lively, physical and attention-getting without being alarming.",
+            "通知铃铛以顶部为铰点悬挂。收到新提醒时，它像真正的钟摆一样摇响：依次摆到 +18°、−15°、+11°、−7°、+3° 再回到静止，每次摆幅递减（间隔约 0.12 秒），使用三次缓动让能量肉眼可见地衰减；第一下敲击时整个铃铛放大到 112%。两侧声波弧线向外迸发，短暂停留后在约 0.55 秒时完全淡出；红色计数角标同时弹大到 125% 再回落到 100%，数字同步向上滚动；与此同时，一枚磨砂通知胶囊从上方 18 pt 处落下（由 92% 放大）替换上一条，旧通知向下淡出。第一下敲击伴随中等强度触感——生动、有物理感、引人注意却不令人紧张。"
         ),
         implementation: L(
             "keyframeAnimator(initialValue:trigger:) with separate KeyframeTracks for angle (CubicKeyframes), scale and wave opacity (SpringKeyframes); rotationEffect is anchored at .top.",
@@ -23,6 +23,42 @@ extension Effect {
         ]
     ) { ctx in
         BellRingDemo(ctx: ctx)
+    }
+}
+
+private let bellMessages: [(symbol: String, text: LocalizedText)] = [
+    ("message.fill", L("Mia sent you a photo", "Mia 给你发了一张照片")),
+    ("calendar", L("Design review in 10 min", "设计评审 10 分钟后开始")),
+    ("shippingbox.fill", L("Your order has shipped", "你的订单已发货")),
+    ("bubble.left.and.bubble.right.fill", L("3 new comments on “Aurora”", "「极光」有 3 条新评论")),
+]
+
+private let bellBannerTransition: AnyTransition = .asymmetric(
+    insertion: .offset(y: -18).combined(with: .scale(scale: 0.92)).combined(with: .opacity),
+    removal: .offset(y: 10).combined(with: .opacity)
+)
+
+private struct BellBanner: View {
+    let message: (symbol: String, text: LocalizedText)
+    let language: AppLanguage
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: message.symbol)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(Palette.sunset, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            Text(message.text, language)
+                .font(.footnote.weight(.semibold))
+                .lineLimit(1)
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 14)
+        .frame(height: 42)
+        .background(.regularMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(Palette.stroke))
+        .shadow(color: .black.opacity(0.1), radius: 12, y: 6)
     }
 }
 
@@ -71,6 +107,12 @@ private struct BellRingDemo: View {
                         CubicKeyframe(0, duration: 0.3 / tempo)
                     }
                 }
+            ZStack {
+                BellBanner(message: bellMessages[badge % bellMessages.count], language: ctx.language)
+                    .id(badge)
+                    .transition(bellBannerTransition)
+            }
+            .frame(height: 50)
             DemoHint(text: L("Tap to ring", "点击摇铃"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

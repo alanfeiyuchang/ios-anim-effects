@@ -16,6 +16,8 @@ enum ShowcaseSportEffects {
         .showcaseLiftStatus,
         .showcaseHeartZone,
         .showcaseRunSummary,
+        .showcaseWeatherWidget,
+        .showcaseGearChecklist,
     ]
 }
 

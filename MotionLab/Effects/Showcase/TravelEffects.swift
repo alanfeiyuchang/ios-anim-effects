@@ -16,5 +16,6 @@ enum ShowcaseTravelEffects {
         .showcaseDateRange,
         .showcasePolaroidFan,
         .showcaseFlipClock,
+        .showcaseNowPlaying,
     ]
 }

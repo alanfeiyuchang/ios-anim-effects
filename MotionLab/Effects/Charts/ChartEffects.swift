@@ -12,7 +12,7 @@ enum ChartEffects {
         .chartsBarRace,
         .chartsRadarMorph,
         .chartsRangeMorph,
-        .chartsLiquidFill,
+        .chartsCandlestickLive,
         .chartsDonutToBars,
     ]
 }

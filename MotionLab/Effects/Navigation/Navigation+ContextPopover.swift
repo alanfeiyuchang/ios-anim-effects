@@ -11,8 +11,8 @@ extension Effect {
             "从「⋯」按钮本身生长出来的上下文菜单，而非凭空出现。"
         ),
         prompt: L(
-            "A note card with a small ⋯ button in its top-right corner. Tapping the button grows a frosted menu out of that exact point: it scales from 20% to 100% anchored at its top-trailing corner, fades in and sharpens from a 6 pt blur on a lively spring (response ≈0.36 s, damping ≈0.74) with a slight overshoot, while the card behind dims and recedes to 97%. Rows (Edit, Duplicate, Pin, Share, and a destructive red Delete below a hairline divider) settle 30 ms apart from top to bottom. Pressing a row highlights it; choosing one or tapping outside shrinks the menu back into the button in ~180 ms. It should feel spatially anchored — the menu clearly belongs to the control that spawned it.",
-            "一张笔记卡片，右上角有一个小小的「⋯」按钮。点击后，一块磨砂菜单从这个点精准地「长」出来：以右上角为锚点从 20% 放大到 100%，同时淡入并从 6pt 模糊变清晰，采用略带过冲的活泼弹簧（响应约 0.36 秒、阻尼约 0.74）；背后的卡片随之变暗并缩小到 97%。菜单项（编辑、复制、置顶、分享，以及细分隔线下方红色的删除）自上而下以 30 毫秒间隔落定。按下某行会高亮；选择后或点击空白处，菜单在约 180 毫秒内缩回按钮。它必须有明确的空间锚定感——一眼就能看出菜单属于触发它的那个控件。"
+            "A note card with a small ⋯ button in its top-right corner sits atop a short list of notes. Tapping the button grows a frosted menu out of that exact point: it scales from 20% to 100% anchored at its top-trailing corner, fades in and sharpens from a 6 pt blur on a lively spring (response ≈0.36 s, damping ≈0.74) with a slight overshoot, while the card recedes to 97% and the notes below fade to 55% behind a 1.5 pt blur. Rows (Edit, Duplicate, Pin, Share, and a destructive red Delete below a hairline divider) settle 30 ms apart from top to bottom. Pressing a row highlights it; choosing one or tapping outside shrinks the menu back into the button in ~180 ms. It should feel spatially anchored — the menu clearly belongs to the control that spawned it.",
+            "一张笔记卡片位于笔记列表顶部，右上角有一个小小的「⋯」按钮。点击后，一块磨砂菜单从这个点精准地「长」出来：以右上角为锚点从 20% 放大到 100%，同时淡入并从 6pt 模糊变清晰，采用略带过冲的活泼弹簧（响应约 0.36 秒、阻尼约 0.74）；卡片随之缩小到 97%，下方的笔记淡到 55% 并轻微模糊 1.5pt。菜单项（编辑、复制、置顶、分享，以及细分隔线下方红色的删除）自上而下以 30 毫秒间隔落定。按下某行会高亮；选择后或点击空白处，菜单在约 180 毫秒内缩回按钮。它必须有明确的空间锚定感——一眼就能看出菜单属于触发它的那个控件。"
         ),
         implementation: L(
             "The menu is inserted with an asymmetric transition combining scale(anchor: .topTrailing), opacity and a custom blur modifier; the Origin parameter switches the anchor to .center for comparison. Rows reveal via per-row delayed animations.",
@@ -57,7 +57,15 @@ private struct ContextPopoverDemo: View {
                 .contentShape(Rectangle())
                 .allowsHitTesting(open)
                 .onTapGesture { setOpen(false) }
-            noteCard
+            VStack(spacing: 12) {
+                noteCard
+                    .zIndex(1)
+                ForEach(0..<2, id: \.self) { index in
+                    PopoverNoteRow(index: index, language: ctx.language)
+                        .opacity(open ? 0.55 : 1)
+                        .blur(radius: open ? 1.5 : 0)
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.6) { setOpen(!open) }
@@ -83,7 +91,6 @@ private struct ContextPopoverDemo: View {
         .frame(width: 290)
         .demoCard(cornerRadius: 24)
         .scaleEffect(open ? 0.97 : 1)
-        .offset(y: -70)
     }
 
     private var moreButton: some View {
@@ -122,6 +129,38 @@ private struct ContextPopoverDemo: View {
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             open = value
         }
+    }
+}
+
+private struct PopoverNoteRow: View {
+    let index: Int
+    let language: AppLanguage
+
+    private let notes: [(String, Color, LocalizedText, LocalizedText)] = [
+        ("lightbulb.fill", Palette.amber, L("Onboarding ideas", "新手引导灵感"), L("Yesterday", "昨天")),
+        ("paintpalette.fill", Palette.pink, L("Colour tokens", "色彩变量"), L("Monday", "周一")),
+    ]
+
+    var body: some View {
+        let note = notes[index % notes.count]
+        HStack(spacing: 12) {
+            Image(systemName: note.0)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(note.1)
+                .frame(width: 34, height: 34)
+                .background(note.1.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(note.2, language)
+                    .font(.subheadline.weight(.semibold))
+                Text(note.3, language)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .frame(width: 290, height: 60)
+        .demoCard(cornerRadius: 18)
     }
 }
 

@@ -4,6 +4,8 @@ enum MorphEffects {
         .morphHeroCard,
         .morphFabMenu,
         .morphZoomSheet,
+        .morphMiniPlayer,
+        .morphFolderOpen,
         .morphSearchExpand,
         .morphGalleryZoom,
         .morphShapeMorph,

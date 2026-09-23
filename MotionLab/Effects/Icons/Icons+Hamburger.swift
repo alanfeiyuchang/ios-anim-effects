@@ -80,6 +80,7 @@ private struct HamburgerDemo: View {
                     .scaleEffect(open ? 1 : 0.9, anchor: .top)
                     .offset(y: open ? 0 : -14 - CGFloat(i) * 8)
                     .animation(rowAnimation(i), value: open)
+                    .onTapGesture { toggle() }
             }
         }
         .frame(width: 210)

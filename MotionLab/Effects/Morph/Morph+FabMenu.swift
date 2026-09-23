@@ -48,7 +48,7 @@ private struct FabMenuDemo: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            FabBackdrop()
+            FabBackdrop(language: ctx.language)
             DemoHint(text: L("Tap the + button", "点击“+”按钮"), ctx: ctx)
                 .padding(.leading, 24)
                 .padding(.bottom, 44)
@@ -146,14 +146,32 @@ private struct FabPanel: View {
 
 /// Faint note-list placeholder so the FAB sits over an app screen rather than an empty stage.
 private struct FabBackdrop: View {
+    let language: AppLanguage
+
+    private let notes: [(String, Color, LocalizedText, LocalizedText)] = [
+        ("checklist", Palette.coral, L("Launch checklist", "发布清单"), L("Today · 6 items", "今天 · 6 项")),
+        ("wand.and.stars", Palette.violet, L("Motion specs v2", "动效规范 v2"), L("Yesterday", "昨天")),
+        ("person.2.fill", Palette.sky, L("Weekly sync notes", "周会纪要"), L("Monday", "周一")),
+    ]
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            ForEach(0..<3, id: \.self) { _ in
+            ForEach(0..<notes.count, id: \.self) { index in
+                let note = notes[index]
                 HStack(spacing: 12) {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.primary.opacity(0.07))
+                    Image(systemName: note.0)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(note.1)
                         .frame(width: 38, height: 38)
-                    PlaceholderLines(count: 2)
+                        .background(note.1.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(note.2, language)
+                            .font(.subheadline.weight(.semibold))
+                        Text(note.3, language)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
                 }
             }
         }

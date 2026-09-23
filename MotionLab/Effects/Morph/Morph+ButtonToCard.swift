@@ -45,7 +45,7 @@ private struct ButtonToCardDemo: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            BackdropList(receded: expanded && ctx.bool("recede"))
+            BackdropList(receded: expanded && ctx.bool("recede"), language: ctx.language)
             if expanded {
                 ProCard(ns: ns, ctx: ctx, showContent: $showContent, onClose: toggle)
             } else {
@@ -179,15 +179,35 @@ private struct ProCard: View {
 
 private struct BackdropList: View {
     let receded: Bool
+    let language: AppLanguage
+
+    private let rows: [(String, [Color], LocalizedText, LocalizedText)] = [
+        ("sparkles", [Palette.indigo, Palette.violet], L("Spring Button", "弹簧按钮"), L("Buttons · 3 params", "按钮 · 3 个参数")),
+        ("rectangle.stack.fill", [Palette.pink, Palette.coral], L("Wallet Stack", "钱包卡片堆叠"), L("Cards · 4 params", "卡片 · 4 个参数")),
+        ("waveform", [Palette.mint, Palette.sky], L("Audio Wave", "音频波形"), L("Loading · 4 params", "加载 · 4 个参数")),
+    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(0..<3, id: \.self) { _ in
+            ForEach(0..<rows.count, id: \.self) { index in
+                let row = rows[index]
                 HStack(spacing: 12) {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.primary.opacity(0.08))
+                    Image(systemName: row.0)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white)
                         .frame(width: 44, height: 44)
-                    PlaceholderLines(count: 2)
+                        .background(
+                            LinearGradient(colors: row.1, startPoint: .topLeading, endPoint: .bottomTrailing),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(row.2, language)
+                            .font(.subheadline.weight(.semibold))
+                        Text(row.3, language)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
                 }
             }
         }

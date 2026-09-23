@@ -174,7 +174,18 @@ private struct CardsScratchPrize: View {
     let revealed: Bool
     let language: AppLanguage
 
-    private var amount: String { ["¥88", "¥520", "¥66", "¥128"][round % 4] }
+    private var amount: String {
+        let amounts = language == .zh ? ["¥88", "¥520", "¥66", "¥128"] : ["$25", "$100", "$10", "$50"]
+        return amounts[round % amounts.count]
+    }
+
+    private let sparkleOffsets: [CGSize] = [
+        CGSize(width: -110, height: -52),
+        CGSize(width: -84, height: 50),
+        CGSize(width: 96, height: -58),
+        CGSize(width: 116, height: 30),
+        CGSize(width: 70, height: 62),
+    ]
 
     var body: some View {
         ZStack {
@@ -200,11 +211,11 @@ private struct CardsScratchPrize: View {
 
     private var sparkles: some View {
         ZStack {
-            ForEach(0..<5, id: \.self) { i in
+            ForEach(sparkleOffsets.indices, id: \.self) { i in
                 Image(systemName: "sparkle")
                     .font(.system(size: CGFloat(10 + (i * 7) % 14)))
                     .foregroundStyle(Palette.amber)
-                    .offset(x: CGFloat([-110, -84, 96, 116, 70][i]), y: CGFloat([-52, 50, -58, 30, 62][i]))
+                    .offset(sparkleOffsets[i])
                     .scaleEffect(revealed ? 1 : 0.4)
                     .opacity(revealed ? 1 : 0.5)
                     .animation(.spring(response: 0.5, dampingFraction: 0.55).delay(0.1 + Double(i) * 0.05), value: revealed)

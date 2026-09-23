@@ -31,3 +31,5 @@
 - 上传后约 5–20 分钟，构建会出现在 App Store Connect → TestFlight；内部测试员可立即安装，
   外部测试需先提交一次 Beta 审核。
 - App 已声明 `ITSAppUsesNonExemptEncryption = NO`，无需每次回答出口合规问题。
+
+> 首次上传：2026-09-23，由提交信息中的 `[testflight]` 触发。

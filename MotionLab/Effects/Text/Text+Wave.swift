@@ -36,7 +36,7 @@ private struct WaveDemo: View {
             let time = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
             VStack(spacing: 6) {
                 Text(L("Good Vibes", "律动文字"), ctx.language)
-                    .font(.system(size: 58, weight: .heavy, design: .rounded))
+                    .font(.system(size: 50, weight: .heavy, design: .rounded))
                     .foregroundStyle(Palette.sunset)
                     .textRenderer(renderer(time: time, scale: 1))
                 Text(L("every glyph is alive", "每个字形都在呼吸"), ctx.language)

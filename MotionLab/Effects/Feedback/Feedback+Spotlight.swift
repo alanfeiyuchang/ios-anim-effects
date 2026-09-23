@@ -37,8 +37,8 @@ private struct SpotlightStep {
 private enum SpotlightLayout {
     static let size = CGSize(width: 300, height: 260)
     static let steps: [SpotlightStep] = [
-        SpotlightStep(center: CGPoint(x: 196, y: 34), radius: 22, title: L("Share with your team", "与团队分享"), tooltipBelow: true),
-        SpotlightStep(center: CGPoint(x: 236, y: 34), radius: 22, title: L("Save to favorites", "加入收藏"), tooltipBelow: true),
+        SpotlightStep(center: CGPoint(x: 193, y: 34), radius: 22, title: L("Share with your team", "与团队分享"), tooltipBelow: true),
+        SpotlightStep(center: CGPoint(x: 233, y: 34), radius: 22, title: L("Save to favorites", "加入收藏"), tooltipBelow: true),
         SpotlightStep(center: CGPoint(x: 256, y: 216), radius: 34, title: L("Create something new", "开始新的创作"), tooltipBelow: false),
     ]
 }
@@ -51,7 +51,7 @@ private struct SpotlightDemo: View {
         let current = SpotlightLayout.steps[step % SpotlightLayout.steps.count]
         VStack(spacing: 16) {
             ZStack {
-                SpotlightMockScreen()
+                SpotlightMockScreen(language: ctx.language)
                 SpotlightHole(center: current.center, radius: current.radius)
                     .fill(Color.black.opacity(ctx["dim"]), style: FillStyle(eoFill: true))
                 Circle()
@@ -78,7 +78,7 @@ private struct SpotlightDemo: View {
     }
 
     private func tooltipPosition(for step: SpotlightStep) -> CGPoint {
-        let x = min(max(step.center.x, 100), SpotlightLayout.size.width - 100)
+        let x = min(max(step.center.x, 112), SpotlightLayout.size.width - 112)
         let offset = step.radius + 42
         let y = step.tooltipBelow ? step.center.y + offset : step.center.y - offset
         return CGPoint(x: x, y: y)
@@ -162,10 +162,12 @@ private struct SpotlightTooltip: View {
 }
 
 private struct SpotlightMockScreen: View {
+    let language: AppLanguage
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 18) {
-                Text("Library")
+                Text(language == .zh ? "资料库" : "Library")
                     .font(.title3.weight(.bold))
                 Spacer()
                 Image(systemName: "square.and.arrow.up")

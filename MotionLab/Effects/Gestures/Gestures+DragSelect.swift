@@ -66,10 +66,10 @@ private struct DragSelectDemo: View {
         return HStack(spacing: 6) {
             Image(systemName: count > 0 ? "checkmark.circle.fill" : "circle.dashed")
                 .contentTransition(.symbolEffect(.replace))
-            Text("\(count)")
+            Text(verbatim: "\(count)")
                 .monospacedDigit()
                 .contentTransition(.numericText(value: Double(count)))
-            Text(ctx.language == .zh ? "项已选" : "selected")
+            Text(L("selected", "项已选"), ctx.language)
         }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(count > 0 ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.secondary))

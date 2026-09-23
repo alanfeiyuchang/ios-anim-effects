@@ -8,8 +8,8 @@ extension Effect {
         name: L("Drag to Dismiss", "下拉关闭卡片"),
         summary: L("Pull a detail card down: it shrinks, rounds its corners and lets go past a threshold.", "下拉详情卡片，它会缩小、圆角变大，越过阈值即关闭。"),
         prompt: L(
-            "A 220 × 260 pt detail card (hero gradient image, title and text lines, 14 pt corners, deep shadow) floats above a dimmed grid of thumbnails. Dragging down makes the card follow the finger while it interactively scales from 100% toward 70% around the point you grabbed, so that spot stays under the finger, its corner radius grows from 14 pt to 44 pt, horizontal movement is damped to 60%, and the backdrop brightens as the dim fades — the card visibly becomes a thumbnail again. Upward drags are rubber-banded. On release, if the pull exceeds ~140 pt or the predicted end passes 320 pt, the card shrinks to 35% and drops away while fading (spring response 0.45 s, damping 0.85); otherwise it springs back to full size. The same gesture you use to close photos in iOS: direct, reversible and forgiving.",
-            "一张 220 × 260pt 的详情卡片（渐变主图、标题与文字行、14pt 圆角、深投影）悬浮在一片变暗的缩略图网格之上。向下拖拽时卡片跟手，同时以按下的位置为锚点交互式地从 100% 缩小至约 70%（被按住的那一点始终停在指下）、圆角由 14pt 增大到 44pt，水平位移衰减为 60%，背景遮罩逐渐褪去——卡片看起来正“变回”缩略图。向上拖拽带橡皮筋阻尼。松手时，若下拉超过约 140pt 或预测终点超过 320pt，卡片缩至 35% 并下坠淡出（弹簧响应 0.45 秒、阻尼 0.85）；否则以弹簧回到全尺寸。与 iOS 照片下拉关闭一致：直接、可逆、容错。"
+            "A 220×260 pt detail card (hero gradient image, title and text lines, 14 pt corners, deep shadow) floats above a dimmed grid of thumbnails. Dragging down makes it follow the finger while it scales interactively from 100% toward 70% around the grabbed point, so that spot stays under the finger, its corner radius grows from 14 to 44 pt, sideways travel is damped to 60% and the backdrop brightens as the dim fades, so the card visibly turns back into a thumbnail; upward drags rubber-band. On release, a pull past 140 pt or a predicted end beyond 320 pt shrinks the card to 35% and drops it away as it fades (spring response 0.45 s, damping 0.85); anything less springs back to full size. Direct, reversible and forgiving, like closing a photo in iOS.",
+            "一张 220×260 pt 的详情卡片（渐变主图、标题与文字行、14 pt 圆角、深投影）悬浮在变暗的缩略图网格之上。向下拖动时卡片跟手，并以按住的点为锚点从 100% 交互式缩向 70%，让那一点始终留在指下；圆角由 14 pt 增到 44 pt，横向位移衰减为 60%，背景遮罩逐渐褪去，卡片看起来正“变回”缩略图；向上拖则带橡皮筋阻尼。松手时若下拉超过 140 pt 或预测终点超过 320 pt，卡片缩到 35% 并下坠淡出（弹簧响应 0.45 秒、阻尼 0.85），否则弹回全尺寸。直接、可逆、容错，就像 iOS 里下拉关闭照片。"
         ),
         implementation: L(
             "A DragGesture maps vertical translation to a 0–1 progress that drives scaleEffect (anchored at the touch's UnitPoint), corner radius and backdrop opacity; onEnded checks distance and predictedEndTranslation to dismiss or spring back.",
@@ -139,7 +139,7 @@ private struct DetailCard: View {
                         .foregroundStyle(.white.opacity(0.9))
                 }
             VStack(alignment: .leading, spacing: 10) {
-                Text(language == .zh ? "海岸线" : "Coastline")
+                Text(L("Coastline", "海岸线"), language)
                     .font(.headline)
                 PlaceholderLines(count: 2)
             }

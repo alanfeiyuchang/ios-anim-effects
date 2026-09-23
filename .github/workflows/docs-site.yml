@@ -8,10 +8,8 @@ on:
   push:
   workflow_dispatch:
 
-concurrency:
-  group: docs-site
-  cancel-in-progress: true
-
+# Concurrency is per job (not per workflow) so that ordinary pushes, whose jobs are skipped,
+# never cancel a site build that is in progress.
 jobs:
   record:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[site]')
@@ -40,6 +38,9 @@ jobs:
 
   site:
     needs: record
+    concurrency:
+      group: docs-site-deploy
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       pages: write

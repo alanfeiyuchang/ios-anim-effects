@@ -36,6 +36,8 @@ private struct MagneticTickSliderDemo: View {
     @State private var previewDirection: CGFloat = 1
     /// The detail intro's scripted nudge; cancelled by the first real touch and on disappear.
     @State private var introTask: Task<Void, Never>?
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let width: CGFloat = 260
 
@@ -130,6 +132,9 @@ private struct MagneticTickSliderDemo: View {
         .frame(width: width, height: 44)
         .contentShape(Rectangle())
         .gesture(drag)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endDrag() }
+        }
     }
 
     private func tick(index: Int, thumb: CGFloat, active: Int) -> some View {
@@ -144,6 +149,7 @@ private struct MagneticTickSliderDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 stopIntro()
                 let x: CGFloat = value.location.x.clamped(to: 0...width)
@@ -157,7 +163,13 @@ private struct MagneticTickSliderDemo: View {
                     Haptics.selection()
                 }
             }
-            .onEnded { _ in settle() }
+            .onEnded { _ in endDrag() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger: the thumb snaps onto its stop.
+    private func endDrag() {
+        guard dragging else { return }
+        settle()
     }
 
     private func settle() {

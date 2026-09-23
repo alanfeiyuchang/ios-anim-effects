@@ -35,6 +35,8 @@ private struct LiquidSliderDemo: View {
     @State private var dragging = false
     @State private var settleTask: Task<Void, Never>?
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let glassSize = CGSize(width: 96, height: 220)
     private static let previewTargets: [Double] = [0.8, 0.3, 0.62, 0.15, 0.9]
@@ -106,10 +108,14 @@ private struct LiquidSliderDemo: View {
         .shadow(color: Palette.blue.opacity(0.18), radius: 14, y: 8)
         .contentShape(shape)
         .gesture(drag)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endDrag() }
+        }
     }
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { gesture in
                 if !dragging {
                     startLevel = level
@@ -126,10 +132,15 @@ private struct LiquidSliderDemo: View {
                 }
                 scheduleSettle()
             }
-            .onEnded { _ in
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { dragging = false }
-                settle()
-            }
+            .onEnded { _ in endDrag() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func endDrag() {
+        guard dragging else { return }
+        settleTask?.cancel()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { dragging = false }
+        settle()
     }
 
     private func scheduleSettle() {

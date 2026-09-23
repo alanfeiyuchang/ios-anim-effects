@@ -50,7 +50,7 @@ private struct PolygonSidesDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
-        .gesture(drag)
+        .pageSafeHorizontalDrag(onChanged: dragChanged, onEnded: { _ in dragEnded() })
         .onTapGesture { step() }
         .autoplay(ctx.isPreview, every: 1.1) { step() }
     }
@@ -87,22 +87,21 @@ private struct PolygonSidesDemo: View {
         .animation(.snappy, value: rounded)
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 6)
-            .onChanged { value in
-                let start = dragStart ?? sides
-                if dragStart == nil { dragStart = sides }
-                let before = rounded
-                let raw = start + Double(value.translation.width) / 36
-                withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.86)) {
-                    sides = raw.clamped(to: 3...8)
-                }
-                if rounded != before { Haptics.selection() }
-            }
-            .onEnded { _ in
-                dragStart = nil
-                snap(to: Double(rounded))
-            }
+    private func dragChanged(_ value: DragGesture.Value) {
+        let start = dragStart ?? sides
+        if dragStart == nil { dragStart = sides }
+        let before = rounded
+        let raw = start + Double(value.translation.width) / 36
+        withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.86)) {
+            sides = raw.clamped(to: 3...8)
+        }
+        if rounded != before { Haptics.selection() }
+    }
+
+    /// Release or system cancellation: forget the grab and snap to the nearest whole polygon.
+    private func dragEnded() {
+        dragStart = nil
+        snap(to: Double(rounded))
     }
 
     private func step() {

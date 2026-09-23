@@ -69,7 +69,7 @@ private struct CubeTransitionDemo: View {
             }
             .frame(width: faceWidth, height: 250)
             .contentShape(Rectangle())
-            .gesture(drag)
+            .pageSafeHorizontalDrag(onChanged: dragChanged, onEnded: dragEnded)
             dots
             DemoHint(text: L("Swipe left or right to turn the cube", "左右滑动旋转立方体"), ctx: ctx)
         }
@@ -95,27 +95,26 @@ private struct CubeTransitionDemo: View {
         }
     }
 
-    private var drag: some Gesture {
-        DragGesture()
-            .onChanged { value in
-                let start = dragStart ?? progress
-                if dragStart == nil { dragStart = progress }
-                let raw = start - value.translation.width / faceWidth
-                if raw < 0 {
-                    progress = rubberBand(raw * faceWidth, limit: 60) / faceWidth
-                } else if raw > lastIndex {
-                    progress = lastIndex + rubberBand((raw - lastIndex) * faceWidth, limit: 60) / faceWidth
-                } else {
-                    progress = raw
-                }
-            }
-            .onEnded { value in
-                let start = dragStart ?? progress
-                dragStart = nil
-                let projected = start - value.predictedEndTranslation.width / faceWidth
-                let target = min(max(projected.rounded(), start.rounded() - 1), start.rounded() + 1)
-                snap(to: target.clamped(to: 0...lastIndex))
-            }
+    private func dragChanged(_ value: DragGesture.Value) {
+        let start = dragStart ?? progress
+        if dragStart == nil { dragStart = progress }
+        let raw = start - value.translation.width / faceWidth
+        if raw < 0 {
+            progress = rubberBand(raw * faceWidth, limit: 60) / faceWidth
+        } else if raw > lastIndex {
+            progress = lastIndex + rubberBand((raw - lastIndex) * faceWidth, limit: 60) / faceWidth
+        } else {
+            progress = raw
+        }
+    }
+
+    /// Release projects the flick (one face at most); a system cancellation (`nil`) snaps to the nearest face.
+    private func dragEnded(_ value: DragGesture.Value?) {
+        let start: CGFloat = dragStart ?? progress
+        dragStart = nil
+        let projected: CGFloat = value.map { start - $0.predictedEndTranslation.width / faceWidth } ?? progress
+        let target: CGFloat = min(max(projected.rounded(), start.rounded() - 1), start.rounded() + 1)
+        snap(to: target.clamped(to: 0...lastIndex))
     }
 
     private func snap(to target: CGFloat) {

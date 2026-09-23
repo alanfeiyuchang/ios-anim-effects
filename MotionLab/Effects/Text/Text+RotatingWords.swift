@@ -12,8 +12,8 @@ extension Effect {
             "落地页标题第一行保持不动，下方的关键词每隔约2秒在一枚淡色胶囊中轮换。旧词向上滑出约34pt，同时模糊至8pt并淡出；新词从下方34pt处升起，由模糊逐渐对焦清晰，二者都使用弹簧曲线（约0.55秒、弹性0.25），短暂重叠，宛如老虎机的转轴。胶囊宽度随新词平滑伸缩，渐变底色同步变换色相，让标题拥有自信而鲜活的节奏，却不显得喧闹。"
         ),
         implementation: L(
-            "The word is keyed with .id(index) and uses a custom Transition (offset + blur + opacity by TransitionPhase); the surrounding capsule animates its size with the same spring.",
-            "关键词通过 .id(index) 标识身份，并使用自定义 Transition（依据 TransitionPhase 设置位移、模糊与透明度）；外围胶囊以同一弹簧动画改变尺寸。"
+            "The word is keyed with .id(index) and uses a custom Transition (offset + blur + opacity by TransitionPhase) inside an overlay; a hidden copy of the current word sizes the capsule, so its width animates with the same spring.",
+            "关键词通过 .id(index) 标识身份，在 overlay 中使用自定义 Transition（依据 TransitionPhase 设置位移、模糊与透明度）；胶囊尺寸由隐藏的当前词决定，宽度随同一弹簧动画伸缩。"
         ),
         apis: ["Transition", "TransitionPhase", ".id(_:)", "spring(duration:bounce:)"],
         tags: ["rotating", "words", "headline", "slot", "hero", "轮播", "关键词", "标题", "文字切换"],
@@ -55,14 +55,24 @@ private struct RotatingWordsDemo: View {
 
     private var wordSlot: some View {
         let tint = tints[index % tints.count]
-        return ZStack {
-            Text(verbatim: words[index % words.count])
-                .font(.system(size: 40, weight: .heavy, design: .rounded))
-                .foregroundStyle(LinearGradient(colors: [tint, Palette.violet], startPoint: .leading, endPoint: .trailing))
-                .fixedSize()
-                .id(index)
-                .transition(SlotTransition(distance: 34, blur: ctx.cg("blur")))
-        }
+        let word = words[index % words.count]
+        // The pill is sized by a hidden copy of the *current* word only (no identity change), so its width
+        // animates inside the same spring as the swap. The transitioning words live in an overlay, which
+        // never affects layout, so the outgoing word's removal can't make the pill snap afterwards.
+        return Text(verbatim: word)
+            .font(.system(size: 40, weight: .heavy, design: .rounded))
+            .fixedSize()
+            .hidden()
+            .overlay {
+                ZStack {
+                    Text(verbatim: word)
+                        .font(.system(size: 40, weight: .heavy, design: .rounded))
+                        .foregroundStyle(LinearGradient(colors: [tint, Palette.violet], startPoint: .leading, endPoint: .trailing))
+                        .fixedSize()
+                        .id(index)
+                        .transition(SlotTransition(distance: 34, blur: ctx.cg("blur")))
+                }
+            }
         .padding(.horizontal, 22)
         .frame(height: 66)
         .background(tint.opacity(0.13), in: Capsule())

@@ -11,8 +11,8 @@ extension Effect {
             "温暖的蜡滴缓缓升起、拉伸、融合又沉落，复古而悠长。"
         ),
         prompt: L(
-            "A deep aubergine backdrop with a soft warm glow at the base. Molten wax — a vertical gradient from butter yellow through tangerine to hot rose — pools along the bottom and ceiling while several free blobs heave up and sink down on long, uneven sine cycles (roughly 10–25 s), drifting gently sideways. Blobs stretch vertically in proportion to their speed and flatten as they turn around at the top and bottom, and whenever they meet the pools or each other they neck, fuse into one glossy surface and tear apart again. An outer orange bloom haloes the liquid. Movement is slow, heavy and viscous — nostalgic, warm and hypnotic.",
-            "深茄紫色背景，底部泛着柔和暖光。熔化的蜡——自奶油黄经橘红到玫瑰红的纵向渐变——在底部与顶部各积成一池，数颗游离的蜡滴沿漫长而不规则的正弦周期（约 10–25 秒）上浮、下沉，并轻微左右漂移。蜡滴按速度比例纵向拉长，在顶部和底部折返时被压扁；每当与蜡池或彼此相遇，便拉出细颈、融为一块光润曲面，再重新撕裂分开。液体外缘带一圈橙色辉光。运动缓慢、沉重、黏稠——怀旧、温暖、令人着迷。"
+            "A deep aubergine backdrop with a soft warm glow at the base. Molten wax — a vertical gradient from butter yellow through tangerine to hot rose — pools along the bottom and ceiling while several free blobs heave up and sink down on long, uneven sine cycles (roughly 10–25 s), drifting gently sideways. Blobs stretch vertically in proportion to their speed and relax back to round as they turn around at the top and bottom, and whenever they meet the pools or each other they neck, fuse into one glossy surface and tear apart again. An outer orange bloom haloes the liquid. Movement is slow, heavy and viscous — nostalgic, warm and hypnotic.",
+            "深茄紫色背景，底部泛着柔和暖光。熔化的蜡——自奶油黄经橘红到玫瑰红的纵向渐变——在底部与顶部各积成一池，数颗游离的蜡滴沿漫长而不规则的正弦周期（约 10–25 秒）上浮、下沉，并轻微左右漂移。蜡滴按速度比例纵向拉长，在顶部和底部折返时减速并恢复圆润；每当与蜡池或彼此相遇，便拉出细颈、融为一块光润曲面，再重新撕裂分开。液体外缘带一圈橙色辉光。运动缓慢、沉重、黏稠——怀旧、温暖、令人着迷。"
         ),
         implementation: L(
             "Ellipses for blobs and pools are drawn inside a Canvas that stacks alphaThreshold on blur, producing a merged silhouette used to mask a vertical LinearGradient; stretch comes from each blob's sine velocity.",

@@ -11,8 +11,8 @@ extension Effect {
             "半透明正弦波层层叠叠，以柔和视差缓缓起伏。"
         ),
         prompt: L(
-            "A calm horizon: a pastel peach-to-lilac-to-periwinkle sky (deep navy-indigo in dark mode) with a soft blurred sun glow, over a stack of five translucent wave bands filling the lower half. Each band is a filled curve built from a primary sine plus a finer counter-moving harmonic; bands further back are lighter, flatter and slower, bands in front are deeper indigo-violet, taller and faster (roughly 5 s to 12 s cycles), creating gentle parallax as they slide against one another. Every band carries a vertical gradient that darkens toward the bottom. Motion is continuous and unhurried — the mood is meditative, like breathing or a slow tide.",
-            "宁静的地平线：天空为桃色 → 淡紫 → 长春花蓝的柔和渐变（深色模式下为深海军蓝与靛蓝），带一团柔和模糊的太阳光晕；下半部分由五层半透明波带堆叠。每层是一条主正弦波叠加一条反向运动的细小谐波后填充而成；越靠后的波带越浅、越平、越慢，越靠前则越深（靛紫）、越高、越快（周期约 5–12 秒），彼此滑动形成柔和视差。每层自带由上至下逐渐加深的纵向渐变。运动连续而从容，氛围如呼吸或缓慢潮汐般冥想安宁。"
+            "A calm horizon: a pastel peach-to-lilac-to-periwinkle sky (deep navy-indigo in dark mode) with a soft blurred sun glow, over a stack of five translucent wave bands filling the lower half. Each band is a filled curve built from a primary sine plus a finer counter-moving harmonic; bands further back are lighter, flatter and slower, bands in front are deeper indigo-violet, taller and faster (roughly 6 s to 14 s cycles), creating gentle parallax as they slide against one another. Every band carries a vertical gradient that darkens toward the bottom. Motion is continuous and unhurried — the mood is meditative, like breathing or a slow tide.",
+            "宁静的地平线：天空为桃色 → 淡紫 → 长春花蓝的柔和渐变（深色模式下为深海军蓝与靛蓝），带一团柔和模糊的太阳光晕；下半部分由五层半透明波带堆叠。每层是一条主正弦波叠加一条反向运动的细小谐波后填充而成；越靠后的波带越浅、越平、越慢，越靠前则越深（靛紫）、越高、越快（周期约 6–14 秒），彼此滑动形成柔和视差。每层自带由上至下逐渐加深的纵向渐变。运动连续而从容，氛围如呼吸或缓慢潮汐般冥想安宁。"
         ),
         implementation: L(
             "A Canvas driven by TimelineView fills one closed wave Path per layer (sampled every 6 pt) with a vertical linear gradient; the sky adapts to the colour scheme.",

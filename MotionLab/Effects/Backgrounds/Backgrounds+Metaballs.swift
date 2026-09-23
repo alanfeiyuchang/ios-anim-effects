@@ -11,8 +11,8 @@ extension Effect {
             "虹彩液滴环绕流动、彼此融合，手指也会变成其中一滴。"
         ),
         prompt: L(
-            "On a near-black plum canvas, six to ten liquid blobs orbit a central pulsing drop along slow Lissajous paths (7–12 s periods). Whenever two blobs approach they stretch a viscous neck, merge into one smooth surface and pinch apart again, like mercury or a lava lamp seen from above. The liquid is filled with an iridescent pink → violet → sky gradient whose direction slowly rotates, and carries a soft violet bloom around its silhouette. Touching the canvas spawns a finger blob that grows in over ~200 ms and trails the finger with a gentle lag, gooping into any drop it passes; lifting shrinks it away. Organic, playful, tactile.",
-            "近黑的梅子色画布上，六到十个液滴绕着一颗中心脉动的主液滴，沿缓慢的李萨如轨迹（周期 7–12 秒）环绕。两滴靠近时会拉出黏稠的“颈部”，融合成一整块光滑曲面，再缓缓断开，宛如俯视水银或熔岩灯。液体填充粉 → 紫 → 天蓝的虹彩渐变，渐变方向缓慢旋转，轮廓外带一圈柔和紫色辉光。手指按下时会在约 200 毫秒内长出一个跟随手指、略带延迟的液滴，经过之处与其他液滴黏连融合；松手后液滴收缩消失。有机、灵动、富有触感。"
+            "On a near-black plum canvas, several liquid blobs (seven by default) orbit a central pulsing drop along slow Lissajous paths (roughly 7–15 s periods). Whenever two blobs approach they stretch a viscous neck, merge into one smooth surface and pinch apart again, like mercury or a lava lamp seen from above. The liquid is filled with an iridescent pink → violet → sky gradient whose direction slowly rotates, and carries a soft violet bloom around its silhouette. Touching the canvas spawns a finger blob that grows in over ~200 ms and trails the finger with a gentle lag, gooping into any drop it passes; lifting shrinks it away. Organic, playful, tactile.",
+            "近黑的梅子色画布上，数个液滴（默认七个）绕着一颗中心脉动的主液滴，沿缓慢的李萨如轨迹（周期约 7–15 秒）环绕。两滴靠近时会拉出黏稠的“颈部”，融合成一整块光滑曲面，再缓缓断开，宛如俯视水银或熔岩灯。液体填充粉 → 紫 → 天蓝的虹彩渐变，渐变方向缓慢旋转，轮廓外带一圈柔和紫色辉光。手指按下时会在约 200 毫秒内长出一个跟随手指、略带延迟的液滴，经过之处与其他液滴黏连融合；松手后液滴收缩消失。有机、灵动、富有触感。"
         ),
         implementation: L(
             "Canvas with an alphaThreshold filter stacked on a blur filter turns overlapping white circles into a single gooey silhouette, which masks an animated LinearGradient; a small model smooths the finger blob.",

@@ -10,8 +10,8 @@ extension Effect {
         name: L("Blur-In Toast", "模糊滑入吐司"),
         summary: L("A frosted capsule toast that springs in out of a blur and slips away.", "磨砂胶囊吐司从模糊中弹入，再悄然滑走。"),
         prompt: L(
-            "A compact frosted-glass capsule toast — a green check badge, a bold title and a secondary caption — lives just off the top (or bottom) edge. On trigger it travels 110 pt into view on a spring (response ≈0.45 s, damping 0.72) while simultaneously sharpening from a 10 pt blur, scaling from 86% to 100% and fading in, landing with a slight overshoot; a success haptic fires on arrival. After a ~2 s hold it retreats along the same path on a 0.35 s smooth curve, blurring out as it goes. Re-triggering while visible restarts the timer instead of stacking. It feels light, polished and never interrupts.",
-            "一枚紧凑的磨砂玻璃胶囊吐司——绿色对勾徽标、粗体标题与次级说明——停在画面顶部（或底部）外侧。触发后它以弹簧（响应约 0.45 秒、阻尼 0.72）滑入画面 110 pt，同时从 10 pt 模糊逐渐清晰、从 86% 放大到 100% 并淡入，落位时带一点轻微过冲；到位瞬间触发成功触感。停留约 2 秒后，沿原路以 0.35 秒平滑曲线退出，边走边重新模糊。显示期间再次触发只会重置计时，不会叠加。轻盈、精致，从不打断用户。"
+            "A compact frosted-glass capsule toast — a green check badge, a bold title and a secondary caption — lives just off the top (or bottom) edge. On trigger it travels 110 pt into view on a spring (response ≈0.45 s, damping 0.72) while simultaneously sharpening from a 10 pt blur, scaling from 86% to 100% and fading in, landing with a slight overshoot; a success haptic fires the instant it launches. After a ~2 s hold it retreats along the same path on a 0.35 s smooth curve, blurring out as it goes. Re-triggering while visible restarts the timer instead of stacking. It feels light, polished and never interrupts.",
+            "一枚紧凑的磨砂玻璃胶囊吐司——绿色对勾徽标、粗体标题与次级说明——停在画面顶部（或底部）外侧。触发后它以弹簧（响应约 0.45 秒、阻尼 0.72）滑入画面 110 pt，同时从 10 pt 模糊逐渐清晰、从 86% 放大到 100% 并淡入，落位时带一点轻微过冲；触发的同一刻伴随成功触感。停留约 2 秒后，沿原路以 0.35 秒平滑曲线退出，边走边重新模糊。显示期间再次触发只会重置计时，不会叠加。轻盈、精致，从不打断用户。"
         ),
         implementation: L(
             "Offset, blur, scale and opacity are all driven by one Boolean inside a spring; a tokenised Task handles auto-dismiss.",

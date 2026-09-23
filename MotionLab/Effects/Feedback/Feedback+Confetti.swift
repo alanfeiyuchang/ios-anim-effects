@@ -8,8 +8,8 @@ extension Effect {
         name: L("Confetti Burst", "彩纸礼花"),
         summary: L("A physics-based shower of fluttering paper bursts from the button.", "基于物理的彩纸从按钮处迸发、翻飞飘落。"),
         prompt: L(
-            "Tapping a gradient 'Celebrate' pill (which pops 90% → 108% → 100%) fires about 110 pieces of confetti from its center in an upward cone of ±55°. Each piece — a small rectangle, dot or streamer in the brand spectrum — launches at 300–700 pt/s, decelerates with air drag, then falls under gravity toward a ~320 pt/s terminal velocity, spinning on its own axis and fluttering in 3D by squashing its width with a cosine. Pieces live 2.6 s and fade over their last 0.6 s. Multiple bursts can overlap. It feels joyful, weighty and real, never cartoonish.",
-            "点击一枚渐变“庆祝”胶囊按钮（按钮先缩到 90% 再弹到 108% 后回到 100%），约 110 片彩纸从按钮中心向上以 ±55° 锥形迸发。每一片——小长方形、圆点或纸带，颜色取自品牌色谱——以 300–700 pt/s 的初速射出，受空气阻力减速，再在重力作用下下落，趋近约 320 pt/s 的终端速度；同时绕自身旋转，并用余弦压缩宽度模拟三维翻飞。每片存活 2.6 秒，最后 0.6 秒淡出，多次迸发可以叠加。欢快、有分量、真实，而不卡通。"
+            "Tapping a gradient 'Celebrate' pill (which pops 90% → 108% → 100%) fires about 110 pieces of confetti from its center in an upward cone of ±55°. Each piece — a small rectangle, dot or streamer in the brand spectrum — launches at 300–700 pt/s, decelerates with air drag, then falls under gravity toward a ~360 pt/s terminal velocity, spinning on its own axis and fluttering in 3D by squashing its width with a cosine. Pieces live 2.6 s and fade over their last 0.6 s. Multiple bursts can overlap. It feels joyful, weighty and real, never cartoonish.",
+            "点击一枚渐变“庆祝”胶囊按钮（按钮先缩到 90% 再弹到 108% 后回到 100%），约 110 片彩纸从按钮中心向上以 ±55° 锥形迸发。每一片——小长方形、圆点或纸带，颜色取自品牌色谱——以 300–700 pt/s 的初速射出，受空气阻力减速，再在重力作用下下落，趋近约 360 pt/s 的终端速度；同时绕自身旋转，并用余弦压缩宽度模拟三维翻飞。每片存活 2.6 秒，最后 0.6 秒淡出，多次迸发可以叠加。欢快、有分量、真实，而不卡通。"
         ),
         implementation: L(
             "Particles are generated once per burst; a TimelineView redraws a Canvas each frame using the closed-form solution of drag + gravity, and pauses when no burst is alive.",

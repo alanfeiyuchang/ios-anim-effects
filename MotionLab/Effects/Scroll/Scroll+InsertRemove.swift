@@ -121,7 +121,7 @@ private struct ScrollInsertRemoveDemo: View {
     }
 
     private func insert() {
-        Haptics.tap(.soft)
+        if !ctx.isPreview { Haptics.tap(.soft) }
         withAnimation(spring) {
             items.insert(nextID, at: 0)
             nextID += 1
@@ -129,7 +129,7 @@ private struct ScrollInsertRemoveDemo: View {
     }
 
     private func remove(_ id: Int) {
-        Haptics.tap(.light)
+        if !ctx.isPreview { Haptics.tap(.light) }
         withAnimation(spring) {
             items.removeAll { $0 == id }
         }

@@ -10,8 +10,8 @@ extension Effect {
         name: L("Skeleton Shimmer", "骨架屏微光"),
         summary: L("Placeholder shapes with a diagonal sheen that dissolve into real content.", "占位骨架带斜向流光，再柔和溶解为真实内容。"),
         prompt: L(
-            "A content card rendered as neutral skeleton blocks — a 120 pt hero image, a 40 pt avatar, two title bars and body lines — all at 8% label-color opacity with continuous rounded corners. A soft diagonal highlight band, tilted about 15°, sweeps left to right every 1.4 s, masked so it only lights up the placeholder shapes; it uses white at 70% in light mode and 14% in dark mode. When the data arrives, the skeleton fades out while the real card fades in from a 8 pt blur and 98% scale over a 0.5 s smooth curve, keeping the exact same layout so nothing jumps.",
-            "一张以中性骨架块呈现的内容卡片——120 pt 的头图、40 pt 头像、两条标题条与若干正文行，全部为 8% 文字色、连续圆角。一条倾斜约 15° 的柔和高光带每 1.4 秒从左向右扫过，并被遮罩限制只照亮占位形状；浅色模式用 70% 白，深色模式用 14% 白。数据到达时骨架淡出，真实卡片从 8 pt 模糊、98% 缩放，经 0.5 秒平滑曲线浮现，布局与骨架完全一致，没有任何跳动。"
+            "A content card rendered as neutral skeleton blocks — a 110 pt hero image, a 40 pt avatar, two title bars and body lines — all at 8% label-color opacity with continuous rounded corners. A soft diagonal highlight band, tilted roughly 35° off vertical, sweeps left to right every 1.4 s, masked so it only lights up the placeholder shapes; it uses white at 70% in light mode and 14% in dark mode. When the data arrives, the skeleton fades out while the real card fades in from an 8 pt blur and 98% scale over a 0.5 s smooth curve, keeping the exact same layout so nothing jumps.",
+            "一张以中性骨架块呈现的内容卡片——110 pt 的头图、40 pt 头像、两条标题条与若干正文行，全部为 8% 文字色、连续圆角。一条偏离竖直约 35° 的柔和斜向高光带每 1.4 秒从左向右扫过，并被遮罩限制只照亮占位形状；浅色模式用 70% 白，深色模式用 14% 白。数据到达时骨架淡出，真实卡片从 8 pt 模糊、98% 缩放，经 0.5 秒平滑曲线浮现，布局与骨架完全一致，没有任何跳动。"
         ),
         implementation: L(
             "A TimelineView moves a LinearGradient's start/end points; the gradient is masked by the same skeleton layout, and loaded content cross-fades with blur.",

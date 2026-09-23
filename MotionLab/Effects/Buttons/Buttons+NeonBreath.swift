@@ -8,8 +8,8 @@ extension Effect {
         name: L("Neon Breath", "霓虹呼吸"),
         summary: L("A neon tube glow that slowly breathes and flickers on tap.", "缓慢呼吸的霓虹灯管辉光，点击时闪烁。"),
         prompt: L(
-            "A dark capsule outlined by a 2 pt neon tube in electric cyan, with the label set in the same glowing color. The glow breathes on a slow sine wave (~2.4 s per cycle): stacked shadows swell from a tight 4 pt halo to a 22 pt bloom and back, while the tube brightens by ~40% at the peak; a blurred reflection pools on the floor below and pulses in sync. Tapping the button triggers a quick neon-sign flicker — opacity stutters 1 → 0.35 → 1 → 0.6 → 1 within ~350 ms — plus a light haptic. It feels atmospheric and nocturnal, like a sign humming in a rainy alley.",
-            "深色胶囊按钮，外圈是一条 2pt 的电光青色霓虹灯管，文字也使用同色发光。辉光以缓慢的正弦节奏呼吸（每周期约 2.4 秒）：多层阴影从紧贴的 4pt 光晕扩散到 22pt 的柔光再收回，灯管在峰值时亮度提升约 40%；下方地面有一片模糊的倒影同步明暗。点击按钮会触发一次霓虹招牌般的闪烁——不透明度在约 350 毫秒内按 1 → 0.35 → 1 → 0.6 → 1 抖动——并伴随轻触觉。氛围感十足，像雨夜小巷里嗡嗡作响的霓虹招牌。"
+            "A dark capsule outlined by a 2 pt neon tube in electric cyan, with the label set in the same glowing color. The glow breathes on a slow sine wave (~2.4 s per cycle): stacked shadows swell from a tight 4 pt halo to a 22 pt bloom and back, while the tube’s brightness lifts by 0.25 at the peak; a blurred reflection pools on the floor below and pulses in sync. Tapping the button triggers a quick neon-sign flicker — opacity stutters 1 → 0.35 → 1 → 0.6 → 1 within ~350 ms — plus a light haptic. It feels atmospheric and nocturnal, like a sign humming in a rainy alley.",
+            "深色胶囊按钮，外圈是一条 2pt 的电光青色霓虹灯管，文字也使用同色发光。辉光以缓慢的正弦节奏呼吸（每周期约 2.4 秒）：多层阴影从紧贴的 4pt 光晕扩散到 22pt 的柔光再收回，灯管在峰值时亮度提升 0.25；下方地面有一片模糊的倒影同步明暗。点击按钮会触发一次霓虹招牌般的闪烁——不透明度在约 350 毫秒内按 1 → 0.35 → 1 → 0.6 → 1 抖动——并伴随轻触觉。氛围感十足，像雨夜小巷里嗡嗡作响的霓虹招牌。"
         ),
         implementation: L(
             "TimelineView computes a sine-based breath value that scales layered shadows and stroke brightness; a keyframeAnimator keyed on a tap counter plays the flicker on opacity.",

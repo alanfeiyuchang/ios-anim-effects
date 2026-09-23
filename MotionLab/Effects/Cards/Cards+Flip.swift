@@ -44,7 +44,7 @@ private struct CardsFlipDemo: View {
     }
 
     private func flip() {
-        Haptics.tap(.medium)
+        if !ctx.isPreview { Haptics.tap(.medium) }
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             angle += 180
         }

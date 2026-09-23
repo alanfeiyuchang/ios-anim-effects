@@ -42,14 +42,15 @@ private struct TypewriterDemo: View {
             header
             HStack(alignment: .center, spacing: 2) {
                 Text(typed)
-                    .font(.system(size: 26, weight: .semibold, design: .monospaced))
+                    .font(.system(size: 22, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
                 Caret(style: ctx.int("caret"), isTyping: isTyping)
             }
             .frame(height: 40)
         }
         .padding(22)
-        .frame(width: 300, alignment: .leading)
+        .frame(width: 316, alignment: .leading)
         .demoCard(cornerRadius: 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task(id: "\(ctx.language.rawValue)-\(ctx["speed"])") { await run() }

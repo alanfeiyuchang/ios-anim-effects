@@ -10,8 +10,8 @@ extension Effect {
         name: L("Error Shake", "错误抖动"),
         summary: L("A passcode field that shakes 'no' with a decaying keyframe wiggle.", "密码框以衰减的关键帧左右摇头表示“不对”。"),
         prompt: L(
-            "A passcode card with four filled dots inside a capsule field and an 'Unlock' button. On a wrong attempt the field shakes horizontally like a head saying no: −16 → +13 → −9 → +5 → −2 pt over roughly 370 ms of short cubic segments, then settles to 0 on a snappy spring, each swing smaller than the last. At the same moment the dots and hairline border flush to system red, an error haptic fires, and a red 'Wrong passcode' caption drops in 6 pt from above; everything eases back to neutral after 1.2 s. Firm but not alarming.",
-            "密码卡片中，一条胶囊输入框里有四个实心圆点，下方是“解锁”按钮。输入错误时，输入框像“摇头说不”一样左右抖动：在约 370 毫秒内以数段短促的三次曲线经过 −16 → +13 → −9 → +5 → −2 pt，最后以利落的弹簧归零，每次摆幅都比上次更小。与此同时圆点与细描边变为系统红色，触发错误触感，一行红色“密码错误”从上方 6 pt 处落入；1.2 秒后一切缓缓恢复常态。坚定而不惊吓。"
+            "A passcode card with four filled dots inside a capsule field and an 'Unlock' button. On a wrong attempt the field shakes horizontally like a head saying no: −16 → +13 → −9 → +5 → −2 pt over roughly 360 ms of short cubic segments, then settles to 0 on a snappy spring, each swing smaller than the last. At the same moment the dots and hairline border flush to system red, an error haptic fires, and a red 'Wrong passcode' caption drops in 6 pt from above; everything eases back to neutral after 1.2 s. Firm but not alarming.",
+            "密码卡片中，一条胶囊输入框里有四个实心圆点，下方是“解锁”按钮。输入错误时，输入框像“摇头说不”一样左右抖动：在约 360 毫秒内以数段短促的三次曲线经过 −16 → +13 → −9 → +5 → −2 pt，最后以利落的弹簧归零，每次摆幅都比上次更小。与此同时圆点与细描边变为系统红色，触发错误触感，一行红色“密码错误”从上方 6 pt 处落入；1.2 秒后一切缓缓恢复常态。坚定而不惊吓。"
         ),
         implementation: L(
             "keyframeAnimator keyed on an attempt counter plays a decaying CubicKeyframe sequence on x-offset; a Boolean tints the field red for 1.2 s.",

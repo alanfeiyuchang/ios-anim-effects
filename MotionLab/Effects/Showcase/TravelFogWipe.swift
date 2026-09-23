@@ -57,6 +57,13 @@ private struct TravelFogDemo: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // Drop strokes once they have fully re-fogged so the hole TimelineView can pause again.
+        .task(id: "\(strokes.count)-\(isDrawing)") {
+            guard let regrow = regrowAfter, !isDrawing, !strokes.isEmpty else { return }
+            try? await Task.sleep(for: .seconds(TravelFogHoles.hold + regrow + 0.1))
+            guard !Task.isCancelled else { return }
+            prune()
+        }
     }
 
     private var photo: some View {
@@ -156,7 +163,7 @@ private struct TravelFogHoles: View {
     let isPreview: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: !isPreview && strokes.isEmpty)) { timeline in
+        TimelineView(.animation(minimumInterval: nil, paused: !isPreview && (strokes.isEmpty || regrowAfter == nil))) { timeline in
             Canvas { context, size in
                 let now = timeline.date
                 for stroke in strokes {

@@ -8,8 +8,8 @@ extension Effect {
         name: L("Frosted Glass Card", "磨砂玻璃卡片"),
         summary: L("A frosted card over drifting color, with a tilt-reactive sheen.", "漂浮色块上的磨砂卡片，倾斜时高光随之流动。"),
         prompt: L(
-            "A frosted-glass card floats above slowly drifting, heavily blurred color orbs (magenta, indigo, amber) that orbit on 8–12 s loops. The card uses a background blur with a 1 pt inner white hairline at 35% opacity and a soft drop shadow. Dragging tilts it up to ±12° in 3D; a diagonal specular sheen slides across the glass opposite the tilt and the orbs parallax behind it, then everything springs back (response 0.5 s, damping 0.7). Calm, luminous and physical.",
-            "一张磨砂玻璃卡片悬浮于缓慢漂移、高度模糊的彩色光球（洋红、靛蓝、琥珀）之上，光球以 8～12 秒周期环绕。卡片采用背景模糊，内侧 1pt、35% 不透明度的白色细描边，并带柔和投影。拖动时卡片在 3D 空间中倾斜最多 ±12°，一道斜向高光沿与倾斜相反的方向滑过玻璃，背后的光球产生视差；松手后一切以弹簧（响应 0.5 秒、阻尼 0.7）回正。宁静、通透、富有实体感。"
+            "A frosted-glass card floats above slowly drifting, heavily blurred color orbs (pink, indigo, amber) that orbit on 7–12 s loops. The card uses a background blur with a 1 pt white hairline rim fading diagonally from 60% to 10% opacity and a soft drop shadow. Dragging tilts it up to ±12° in 3D; a diagonal specular sheen slides across the glass opposite the tilt and the orbs parallax behind it, then everything springs back (response 0.5 s, damping 0.7). Calm, luminous and physical.",
+            "一张磨砂玻璃卡片悬浮于缓慢漂移、高度模糊的彩色光球（粉、靛蓝、琥珀）之上，光球以 7～12 秒周期环绕。卡片采用背景模糊，边缘为 1pt 白色细描边、不透明度沿对角由 60% 渐变到 10%，并带柔和投影。拖动时卡片在 3D 空间中倾斜最多 ±12°，一道斜向高光沿与倾斜相反的方向滑过玻璃，背后的光球产生视差；松手后一切以弹簧（响应 0.5 秒、阻尼 0.7）回正。宁静、通透、富有实体感。"
         ),
         implementation: L(
             "Blurred circles animated by TimelineView sit beneath a RoundedRectangle filled with .ultraThinMaterial; DragGesture drives rotation3DEffect and the offset of a gradient sheen overlay.",
@@ -32,8 +32,8 @@ extension Effect {
         name: L("Liquid Glass Lens", "液态玻璃透镜"),
         summary: L("Drag a Liquid Glass droplet that refracts the content beneath.", "拖动一滴液态玻璃，实时折射下方内容。"),
         prompt: L(
-            "A Liquid Glass droplet (iOS 26 material) rests over a colorful grid of content. As the finger drags it, the glass refracts and lenses whatever is beneath in real time, its rim catching specular light, and it gently squashes in the direction of motion (up to 12%) before springing round again (response 0.35 s, damping 0.6) when released. A tap makes it pulse and flex like a water bead. The effect conveys a physical, optical layer floating over the UI.",
-            "一滴液态玻璃（iOS 26 材质）停在一片色彩丰富的内容网格之上。手指拖动时，玻璃实时折射并透镜化下方内容，边缘捕捉镜面高光，并沿运动方向轻微挤压（最多 12%），松手后以弹簧（响应 0.35 秒、阻尼 0.6）回弹成正圆。点击时它会像水珠一样脉动、形变。整体传达出一层悬浮于界面之上的真实光学材质。"
+            "A Liquid Glass droplet (iOS 26 material) rests over a colorful grid of content. As the finger drags it, the glass refracts and lenses whatever is beneath in real time, its rim catching specular light, and it stretches up to 12% along its direction of travel while narrowing across it, springing round again (response 0.35 s, damping 0.6) when released. A tap makes it pulse and flex like a water bead. The effect conveys a physical, optical layer floating over the UI.",
+            "一滴液态玻璃（iOS 26 材质）停在一片色彩丰富的内容网格之上。手指拖动时，玻璃实时折射并透镜化下方内容，边缘捕捉镜面高光，并沿运动方向拉长最多 12%、垂直方向相应收窄，松手后以弹簧（响应 0.35 秒、阻尼 0.6）回弹成正圆。点击时它会像水珠一样脉动、形变。整体传达出一层悬浮于界面之上的真实光学材质。"
         ),
         implementation: L(
             "On iOS 26 the droplet uses .glassEffect(.regular.interactive(), in: Circle()); earlier systems fall back to .ultraThinMaterial with a gradient rim. Velocity from DragGesture drives a scale squash.",
@@ -101,7 +101,7 @@ private struct GlassmorphismDemo: View {
                 Image(systemName: "wave.3.right.circle.fill")
                     .font(.title)
                 Spacer()
-                Text("VISA")
+                Text("PLUS")
                     .font(.system(size: 18, weight: .heavy, design: .rounded))
                     .italic()
             }

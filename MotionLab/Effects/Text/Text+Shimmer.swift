@@ -8,8 +8,8 @@ extension Effect {
         name: L("Shimmer Text", "流光文字"),
         summary: L("A soft band of light sweeps across the letters.", "一道柔光带从文字上缓缓扫过。"),
         prompt: L(
-            "Dimmed text — a headline such as \"Thinking…\" and a \"slide to unlock\" pill — is lit by a soft diagonal band of light that sweeps from left to right inside the glyphs only. The letters rest at about 30% opacity of the primary colour; the band ramps to full brightness at its centre and fades out on both sides, crossing the word in roughly 2 s on a continuous linear loop with no visible reset. In the aurora variant the band carries a violet-pink-amber gradient. It reads as a calm, intelligent \"working\" state rather than a loading spinner.",
-            "处于弱化状态的文字——如“思考中…”标题与“滑动来解锁”胶囊——被一道柔和的斜向光带照亮，光只在字形内部从左向右扫过。文字静止时约为主色 30% 的不透明度；光带中心提亮到 100%，两侧渐隐，以约 2 秒一轮的匀速连续循环穿过文字，不留任何重置痕迹。极光变体中光带带有紫—粉—琥珀的渐变色。整体传达的是冷静、智能的“正在处理”状态，而非生硬的加载转圈。"
+            "Dimmed text — a headline such as \"Thinking…\" and a \"slide to unlock\" pill — is lit by a soft diagonal band of light that sweeps from left to right inside the glyphs only. The letters rest at about 30% opacity of the primary colour; the band ramps to full brightness at its centre and fades out on both sides, crossing the word about every 2.2 s on a continuous linear loop with no visible reset. In the aurora variant the band carries a violet-pink-amber gradient. It reads as a calm, intelligent \"working\" state rather than a loading spinner.",
+            "处于弱化状态的文字——如“思考中…”标题与“滑动来解锁”胶囊——被一道柔和的斜向光带照亮，光只在字形内部从左向右扫过。文字静止时约为主色 30% 的不透明度；光带中心提亮到 100%，两侧渐隐，以约 2.2 秒一轮的匀速连续循环穿过文字，不留任何重置痕迹。极光变体中光带带有紫—粉—琥珀的渐变色。整体传达的是冷静、智能的“正在处理”状态，而非生硬的加载转圈。"
         ),
         implementation: L(
             "The text's foregroundStyle is a LinearGradient whose start/end UnitPoints travel across (and beyond) the text bounds, driven by TimelineView(.animation).",

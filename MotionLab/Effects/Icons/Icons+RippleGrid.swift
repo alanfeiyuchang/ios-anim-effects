@@ -8,8 +8,8 @@ extension Effect {
         name: L("Symbol Ripple Grid", "符号涟漪矩阵"),
         summary: L("A wave of symbol effects spreads out from the tapped icon.", "从点击的图标开始，一圈符号动效向外扩散。"),
         prompt: L(
-            "A 4×4 gallery of colourful hierarchical SF Symbols on soft tinted tiles. Tapping one tile sends a ripple across the grid: each symbol fires a discrete effect (bounce, wiggle or rotate) after a delay proportional to its distance from the origin (~70 ms per tile), while its tile flashes a brighter tint and scales to 108% and back. The wavefront reads as a clean circle expanding outwards over roughly half a second, like a pebble dropped into a pond of icons, with a single light haptic at the source. Playful, orchestrated and systemic.",
-            "4×4 的彩色分层 SF Symbol 画廊，每个图标置于柔和的淡色方块上。点击任意方块，一圈涟漪便在矩阵中扩散：每个符号按与起点的距离延迟触发一次离散动效（弹跳、摇摆或旋转，约每格 70 毫秒），同时所在方块的底色短暂提亮并缩放到 108% 再回落。波前呈一个干净的圆形，在约半秒内向外扩张，像一颗石子落入由图标组成的池塘，起点处伴随一次轻触感。俏皮、编排精致、充满系统感。"
+            "A 4×4 gallery of colourful hierarchical SF Symbols on soft tinted tiles. Tapping one tile sends a ripple across the grid: each symbol fires a discrete effect (bounce, wiggle or rotate) after a delay proportional to its distance from the origin (~70 ms per tile), while its tile flashes a brighter tint and scales to 108% and back. The wavefront reads as a clean circle expanding outwards, crossing the whole grid in about 0.3 s, like a pebble dropped into a pond of icons, with a single light haptic at the source. Playful, orchestrated and systemic.",
+            "4×4 的彩色分层 SF Symbol 画廊，每个图标置于柔和的淡色方块上。点击任意方块，一圈涟漪便在矩阵中扩散：每个符号按与起点的距离延迟触发一次离散动效（弹跳、摇摆或旋转，约每格 70 毫秒），同时所在方块的底色短暂提亮并缩放到 108% 再回落。波前呈一个干净的圆形向外扩张，约 0.3 秒即可扫过整个矩阵，像一颗石子落入由图标组成的池塘，起点处伴随一次轻触感。俏皮、编排精致、充满系统感。"
         ),
         implementation: L(
             "Each cell owns a trigger counter incremented by a delayed Task (distance × stagger); the symbol uses .symbolEffect(_:value:) and the tile pulse is a keyframeAnimator on the same trigger.",

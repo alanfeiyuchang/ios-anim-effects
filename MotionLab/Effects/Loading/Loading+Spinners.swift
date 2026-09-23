@@ -19,8 +19,8 @@ extension Effect {
         name: L("Three-Dot Bounce", "三点跳动"),
         summary: L("Three dots hop in a staggered wave — also a chat typing indicator.", "三颗圆点错峰跳跃，也可作聊天“正在输入”。"),
         prompt: L(
-            "Three 14 pt dots in indigo, violet and pink sit in a row with 8 pt gaps. Each dot hops on a half-sine arc — rising ~18 pt and falling back within the first half of a 1.1 s cycle, then resting — with a 140 ms stagger so the motion travels left to right like a wave. At the top of each hop a dot grows to 100% and full opacity; at rest it shrinks to 85% and dims to 50%. Optionally the row sits inside a tail-cornered chat bubble as a typing indicator. The rhythm is light, friendly and never frantic.",
-            "三颗 14 pt 圆点（靛蓝、紫罗兰、粉色）横向排列，间距 8 pt。每颗圆点在 1.1 秒周期的前半段沿半正弦弧线起跳约 18 pt 再落回，后半段静止；相邻圆点错开 140 毫秒，形成从左向右传递的波浪。跳到最高点时圆点恢复 100% 大小与完全不透明，静止时缩到 85% 并降到 50% 透明度。可选择将其放入带尖角的聊天气泡中，作为“对方正在输入”提示。节奏轻盈、友好，绝不急躁。"
+            "Three 14 pt dots in indigo, violet and pink sit in a row with 8 pt gaps. Each dot hops on a half-sine arc — rising ~16 pt and falling back within the first half of a 1.1 s cycle, then resting — with a ~155 ms (14% of a cycle) stagger so the motion travels left to right like a wave. At the top of each hop a dot grows to 100% and full opacity; at rest it shrinks to 85% and dims to 50%. Optionally the row sits inside a tail-cornered chat bubble as a typing indicator. The rhythm is light, friendly and never frantic.",
+            "三颗 14 pt 圆点（靛蓝、紫罗兰、粉色）横向排列，间距 8 pt。每颗圆点在 1.1 秒周期的前半段沿半正弦弧线起跳约 16 pt 再落回，后半段静止；相邻圆点错开约 155 毫秒（14% 个周期），形成从左向右传递的波浪。跳到最高点时圆点恢复 100% 大小与完全不透明，静止时缩到 85% 并降到 50% 透明度。可选择将其放入带尖角的聊天气泡中，作为“对方正在输入”提示。节奏轻盈、友好，绝不急躁。"
         ),
         implementation: L(
             "A TimelineView evaluates a staggered half-sine per dot every frame and maps it to offset, scale and opacity.",
@@ -187,8 +187,8 @@ extension Effect {
         name: L("Orbiting Dots", "轨道圆点"),
         summary: L("Dots circle an orbit, bunching up and spreading out with easing.", "圆点沿轨道公转，随缓动聚拢又散开。"),
         prompt: L(
-            "Five dots of decreasing size (100% down to ~68%) travel around a 34 pt-radius orbit. Each dot follows the same cubic ease-in-out lap of 1.6 s but starts 7.5% of a cycle after the one ahead, so the group clumps together at the top, stretches into a comet as it accelerates down the sides, and gathers again — the classic 'orbit' loader. Colors step through a cool aurora palette, or stay monochrome. The motion feels gravitational and hypnotic, with no hard starts or stops.",
-            "五颗逐渐变小（从 100% 递减到约 68%）的圆点沿半径 34 pt 的轨道公转。每颗圆点都走同一条 1.6 秒、三次缓入缓出的圆周，但比前一颗晚出发 7.5% 个周期：于是它们在顶部挤成一团，沿两侧加速时拉成一条彗星尾，再重新聚拢——经典的“轨道”加载器。颜色依次取自冷调极光色，也可切换为单色。运动带着引力感，令人着迷，没有任何生硬的启停。"
+            "Five dots of decreasing size (100% down to ~74%) travel around a 34 pt-radius orbit. Each dot follows the same cubic ease-in-out lap of 1.6 s but starts 7.5% of a cycle after the one ahead, so the group clumps together at the top, stretches into a comet as it accelerates down the sides, and gathers again — the classic 'orbit' loader. Colors step through a cool aurora palette, or stay monochrome. The motion feels gravitational and hypnotic, with no hard starts or stops.",
+            "五颗逐渐变小（从 100% 递减到约 74%）的圆点沿半径 34 pt 的轨道公转。每颗圆点都走同一条 1.6 秒、三次缓入缓出的圆周，但比前一颗晚出发 7.5% 个周期：于是它们在顶部挤成一团，沿两侧加速时拉成一条彗星尾，再重新聚拢——经典的“轨道”加载器。颜色依次取自冷调极光色，也可切换为单色。运动带着引力感，令人着迷，没有任何生硬的启停。"
         ),
         implementation: L(
             "A TimelineView places each dot with offset + rotationEffect using a per-dot delayed, eased angle.",
@@ -255,8 +255,8 @@ extension Effect {
         name: L("Activity Petals", "花瓣指示器"),
         summary: L("The classic iOS petal spinner, smooth or stepped.", "经典 iOS 花瓣式“菊花”，可平滑或逐格。"),
         prompt: L(
-            "Twelve rounded capsule petals (3.5 × 11 pt) radiate around a 13 pt inner radius like the iOS activity indicator. A bright 'head' travels clockwise once per second; each petal is fully opaque when the head passes and fades back to an 18% resting opacity over the following ~80% of a lap, producing a trailing comet of light. In stepped mode the head jumps petal by petal, exactly like UIActivityIndicatorView; in smooth mode it glides continuously. The color adapts to the label color so it reads in light and dark mode.",
-            "十二片圆角胶囊花瓣（3.5 × 11 pt）以 13 pt 内半径呈放射状排列，形如 iOS 系统加载指示器。一个“高亮头”每秒顺时针转一圈；它经过时花瓣完全不透明，随后在约 80% 圈的时间里逐渐淡回 18% 的静息透明度，形成一条拖尾光带。逐格模式下高亮头一瓣一瓣跳动，与 UIActivityIndicatorView 完全一致；平滑模式下则连续滑行。颜色跟随系统文字色，浅色与深色模式下都清晰可辨。"
+            "Twelve rounded capsule petals (3.5 × 11 pt) radiate from the hub, centered 13 pt out, like the iOS activity indicator. A bright 'head' travels clockwise once per second; each petal is fully opaque when the head passes and fades back to an 18% resting opacity over the following ~80% of a lap, producing a trailing comet of light. In stepped mode the head jumps petal by petal, exactly like UIActivityIndicatorView; in smooth mode it glides continuously. The color adapts to the label color so it reads in light and dark mode.",
+            "十二片圆角胶囊花瓣（3.5 × 11 pt）以 13 pt 中心半径呈放射状排列，形如 iOS 系统加载指示器。一个“高亮头”每秒顺时针转一圈；它经过时花瓣完全不透明，随后在约 80% 圈的时间里逐渐淡回 18% 的静息透明度，形成一条拖尾光带。逐格模式下高亮头一瓣一瓣跳动，与 UIActivityIndicatorView 完全一致；平滑模式下则连续滑行。颜色跟随系统文字色，浅色与深色模式下都清晰可辨。"
         ),
         implementation: L(
             "Capsules are rotated into a ring; a TimelineView computes each petal's distance behind the moving head and maps it to opacity.",

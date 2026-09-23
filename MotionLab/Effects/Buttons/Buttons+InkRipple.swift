@@ -8,8 +8,8 @@ extension Effect {
         name: L("Ink Ripple", "墨水涟漪"),
         summary: L("A soft wave of light spreads from the exact touch point.", "从手指触点扩散开的一圈柔光涟漪。"),
         prompt: L(
-            "A rounded-rectangle button with a sky-to-blue gradient and a faint glossy top highlight. Each tap spawns a translucent white circle exactly at the touch point that expands with an ease-out curve until it covers the farthest corner of the button (about 600 ms), while its opacity fades from 35% to zero on a slightly slower ease-in, so the wave dissolves as it reaches the edges. Ripples are clipped to the button shape and can overlap when tapped rapidly. The button itself dips to 96% and springs back with a bouncy keyframe, plus a light haptic. It feels liquid, precise and responsive to exactly where you touched.",
-            "圆角矩形按钮，天蓝到湛蓝渐变，顶部有一道淡淡的高光。每次点击都会在手指的精确落点生成一个半透明白色圆，以缓出曲线扩散到覆盖按钮最远的角（约 600 毫秒）；透明度以略慢的缓入曲线从 35% 渐隐到 0，让涟漪在触及边缘时恰好消散。涟漪被裁切在按钮形状内，快速连点时可相互叠加。按钮本身同时下沉到 96% 并以弹性关键帧回弹，伴随轻触觉。整体如液体般细腻，且精准回应触点位置。"
+            "A rounded-rectangle button with a sky-to-blue gradient and a faint glossy top highlight. Each tap spawns a translucent white circle exactly at the touch point that expands with an ease-out curve until it covers the farthest corner of the button (about 600 ms), while its opacity fades from 35% to zero on an ease-in over the same duration, so the wave dissolves as it reaches the edges. Ripples are clipped to the button shape and can overlap when tapped rapidly. The button itself dips to 96% and springs back with a bouncy keyframe, plus a light haptic. It feels liquid, precise and responsive to exactly where you touched.",
+            "圆角矩形按钮，天蓝到湛蓝渐变，顶部有一道淡淡的高光。每次点击都会在手指的精确落点生成一个半透明白色圆，以缓出曲线扩散到覆盖按钮最远的角（约 600 毫秒）；透明度在同一时长内以缓入曲线从 35% 渐隐到 0，让涟漪在触及边缘时恰好消散。涟漪被裁切在按钮形状内，快速连点时可相互叠加。按钮本身同时下沉到 96% 并以弹性关键帧回弹，伴随轻触觉。整体如液体般细腻，且精准回应触点位置。"
         ),
         implementation: L(
             "onTapGesture's location closure appends a ripple model; each ripple view animates its own scale and opacity on appear and is removed after the duration, all clipped to the button shape.",

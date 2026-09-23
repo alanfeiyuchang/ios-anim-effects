@@ -291,6 +291,8 @@ private struct UndoSnackbarDemo: View {
         withAnimation(spring) {
             deleted = false
             snack = false
+            // Refill the ring so the next delete animates 1 → 0 (a same-tick reset would be coalesced away).
+            remaining = 1
         }
     }
 }

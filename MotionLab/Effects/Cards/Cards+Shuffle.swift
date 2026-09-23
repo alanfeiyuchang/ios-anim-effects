@@ -65,7 +65,7 @@ private struct CardsShuffleDemo: View {
 
     private func shuffle() {
         guard pulled == nil, let top = order.first else { return }
-        Haptics.tap(.soft)
+        if !ctx.isPreview { Haptics.tap(.soft) }
         withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
             pulled = top
         }

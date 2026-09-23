@@ -122,7 +122,9 @@ private struct CardsSwipeDemo: View {
     }
 
     private func fling(direction: CGFloat) {
-        if direction > 0 { Haptics.success() } else { Haptics.tap(.medium) }
+        if !ctx.isPreview {
+            if direction > 0 { Haptics.success() } else { Haptics.tap(.medium) }
+        }
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.86)) {
             offset = CGSize(width: direction * 520, height: offset.height + 60)
         }

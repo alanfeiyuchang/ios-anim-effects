@@ -115,8 +115,8 @@ private struct PinchRotateDemo: View {
     private func autoStep() {
         if scale == 1 && degrees == 0 {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
-                scale = 1.55
-                degrees = 24
+                scale = 1.35
+                degrees = 18
                 isActive = true
             }
         } else {

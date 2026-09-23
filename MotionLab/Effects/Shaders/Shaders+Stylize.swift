@@ -8,8 +8,8 @@ extension Effect {
         name: L("Pixelate Swap", "像素化切换"),
         summary: L("Content dissolves into pixels, swaps, and resolves again.", "内容碎成像素块、替换后再重新清晰。"),
         prompt: L(
-            "Tapping the card transitions its content through a mosaic: the image quantizes into progressively larger square cells (1 → ≈28 pt) over 350 ms with an ease-in curve, the content is swapped at peak coarseness where the change is invisible, then the cells shrink back to full resolution over 400 ms with an ease-out. The effect reads like a retro game scene cut, precise and digital, while staying perfectly smooth because cell size animates continuously.",
-            "点击卡片时，内容通过马赛克完成切换：画面在 350 毫秒内以 ease-in 曲线量化为逐渐变大的方形像素块（1 → 约 28pt），在最粗糙、肉眼无法分辨的瞬间替换内容，随后在 400 毫秒内以 ease-out 曲线收缩回完整清晰度。效果如同复古游戏的场景切换，精准而数字化，同时因像素尺寸连续插值而保持丝滑。"
+            "Tapping the card transitions its content through a mosaic: the image quantizes into progressively larger square cells (1 → ≈28 pt) over ≈375 ms with an ease-in curve, the content is swapped at peak coarseness where the change is invisible, then the cells shrink back to full resolution over ≈410 ms with an ease-out. The effect reads like a retro game scene cut, precise and digital, while staying perfectly smooth because cell size animates continuously.",
+            "点击卡片时，内容通过马赛克完成切换：画面在约 375 毫秒内以 ease-in 曲线量化为逐渐变大的方形像素块（1 → 约 28pt），在最粗糙、肉眼无法分辨的瞬间替换内容，随后在约 410 毫秒内以 ease-out 曲线收缩回完整清晰度。效果如同复古游戏的场景切换，精准而数字化，同时因像素尺寸连续插值而保持丝滑。"
         ),
         implementation: L(
             "A Metal layer shader samples the center of each cell. The cell size lives in an Animatable ViewModifier, animated up, content swapped, then animated down.",
@@ -57,8 +57,8 @@ extension Effect {
         name: L("RGB Glitch", "RGB 故障"),
         summary: L("Chromatic split and slice jitter, with a tap-triggered burst.", "色差分离与切片抖动，点击触发强烈故障。"),
         prompt: L(
-            "A cyberpunk glitch: the red and blue channels drift a few points apart horizontally for a permanent chromatic-aberration fringe, faint scanlines modulate brightness, and at random intervals (≈6 times per second) horizontal 14 pt slices tear sideways by up to ±26 pt for a single frame. A tap spikes the intensity to maximum for 400 ms before decaying back, like a corrupted signal momentarily losing sync. Motion is deliberately steppy and unsmoothed, yet sparse enough to stay legible.",
-            "赛博朋克风格的故障效果：红、蓝通道在水平方向错开数个点，形成常驻的色差边缘；细微的扫描线调制亮度；并以随机间隔（约每秒 6 次）将 14pt 高的水平切片横向撕裂最多 ±26pt，仅持续一帧。点击会让强度瞬间拉满 400 毫秒后回落，如同信号短暂失步。运动刻意呈阶跃、不做平滑，但足够稀疏以保持可读。"
+            "A cyberpunk glitch: the red and blue channels drift a few points apart horizontally for a permanent chromatic-aberration fringe, faint scanlines modulate brightness, and six times per second the 14 pt horizontal slices are re-rolled so that roughly one in five tears sideways, jittering at 12 fps by up to ±26 pt × intensity. A tap spikes the intensity to maximum for 400 ms and then snaps back, like a corrupted signal momentarily losing sync. Motion is deliberately steppy and unsmoothed, yet sparse enough to stay legible.",
+            "赛博朋克风格的故障效果：红、蓝通道在水平方向错开数个点，形成常驻的色差边缘；细微的扫描线调制亮度；14pt 高的水平切片每秒重新随机 6 次，约五分之一被横向撕裂，并以每秒 12 帧抖动，最大位移为 ±26pt × 强度。点击会让强度瞬间拉满 400 毫秒后骤然恢复，如同信号短暂失步。运动刻意呈阶跃、不做平滑，但足够稀疏以保持可读。"
         ),
         implementation: L(
             "A Metal layer shader samples R/G/B at offset positions and shifts hashed horizontal bands per time step; TimelineView supplies time.",
@@ -80,8 +80,8 @@ extension Effect {
         name: L("CRT Monitor", "CRT 显示器"),
         summary: L("Curved glass, rolling scanlines and a soft vignette.", "弧面玻璃、滚动扫描线与柔和暗角。"),
         prompt: L(
-            "Content is rendered as if on a vintage CRT: the image is barrel-distorted so edges bow outward, with pure black outside the curved glass; fine horizontal scanlines scroll downward continuously while a slow brightness roll sweeps the screen every ~3 s; red and blue channels are offset by ~1 pt for phosphor bleed, and a radial vignette darkens the corners by ~28%. The result feels warm, nostalgic and analog without sacrificing legibility.",
-            "内容仿佛显示在复古 CRT 显示器上：画面呈桶形畸变、边缘向外鼓起，弧面玻璃外为纯黑；细密的水平扫描线持续向下滚动，同时每约 3 秒有一道缓慢的亮度波扫过屏幕；红、蓝通道偏移约 1pt 模拟荧光粉溢色，径向暗角使四角变暗约 28%。整体温暖、怀旧、充满模拟质感，同时不牺牲可读性。"
+            "Content is rendered as if on a vintage CRT: the image is barrel-distorted so edges bow outward, with pure black outside the curved glass; fine horizontal scanlines crawl continuously while a slow brightness roll sweeps down the screen every ~3 s; red and blue channels are offset by ~1 pt for phosphor bleed, and a radial vignette darkens the edges by ~28%, more in the corners. The result feels warm, nostalgic and analog without sacrificing legibility.",
+            "内容仿佛显示在复古 CRT 显示器上：画面呈桶形畸变、边缘向外鼓起，弧面玻璃外为纯黑；细密的水平扫描线持续蠕动，同时每约 3 秒有一道缓慢的亮度波自上而下扫过屏幕；红、蓝通道偏移约 1pt 模拟荧光粉溢色，径向暗角使边缘变暗约 28%，四角更暗。整体温暖、怀旧、充满模拟质感，同时不牺牲可读性。"
         ),
         implementation: L(
             "A Metal layer shader remaps UVs with barrel distortion and multiplies scanline, roll and vignette terms; visualEffect provides the view size.",
@@ -241,7 +241,7 @@ private struct DissolveDemo: View {
     }
 
     private func toggle() {
-        Haptics.tap(.rigid)
+        if !ctx.isPreview { Haptics.tap(.rigid) }
         withAnimation(.easeInOut(duration: ctx["duration"])) { gone.toggle() }
     }
 }
@@ -269,7 +269,7 @@ private struct GlitchDemo: View {
     }
 
     private func triggerBurst() {
-        Haptics.tap(.heavy)
+        if !ctx.isPreview { Haptics.tap(.heavy) }
         burstUntil = Date().addingTimeInterval(0.4)
     }
 }

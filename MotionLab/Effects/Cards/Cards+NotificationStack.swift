@@ -98,7 +98,7 @@ private struct CardsNotificationDemo: View {
     }
 
     private func toggle() {
-        Haptics.tap(.soft)
+        if !ctx.isPreview { Haptics.tap(.soft) }
         expanded.toggle()
     }
 }

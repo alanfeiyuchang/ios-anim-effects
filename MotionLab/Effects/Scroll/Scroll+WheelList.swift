@@ -54,7 +54,7 @@ private struct ScrollWheelDemo: View {
             wheel
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sensoryFeedback(.selection, trigger: current)
+        .sensoryFeedback(.selection, trigger: current) { _, _ in !ctx.isPreview }
         .autoplay(ctx.isPreview, every: 1.3) { advance() }
     }
 

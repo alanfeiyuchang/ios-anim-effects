@@ -11,8 +11,8 @@ extension Effect {
             "列表行与网格瓦片互相重排，每个元素都飞向新的位置。"
         ),
         prompt: L(
-            "A collection of six items can be shown as a list (36 pt rows: icon, title, subtitle) or a 3-column grid of square-ish tiles. Toggling the layout morphs every item in place: each one travels from its old frame to its new one while its own contents re-flow from a horizontal to a vertical stack — the icon grows from 28 to 36 pt and the corner radius shifts from 14 to 18 pt. Items move on a spring (response ≈0.5 s, damping ≈0.8) with a ~25 ms cascade in reading order, so the change ripples across the collection. The toggle glyph swaps list ↔ grid with a symbol replace and a selection haptic. Nothing fades — objects visibly keep their identity.",
-            "六个条目可以显示为列表（高 36pt 的行：图标、标题、副标题），也可以显示为三列近方形的网格瓦片。切换布局时每个条目都原地形变：从旧位置移动到新位置，同时内部内容从横向排列重排为纵向排列——图标从 28pt 放大到 36pt，圆角从 14pt 过渡到 18pt。条目以弹簧（响应约 0.5 秒、阻尼约 0.8）移动，并按阅读顺序错开约 25 毫秒，形成波浪式的级联。切换按钮的图标以符号替换动画在列表与网格之间转换，并伴随选择触觉。全程没有淡入淡出——每个对象都清晰地保持自身身份。"
+            "A collection of six items can be shown as a list (38 pt rows: icon, title, subtitle) or a 3-column grid of square-ish tiles. Toggling the layout morphs every item in place: each one travels from its old frame to its new one while its own contents re-flow from a horizontal to a vertical stack — the icon grows from 28 to 36 pt and the corner radius shifts from 14 to 18 pt. Items move on a spring (response ≈0.5 s, damping ≈0.8) with a ~25 ms cascade in reading order, so the change ripples across the collection. The toggle glyph swaps list ↔ grid with a symbol replace and a selection haptic. Nothing fades — objects visibly keep their identity.",
+            "六个条目可以显示为列表（高 38pt 的行：图标、标题、副标题），也可以显示为三列近方形的网格瓦片。切换布局时每个条目都原地形变：从旧位置移动到新位置，同时内部内容从横向排列重排为纵向排列——图标从 28pt 放大到 36pt，圆角从 14pt 过渡到 18pt。条目以弹簧（响应约 0.5 秒、阻尼约 0.8）移动，并按阅读顺序错开约 25 毫秒，形成波浪式的级联。切换按钮的图标以符号替换动画在列表与网格之间转换，并伴随选择触觉。全程没有淡入淡出——每个对象都清晰地保持自身身份。"
         ),
         implementation: L(
             "A custom Layout places items in N columns; changing its column count inside withAnimation animates every subview's frame, while each item switches between HStackLayout and VStackLayout through AnyLayout to keep child identity.",
@@ -54,7 +54,7 @@ private struct ListGridDemo: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            CollectionLayout(columns: isGrid ? 3 : 1, itemHeight: isGrid ? 104 : 36, spacing: isGrid ? 8 : 6) {
+            CollectionLayout(columns: isGrid ? 3 : 1, itemHeight: isGrid ? 104 : 38, spacing: isGrid ? 8 : 4) {
                 ForEach(0..<libraryItems.count, id: \.self) { index in
                     LibraryCell(item: libraryItems[index], isGrid: isGrid, language: ctx.language)
                         .animation(spring.delay(Double(index) * ctx["cascade"]), value: isGrid)
@@ -116,7 +116,7 @@ private struct LibraryCell: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, isGrid ? 10 : 4)
+        .padding(.vertical, isGrid ? 10 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Palette.elevated, in: RoundedRectangle(cornerRadius: isGrid ? 18 : 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: isGrid ? 18 : 14, style: .continuous).strokeBorder(Palette.stroke))

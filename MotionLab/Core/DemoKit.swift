@@ -47,12 +47,21 @@ private struct AutoplayModifier: ViewModifier {
     let initialDelay: Double
     let action: () -> Void
 
+    private struct Key: Hashable {
+        let active: Bool
+        let interval: Double
+    }
+
     func body(content: Content) -> some View {
-        content.task(id: active) {
+        // Keyed on the interval too, so interval sliders take effect immediately.
+        content.task(id: Key(active: active, interval: interval)) {
             guard active else { return }
             try? await Task.sleep(for: .seconds(initialDelay))
             while !Task.isCancelled {
+                // Autoplay only runs in previews: never buzz the user for simulated taps.
+                Haptics.isMuted = true
                 action()
+                Haptics.isMuted = false
                 try? await Task.sleep(for: .seconds(interval))
             }
         }
@@ -79,19 +88,26 @@ extension View {
 // MARK: - Haptics
 
 enum Haptics {
+    /// Set while an autoplay (preview) action runs so simulated interactions stay silent.
+    nonisolated(unsafe) static var isMuted = false
+
     static func tap(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
+        guard !isMuted else { return }
         UIImpactFeedbackGenerator(style: style).impactOccurred()
     }
 
     static func success() {
+        guard !isMuted else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
     static func error() {
+        guard !isMuted else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.error)
     }
 
     static func selection() {
+        guard !isMuted else { return }
         UISelectionFeedbackGenerator().selectionChanged()
     }
 }

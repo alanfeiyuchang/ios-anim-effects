@@ -8,14 +8,14 @@ extension Effect {
         name: L("Heart Like Burst", "点赞爱心迸发"),
         summary: L("The heart squashes, fills and bursts with a ring of particles.", "爱心先压缩再填色，伴随一圈粒子迸发。"),
         prompt: L(
-            "An outlined heart with a like count beside it. On like, the heart anticipates by squashing to 70%, then springs to 125% as it swaps to a filled red glyph and settles at 100% (≈0.5 s total). At the peak a thin ring expands from the centre to ~2× and fades, and ten small multicoloured dots shoot radially outwards ~56 pt, shrinking and fading on an ease-out, while the count rolls up by one with a light haptic. Unliking simply replaces back to the outline with a gentle shrink and the count rolls down. Joyful, rewarding and snappy — the signature social micro-interaction.",
-            "描边爱心旁显示点赞数。点赞时，爱心先预备性压缩到 70%，再弹到 125% 并替换为实心红色，随后回到 100%（全程约 0.5 秒）。在最高点，一道细圆环从中心扩散到约 2 倍并淡出，十颗彩色小圆点沿径向向外射出约 56pt，以缓出曲线缩小并消失，同时点赞数向上滚动加一，伴随轻触感。取消点赞时则以轻微收缩替换回描边样式，数字向下滚动。欢快、有回报感、干脆利落——社交产品的招牌微交互。"
+            "An outlined heart with a like count beside it. On like, the heart anticipates by squashing to 70%, then springs to 125% as it swaps to a filled red glyph and settles at 100% (≈0.6 s total). At the peak a thin ring expands from the centre to ~2× and fades, and ten small multicoloured dots shoot radially outwards ~56 pt, shrinking and fading on an ease-out, while the count rolls up by one with a medium haptic. Unliking simply replaces back to the outline glyph and the count rolls down with a selection tick. Joyful, rewarding and snappy — the signature social micro-interaction.",
+            "描边爱心旁显示点赞数。点赞时，爱心先预备性压缩到 70%，再弹到 125% 并替换为实心红色，随后回到 100%（全程约 0.6 秒）。在最高点，一道细圆环从中心扩散到约 2 倍并淡出，十颗彩色小圆点沿径向向外射出约 56pt，以缓出曲线缩小并消失，同时点赞数向上滚动加一，伴随中等强度触感。取消点赞时直接替换回描边样式，数字向下滚动，并伴随一次选择触感。欢快、有回报感、干脆利落——社交产品的招牌微交互。"
         ),
         implementation: L(
             "keyframeAnimator drives heart scale and a 0→1 burst progress (ring + radial dots are invisible at both ends); the glyph swaps via symbolEffect replace and the count uses numericText.",
             "keyframeAnimator 驱动爱心缩放以及 0→1 的迸发进度（圆环与径向粒子在两端都不可见）；图标通过 symbolEffect 替换切换，数字使用 numericText。"
         ),
-        apis: ["keyframeAnimator", "contentTransition(.symbolEffect(.replace))", "contentTransition(.numericText(value:))", "sensoryFeedback"],
+        apis: ["keyframeAnimator", "contentTransition(.symbolEffect(.replace))", "contentTransition(.numericText(value:))", "KeyframeTrack"],
         tags: ["like", "heart", "burst", "particles", "点赞", "爱心", "粒子", "喜欢"],
         params: [
             .slider("radius", L("Burst radius", "迸发半径"), 30...90, default: 56, decimals: 0, unit: "pt"),

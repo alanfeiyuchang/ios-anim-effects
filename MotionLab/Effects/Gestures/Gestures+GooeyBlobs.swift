@@ -8,8 +8,8 @@ extension Effect {
         name: L("Gooey Drag", "黏液拖拽"),
         summary: L("Pull a droplet out of a blob and watch the liquid bridge stretch, snap and re-merge.", "从团块中拉出液滴，液桥拉伸、断开再融合。"),
         prompt: L(
-            "A 112 pt liquid blob sits at the center with a 72 pt droplet fused to its right side and a 34 pt satellite drop trailing it, all rendered as one aurora-gradient surface (mint → sky → violet) with a soft glow. The surface uses a metaball look: shapes are blurred ~14 pt and alpha-thresholded at 50%, so whenever they come close a smooth, necking liquid bridge forms between them. Dragging pulls the droplet toward the finger on a physically simulated spring (≈ 0.5 s response, damping ≈ 0.45); the bridge thins and snaps as it leaves, the satellite follows with extra lag. Releasing flings the droplet home, where it overshoots, merges and wobbles before settling. Viscous, tactile, delightfully liquid.",
-            "中央是一个 112pt 的液态团块，右侧融合着一颗 72pt 的液滴，后方还拖着一颗 34pt 的小卫星滴，三者作为同一块极光渐变表面（薄荷绿 → 天蓝 → 紫）渲染，并带柔和光晕。表面采用“元球”效果：图形先模糊约 14pt，再以 50% 透明度阈值裁切，因此只要彼此靠近就会自然生出平滑、带颈缩的液桥。拖动时，液滴通过物理模拟的弹簧（响应约 0.5 秒、阻尼约 0.45）被拉向手指，液桥逐渐变细直至断开，小卫星以更大的滞后紧随。松手后液滴被弹回原位，过冲、融合并晃动后才稳定。黏稠、可触，充满液体的趣味。"
+            "A 112 pt liquid blob sits at the center with a 72 pt droplet fused to its right side and a 34 pt satellite drop hidden inside that droplet, all rendered as one aurora-gradient surface (mint → sky → violet) with a soft glow. The surface uses a metaball look: shapes are blurred ~14 pt and alpha-thresholded at 50%, so whenever they come close a smooth, necking liquid bridge forms between them. Dragging pulls the droplet toward the finger on a physically simulated spring (≈ 0.5 s response, damping ≈ 0.45); the bridge thins and snaps as it leaves, and the satellite peels out and trails behind on a softer, laggier spring. Releasing flings the droplet home, where it overshoots, merges and wobbles before settling. Viscous, tactile, delightfully liquid.",
+            "中央是一个 112pt 的液态团块，右侧融合着一颗 72pt 的液滴，液滴内还藏着一颗 34pt 的小卫星滴，三者作为同一块极光渐变表面（薄荷绿 → 天蓝 → 紫）渲染，并带柔和光晕。表面采用“元球”效果：图形先模糊约 14pt，再以 50% 透明度阈值裁切，因此只要彼此靠近就会自然生出平滑、带颈缩的液桥。拖动时，液滴通过物理模拟的弹簧（响应约 0.5 秒、阻尼约 0.45）被拉向手指，液桥逐渐变细直至断开，小卫星则从液滴中分离，以更软、更滞后的弹簧拖在其后。松手后液滴被弹回原位，过冲、融合并晃动后才稳定。黏稠、可触，充满液体的趣味。"
         ),
         implementation: L(
             "A TimelineView(.animation) steps a small spring integrator stored in a reference-type model; a Canvas blurs and alpha-thresholds the circles into metaballs, and the result masks an aurora gradient.",
@@ -90,7 +90,7 @@ private struct GooeyDemo: View {
                             let t = timeline.date.timeIntervalSinceReferenceDate
                             let pull = max(0, sin(t * 1.4))
                             model.target = CGPoint(
-                                x: model.home.x + CGFloat(pull * 70 + 10 * cos(t * 2.3)),
+                                x: model.home.x + CGFloat(pull * 44 + 6 * cos(t * 2.3)),
                                 y: CGFloat(sin(t * 0.9) * 70 * pull)
                             )
                         }

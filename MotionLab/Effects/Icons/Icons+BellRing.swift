@@ -8,8 +8,8 @@ extension Effect {
         name: L("Bell Ring", "铃铛摇响"),
         summary: L("A pendulum swing with decaying keyframes and a popping badge.", "钟摆式摇动，关键帧逐渐衰减，角标随之弹出。"),
         prompt: L(
-            "A notification bell hangs from its top hinge. On a new alert it rings like a real pendulum: it swings to +18°, −15°, +11°, −7°, +3° and back to rest, each swing slightly shorter (≈0.12 s apart) with cubic easing so the energy visibly decays, while the whole bell pulses to 112% on the first strike. Sound-wave arcs flare out on both sides and fade within 0.4 s, and a red count badge pops from 0 to 125% then settles to 100% as the number rolls up. A medium haptic lands on the first strike — lively, physical and attention-getting without being alarming.",
-            "通知铃铛以顶部为铰点悬挂。收到新提醒时，它像真正的钟摆一样摇响：依次摆到 +18°、−15°、+11°、−7°、+3° 再回到静止，每次摆幅递减（间隔约 0.12 秒），使用三次缓动让能量肉眼可见地衰减；第一下敲击时整个铃铛放大到 112%。两侧声波弧线向外迸发并在 0.4 秒内淡出，红色计数角标从 0 弹到 125% 再回落到 100%，数字同步向上滚动。第一下敲击伴随中等强度触感——生动、有物理感、引人注意却不令人紧张。"
+            "A notification bell hangs from its top hinge. On a new alert it rings like a real pendulum: it swings to +18°, −15°, +11°, −7°, +3° and back to rest, each swing slightly shorter (≈0.12 s apart) with cubic easing so the energy visibly decays, while the whole bell pulses to 112% on the first strike. Sound-wave arcs flare out on both sides, hold for a beat and fade out by ~0.55 s, while the red count badge punches up to 125% and springs back to 100% as the number rolls up. A medium haptic lands on the first strike — lively, physical and attention-getting without being alarming.",
+            "通知铃铛以顶部为铰点悬挂。收到新提醒时，它像真正的钟摆一样摇响：依次摆到 +18°、−15°、+11°、−7°、+3° 再回到静止，每次摆幅递减（间隔约 0.12 秒），使用三次缓动让能量肉眼可见地衰减；第一下敲击时整个铃铛放大到 112%。两侧声波弧线向外迸发，短暂停留后在约 0.55 秒时完全淡出；红色计数角标同时弹大到 125% 再回落到 100%，数字同步向上滚动。第一下敲击伴随中等强度触感——生动、有物理感、引人注意却不令人紧张。"
         ),
         implementation: L(
             "keyframeAnimator(initialValue:trigger:) with separate KeyframeTracks for angle (CubicKeyframes), scale and wave opacity (SpringKeyframes); rotationEffect is anchored at .top.",

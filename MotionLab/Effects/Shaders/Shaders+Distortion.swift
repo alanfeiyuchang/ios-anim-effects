@@ -10,8 +10,8 @@ extension Effect {
         name: L("Touch Ripple", "触点涟漪"),
         summary: L("A Metal water ripple that radiates from where you tap.", "从触点向外扩散的 Metal 水波涟漪。"),
         prompt: L(
-            "On tap, a circular water ripple radiates outward from the exact touch point across the whole surface. Each pixel is displaced along the radial direction by a damped sine wave — amplitude ≈12 pt, frequency ≈15, exponential decay ≈8 — that reaches it after a delay proportional to its distance (wave speed ≈1200 pt/s), so the ring visibly travels. Crests are brightened by ~30% to fake a specular highlight. The whole ripple settles in about 1–2 seconds; subsequent taps restart it from the new point, feeling like touching the surface of liquid glass.",
-            "点击时，一圈水波从精确的触点位置向整个画面扩散。每个像素沿径向被一条衰减正弦波推移——振幅约 12pt、频率约 15、指数衰减约 8——并按其与触点的距离延迟到达（波速约 1200pt/s），因此能清楚看到波环向外推进。波峰处亮度提升约 30%，模拟高光反射。整个涟漪在 1～2 秒内平息，再次点击则从新位置重新激起，如同触碰一块液态玻璃。"
+            "On tap, a circular water ripple radiates outward from the exact touch point across the whole surface. Each pixel is displaced along the radial direction by a damped sine wave — amplitude ≈12 pt, frequency ≈15, exponential decay ≈8 — that reaches it after a delay proportional to its distance (wave speed ≈1200 pt/s), so the ring visibly travels. Crests are brightened by ~30% to fake a specular highlight. Each point settles within about half a second of the ring passing, so the whole ripple is gone in well under a second; subsequent taps restart it from the new point, feeling like touching the surface of liquid glass.",
+            "点击时，一圈水波从精确的触点位置向整个画面扩散。每个像素沿径向被一条衰减正弦波推移——振幅约 12pt、频率约 15、指数衰减约 8——并按其与触点的距离延迟到达（波速约 1200pt/s），因此能清楚看到波环向外推进。波峰处亮度提升约 30%，模拟高光反射。波环经过后每一点约半秒即归于平静，整圈涟漪不到一秒便完全消散；再次点击则从新位置重新激起，如同触碰一块液态玻璃。"
         ),
         implementation: L(
             "A [[stitchable]] Metal layer shader samples the view at a radially displaced position. A keyframeAnimator drives the elapsed time from 0 to the duration each time the tap trigger changes.",
@@ -36,8 +36,8 @@ extension Effect {
         name: L("Flag Wave", "旗帜波动"),
         summary: L("Continuous sine distortion like fabric in the wind.", "如风中布料般持续起伏的正弦扭曲。"),
         prompt: L(
-            "A card undulates continuously like a flag in a gentle breeze. Every pixel is displaced vertically by a sine wave travelling along the x-axis and horizontally by a slower cosine along the y-axis at half the amplitude, so the surface ripples diagonally rather than bouncing uniformly. The motion loops seamlessly with no easing, amplitude ≈6 pt and a wavelength of ≈30 pt, producing a calm, hypnotic, cloth-like drift ideal for hero artwork or ambient headers.",
-            "卡片像微风中的旗帜一样持续起伏。每个像素在竖直方向受沿 x 轴传播的正弦波推移，在水平方向受沿 y 轴、速度更慢、振幅减半的余弦波推移，使表面呈斜向涟漪而非整体上下跳动。运动无缝循环、无缓动，振幅约 6pt、波长约 30pt，呈现平静、催眠般的布料飘动感，适合头图或氛围型标题区。"
+            "A card undulates continuously like a flag in a gentle breeze. Every pixel is displaced vertically by a sine wave travelling along the x-axis and horizontally by a slower cosine along the y-axis at half the amplitude, so the surface ripples diagonally rather than bouncing uniformly. The motion loops seamlessly with no easing: amplitude ≈6 pt, a wavelength parameter of 30 pt (≈190 pt crest to crest, i.e. 2π × 30) and a ≈2 s cycle, producing a calm, hypnotic, cloth-like drift ideal for hero artwork or ambient headers.",
+            "卡片像微风中的旗帜一样持续起伏。每个像素在竖直方向受沿 x 轴传播的正弦波推移，在水平方向受沿 y 轴、速度更慢、振幅减半的余弦波推移，使表面呈斜向涟漪而非整体上下跳动。运动无缝循环、无缓动：振幅约 6pt，波长参数 30pt（波峰间距约 190pt，即 2π × 30），周期约 2 秒，呈现平静、催眠般的布料飘动感，适合头图或氛围型标题区。"
         ),
         implementation: L(
             "A Metal distortion shader returns a new sample position from sin/cos of position and time; a TimelineView(.animation) feeds the time every frame.",
@@ -224,20 +224,8 @@ private struct MagnifierDemo: View {
 
     var body: some View {
         ShaderClock(paused: !ctx.isPreview) { time in
-            let point = currentCenter(time: time)
-            let radius = ctx["radius"]
             ShaderGridArtwork()
-                .distortionEffect(
-                    ShaderLibrary.mlBulge(.float2(point), .float(radius), .float(ctx["strength"])),
-                    maxSampleOffset: CGSize(width: radius, height: radius)
-                )
-                .overlay {
-                    Circle()
-                        .strokeBorder(Color.white.opacity(0.7), lineWidth: 1)
-                        .frame(width: radius * 2, height: radius * 2)
-                        .shadow(color: .black.opacity(0.35), radius: 10, y: 6)
-                        .position(point)
-                }
+                .modifier(BulgeLensModifier(center: currentCenter(time: time), radius: ctx["radius"], strength: ctx["strength"]))
         }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .contentShape(Rectangle())
@@ -255,6 +243,33 @@ private struct MagnifierDemo: View {
         let mid = CGPoint(x: size.width / 2, y: size.height / 2)
         guard ctx.isPreview else { return mid }
         return CGPoint(x: mid.x + cos(time * 1.2) * 80, y: mid.y + sin(time * 1.6) * 60)
+    }
+}
+
+/// Animatable so the release spring moves the bulge and its rim together (shader arguments don't animate on their own).
+private struct BulgeLensModifier: ViewModifier, Animatable {
+    var center: CGPoint
+    var radius: Double
+    var strength: Double
+
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(center.x, center.y) }
+        set { center = CGPoint(x: newValue.first, y: newValue.second) }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .distortionEffect(
+                ShaderLibrary.mlBulge(.float2(center), .float(radius), .float(strength)),
+                maxSampleOffset: CGSize(width: radius, height: radius)
+            )
+            .overlay {
+                Circle()
+                    .strokeBorder(Color.white.opacity(0.7), lineWidth: 1)
+                    .frame(width: radius * 2, height: radius * 2)
+                    .shadow(color: .black.opacity(0.35), radius: 10, y: 6)
+                    .position(center)
+            }
     }
 }
 

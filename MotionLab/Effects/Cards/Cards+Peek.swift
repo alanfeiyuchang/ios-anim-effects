@@ -103,7 +103,7 @@ private struct CardsPeekDemo: View {
 
     private func peek(_ i: Int) {
         guard peeked == nil else { return }
-        Haptics.tap(.medium)
+        if !ctx.isPreview { Haptics.tap(.medium) }
         withAnimation(.spring(response: ctx["response"], dampingFraction: 0.72)) {
             peeked = i
             pressing = nil

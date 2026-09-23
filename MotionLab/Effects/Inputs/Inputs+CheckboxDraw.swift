@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The box pops, the checkmark draws itself and the task strikes through.", "方框弹起，对勾自行描绘，任务文字被划掉。"),
         prompt: L(
             "A to-do list card whose rows each have a 28 pt rounded checkbox (8 pt continuous corners, 2 pt outline). Checking a row: the gradient fill blooms from 30% to full size inside the box while the box squashes to 85% and rebounds to 100% on a bouncy spring; after an 80 ms delay a white checkmark stroke (3 pt, round caps) draws itself from start to end over ~280 ms ease-out. The row's title dims to secondary and a 2 pt strike-through line grows left to right across it on the same curve. Unchecking rewinds the stroke in about 60% of the time and shrinks the fill away. A light haptic ticks each time. It feels crisp, handmade and rewarding to complete.",
-            "待办清单卡片，每行左侧是 28pt 的圆角勾选框（8pt 连续圆角，2pt 描边）。勾选时：渐变填充在框内从 30% 扩展到满格，方框以弹性弹簧先压缩到 85% 再回弹到 100%；延迟 80 毫秒后，一条白色对勾笔画（3pt、圆头）以约 280 毫秒的缓出曲线从起点描绘到终点。该行标题同时褪为次级色，一条 2pt 删除线以相同曲线从左到右划过。取消勾选时笔画反向擦除、填充收缩。每次切换伴随轻触觉。干脆利落，带手作感，完成任务时格外有成就感。"
+            "待办清单卡片，每行左侧是 28pt 的圆角勾选框（8pt 连续圆角，2pt 描边）。勾选时：渐变填充在框内从 30% 扩展到满格，方框以弹性弹簧先压缩到 85% 再回弹到 100%；延迟 80 毫秒后，一条白色对勾笔画（3pt、圆头）以约 280 毫秒的缓出曲线从起点描绘到终点。该行标题同时褪为次级色，一条 2pt 删除线以相同曲线从左到右划过。取消勾选时笔画以约 60% 的时长反向擦除，填充随之收缩。每次切换伴随轻触觉。干脆利落，带手作感，完成任务时格外有成就感。"
         ),
         implementation: L(
             "A custom checkmark Shape is revealed with trim(from:to:) under a delayed ease-out animation; the fill and a keyframeAnimator provide the pop, and a leading-anchored scaleEffect(x:) draws the strike-through.",

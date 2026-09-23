@@ -60,8 +60,12 @@ jobs:
     needs: build
     runs-on: macos-26
     timeout-minutes: 60
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Select Xcode
         run: |
@@ -77,3 +81,15 @@ jobs:
           name: screenshots
           path: screenshots
           retention-days: 7
+
+      - name: Commit screenshots to docs/screenshots
+        run: |
+          rm -rf docs/screenshots
+          mkdir -p docs/screenshots
+          cp -R screenshots/* docs/screenshots/
+          find docs/screenshots -name '*.jpg' -exec sips -Z 900 -s formatOptions 50 {} \; >/dev/null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          git commit -m "Update simulator screenshots [skip ci]" || exit 0
+          for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break; sleep 5; done

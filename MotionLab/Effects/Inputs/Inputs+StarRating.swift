@@ -8,8 +8,8 @@ extension Effect {
         name: L("Star Rating", "星级评分"),
         summary: L("Stars fill in a cascading wave and pop with a bounce.", "星星以波浪式依次点亮并弹跳。"),
         prompt: L(
-            "A review card (\"How was your stay?\") with five 36 pt stars, a caption and a Submit button. Tapping or scrubbing across sets the rating: newly lit stars fill with a warm amber-to-coral gradient one after another with a 50 ms stagger, each punching up to 135% in 120 ms then settling with a bouncy spring, while stars being cleared shrink to 85% and dim back to a soft outline tint. The caption (\"Terrible\" … \"Amazing!\") swaps with a push transition from below. The Submit capsule wakes from a faint tint to a warm sunset gradient once any star is set. A selection haptic ticks on every change. The cascade makes a single tap feel like a small celebration while keeping the value unmistakable.",
-            "一张评价卡片（“这次入住体验如何？”）：五颗 36pt 星星、一行说明文字与“提交评价”按钮。点击或横向拖动设置评分：新点亮的星星以 50 毫秒错峰依次填充琥珀到珊瑚色渐变，每颗先在 120 毫秒内弹到 135%，再以弹性弹簧回落；被取消的星星缩到 85% 并褪回柔和的空心色。说明文字（“很差”……“太棒了！”）以自下而上的推入过渡切换。一旦有评分，“提交评价”胶囊就从淡灰底色唤醒为温暖的日落渐变。每次评分变化触发一次选择触觉。依次点亮的节奏让一次点击也像一场小小的庆祝，同时数值一目了然。"
+            "A review card (\"How was your stay?\") with five 36 pt stars, a caption and a Submit button. Tapping or scrubbing across sets the rating: newly lit stars fill with a warm amber-to-coral gradient one after another with a 50 ms stagger, each punching up to 135% in 120 ms then settling on a bouncy spring (response 0.45 s, damping 0.6), while stars being cleared shrink to 85% and dim back to a soft outline tint. The caption (\"Terrible\" … \"Amazing!\") swaps with a push transition from below. The Submit capsule wakes from a faint tint to a warm sunset gradient once any star is set. A selection haptic ticks on every change. The cascade makes a single tap feel like a small celebration while keeping the value unmistakable.",
+            "一张评价卡片（“这次入住体验如何？”）：五颗 36pt 星星、一行说明文字与“提交评价”按钮。点击或横向拖动设置评分：新点亮的星星以 50 毫秒错峰依次填充琥珀到珊瑚色渐变，每颗先在 120 毫秒内弹到 135%，再以弹性弹簧（响应 0.45 秒、阻尼 0.6）回落；被取消的星星缩到 85% 并褪回柔和的空心色。说明文字（“很差”……“太棒了！”）以自下而上的推入过渡切换。一旦有评分，“提交评价”胶囊就从淡灰底色唤醒为温暖的日落渐变。每次评分变化触发一次选择触觉。依次点亮的节奏让一次点击也像一场小小的庆祝，同时数值一目了然。"
         ),
         implementation: L(
             "A zero-distance DragGesture maps x-position to a rating; each star runs a keyframeAnimator on the change trigger with an index-based delay, and a gradient layer fades in with the same delay via animation(_:value:).",
@@ -20,6 +20,8 @@ extension Effect {
         params: [
             .slider("stagger", L("Stagger", "错峰间隔"), 0...0.15, default: 0.05, unit: "s"),
             .slider("pop", L("Pop scale", "弹跳幅度"), 1.0...1.6, default: 1.35),
+            .slider("response", L("Settle response", "回落弹簧响应"), 0.2...0.8, default: 0.45, unit: "s"),
+            .slider("damping", L("Settle damping", "回落阻尼"), 0.3...1.0, default: 0.6),
         ]
     ) { ctx in
         InputStarRatingDemo(ctx: ctx)
@@ -53,6 +55,8 @@ private struct InputStarRatingDemo: View {
             Spacer()
             card
             Spacer()
+            DemoHint(text: L("Tap a star or drag across them", "点击星星，或横向拖过它们"), ctx: ctx)
+                .padding(.bottom, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.3, delay: 0.4) { previewTick() }
@@ -111,6 +115,7 @@ private struct InputStarRatingDemo: View {
                     size: starSize,
                     delay: delay(for: index),
                     pop: ctx["pop"],
+                    settle: Spring(response: ctx["response"], dampingRatio: ctx["damping"]),
                     trigger: changes
                 )
             }
@@ -156,6 +161,7 @@ private struct InputStar: View {
     let size: CGFloat
     let delay: Double
     let pop: Double
+    let settle: Spring
     let trigger: Int
 
     var body: some View {
@@ -179,7 +185,7 @@ private struct InputStar: View {
             KeyframeTrack(\.self) {
                 LinearKeyframe(1, duration: lead)
                 CubicKeyframe(peak, duration: 0.12)
-                SpringKeyframe(1, duration: 0.45, spring: .bouncy)
+                SpringKeyframe(1, duration: max(settle.settlingDuration, 0.3), spring: settle)
             }
         }
     }

@@ -117,9 +117,16 @@ private struct SideDrawerDemo: View {
     }
 }
 
-private struct DrawerMenu: View {
-    let progress: CGFloat
+/// Animatable so each frame of the open/close spring re-evaluates the per-row thresholds,
+/// which keeps the cascade visible on taps and autoplay, not only while dragging.
+private struct DrawerMenu: View, Animatable {
+    var progress: CGFloat
     let language: AppLanguage
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {

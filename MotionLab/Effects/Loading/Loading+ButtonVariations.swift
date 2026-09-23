@@ -181,6 +181,7 @@ private struct DotsButtonDemo: View {
     let ctx: DemoContext
     @State private var phase: DotsSendPhase = .idle
     @State private var token = 0
+    @State private var task: Task<Void, Never>?
 
     private var rollIn: AnyTransition {
         AnyTransition.asymmetric(
@@ -201,6 +202,10 @@ private struct DotsButtonDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["duration"] + 3.2, delay: 0.5) { send() }
+        .onDisappear {
+            task?.cancel()
+            phase = .idle
+        }
     }
 
     private func composer(zh: Bool) -> some View {
@@ -245,13 +250,14 @@ private struct DotsButtonDemo: View {
         let current = token
         if live { Haptics.tap(.medium) }
         withAnimation(spring) { phase = .sending }
-        Task {
+        task?.cancel()
+        task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
-            guard token == current else { return }
+            guard !Task.isCancelled, token == current else { return }
             withAnimation(spring) { phase = .sent }
             if live { Haptics.success() }
             try? await Task.sleep(for: .seconds(1.4))
-            guard token == current else { return }
+            guard !Task.isCancelled, token == current else { return }
             withAnimation(spring) { phase = .idle }
         }
     }
@@ -335,6 +341,7 @@ private struct TraceButtonDemo: View {
     @State private var closeFrom: Double = 0
     @State private var closed: Double = 0
     @State private var token = 0
+    @State private var task: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 22) {
@@ -344,6 +351,11 @@ private struct TraceButtonDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["duration"] + 3.4, delay: 0.5) { tap() }
+        .onDisappear {
+            task?.cancel()
+            phase = .idle
+            closed = 0
+        }
     }
 
     private var face: some View {
@@ -356,8 +368,10 @@ private struct TraceButtonDemo: View {
                 TraceComet(started: started, lap: max(ctx["lap"], 0.2), length: ctx["length"], preview: ctx.isPreview)
                     .transition(.opacity)
             }
+            // Its own 0.5 s curve: the 0.3 s modifier below would otherwise override the closing trace.
             TraceSlice(from: closeFrom, length: closed)
                 .stroke(Palette.green, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .animation(.easeInOut(duration: 0.5), value: closed)
                 .opacity(closed > 0.001 ? 1 : 0)
             labelView(zh: zh)
         }
@@ -394,6 +408,7 @@ private struct TraceButtonDemo: View {
     private func tap() {
         if phase == .done {
             token += 1
+            task?.cancel()
             withAnimation(.smooth(duration: 0.35)) {
                 phase = .idle
                 closed = 0
@@ -410,9 +425,10 @@ private struct TraceButtonDemo: View {
         withAnimation(.smooth(duration: 0.3)) { phase = .working }
         let wait = ctx["duration"]
         let lap = max(ctx["lap"], 0.2)
-        Task {
+        task?.cancel()
+        task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
-            guard token == current else { return }
+            guard !Task.isCancelled, token == current else { return }
             // Continue from where the comet's head currently is.
             let elapsed: Double = Date.now.timeIntervalSince(started)
             let head: Double = (elapsed / lap).truncatingRemainder(dividingBy: 1)
@@ -425,7 +441,7 @@ private struct TraceButtonDemo: View {
             if live { Haptics.success() }
             if !live {
                 try? await Task.sleep(for: .seconds(2.2))
-                guard token == current else { return }
+                guard !Task.isCancelled, token == current else { return }
                 withAnimation(.smooth(duration: 0.35)) {
                     phase = .idle
                     closed = 0

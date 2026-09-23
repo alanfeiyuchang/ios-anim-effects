@@ -39,6 +39,7 @@ private struct DownloadButtonDemo: View {
     @State private var phase: DownloadPhase = .idle
     @State private var progress: Double = 0
     @State private var token = 0
+    @State private var task: Task<Void, Never>?
 
     private var spring: Animation {
         .spring(response: ctx["response"], dampingFraction: ctx["damping"])
@@ -70,6 +71,7 @@ private struct DownloadButtonDemo: View {
         .autoplay(ctx.isPreview, every: 2.4, delay: 0.6) {
             if phase == .idle || phase == .done { tap() }
         }
+        .onDisappear { task?.cancel() }
     }
 
     private var appIcon: some View {
@@ -89,6 +91,7 @@ private struct DownloadButtonDemo: View {
             begin()
         case .waiting, .downloading, .done:
             token += 1
+            task?.cancel()
             if !ctx.isPreview { Haptics.tap() }
             withAnimation(spring) {
                 phase = .idle
@@ -104,18 +107,19 @@ private struct DownloadButtonDemo: View {
         let live = !ctx.isPreview
         if live { Haptics.tap(.medium) }
         withAnimation(spring) { phase = .waiting }
-        Task {
+        task?.cancel()
+        task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))
-            guard token == current else { return }
+            guard !Task.isCancelled, token == current else { return }
             withAnimation(.easeInOut(duration: 0.25)) { phase = .downloading }
             while progress < 1 {
                 try? await Task.sleep(for: .seconds(0.12))
-                guard token == current else { return }
+                guard !Task.isCancelled, token == current else { return }
                 let step = Double.random(in: 0.02...0.08) * speed
                 withAnimation(.linear(duration: 0.12)) { progress = min(1, progress + step) }
             }
             try? await Task.sleep(for: .seconds(0.3))
-            guard token == current else { return }
+            guard !Task.isCancelled, token == current else { return }
             withAnimation(spring) { phase = .done }
             if live { Haptics.success() }
         }

@@ -45,6 +45,7 @@ private struct LoadButtonDemo: View {
     @State private var phase: LoadPhase = .idle
     @State private var successCount = 0
     @State private var token = 0
+    @State private var task: Task<Void, Never>?
 
     var body: some View {
         let showRing = ctx.bool("ring")
@@ -82,6 +83,11 @@ private struct LoadButtonDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["duration"] + 3.0, delay: 0.5) { start() }
+        .onDisappear {
+            // A cancelled run would otherwise leave the button stuck mid-load when it reappears.
+            task?.cancel()
+            phase = .idle
+        }
     }
 
     private func start() {
@@ -93,14 +99,15 @@ private struct LoadButtonDemo: View {
         let current = token
         if live { Haptics.tap(.medium) }
         withAnimation(morph) { phase = .loading }
-        Task {
+        task?.cancel()
+        task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
-            guard token == current else { return }
+            guard !Task.isCancelled, token == current else { return }
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .success }
             successCount += 1
             if live { Haptics.success() }
             try? await Task.sleep(for: .seconds(1.3))
-            guard token == current else { return }
+            guard !Task.isCancelled, token == current else { return }
             withAnimation(morph) { phase = .idle }
         }
     }

@@ -37,11 +37,11 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
             build > build.log 2>&1 || {
-              echo "::group::Compiler errors"
-              grep -E "error:" build.log | sort -u | head -n 200
-              echo "::endgroup::"
-              tail -n 60 build.log
+              tail -n 30 build.log
+              echo "================ COMPILER ERRORS ================"
+              grep -E "error:" build.log | sed -E 's#^.*/MotionLab/#MotionLab/#' | sort -u | head -n 300
               exit 1
             }
           grep -E "warning:" build.log | sort -u | head -n 100 || true

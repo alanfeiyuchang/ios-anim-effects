@@ -43,6 +43,8 @@ private final class TossModel {
     private var squash: CGFloat = 0
     private var onFloor = true
     private var lastDate: Date?
+    /// Rate-limits floor haptics (the timeline can re-render a frame).
+    private var lastImpact: Date?
 
     init(position: CGPoint) {
         self.position = position
@@ -88,7 +90,11 @@ private final class TossModel {
             let impact = velocity.dy
             if impact > 0 {
                 squash = min(impact / 3200, 0.25)
-                if haptics && impact > 700 { Haptics.tap(.soft) }
+                if haptics && impact > 700 && (lastImpact.map { date.timeIntervalSince($0) > 0.08 } ?? true) {
+                    lastImpact = date
+                    // Never fire side effects while SwiftUI is evaluating the view: defer to the next main-loop turn.
+                    DispatchQueue.main.async { Haptics.tap(.soft) }
+                }
                 velocity.dy = -impact * restitution
                 velocity.dx *= 0.92
                 if abs(velocity.dy) < 60 {

@@ -112,11 +112,14 @@ private struct RoseBloomDemo: View {
     private var monthLabels: some View {
         let labels = ctx.language == .zh ? roseMonthsZH : roseMonthsEN
         return ForEach(0..<12, id: \.self) { index in
-            let radians = (-90 + (Double(index) + 0.5) * 30) * .pi / 180
+            let degrees: Double = -90 + (Double(index) + 0.5) * 30
+            let radians: Double = degrees * Double.pi / 180
+            let dx: CGFloat = 132 * CGFloat(cos(radians))
+            let dy: CGFloat = 132 * CGFloat(sin(radians))
             Text(labels[index])
                 .font(.system(size: 10, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
-                .offset(x: 132 * CGFloat(cos(radians)), y: 132 * CGFloat(sin(radians)))
+                .offset(x: dx, y: dy)
         }
     }
 

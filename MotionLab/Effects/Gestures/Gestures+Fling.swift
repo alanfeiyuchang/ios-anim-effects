@@ -8,8 +8,8 @@ extension Effect {
         name: L("Fling & Wall Bounce", "惯性甩动与撞墙反弹"),
         summary: L("Throw a puck; it glides with real momentum, ricochets off the walls and can be caught mid-flight.", "甩出圆球，带着真实惯性滑行、撞墙反弹，飞行中也能随手接住。"),
         prompt: L(
-            "A glossy 64 pt puck (mint-to-sky gradient, inner highlight, colored drop shadow) sits inside a 290 pt rounded arena with a subtle dot grid. The puck follows the finger 1:1 and swells to 108% while held. On release it keeps the exact lift-off velocity and decelerates exponentially (time constant = glide factor, so it coasts velocity × glide points), with a faint comet trail whose length tracks its speed. Hitting a wall reflects the velocity with a restitution of ~0.82 and squashes the puck up to 22% for ~120 ms, anchored on the side touching the wall so it flattens against it rather than shrinking in mid-air, with a soft haptic on hard hits. The simulation pauses once the puck has settled. Because the physics is integrated every frame, touching the puck mid-flight catches it exactly where it is on screen — no jump. A hard flick ricochets several times; a gentle toss barely drifts.",
-            "一个 64pt 的光泽圆球（薄荷绿到天蓝渐变、内高光、同色投影）置于 290pt 的圆角场地中，场地铺有淡淡的点阵。按住时圆球 1:1 跟手并放大到 108%。松手后圆球完整继承离手速度，并按指数规律减速（时间常数即滑行系数，滑行距离 = 速度 × 滑行系数），身后拖出一道随速度伸缩的淡彗尾。撞墙时速度按约 0.82 的恢复系数反射，圆球以接触墙面的一侧为锚点压扁最多 22%、约 120ms 后弹回——是贴着墙变扁，而不是悬空缩小；重击时伴随轻柔触感。圆球静止后模拟随即暂停。由于物理状态逐帧积分，飞行途中按住圆球会在它当前的屏幕位置被稳稳接住，毫无跳变。重甩连续反弹，轻抛只滑出一小段。"
+            "A glossy 64 pt puck (mint-to-sky gradient, inner highlight, coloured shadow) sits in a 290 pt rounded arena with a subtle dot grid, following the finger 1:1 and swelling to 108% while held. On release it keeps its exact lift-off velocity and decelerates exponentially with a 0.35 s time constant, so it coasts about velocity × 0.35 points, trailing a faint comet tail whose length tracks its speed. Each wall reflects the velocity with 0.82 restitution and squashes the puck up to 22% against the contact side, relaxing in about 120 ms, with a soft haptic on hard hits. Physics is integrated every frame, so touching the puck mid-flight catches it exactly where it is; a hard flick ricochets several times, a gentle toss barely drifts.",
+            "一个 64 pt 的光泽圆球（薄荷绿到天蓝渐变、内高光、同色投影）放在铺着淡点阵的 290 pt 圆角场地里，按住时 1:1 跟手并放大到 108%。松手后它完整继承离手速度，以 0.35 秒的时间常数指数减速，大约滑出“速度 × 0.35”的距离，身后拖着一道随速度伸缩的淡彗尾。撞墙时速度按 0.82 的恢复系数反射，圆球贴着接触面压扁最多 22%，约 120 毫秒后复原，重击时伴随轻柔触感。物理逐帧积分，飞行途中一按就能在当前位置稳稳接住；重甩连续反弹，轻抛只滑出一小段。"
         ),
         implementation: L(
             "A reference-type model integrates velocity with exponential friction and reflects it at the walls; TimelineView(.animation) steps it every frame and renders the puck, the wall-anchored squash and the trail, and pauses once the model settles. The DragGesture grabs the model's live position, so catching mid-flight is seamless.",
@@ -43,6 +43,8 @@ private final class FlingModel {
     private(set) var squash: CGVector = .zero
     private(set) var trail: [CGPoint] = []
     private var lastDate: Date?
+    /// Rate-limits wall haptics (the timeline can re-render a frame).
+    private var lastImpact: Date?
 
     init(position: CGPoint) {
         self.position = position
@@ -90,7 +92,11 @@ private final class FlingModel {
                 squash.dy = (velocity.dy < 0 ? -1 : 1) * min(abs(velocity.dy) / 2600, 0.22)
                 velocity.dy = -velocity.dy * e
             }
-            if haptics && impact > 700 { Haptics.tap(.soft) }
+            if haptics && impact > 700 && (lastImpact.map { date.timeIntervalSince($0) > 0.08 } ?? true) {
+                lastImpact = date
+                // Never fire side effects while SwiftUI is evaluating the view: defer to the next main-loop turn.
+                DispatchQueue.main.async { Haptics.tap(.soft) }
+            }
         }
         position.x = position.x.clamped(to: 0...max(bounds.width, 0))
         position.y = position.y.clamped(to: 0...max(bounds.height, 0))

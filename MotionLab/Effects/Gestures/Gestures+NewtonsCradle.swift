@@ -107,7 +107,8 @@ private final class CradleModel {
         }
         if haptics && impact > 260 && date.timeIntervalSince(lastHaptic) > 0.07 {
             lastHaptic = date
-            Haptics.tap(.rigid)
+            // Never fire side effects while SwiftUI is evaluating the view: defer to the next main-loop turn.
+            DispatchQueue.main.async { Haptics.tap(.rigid) }
         }
     }
 

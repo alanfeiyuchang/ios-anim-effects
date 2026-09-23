@@ -4,10 +4,21 @@ struct BrowseView: View {
     @Environment(\.appLanguage) private var language
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.launchIntroActive) private var introActive
     @Environment(RecentsStore.self) private var recents
     @Environment(AppNavigator.self) private var navigator
     /// Rolled once per appearance so the dice target is stable while the page is visible.
     @State private var randomID = EffectLibrary.all.randomElement()?.id
+    /// First-appearance choreography (title glyphs, counters, sections) has been triggered.
+    @State private var revealed = SessionFlags.browseRevealed
+    /// The inline nav-bar title only fades in once the hero title has scrolled away.
+    @State private var showsNavTitle = false
+    @State private var isAppeared = false
+    @State private var heroOnScreen = true
+    @State private var focusedFeatured = 0
+    /// Bumped on every appearance: the dice "re-rolls" with a bounce.
+    @State private var diceRolls = 0
 
     var body: some View {
         ScrollViewReader { reader in
@@ -15,46 +26,90 @@ struct BrowseView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     header(reader)
                     featured
+                        .entrance(revealed, delay: 0.3, distance: 26, scale: 0.98, blur: 0)
                     if !recents.ids.isEmpty { recent }
                     categories.id(Self.categoriesAnchor)
                 }
                 .padding(.bottom, 32)
                 .animation(.smooth, value: recents.ids)
             }
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top > 44
+            } action: { _, isPastTitle in
+                withAnimation(.easeInOut(duration: 0.2)) { showsNavTitle = isPastTitle }
+            }
         }
         .background(Palette.pageBackground)
         .navigationTitle(Strings.appTitle(language))
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text(Strings.appTitle, language)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .opacity(showsNavTitle ? 1 : 0)
+                    .accessibilityHidden(!showsNavTitle)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if let randomID {
                     NavigationLink(value: Route.effect(randomID)) {
                         Image(systemName: "dice.fill")
+                            .symbolEffect(.bounce, value: diceRolls)
                     }
                     .accessibilityLabel(Strings.random(language))
                 }
             }
         }
-        .onAppear { randomID = EffectLibrary.all.randomElement()?.id }
+        .onAppear {
+            randomID = EffectLibrary.all.randomElement()?.id
+            isAppeared = true
+            if !reduceMotion { diceRolls += 1 }
+            if !introActive { playReveal() }
+        }
+        .onDisappear { isAppeared = false }
+        .onChange(of: introActive) { _, active in
+            if !active { playReveal() }
+        }
     }
 
     private static let categoriesAnchor = "categories"
 
+    /// Starts the one-time header choreography (each element animates itself off `revealed`).
+    private func playReveal() {
+        guard !revealed else { return }
+        SessionFlags.browseRevealed = true
+        revealed = true
+    }
+
+    /// The mesh only ticks while it can actually be seen.
+    private var heroAnimating: Bool {
+        isAppeared && heroOnScreen && scenePhase == .active && !reduceMotion && navigator.tab == .browse
+    }
+
+    // MARK: Header
+
     private func header(_ reader: ScrollViewProxy) -> some View {
         let effectCount = EffectLibrary.all.count
         let categoryCount = EffectCategory.allCases.count
+        let revealed = self.revealed
+        // Counters roll up from zero on first reveal (never with Reduce Motion).
+        let countsShown = revealed || reduceMotion
         return VStack(alignment: .leading, spacing: 10) {
+            GlyphRevealTitle(text: Strings.appTitle(language), revealed: revealed)
+                .accessibilityAddTraits(.isHeader)
             Text(Strings.appSubtitle, language)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .entrance(revealed, delay: 0.3, distance: 8)
             // Wraps to a second row at large text sizes instead of truncating.
             FlowLayout(spacing: 10) {
-                StatPill(value: "\(effectCount)", unit: Strings.effects(language)) {
+                StatPill(value: countsShown ? effectCount : 0, unit: Strings.effects(language)) {
                     // "235 effects" → the whole catalog in Search.
                     navigator.search("")
                 }
                 .accessibilityLabel(Text(verbatim: Strings.effectCount(effectCount, language)))
                 .accessibilityHint(Text(Strings.showAllEffects, language))
-                StatPill(value: "\(categoryCount)", unit: Strings.categoriesUnit(language)) {
+                StatPill(value: countsShown ? categoryCount : 0, unit: Strings.categoriesUnit(language)) {
                     withAnimation(reduceMotion ? nil : Animation.smooth) {
                         reader.scrollTo(Self.categoriesAnchor, anchor: .top)
                     }
@@ -62,35 +117,75 @@ struct BrowseView: View {
                 .accessibilityLabel(Text(verbatim: Strings.categoryCount(categoryCount, language)))
                 .accessibilityHint(Text(Strings.jumpToCategories, language))
             }
+            .entrance(revealed, delay: 0.38, distance: 10)
         }
         .padding(.horizontal)
+        .padding(.top, 6)
+        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            // Extends up behind the transparent navigation bar and fades out below the counters.
+            HeroMeshBackground(isAnimating: heroAnimating)
+                .padding(.top, -420)
+                .padding(.bottom, -72)
+                .mask {
+                    LinearGradient(
+                        stops: [
+                            Gradient.Stop(color: .black, location: 0),
+                            Gradient.Stop(color: .black, location: 0.72),
+                            Gradient.Stop(color: .clear, location: 1),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+        }
+        .onScrollVisibilityChange(threshold: 0.02) { visible in
+            if heroOnScreen != visible { heroOnScreen = visible }
+        }
     }
 
+    // MARK: Featured
+
     private var featured: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let items = EffectLibrary.featured
+        let count = items.count
+        let focused = focusedFeatured
+        let motion = !reduceMotion
+        return VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: Strings.featured(language))
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: 16) {
-                    ForEach(EffectLibrary.featured) { effect in
+                LazyHStack(alignment: .top, spacing: FeaturedMetrics.spacing) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, effect in
                         EffectLink(effect: effect, source: "featured") {
-                            FeaturedCard(effect: effect)
+                            FeaturedCard(effect: effect, isFocused: index == focused)
                         }
-                        .scrollTransition(axis: .horizontal) { [reduceMotion] content, phase in
-                            content
-                                .scaleEffect(phase.isIdentity || reduceMotion ? 1 : 0.92)
-                                .opacity(phase.isIdentity ? 1 : 0.7)
-                        }
+                        .modifier(CoverFlowEffect(enabled: motion))
                     }
                 }
                 .scrollTargetLayout()
-                .padding(.horizontal)
+                .padding(.horizontal, FeaturedMetrics.inset)
             }
             .scrollTargetBehavior(.viewAligned)
+            // Lets the focused card's shadow spill below the row.
+            .scrollClipDisabled()
+            .onScrollGeometryChange(for: Int.self) { geometry in
+                let maxOffset = geometry.contentSize.width - geometry.containerSize.width
+                return FeaturedMetrics.focusIndex(offset: geometry.contentOffset.x, maxOffset: maxOffset, count: count)
+            } action: { _, index in
+                focusedFeatured = index
+            }
+            // A soft detent as each card snaps into focus.
+            .sensoryFeedback(.selection, trigger: focusedFeatured)
         }
     }
 
+    // MARK: Recent
+
     private var recent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let motion = !reduceMotion
+        let swap = CardSwapTransition(reduceMotion: reduceMotion)
+        return VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: Strings.recent(language)) {
                 Button(Strings.clear(language)) {
                     Haptics.tap()
@@ -103,6 +198,13 @@ struct BrowseView: View {
                         EffectLink(effect: effect, source: "recent") {
                             CompactEffectCard(effect: effect)
                         }
+                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                            let v: Double = motion ? abs(phase.value) : 0
+                            return content
+                                .scaleEffect(1 - CGFloat(v) * 0.08)
+                                .opacity(1 - v * 0.3)
+                        }
+                        .transition(swap)
                     }
                 }
                 .padding(.horizontal)
@@ -111,18 +213,24 @@ struct BrowseView: View {
         .transition(.opacity)
     }
 
+    // MARK: Categories
+
     private var categories: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let revealed = self.revealed
+        return VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: Strings.categories(language))
+                .entrance(revealed, delay: 0.42, distance: 12, blur: 0)
             LazyVGrid(columns: categoryColumns, spacing: 14) {
-                ForEach(EffectCategory.allCases) { category in
+                ForEach(Array(EffectCategory.allCases.enumerated()), id: \.element) { index, category in
                     let count = EffectLibrary.effects(in: category).count
                     NavigationLink(value: Route.category(category)) {
                         CategoryTile(category: category, count: count)
                     }
-                    .buttonStyle(PressableCardStyle())
+                    .buttonStyle(PressableCardStyle(depth: 10, tilt: true))
                     .accessibilityLabel(Text(verbatim: "\(category.title(language)), \(Strings.effectCount(count, language))"))
                     .accessibilityHint(Text(category.subtitle, language))
+                    .entrance(revealed, delay: 0.46 + ShellMotion.stagger(index, step: 0.05, cap: 6), distance: 22, scale: 0.95)
+                    .scrollReveal()
                 }
             }
             .padding(.horizontal)
@@ -136,9 +244,48 @@ struct BrowseView: View {
     }
 }
 
-/// Tappable "235 effects" style pill on the Browse header.
+// MARK: - Featured carousel geometry
+
+private enum FeaturedMetrics {
+    static let cardWidth: CGFloat = 260
+    static let spacing: CGFloat = 16
+    static let inset: CGFloat = 16
+    static var pitch: CGFloat { cardWidth + spacing }
+
+    /// Index of the card snapped to the leading edge (the last one once the row hits its end).
+    static func focusIndex(offset: CGFloat, maxOffset: CGFloat, count: Int) -> Int {
+        guard count > 0 else { return 0 }
+        if maxOffset > 0 && offset >= maxOffset - 2 { return count - 1 }
+        let raw = Int((offset / pitch).rounded())
+        return min(max(raw, 0), count - 1)
+    }
+}
+
+/// Cover-flow: cards turn and shrink slightly as they leave the snapped (leading) position.
+private struct CoverFlowEffect: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        let enabled = self.enabled
+        return content.visualEffect { effect, proxy in
+            let minX = proxy.frame(in: .scrollView).minX
+            let raw: CGFloat = (minX - FeaturedMetrics.inset) / FeaturedMetrics.pitch
+            let t: CGFloat = enabled ? min(max(raw, -1), 1) : 0
+            let degrees = Double(-14 * t)
+            let shrink: CGFloat = 1 - 0.08 * abs(t)
+            return effect
+                .rotation3DEffect(.degrees(degrees), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
+                .scaleEffect(shrink)
+                .opacity(1 - 0.3 * Double(abs(t)))
+        }
+    }
+}
+
+// MARK: - Pieces
+
+/// Tappable "235 effects" style pill on the Browse header; the number rolls up on first reveal.
 private struct StatPill: View {
-    let value: String
+    let value: Int
     let unit: String
     let action: () -> Void
 
@@ -148,9 +295,11 @@ private struct StatPill: View {
             action()
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(verbatim: value)
+                Text(verbatim: "\(value)")
                     .font(.title3.weight(.bold).monospacedDigit())
                     .foregroundStyle(Palette.primaryStrong)
+                    .contentTransition(.numericText(value: Double(value)))
+                    .animation(ShellMotion.count.delay(0.35), value: value)
                 Text(verbatim: unit)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -162,7 +311,7 @@ private struct StatPill: View {
             .lineLimit(1)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Palette.chipOnPage, in: Capsule())
+            .background(.regularMaterial, in: Capsule())
             .overlay(Capsule().strokeBorder(Palette.stroke))
             .contentShape(Capsule())
         }
@@ -171,14 +320,20 @@ private struct StatPill: View {
 }
 
 /// Gradient rounded-square badge with the category's SF Symbol.
+/// Bounces when `bounce` changes, and on touch-down inside a `PressableCardStyle` button.
 struct CategoryIcon: View {
     let category: EffectCategory
     var size: CGFloat = 42
+    var bounce: Int = 0
+    @Environment(\.isCardPressed) private var isPressed
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pressBounces = 0
 
     var body: some View {
         Image(systemName: category.symbol)
             .font(.system(size: size * 0.45, weight: .semibold))
             .foregroundStyle(.white)
+            .symbolEffect(.bounce, value: bounce + pressBounces)
             .frame(width: size, height: size)
             .background(
                 LinearGradient(colors: category.gradient, startPoint: .topLeading, endPoint: .bottomTrailing),
@@ -186,18 +341,23 @@ struct CategoryIcon: View {
             )
             .shadow(color: (category.gradient.last ?? .clear).opacity(0.3), radius: size * 0.15, y: size * 0.08)
             .accessibilityHidden(true)
+            .onChange(of: isPressed) { _, pressed in
+                if pressed && !reduceMotion { pressBounces += 1 }
+            }
     }
 }
 
 private struct FeaturedCard: View {
     let effect: Effect
+    var isFocused = false
     @Environment(\.appLanguage) private var language
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         let isLarge = dynamicTypeSize.isAccessibilitySize
+        let shape = RoundedRectangle(cornerRadius: CornerRadius.featuredCard, style: .continuous)
         VStack(alignment: .leading, spacing: 10) {
-            PreviewStage(effect: effect, cornerRadius: CornerRadius.featuredThumbnail)
+            PreviewStage(effect: effect, cornerRadius: CornerRadius.featuredThumbnail, parallax: true)
                 .frame(width: 240, height: 240)
             VStack(alignment: .leading, spacing: 3) {
                 Label {
@@ -219,8 +379,18 @@ private struct FeaturedCard: View {
             .padding(.horizontal, 6)
         }
         .padding(10)
-        .frame(width: 260, alignment: .leading)
-        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: CornerRadius.featuredCard, style: .continuous))
+        .frame(width: FeaturedMetrics.cardWidth, alignment: .leading)
+        .background {
+            // The snapped card lifts: its shadow deepens as it settles into focus.
+            shape
+                .fill(Palette.cardBackground)
+                .shadow(
+                    color: Color.black.opacity(isFocused ? 0.13 : 0.03),
+                    radius: isFocused ? 18 : 6,
+                    y: isFocused ? 10 : 3
+                )
+                .animation(.smooth(duration: 0.45), value: isFocused)
+        }
     }
 }
 
@@ -298,7 +468,10 @@ private struct CategoryTile: View {
 struct CategoryView: View {
     let category: EffectCategory
     @Environment(\.appLanguage) private var language
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var chipNamespace
     @State private var interaction: EffectInteraction?
+    @State private var iconBounce = 0
 
     private var allEffects: [Effect] { EffectLibrary.effects(in: category) }
 
@@ -317,7 +490,7 @@ struct CategoryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .center, spacing: 14) {
-                    CategoryIcon(category: category, size: 52)
+                    CategoryIcon(category: category, size: 52, bounce: iconBounce)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(Strings.effectCount(all.count, language))
                             .font(.footnote.weight(.semibold))
@@ -327,12 +500,14 @@ struct CategoryView: View {
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    .appearEntrance(index: 1, distance: 8)
                 }
                 .padding(.horizontal)
                 .accessibilityElement(children: .combine)
                 // A filter with a single option would only ever show everything.
                 if interactions.count > 1 {
                     interactionFilter(all: all, interactions: interactions)
+                        .appearEntrance(index: 2, distance: 10, blur: 0)
                 }
                 EffectGrid(effects: effects)
                     .padding(.horizontal)
@@ -342,22 +517,33 @@ struct CategoryView: View {
         }
         .background(Palette.pageBackground)
         .navigationTitle(category.title(language))
+        .task {
+            // The badge greets you once the push has settled.
+            guard !reduceMotion else { return }
+            try? await Task.sleep(for: .seconds(0.35))
+            guard !Task.isCancelled else { return }
+            iconBounce += 1
+        }
     }
 
     private func interactionFilter(all: [Effect], interactions: [EffectInteraction]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                Chip(title: Strings.all(language), count: all.count, isSelected: interaction == nil) { interaction = nil }
+                Chip(title: Strings.all(language), count: all.count, isSelected: interaction == nil, namespace: chipNamespace) {
+                    interaction = nil
+                }
                 ForEach(interactions) { item in
                     Chip(title: item.title(language),
                          symbol: item.symbol,
                          count: all.filter { $0.interaction == item }.count,
-                         isSelected: interaction == item) {
+                         isSelected: interaction == item,
+                         namespace: chipNamespace) {
                         interaction = interaction == item ? nil : item
                     }
                 }
             }
             .padding(.horizontal)
+            .padding(.vertical, 4)
         }
     }
 }

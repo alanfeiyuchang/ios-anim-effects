@@ -14,6 +14,13 @@ struct EffectDetailView: View {
     @State private var copyFeedback: Task<Void, Never>?
     /// The inline nav-bar title only fades in once the large in-page title has scrolled away.
     @State private var showsNavTitle = false
+    /// Bumped each time the effect becomes a favorite (heart bounce + burst).
+    @State private var favoriteBursts = 0
+    /// Bumped on share taps (icon bounce).
+    @State private var shareTaps = 0
+    /// Bumped on copy (checkmark bounce).
+    @State private var copies = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(effect: Effect) {
         self.effect = effect
@@ -38,12 +45,15 @@ struct EffectDetailView: View {
                     header
                     VStack(spacing: 10) {
                         stage(fullPrompt: fullPrompt)
+                            // Rises into place with a spring as the page arrives.
+                            .appearEntrance(delay: 0.12, distance: 36, scale: 0.94, blur: 0)
                         stageControls
+                            .appearEntrance(delay: 0.24, distance: 10, blur: 0)
                     }
-                    if !effect.params.isEmpty { parameters }
-                    promptCard(fullPrompt).id("prompt")
-                    implementationCard
-                    if !effect.tags.isEmpty { tagsCard }
+                    if !effect.params.isEmpty { parameters.scrollReveal() }
+                    promptCard(fullPrompt).id("prompt").scrollReveal()
+                    implementationCard.scrollReveal()
+                    if !effect.tags.isEmpty { tagsCard.scrollReveal() }
                     relatedCard
                 }
                 .padding()
@@ -77,15 +87,15 @@ struct EffectDetailView: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 ShareLink(item: fullPrompt) {
                     Image(systemName: "square.and.arrow.up")
+                        .symbolEffect(.bounce.up, value: shareTaps)
                 }
+                .simultaneousGesture(TapGesture().onEnded {
+                    Haptics.tap()
+                    if !reduceMotion { shareTaps += 1 }
+                })
                 .accessibilityLabel(Text(Strings.sharePrompt, language))
-                Button {
-                    favorites.toggle(effect.id)
-                    Haptics.tap(.medium)
-                } label: {
-                    Image(systemName: isFavorite ? "heart.fill" : "heart")
-                        .foregroundStyle(isFavorite ? Palette.pink : Palette.accent)
-                        .contentTransition(.symbolEffect(.replace))
+                Button(action: toggleFavorite) {
+                    HeartBurstIcon(isFavorite: isFavorite, burst: favoriteBursts)
                 }
                 .accessibilityLabel(Text(isFavorite ? Strings.removeFavorite : Strings.addFavorite, language))
             }
@@ -120,6 +130,7 @@ struct EffectDetailView: View {
                 }
                 .buttonStyle(PressableCardStyle())
                 .accessibilityHint(Text(Strings.openCategory, language))
+                .appearEntrance(index: 0, delay: 0.05, distance: 8, scale: 0.9, blur: 3)
                 Button {
                     Haptics.selection()
                     navigator.search(interaction: effect.interaction)
@@ -136,6 +147,7 @@ struct EffectDetailView: View {
                 }
                 .buttonStyle(PressableCardStyle())
                 .accessibilityHint(Text(Strings.showInteraction, language))
+                .appearEntrance(index: 1, delay: 0.05, distance: 8, scale: 0.9, blur: 3)
                 if let requirement = effect.requirement {
                     Text(verbatim: "\(Strings.requires(language)) \(requirement)")
                         .font(.caption.weight(.semibold))
@@ -144,14 +156,17 @@ struct EffectDetailView: View {
                         .padding(.vertical, 5)
                         .background(Palette.violet.opacity(0.15), in: Capsule())
                         .foregroundStyle(Palette.violetText)
+                        .appearEntrance(index: 2, delay: 0.05, distance: 8, scale: 0.9, blur: 3)
                 }
             }
             Text(effect.name, language)
                 .font(.largeTitle.weight(.bold))
                 .accessibilityAddTraits(.isHeader)
+                .appearEntrance(index: 1, distance: 10)
             Text(effect.summary, language)
                 .font(.body)
                 .foregroundStyle(.secondary)
+                .appearEntrance(index: 2, distance: 10)
         }
     }
 
@@ -181,15 +196,21 @@ struct EffectDetailView: View {
         HStack {
             Spacer(minLength: 0)
             Button(action: resetDemo) {
-                Label(Strings.reset(language), systemImage: "arrow.counterclockwise")
-                    .font(.footnote.weight(.semibold))
-                    .lineLimit(1)
-                    .symbolEffect(.bounce, value: resetToken)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(Palette.chipOnPage, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Palette.stroke))
-                    .contentShape(Capsule())
+                Label {
+                    Text(Strings.reset, language)
+                } icon: {
+                    // One full counter-clockwise turn per reset, settling with a spring.
+                    Image(systemName: "arrow.counterclockwise")
+                        .rotationEffect(.degrees(reduceMotion ? 0 : Double(resetToken) * -360))
+                        .animation(.spring(response: 0.6, dampingFraction: 0.72), value: resetToken)
+                }
+                .font(.footnote.weight(.semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Palette.chipOnPage, in: Capsule())
+                .overlay(Capsule().strokeBorder(Palette.stroke))
+                .contentShape(Capsule())
             }
             .buttonStyle(PressableCardStyle())
             .fixedSize()
@@ -235,22 +256,43 @@ struct EffectDetailView: View {
                     .overlay(alignment: .leading) {
                         Capsule().fill(Palette.primary).frame(width: 3).padding(.vertical, 10)
                     }
-                Button {
-                    copyPrompt(fullPrompt)
-                } label: {
-                    Label(copied ? Strings.copied(language) : Strings.copyPrompt(language),
-                          systemImage: copied ? "checkmark" : "doc.on.doc")
-                        .contentTransition(.symbolEffect(.replace))
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .foregroundStyle(.white)
-                        .background(copied ? AnyShapeStyle(Palette.successStrong) : AnyShapeStyle(Palette.primaryStrong),
-                                    in: RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
-                }
-                .buttonStyle(PressableCardStyle())
+                copyButton(fullPrompt)
             }
         }
+    }
+
+    /// Full-width "Copy Prompt" bar that, once copied, contracts into a green "✓ Copied" pill
+    /// (width, corner radius, colour and glyph all morph on one spring), then expands back.
+    private func copyButton(_ fullPrompt: String) -> some View {
+        let copied = self.copied
+        let maxWidth: CGFloat? = copied ? nil : CGFloat.infinity
+        let radius: CGFloat = copied ? 24 : CornerRadius.chip
+        let fill: AnyShapeStyle = copied ? AnyShapeStyle(Palette.successStrong) : AnyShapeStyle(Palette.primaryStrong)
+        let glow: Color = copied ? Palette.green.opacity(0.35) : Palette.indigo.opacity(0.25)
+        return Button {
+            copyPrompt(fullPrompt)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                    .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(.bounce, value: copies)
+                    .accessibilityHidden(true)
+                Text(verbatim: copied ? Strings.copied(language) : Strings.copyPrompt(language))
+                    .contentTransition(.interpolate)
+            }
+            .font(.subheadline.weight(.semibold))
+            .lineLimit(1)
+            .padding(.horizontal, 22)
+            .frame(maxWidth: maxWidth)
+            .padding(.vertical, 12)
+            .foregroundStyle(.white)
+            .background(fill, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .shadow(color: glow, radius: 10, y: 5)
+            .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        }
+        .buttonStyle(PressableCardStyle())
+        .frame(maxWidth: .infinity)
+        .animation(reduceMotion ? Animation.easeInOut(duration: 0.2) : ShellMotion.pop, value: copied)
     }
 
     private var implementationCard: some View {
@@ -296,10 +338,12 @@ struct EffectDetailView: View {
         if !items.isEmpty {
             DetailSection(title: Strings.moreInCategory(language), symbol: effect.category.symbol) {
                 VStack(spacing: 8) {
-                    ForEach(items) { item in
+                    // Rows cascade in one after another as they scroll into view.
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                         EffectLink(effect: item, source: "related") {
                             RelatedEffectRow(effect: item)
                         }
+                        .scrollReveal(delay: 0.06 + ShellMotion.stagger(index, step: 0.07), distance: 18, scale: 0.97, blur: 3)
                     }
                     NavigationLink(value: Route.category(effect.category)) {
                         HStack(spacing: 4) {
@@ -314,6 +358,7 @@ struct EffectDetailView: View {
                     }
                 }
             }
+            .scrollReveal()
         }
     }
 
@@ -324,16 +369,28 @@ struct EffectDetailView: View {
         Haptics.tap()
     }
 
+    private func toggleFavorite() {
+        let adding = !isFavorite
+        withAnimation(ShellMotion.pop) { favorites.toggle(effect.id) }
+        if adding {
+            favoriteBursts += 1
+            Haptics.tap(.medium)
+        } else {
+            Haptics.tap(.light)
+        }
+    }
+
     private func copyPrompt(_ fullPrompt: String) {
         UIPasteboard.general.string = fullPrompt
         Haptics.success()
         UIAccessibility.post(notification: .announcement, argument: Strings.promptCopied(language))
-        withAnimation(.snappy) { copied = true }
+        copied = true
+        copies += 1
         copyFeedback?.cancel()
         copyFeedback = Task {
             try? await Task.sleep(for: .seconds(1.6))
             guard !Task.isCancelled else { return }
-            withAnimation(.snappy) { copied = false }
+            copied = false
         }
     }
 }
@@ -424,6 +481,8 @@ struct ParamControl: View {
                         .font(.subheadline.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .contentTransition(.numericText(value: value))
+                        // Digits roll like an odometer as the slider moves (and on "Restore defaults").
+                        .animation(.snappy(duration: 0.22), value: spec.formatted(value, language))
                 }
                 .accessibilityHidden(true)
                 Group {
@@ -435,11 +494,14 @@ struct ParamControl: View {
                 }
                 .accessibilityLabel(Text(spec.name, language))
                 .accessibilityValue(Text(verbatim: spec.formatted(value, language)))
+                // Stepped sliders tick like detents; continuous ones stay silent.
+                .sensoryFeedback(.selection, trigger: step == nil ? 0 : value)
             }
         case .toggle:
             Toggle(isOn: Binding(get: { value > 0.5 }, set: { value = $0 ? 1 : 0 })) {
                 Text(spec.name, language).font(.subheadline)
             }
+            .sensoryFeedback(.impact(weight: .light), trigger: value > 0.5)
         case .choice(let options):
             VStack(alignment: .leading, spacing: 8) {
                 Text(spec.name, language).font(.subheadline)
@@ -450,6 +512,7 @@ struct ParamControl: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .sensoryFeedback(.selection, trigger: Int(value.rounded()))
             }
         }
     }

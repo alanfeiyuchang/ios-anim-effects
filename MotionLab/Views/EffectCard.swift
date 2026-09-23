@@ -19,8 +19,12 @@ enum StageMetrics {
 struct PreviewStage: View {
     let effect: Effect
     var cornerRadius: CGFloat = CornerRadius.thumbnail
+    /// Shifts the demo inside its frame as the thumbnail moves through a horizontal scroll view
+    /// (Featured carousel). Off with Reduce Motion.
+    var parallax = false
     @Environment(\.appLanguage) private var language
     @Environment(\.previewMotionEnabled) private var motionEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
     @State private var isOnScreen = true
@@ -59,6 +63,7 @@ struct PreviewStage: View {
                 }
             }
             .transition(.opacity)
+            .modifier(PreviewParallax(enabled: parallax && !reduceMotion))
         }
         .aspectRatio(1, contentMode: .fit)
         .background(StageBackground())
@@ -115,6 +120,28 @@ struct PreviewStage: View {
             snapshotKey = key
         } else {
             failedKey = key
+        }
+    }
+}
+
+/// Parallax for thumbnails in a horizontal carousel: the demo is scaled up slightly and slides
+/// against the card's own movement, so it reads as a window onto a deeper layer.
+private struct PreviewParallax: ViewModifier {
+    let enabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled {
+            content
+                .scaleEffect(1.07)
+                .visualEffect { effect, proxy in
+                    // 26 pt = carousel inset (16) + card padding (10): the resting, snapped position.
+                    let minX = proxy.frame(in: .scrollView).minX
+                    let shift: CGFloat = min(max((minX - 26) * -0.05, -8), 8)
+                    return effect.offset(x: shift)
+                }
+        } else {
+            content
         }
     }
 }
@@ -183,11 +210,12 @@ struct EffectCard: View {
                             .foregroundStyle(.white)
                             .padding(6)
                             .background(Palette.pink, in: Circle())
+                            .shadow(color: Palette.pink.opacity(0.35), radius: 4, y: 2)
                             .padding(8)
-                            .transition(.scale.combined(with: .opacity))
+                            .transition(.scale(scale: 0.3).combined(with: .opacity))
                     }
                 }
-                .animation(.snappy, value: favorites.contains(effect.id))
+                .animation(ShellMotion.pop, value: favorites.contains(effect.id))
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(effect.name, language)
@@ -233,11 +261,19 @@ struct RequirementBadge: View {
     }
 }
 
+/// Grid of effect cards.
+///
+/// Motion: the cards on screen when the grid first appears rise in with a short stagger; cards
+/// scrolled into view later are revealed by an animated scroll transition; cards joining or leaving
+/// (search results, favorites) scale/blur in and out. Reduce Motion reduces all of it to fades.
 struct EffectGrid: View {
     let effects: [Effect]
     /// Zoom-transition placement name; give each grid on one screen its own.
     var source = "grid"
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Flips once, on first appearance; cards created later start already in place.
+    @State private var entered = false
 
     private var columns: [GridItem] {
         // Accessibility text sizes get one wide column so names and summaries stay readable.
@@ -247,12 +283,20 @@ struct EffectGrid: View {
     }
 
     var body: some View {
+        let entered = self.entered
+        let swap = CardSwapTransition(reduceMotion: reduceMotion)
         LazyVGrid(columns: columns, spacing: 14) {
-            ForEach(effects) { effect in
+            ForEach(Array(effects.enumerated()), id: \.element.id) { index, effect in
                 EffectLink(effect: effect, source: source) {
                     EffectCard(effect: effect)
                 }
+                .entrance(entered, delay: ShellMotion.stagger(index, step: 0.05, cap: 8), distance: 22, scale: 0.95)
+                .scrollReveal()
+                .transition(swap)
             }
+        }
+        .onAppear {
+            if !entered { self.entered = true }
         }
     }
 }
@@ -291,21 +335,31 @@ extension View {
 }
 
 /// Capsule filter chip.
+///
+/// Give every chip in one row the same `namespace` and the selected pill slides from chip to chip
+/// (matched geometry) instead of cross-fading; the label colour cross-fades underneath it.
 struct Chip: View {
     let title: String
     var symbol: String? = nil
     var count: Int? = nil
     var isSelected: Bool
+    /// Shared by the chips of one row so the selection pill travels between them.
+    var namespace: Namespace.ID? = nil
     var action: () -> Void
+    @State private var bounces = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button {
             Haptics.selection()
-            action()
+            if !isSelected && !reduceMotion { bounces += 1 }
+            withAnimation(ShellMotion.selection) { action() }
         } label: {
             HStack(spacing: 5) {
                 if let symbol {
-                    Image(systemName: symbol).font(.caption.weight(.semibold))
+                    Image(systemName: symbol)
+                        .font(.caption.weight(.semibold))
+                        .symbolEffect(.bounce, value: bounces)
                 }
                 Text(title)
                     .font(.subheadline.weight(.medium))
@@ -314,6 +368,7 @@ struct Chip: View {
                     Text("\(count)")
                         .font(.caption.weight(.semibold).monospacedDigit())
                         .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.secondary)
+                        .contentTransition(.numericText(value: Double(count)))
                 }
             }
             .fixedSize()
@@ -321,16 +376,33 @@ struct Chip: View {
             .padding(.vertical, 7)
             .foregroundStyle(isSelected ? Color.white : Color.primary)
             .background {
-                Capsule().fill(isSelected ? AnyShapeStyle(Palette.primaryStrong) : AnyShapeStyle(Palette.chipOnPage))
-            }
-            .overlay {
-                if !isSelected { Capsule().strokeBorder(Palette.stroke) }
+                ZStack {
+                    Capsule()
+                        .fill(Palette.chipOnPage)
+                        .overlay(Capsule().strokeBorder(Palette.stroke))
+                        .opacity(isSelected ? 0 : 1)
+                    if isSelected { selectionPill }
+                }
             }
             .contentShape(Capsule())
         }
         .buttonStyle(PressableCardStyle())
-        .animation(.snappy, value: isSelected)
+        .animation(ShellMotion.selection, value: isSelected)
+        // The travelling pill draws above neighbouring chips while it slides.
+        .zIndex(isSelected ? 1 : 0)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private var selectionPill: some View {
+        let pill = Capsule()
+            .fill(Palette.primaryStrong)
+            .shadow(color: Palette.indigo.opacity(0.28), radius: 6, y: 3)
+        if let namespace {
+            pill.matchedGeometryEffect(id: "chip.selection", in: namespace)
+        } else {
+            pill
+        }
     }
 }
 

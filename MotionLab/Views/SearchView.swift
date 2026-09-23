@@ -2,7 +2,10 @@ import SwiftUI
 
 struct SearchView: View {
     @Environment(\.appLanguage) private var language
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppNavigator.self) private var navigator
+    @Namespace private var categoryChips
+    @Namespace private var interactionChips
 
     /// Keywords that match many effects in both languages (the search haystack is bilingual).
     private static let keywordSuggestions: [LocalizedText] = [
@@ -31,32 +34,25 @@ struct SearchView: View {
                     if navigator.hasActiveFilters {
                         Button(Strings.clearFilters(language)) {
                             Haptics.tap()
-                            navigator.clearFilters()
+                            withAnimation(ShellMotion.selection) { navigator.clearFilters() }
                         }
                         .font(.footnote.weight(.semibold))
+                        .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .trailing)))
                     }
                 }
                 .padding(.horizontal)
 
                 if results.isEmpty {
-                    ContentUnavailableView {
-                        Label(Strings.noResults(language), systemImage: "sparkle.magnifyingglass")
-                    } description: {
-                        Text(Strings.noResultsHint, language)
-                    } actions: {
-                        if navigator.hasActiveFilters {
-                            Button(Strings.clearFilters(language)) { navigator.clearFilters() }
-                                .buttonStyle(.bordered)
-                        }
-                    }
-                    .padding(.top, 24)
+                    emptyState
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 } else {
                     EffectGrid(effects: results)
                         .padding(.horizontal)
                 }
             }
             .padding(.vertical)
-            .animation(.smooth(duration: 0.3), value: results.map(\.id))
+            .animation(.smooth(duration: 0.32), value: results.map(\.id))
+            .animation(.smooth(duration: 0.25), value: navigator.query.isEmpty)
         }
         .scrollDismissesKeyboard(.immediately)
         .background(Palette.pageBackground)
@@ -64,35 +60,84 @@ struct SearchView: View {
         .searchable(text: $navigator.query, placement: .navigationBarDrawer(displayMode: .always), prompt: Strings.searchPrompt(language))
     }
 
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label {
+                Text(Strings.noResults, language)
+            } icon: {
+                Image(systemName: "sparkle.magnifyingglass")
+                    .symbolEffect(.breathe, isActive: !reduceMotion)
+            }
+        } description: {
+            Text(Strings.noResultsHint, language)
+        } actions: {
+            if navigator.hasActiveFilters {
+                Button(Strings.clearFilters(language)) {
+                    Haptics.tap()
+                    withAnimation(ShellMotion.selection) { navigator.clearFilters() }
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(.top, 24)
+    }
+
     private var filters: some View {
         VStack(alignment: .leading, spacing: 8) {
             FilterRowLabel(text: Strings.categoryFilter(language))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    Chip(title: Strings.all(language), isSelected: navigator.category == nil) { navigator.category = nil }
-                    ForEach(EffectCategory.allCases) { item in
-                        Chip(title: item.title(language), symbol: item.symbol, isSelected: navigator.category == item) {
-                            navigator.category = navigator.category == item ? nil : item
+            ScrollViewReader { reader in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Chip(title: Strings.all(language), isSelected: navigator.category == nil, namespace: categoryChips) {
+                            navigator.category = nil
+                        }
+                        .id(Self.allChipID)
+                        ForEach(EffectCategory.allCases) { item in
+                            Chip(title: item.title(language), symbol: item.symbol, isSelected: navigator.category == item, namespace: categoryChips) {
+                                navigator.category = navigator.category == item ? nil : item
+                            }
+                            .id(item.rawValue)
                         }
                     }
+                    .padding(.horizontal)
+                    .padding(.vertical, 4)
                 }
-                .padding(.horizontal)
+                // Filters set from elsewhere (e.g. a tag on a detail page) glide into view.
+                .onChange(of: navigator.category) { _, category in
+                    withAnimation(reduceMotion ? nil : ShellMotion.selection) {
+                        reader.scrollTo(category?.rawValue ?? Self.allChipID, anchor: .center)
+                    }
+                }
             }
             FilterRowLabel(text: Strings.interactionFilter(language))
                 .padding(.top, 4)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    Chip(title: Strings.all(language), isSelected: navigator.interaction == nil) { navigator.interaction = nil }
-                    ForEach(EffectInteraction.allCases) { item in
-                        Chip(title: item.title(language), symbol: item.symbol, isSelected: navigator.interaction == item) {
-                            navigator.interaction = navigator.interaction == item ? nil : item
+            ScrollViewReader { reader in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Chip(title: Strings.all(language), isSelected: navigator.interaction == nil, namespace: interactionChips) {
+                            navigator.interaction = nil
+                        }
+                        .id(Self.allChipID)
+                        ForEach(EffectInteraction.allCases) { item in
+                            Chip(title: item.title(language), symbol: item.symbol, isSelected: navigator.interaction == item, namespace: interactionChips) {
+                                navigator.interaction = navigator.interaction == item ? nil : item
+                            }
+                            .id(item.rawValue)
                         }
                     }
+                    .padding(.horizontal)
+                    .padding(.vertical, 4)
                 }
-                .padding(.horizontal)
+                .onChange(of: navigator.interaction) { _, interaction in
+                    withAnimation(reduceMotion ? nil : ShellMotion.selection) {
+                        reader.scrollTo(interaction?.rawValue ?? Self.allChipID, anchor: .center)
+                    }
+                }
             }
         }
     }
+
+    private static let allChipID = "all"
 
     private var suggestions: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -101,8 +146,9 @@ struct SearchView: View {
                 .foregroundStyle(.secondary)
                 .accessibilityAddTraits(.isHeader)
             FlowLayout(spacing: 8) {
-                ForEach(Self.keywordSuggestions, id: \.self) { item in
+                ForEach(Array(Self.keywordSuggestions.enumerated()), id: \.element) { index, item in
                     SuggestionChip(text: item(language), symbol: "magnifyingglass") { navigator.query = item(language) }
+                        .appearEntrance(index: index, delay: 0.05, distance: 10, scale: 0.9, blur: 3)
                 }
             }
             Text(Strings.popularAPIs, language)
@@ -111,15 +157,16 @@ struct SearchView: View {
                 .padding(.top, 4)
                 .accessibilityAddTraits(.isHeader)
             FlowLayout(spacing: 8) {
-                ForEach(Self.apiSuggestions, id: \.self) { api in
+                ForEach(Array(Self.apiSuggestions.enumerated()), id: \.element) { index, api in
                     SuggestionChip(text: api, symbol: "chevron.left.forwardslash.chevron.right", monospaced: true) {
                         navigator.query = api
                     }
+                    .appearEntrance(index: index, delay: 0.25, distance: 10, scale: 0.9, blur: 3)
                 }
             }
         }
         .padding(.horizontal)
-        .transition(.opacity)
+        .transition(.opacity.combined(with: .offset(y: -8)))
     }
 }
 

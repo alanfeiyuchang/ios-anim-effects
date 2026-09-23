@@ -28,10 +28,37 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppNavigator.self) private var navigator
     @AppStorage("app.animatePreviews") private var animatePreviews = true
+    /// The launch intro overlay is mounted.
+    @State private var showsIntro = LaunchIntro.shouldPlay
+    /// The intro still hides the UI (until its circular reveal starts).
+    @State private var introCovers = LaunchIntro.shouldPlay
 
     var body: some View {
-        @Bindable var navigator = navigator
-        TabView(selection: $navigator.tab) {
+        tabs
+            .environment(\.launchIntroActive, introCovers)
+            .overlay {
+                if showsIntro {
+                    LaunchIntroView {
+                        introCovers = false
+                    } onFinish: {
+                        withAnimation(.easeOut(duration: 0.22)) { showsIntro = false }
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .onAppear {
+                // Reduce Motion may have been read differently by UIKit at launch; SwiftUI's value wins.
+                if reduceMotion && showsIntro {
+                    showsIntro = false
+                    introCovers = false
+                    LaunchIntro.didFinish = true
+                }
+            }
+    }
+
+    private var tabs: some View {
+        @Bindable var router = navigator
+        return TabView(selection: $router.tab) {
             Tab(Strings.browse(language), systemImage: "square.grid.2x2.fill", value: AppTab.browse) {
                 RoutedStack(initialPath: LaunchOptions.initialPath) { BrowseView() }
             }
@@ -46,6 +73,8 @@ struct RootView: View {
             }
         }
         .environment(\.previewMotionEnabled, animatePreviews && !reduceMotion)
+        // A light detent tick on every tab switch (tap or programmatic, e.g. a tag search).
+        .sensoryFeedback(.selection, trigger: navigator.tab)
     }
 }
 
@@ -138,23 +167,59 @@ struct EffectLink<Label: View>: View {
     }
 }
 
-/// Subtle press-down scale used on every card in the app.
+/// Tactile press used on every card, chip and pill in the app: a quick spring down-scale with a
+/// slight dim, released with a little overshoot. `depth` adds a resting shadow that compresses
+/// while pressed; `tilt` leans the top edge back a few degrees, like pressing a physical tile.
+/// The label can read `\.isCardPressed` to react (e.g. bounce an icon).
 /// With Reduce Motion on, the press is shown as a dim instead of a scale.
 struct PressableCardStyle: ButtonStyle {
+    var depth: CGFloat = 0
+    var tilt = false
+
     func makeBody(configuration: Configuration) -> some View {
-        PressableCardBody(label: configuration.label, isPressed: configuration.isPressed)
+        PressableCardBody(label: configuration.label, isPressed: configuration.isPressed, depth: depth, tilt: tilt)
     }
 }
 
 private struct PressableCardBody: View {
     let label: ButtonStyleConfiguration.Label
     let isPressed: Bool
+    let depth: CGFloat
+    let tilt: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        let moves = isPressed && !reduceMotion
+        let lean: Double = moves && tilt ? 4 : 0
         label
-            .scaleEffect(isPressed && !reduceMotion ? 0.96 : 1)
+            .environment(\.isCardPressed, isPressed)
+            .modifier(PressDepth(depth: depth, isPressed: isPressed, isDark: colorScheme == .dark))
+            .rotation3DEffect(.degrees(lean), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
+            .scaleEffect(moves ? 0.96 : 1)
             .opacity(isPressed && reduceMotion ? 0.7 : 1)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+            .animation(isPressed ? ShellMotion.pressDown : ShellMotion.pressUp, value: isPressed)
+    }
+}
+
+/// Resting elevation that flattens (and a slight dim) while pressed. Only applied when `depth > 0`
+/// (tiles), so grid cards with live previews never carry an extra filter or shadow pass.
+private struct PressDepth: ViewModifier {
+    let depth: CGFloat
+    let isPressed: Bool
+    let isDark: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if depth > 0 {
+            let radius: CGFloat = isPressed ? depth * 0.35 : depth
+            let y: CGFloat = isPressed ? depth * 0.15 : depth * 0.5
+            let dim: Double = isPressed ? (isDark ? 0.05 : -0.035) : 0
+            content
+                .brightness(dim)
+                .shadow(color: Color.black.opacity(isPressed ? 0.05 : 0.09), radius: radius, y: y)
+        } else {
+            content
+        }
     }
 }

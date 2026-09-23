@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A rotary knob that clicks into detents with haptic ticks.", "带刻度吸附与触觉反馈的旋转旋钮。"),
         prompt: L(
             "A 170 pt hardware-style rotary knob: a softly shaded disc with a raised rim whose top-left highlight and drop shadow stay fixed like a lit object, a small glowing indicator dot, and a 270° scale of tick marks around it (from 7:30 to 4:30 o'clock). Dragging in a circle turns only the indicator; the angle is quantized into detents so it snaps from tick to tick on a snappy spring (~180 ms) with a crisp selection haptic per click — or, with snapping off, follows the finger continuously. Ticks up to the value light up, a gradient arc traces the covered range and the centered percentage rolls with a numeric transition. Pushing past either end rubber-bands the indicator ~10° with a rigid haptic, then it springs back. Weighty, clicky and exact, like precision audio gear.",
-            "170pt 的硬件风旋转旋钮：带柔和明暗的圆盘与微凸边缘，左上高光和投影始终固定，像被真实光源照亮的实物；一个发光的小指示点，外圈环绕 270° 刻度（7 点半到 4 点半方向）。手指绕圈拖动时只有指示点旋转：角度被量化为档位，以约 180 毫秒的利落弹簧逐格跳动，每格一次清脆的选择触觉；关闭吸附时则连续跟手。已达刻度点亮，渐变圆弧描出覆盖范围，中央百分比以数字滚动更新。顶到两端时指示点以橡皮筋阻尼多转约 10° 并伴随一次硬朗触感，松手弹回。沉稳、清脆、精确，如同精密音频设备。"
+            "170pt 硬件风旋钮：柔和明暗的圆盘与微凸边缘，左上高光与投影始终固定，像被真实光源照亮；一个发光指示点，外圈是 270° 刻度（7 点半到 4 点半）。绕圈拖动时只有指示点旋转，角度被量化为档位，以约 180 毫秒的利落弹簧逐格跳动，每格一次清脆的选择触觉；关闭吸附则连续跟手。已达刻度点亮，渐变圆弧描出范围，中央百分比滚动更新。顶到两端时指示点以橡皮筋多转约 10° 并硬朗地触感一下，松手弹回。沉稳、清脆，如精密音频设备。"
         ),
         implementation: L(
             "A DragGesture converts the touch point to an angle with atan2, clamps it to ±135° (the excess feeds a rubberBand overshoot) and rounds to a detent index; only an indicator overlay is rotated, with a snappy spring per detent, while the shaded face stays static and a trimmed Circle draws the arc.",

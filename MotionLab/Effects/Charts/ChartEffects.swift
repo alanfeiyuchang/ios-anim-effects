@@ -49,3 +49,27 @@ enum ChartEntrance {
         }
     }
 }
+
+/// The bottom hint for tap-to-morph charts. These demos have no entrance of their own, so with Reduce Motion
+/// (when the stage's arrival intro is skipped) a hand glyph pulses three times to show the chart is tappable.
+struct ChartTapCue: View {
+    let text: LocalizedText
+    let ctx: DemoContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulses = 0
+
+    var body: some View {
+        if !ctx.isPreview {
+            HStack(spacing: 5) {
+                if reduceMotion {
+                    Image(systemName: "hand.tap.fill")
+                        .symbolEffect(.pulse, options: .repeat(3), value: pulses)
+                        .onAppear { pulses += 1 }
+                }
+                Text(text, ctx.language)
+            }
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(.secondary)
+        }
+    }
+}

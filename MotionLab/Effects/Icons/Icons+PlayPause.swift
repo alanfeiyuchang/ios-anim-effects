@@ -42,7 +42,7 @@ private struct PlayPauseDemo: View {
                     HStack(spacing: 8) {
                         Text(L("Midnight Drive", "午夜驾驶"), ctx.language)
                             .font(.headline)
-                        EqualizerBars(active: playing)
+                        EqualizerBars(active: playing, preview: ctx.isPreview)
                     }
                     Text(L("Neon Coast", "霓虹海岸"), ctx.language)
                         .font(.subheadline)
@@ -55,6 +55,11 @@ private struct PlayPauseDemo: View {
         .padding(20)
         .frame(width: 290)
         .demoCard(cornerRadius: 28)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap play", "点击播放"), ctx: ctx)
+                .fixedSize()
+                .offset(y: 30)
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.6) { toggle() }
     }
@@ -128,9 +133,11 @@ private struct PlayPauseShape: Shape {
 
 private struct EqualizerBars: View {
     let active: Bool
+    /// Grid previews tick at the capped frame rate.
+    let preview: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: !active)) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !active)) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             HStack(alignment: .bottom, spacing: 2) {
                 ForEach(0..<3, id: \.self) { i in

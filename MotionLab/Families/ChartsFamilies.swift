@@ -38,8 +38,8 @@ enum ChartsFamilies {
         EffectFamily(
             id: "charts.kpi",
             category: .charts,
-            name: L("KPIs & Heatmaps", "指标与热力图"),
-            summary: L("Stat tiles, bullet charts, waffles and heatmaps that count, roll or ripple into view.", "以计数、滚轮或涟漪方式入场的指标卡、子弹图、华夫格与热力格。"),
+            name: L("Stat Tiles & Unit Grids", "指标卡与格阵图"),
+            summary: L("Stat tiles, bullet charts, waffle and heatmap grids that count, roll or ripple into view.", "以计数、滚轮或涟漪方式入场的指标卡、子弹图，以及华夫格与热力格阵。"),
             symbol: "square.grid.3x3.fill"
         ),
     ]

@@ -13,8 +13,8 @@ extension Effect {
             "分段进度条依次填满，快拍页面伴随缓慢推镜交叉切换。"
         ),
         prompt: L(
-            "A 214 × 300 pt story card with 26 pt continuous corners, topped by a row of 3 pt white capsules — one per page, 4 pt apart, at 35% opacity. The current segment fills linearly from left to right over the page duration (3 s), finished ones stay solid, upcoming ones stay empty. When a segment completes, the next page cross-fades in over 0.45 s from 104% scale while the artwork beneath slowly pushes in from 100% to 108% for its whole lifetime (a Ken Burns drift), so the image is never static. Tapping the right two-thirds skips ahead, the left third goes back, each with a selection tick. Header avatar, name and timestamp, plus a frosted reply pill at the bottom, frame it like a real stories viewer. Rhythmic, immersive, effortless.",
-            "一张 214 × 300 pt、26 pt 连续圆角的快拍卡片，顶部是一排 3 pt 高的白色胶囊——每页一段、间距 4 pt、透明度 35%。当前段在本页时长（3 秒）内从左到右线性填满，已看完的保持实心，未看的保持空白。一段结束时，下一页在 0.45 秒内从 104% 缩放交叉淡入；画面在整页展示期间从 100% 缓慢推近到 108%（肯·伯恩斯推镜），始终保持微微流动。点击右侧三分之二跳到下一页，左侧三分之一返回上一页，均伴随选择触感。顶部头像、昵称与时间，底部磨砂“回复”胶囊，让它看起来就是一个真实的快拍浏览器。节奏分明、沉浸、毫不费力。"
+            "A 214 × 300 pt story card with 26 pt corners, topped by 3 pt white capsules, one per page, 4 pt apart at 35% opacity. The current segment fills linearly over the page duration (3 s); finished ones stay solid, upcoming ones empty. When it completes, the next page cross-fades in over 0.45 s from 104% scale, and the artwork pushes in from 100% to 108% across its whole lifetime (a Ken Burns drift) so the image never sits still. Tapping the right two-thirds skips ahead and the left third goes back, each with a selection tick. An avatar header and a frosted reply pill frame it like a real stories viewer. Rhythmic, immersive, effortless.",
+            "214 × 300 pt、26 pt 圆角的快拍卡片，顶部一排 3 pt 高的白色胶囊，每页一段，间距 4 pt，透明度 35%。当前段在本页时长（3 秒）内线性填满，看过的保持实心，未看的留空。一段走完，下一页从 104% 缩放在 0.45 秒内交叉淡入；画面在整页期间从 100% 缓缓推近到 108%（肯·伯恩斯推镜），始终微微流动。点右侧三分之二跳下一页，点左侧三分之一返回，各伴一记选择触感。顶部头像信息与底部磨砂回复框，让它像真正的快拍浏览器。节奏分明，沉浸自然。"
         ),
         implementation: L(
             "A TimelineView turns the time since the page started into the active segment's fill (scaleEffect(x:anchor: .leading)) and the artwork's drift; a task(id:) sleeps for the remaining duration and advances, and pages swap by .id with an asymmetric transition.",
@@ -216,8 +216,8 @@ extension Effect {
             "照片从带主色的柔和模糊中逐张清晰显现。"
         ),
         prompt: L(
-            "A small gallery — one wide 274 × 128 pt hero photo over two 132 pt squares, 10 pt apart with 18 pt continuous corners. Before its data arrives, each tile shows a pre-blurred (18 pt), 50%-desaturated copy of its own image over a gradient of its dominant colors, zoomed to 112%, with a soft white wash breathing 0 ↔ 16% every 0.9 s. Images land in a random order about 350 ms apart; each one resolves over 0.6 s on a smooth curve — the blurred copy cross-fades out to reveal the sharp, full-color image beneath while both layers settle from 112% to 100% — so detail seems to focus into place rather than pop. The last arrival fires a soft haptic. Calm, photographic, and it never shows an empty box.",
-            "一组小画廊——上方一张 274 × 128 pt 的横幅大图，下方两张 132 pt 方图，间距 10 pt、18 pt 连续圆角。数据到达前，每个图块以自身主色渐变为底，叠一张预先模糊（18 pt）、饱和度降到 50% 的同图副本作为占位，整体放大到 112%，并叠一层每 0.9 秒在 0 与 16% 之间呼吸的柔和白色。图片以随机顺序、约 350 毫秒间隔依次到达；每张在 0.6 秒平滑曲线内完成显影——模糊副本淡出，露出下方清晰、全彩的原图，两层同时从 112% 缩放落回 100%——细节像被“对焦”出来，而不是突然弹出。最后一张到达时伴随轻柔触感。安静、有摄影质感，永远不会出现空白方框。"
+            "A small gallery: a 274 × 128 pt hero photo over two 132 pt squares, 10 pt apart with 18 pt corners. Before data arrives, each tile shows an 18 pt-blurred, 50%-desaturated copy of its own image over its dominant-color gradient, zoomed to 112%, under a white wash breathing 0 ↔ 16% every 0.9 s. Images land in random order about 350 ms apart, each resolving over 0.6 s on a smooth curve: the blurred copy cross-fades away to reveal the sharp full-color image while both layers settle from 112% to 100%, so detail focuses into place instead of popping. The last arrival fires a soft haptic. Photographic, calm, never an empty box.",
+            "一组小画廊：上方 274 × 128 pt 横幅大图，下方两张 132 pt 方图，间距 10 pt、18 pt 圆角。数据到来前，每块以自身主色渐变打底，叠一张模糊 18 pt、饱和度减半的同图副本，放大到 112%，上面再覆一层每 0.9 秒在 0 与 16% 之间呼吸的白雾。图片按随机顺序、约 350 毫秒间隔陆续到达，每张用 0.6 秒平滑曲线显影：模糊副本淡去，露出清晰全彩的原图，两层同时从 112% 回落到 100%，细节像被“对焦”出来。最后一张落定时轻触一下。有摄影感，从不留白框。"
         ),
         implementation: L(
             "Each tile stacks the sharp image under a pre-blurred, desaturated copy (compositingGroup + blur over a solid gradient, so edges stay filled); loading only animates the copy's opacity and both layers' scale. A task(id:) advances the loaded count in a shuffled order with smooth animations.",
@@ -248,9 +248,15 @@ private let blurUpPhotos: [BlurUpPhoto] = [
 
 private struct BlurUpDemo: View {
     let ctx: DemoContext
-    @State private var loadedCount = 0
+    @State private var loadedCount: Int
     @State private var order: [Int] = [1, 0, 2]
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _loadedCount = State(initialValue: ctx.isStill ? 3 : 0)
+    }
 
     var body: some View {
         VStack(spacing: 16) {

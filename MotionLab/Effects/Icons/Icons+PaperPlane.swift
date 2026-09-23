@@ -124,6 +124,8 @@ private struct IconsPlaneDemo: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(sent ? AnyShapeStyle(Palette.green) : AnyShapeStyle(.secondary))
                 .contentTransition(.opacity)
+            DemoHint(text: L("Tap to send", "点击发送"), ctx: ctx)
+                .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: max(duration, 0.4) + 1.5) { send() }
@@ -132,10 +134,12 @@ private struct IconsPlaneDemo: View {
     private func send() {
         launches += 1
         if !ctx.isPreview { Haptics.tap(.medium) }
+        // Captured now: the landing haptic runs after autoplay (or the detail intro) has unmuted Haptics.
+        let muted = Haptics.isMuted || ctx.isPreview
         let away = 0.14 + ctx["duration"] * 0.8
         DispatchQueue.main.asyncAfter(deadline: .now() + away) {
             withAnimation(.snappy) { sent = true }
-            if !ctx.isPreview { Haptics.success() }
+            if !muted { Haptics.success() }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + away + 1.2) {
             withAnimation(.snappy) { sent = false }

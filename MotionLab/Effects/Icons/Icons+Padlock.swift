@@ -157,15 +157,17 @@ private struct IconsPadlockDemo: View {
     }
 
     private func toggle() {
+        // Captured now: the delayed haptics run after autoplay (or the detail intro) has unmuted Haptics.
+        let muted = Haptics.isMuted || ctx.isPreview
         unlocked.toggle()
         if unlocked {
             pulses += 1
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                if !ctx.isPreview { Haptics.success() }
+                if !muted { Haptics.success() }
             }
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                if !ctx.isPreview { Haptics.tap(.rigid) }
+                if !muted { Haptics.tap(.rigid) }
             }
         }
     }

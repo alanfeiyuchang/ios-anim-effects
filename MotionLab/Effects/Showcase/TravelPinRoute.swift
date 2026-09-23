@@ -123,11 +123,11 @@ private struct TravelPinRouteDemo: View {
         ZStack {
             TravelMapBackdrop()
             ForEach(Array(pins.enumerated().dropFirst()), id: \.element.id) { index, pin in
-                TravelRouteLeg(from: pins[index - 1].point, to: pin.point, duration: ctx["routeTime"])
+                TravelRouteLeg(from: pins[index - 1].point, to: pin.point, duration: ctx["routeTime"], still: ctx.isStill)
                     .transition(legRemoval(toward: pin.point))
             }
             ForEach(pins) { pin in
-                TravelPinMarker(isLatest: pin.id == pins.last?.id)
+                TravelPinMarker(isLatest: pin.id == pins.last?.id, still: ctx.isStill)
                     .position(pin.point)
                     .transition(
                         .asymmetric(
@@ -228,7 +228,15 @@ private struct TravelRouteLeg: View {
     let from: CGPoint
     let to: CGPoint
     let duration: Double
-    @State private var drawn = false
+    @State private var drawn: Bool
+
+    /// Still snapshots never run `onAppear`, so their legs start fully drawn.
+    init(from: CGPoint, to: CGPoint, duration: Double, still: Bool) {
+        self.from = from
+        self.to = to
+        self.duration = duration
+        _drawn = State(initialValue: still)
+    }
 
     var body: some View {
         TravelLegShape(from: from, to: to)
@@ -244,7 +252,13 @@ private struct TravelRouteLeg: View {
 
 private struct TravelPinMarker: View {
     let isLatest: Bool
-    @State private var ripple = false
+    @State private var ripple: Bool
+
+    /// Still snapshots never run `onAppear`, so their ripple starts already spent (invisible).
+    init(isLatest: Bool, still: Bool) {
+        self.isLatest = isLatest
+        _ripple = State(initialValue: still)
+    }
 
     var body: some View {
         ZStack {

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A value bubble that swings and stretches with drag velocity.", "数值气泡随拖动速度摆动、拉伸。"),
         prompt: L(
             "A compact \"Layer opacity\" card, sized to its track, holding a slim 8 pt track with a sky-to-blue fill, a white 28 pt thumb and a row of fine ticks (every 10%) that light up as the fill passes them. While dragging, the thumb grows to 115% and a rounded value bubble with a small pointer rises 10 pt above it, showing the percentage in monospaced digits. The bubble hangs from its pointer like a pendulum: horizontal drag velocity tilts it against the motion (up to ±30°) and stretches it slightly wider and shorter, chased by a loose spring (response 0.3 s, damping 0.5). As the finger slows, pauses for ~80 ms or lifts, the bubble swings back upright with a visible wobble (damping 0.45) and settles; a selection haptic ticks every 10%. Playful and physical, yet the number stays perfectly legible.",
-            "“图层不透明度”卡片中是一条 8pt 细轨道，天蓝到湛蓝渐变填充，白色 28pt 圆形滑块，下方一排每 10% 一格的细刻度会随填充经过依次点亮。拖动时滑块放大到 115%，上方升起一个带小尖角的圆角数值气泡（上移 10pt），用等宽数字显示百分比。气泡像挂在尖角上的钟摆：水平拖动速度让它逆着运动方向倾斜（最多 ±30°），并被略微横向拉宽、纵向压扁，由较松的弹簧（响应 0.3 秒、阻尼 0.5）追随。手指减速、停住约 80 毫秒或抬起时，气泡带着明显的摇摆（阻尼 0.45）回正并静止；每跨过 10% 触发一次选择触觉。俏皮而有物理感，数字始终清晰可读。"
+            "“图层不透明度”卡片里是一条 8pt 细轨道，天蓝到湛蓝填充，28pt 白色滑块，下方每 10% 一根刻度随填充点亮。拖动时滑块放大到 115%，上方升起一个带尖角的圆角数值气泡（上移 10pt），以等宽数字显示百分比。气泡像挂在尖角上的钟摆：水平速度让它逆着运动方向倾斜（最多 ±30°）并略微拉宽压扁，由较松的弹簧（响应 0.3 秒、阻尼 0.5）追随。手指减速、停约 80 毫秒或抬起时，气泡带着摇摆（阻尼 0.45）回正；每跨 10% 触发选择触觉。"
         ),
         implementation: L(
             "A DragGesture maps location to value and reads value.velocity to set a tilt/stretch state through a spring; rotationEffect and scaleEffect anchored at the bubble's pointer make it swing like a pendulum.",

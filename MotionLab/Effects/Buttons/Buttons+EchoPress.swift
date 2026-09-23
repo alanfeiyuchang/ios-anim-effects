@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Each tap sends staggered outline echoes rippling off the button's edge.", "每次点击，按钮边缘向外发出错峰的描边回响。"),
         prompt: L(
             "A 230 × 60 pt sky-to-blue capsule reading \"Ping my keys\" with a radio-waves glyph, under a small AirTag-style item card. On tap the button dips to 95% and springs back, the glyph bounces, and three hairline copies of the capsule's outline peel off its edge one after another, 140 ms apart. Each echo grows 44 pt outward on every side over 0.8 s with an ease-out curve while its stroke thins from 2.5 to 0.5 pt and fades to zero, so the rings read like sonar pulses leaving the device. The item card's status line flashes \"Playing sound…\" and a medium haptic fires. Rapid taps overlap cleanly. Clean, communicative and precise — a press that visibly reaches out.",
-            "一枚 230 × 60pt 的天蓝到蓝色胶囊按钮“让钥匙响铃”，带电波图标，上方是一张类似 AirTag 的物品小卡片。点击后按钮下沉到 95% 再弹回，图标跳动一下，同时三道与按钮同形的细描边依次从边缘剥离，间隔 140 毫秒。每道回响在 0.8 秒内以 ease-out 曲线向四周扩张 44pt，描边从 2.5pt 变细到 0.5pt 并淡出至零，像声呐脉冲从设备向外扩散。物品卡片的状态行闪现“正在播放声音…”，并伴随中等触感。快速连点时回响会干净地叠加。简洁、清晰、精准——一次看得见“传出去”的按压。"
+            "一枚 230 × 60pt 的天蓝到蓝色胶囊“让钥匙响铃”，带电波图标，上方是一张 AirTag 式物品卡片。点击后按钮下沉到 95% 再弹回，图标跳一下；三道与按钮同形的细描边每隔 140 毫秒依次从边缘剥离，各自在 0.8 秒内以 ease-out 向四周扩张 44pt，描边从 2.5pt 细到 0.5pt 并淡出，像声呐脉冲向外扩散。物品卡片的状态行闪现“正在播放声音…”，伴随中等触感；快速连点时回响干净叠加。一次看得见“传出去”的按压。"
         ),
         implementation: L(
             "Every tap appends an echo id; each echo is a Capsule stroke whose own KeyframeAnimator holds for its stagger delay and then eases progress 0 → 1, mapping progress to frame growth, line width and opacity. Echo ids are pruned after they finish.",

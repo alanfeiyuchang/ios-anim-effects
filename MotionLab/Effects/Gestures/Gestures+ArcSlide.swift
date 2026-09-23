@@ -8,8 +8,8 @@ extension Effect {
         name: L("Arc Slide to Unlock", "弧形滑动解锁"),
         summary: L("Drag a knob around a 240° arc, ticking past detents, until the lock at the centre springs open.", "沿 240° 弧线拖动滑块、依次越过刻度，直到中心的锁弹开。"),
         prompt: L(
-            "A 220 pt arc track (14 pt stroke, 240° sweep open at the bottom) circles a padlock glyph. A 40 pt white knob sits at the lower-left end. Dragging it follows the finger's angle around the centre, never the straight line, and a mint-to-indigo angular gradient fills the arc behind it; eight detent ticks brighten as they are passed, each with a selection haptic, and big jumps across the gap are ignored so the knob can't teleport. Reaching the end commits: the track flashes green, a ring pulses outward, the padlock swaps to open with a symbol replace and bounces, and a success haptic fires. Releasing early sends the knob back along the arc on a spring (response 0.6 s, damping 0.8), the fill unwinding with it. Deliberate and satisfying.",
-            "一条直径 220pt 的弧形轨道（描边 14pt，底部开口，共 240°）环绕着中心的锁图标，一个 40pt 的白色滑块位于左下端。拖动时滑块沿手指相对圆心的角度移动，始终贴着弧线而不是走直线，身后的弧段被薄荷绿到靛蓝的角向渐变填满；八个刻度在被越过时依次点亮，每越过一个触发一次选择触感；跨越底部缺口的大幅跳变会被忽略，滑块不会瞬移。到达终点立即提交：轨道闪成绿色，一圈光环向外扩散，锁通过符号替换变为打开状态并弹跳一下，同时触发成功触感。中途松手时，滑块以弹簧（响应 0.6 秒、阻尼 0.8）沿弧线退回，填充也随之倒卷。圆润、郑重、满足感十足。"
+            "A 220 pt arc track (14 pt stroke, 240° sweep open at the bottom) circles a padlock, with a 40 pt white knob at its lower-left end. Dragging moves the knob by the finger's angle around the centre, never in a straight line, while a mint-to-indigo angular gradient fills the arc behind it and eight detent ticks brighten as they are passed, each with a selection haptic; jumps across the gap are ignored so the knob never teleports. Reaching the end commits: the track flashes green, a ring pulses outward, the padlock swaps open with a symbol replace and bounces, and a success haptic fires. Releasing early sends the knob back along the arc on a spring (response 0.6 s, damping 0.8), unwinding the fill with it.",
+            "一条直径 220 pt 的弧形轨道（描边 14 pt，底部开口，共 240°）环绕着中央的挂锁，40 pt 的白色滑块停在左下端。拖动时滑块按手指相对圆心的角度移动，始终贴着弧线走，身后被薄荷绿到靛蓝的角向渐变填满；八个刻度被越过时依次点亮，各有一下选择触感，跨越底部缺口的大跳会被忽略，滑块不会瞬移。到达终点即提交：轨道闪成绿色，一圈光环向外扩散，挂锁以符号替换打开并弹跳，同时触发成功触感。中途松手，滑块以弹簧（响应 0.6 秒、阻尼 0.8）沿弧线退回，填充随之倒卷。"
         ),
         implementation: L(
             "The knob's angle is atan2 of its start point on the arc plus the drag translation; a GeometryEffect whose animatableData is the progress places it on the arc, so springs travel along the curve, and trim(from:to:) draws the fill.",
@@ -102,7 +102,7 @@ private struct ArcSlideDemo: View {
                 .foregroundStyle(unlocked ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Color.primary.opacity(0.7)))
                 .contentTransition(.symbolEffect(.replace))
                 .symbolEffect(.bounce, value: unlocked)
-            Text(unlocked ? (ctx.language == .zh ? "已解锁" : "Unlocked") : (ctx.language == .zh ? "滑动解锁" : "Slide to unlock"))
+            Text(unlocked ? L("Unlocked", "已解锁") : L("Slide to unlock", "滑动解锁"), ctx.language)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .contentTransition(.opacity)

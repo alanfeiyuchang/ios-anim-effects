@@ -91,7 +91,8 @@ private struct StackedBarsDemo: View {
                 .padding(.bottom, 8)
         }
         .onAppear { rise() }
-        .autoplay(ctx.isPreview, every: 2.4, delay: 1.2) { toggleAndRestore() }
+        // The rise already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 2.4, delay: 1.2, intro: false) { toggleAndRestore() }
     }
 
     private var header: some View {
@@ -184,7 +185,7 @@ private struct StackedBarsDemo: View {
         })
     }
 
-    /// Previews and the arrival intro: hide one series, then bring it back.
+    /// Previews: hide one series, then bring it back.
     private func toggleAndRestore() {
         let index = autoIndex % stackSeries.count
         autoIndex += 1

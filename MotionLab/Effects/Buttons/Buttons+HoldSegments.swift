@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Segments light up one click at a time while you hold, and drain back if you let go.", "按住时分段指示灯逐格点亮、每格一震，松手则逐格熄灭。"),
         prompt: L(
             "A dark 260 × 64 pt capsule reading \"Hold to unlock\" with a padlock glyph, and a row of five 40 × 8 pt segment pills beneath it. While held, the segments light up one by one in amber at equal steps across 1.5 s; each one pops from 60% to 115% width and settles on a snappy spring, flashes a short glow and fires a selection haptic, so progress is felt as discrete clicks rather than a smooth fill. Releasing early drains the lit segments in reverse at 60 ms per step with lighter ticks. When the fifth lights, all segments flash mint, the padlock swings open via a symbol replace, the capsule turns mint and a success haptic fires; after 1.4 s it relocks. Mechanical, countable and safe.",
-            "一枚 260 × 64pt 的深色胶囊“长按解锁”，带挂锁图标，下方排着五枚 40 × 8pt 的分段指示条。按住时，指示条在 1.5 秒内按相等间隔依次亮起琥珀色；每一格都会从 60% 宽度弹到 115% 再以利落弹簧落定，闪一下辉光并触发一次选择触感，让进度以一格一格的“咔哒”感被感知，而不是平滑填充。中途松手，已点亮的格子以每格 60 毫秒的速度倒序熄灭，并伴随更轻的触感。第五格亮起时，所有格子闪成薄荷绿，挂锁通过符号替换弹开，胶囊变为薄荷绿并触发成功触感；1.4 秒后重新上锁。机械、可计数、安全。"
+            "一枚 260 × 64pt 的深色胶囊“长按解锁”，带挂锁图标，下方排着五枚 40 × 8pt 的分段条。按住时，五格在 1.5 秒内等间隔依次亮起琥珀色：每格宽度从 60% 弹到 115% 再以利落弹簧落定，闪一下辉光并触发选择触感，进度是一格一格“咔哒”出来的，而非平滑填充。中途松手，已亮的格子以每格 60 毫秒倒序熄灭，触感更轻。第五格亮起时全部闪成薄荷绿，挂锁通过符号替换弹开，胶囊转为薄荷绿并触发成功触感；1.4 秒后重新上锁。机械、可数、踏实。"
         ),
         implementation: L(
             "onPressingChanged starts an async Task that increments a lit count every duration / 5 seconds (each step springs its segment and ticks a haptic) or, on release, a drain Task that decrements every 60 ms; the fifth step unlocks. Segments pop through a per-index keyframeAnimator.",

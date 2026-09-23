@@ -29,9 +29,12 @@ extension Effect {
 
 private struct ScrambleDemo: View {
     let ctx: DemoContext
-    @State private var start = Date()
+    /// `.distantPast` = rest on the decoded line; the first decode is the intro/autoplay replay.
+    @State private var start = Date.distantPast
     @State private var index = 0
-    @State private var done = false
+    @State private var done = true
+    /// Only a decode the user asked for ends with a success haptic.
+    @State private var userTriggered = false
 
     private var targets: [String] {
         ctx.language == .zh
@@ -55,7 +58,7 @@ private struct ScrambleDemo: View {
             VStack(spacing: 16) {
                 lockBadge
                 statusRow
-                TimelineView(.animation) { timeline in
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                     let elapsed = timeline.date.timeIntervalSince(start)
                     let duration = max(ctx["duration"], 0.1)
                     VStack(spacing: 14) {
@@ -78,14 +81,18 @@ private struct ScrambleDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
-        .onTapGesture { replay() }
+        .onTapGesture {
+            userTriggered = true
+            replay()
+        }
         .autoplay(ctx.isPreview, every: max(ctx["duration"], 0.5) + 1.6, delay: 0.1) { replay() }
         .task(id: start) {
+            guard start != .distantPast else { return }
             done = false
             try? await Task.sleep(for: .seconds(max(ctx["duration"], 0.1)))
             if Task.isCancelled { return }
             withAnimation(.snappy) { done = true }
-            if !ctx.isPreview { Haptics.success() }
+            if userTriggered && !ctx.isPreview { Haptics.success() }
         }
     }
 

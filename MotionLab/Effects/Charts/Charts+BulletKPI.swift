@@ -80,9 +80,9 @@ private struct BulletKPIDemo: View {
                 refresh()
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: ctx["duration"] + 1.6) {
-            if ctx.isPreview { refresh() }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: ctx["duration"] + 1.6, intro: false) {
+            refresh()
         }
     }
 

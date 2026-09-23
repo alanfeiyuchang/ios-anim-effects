@@ -44,10 +44,16 @@ private enum FlipPhase: Equatable {
 
 private struct FlipInDemo: View {
     let ctx: DemoContext
-    @State private var phase: FlipPhase = .hidden
+    @State private var phase: FlipPhase
     @State private var index = 0
     /// Mirrors `index` outside the animation-disabled reset so the chapter dots can glide.
     @State private var shownIndex = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run the loop: show the word at rest.
+        _phase = State(initialValue: ctx.isStill ? .shown : .hidden)
+    }
 
     private var words: [String] {
         ctx.language == .zh ? ["让文字跃动", "每帧都讲究", "质感即品牌"] : ["KINETIC", "MOTION", "DELIGHT"]

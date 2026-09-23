@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Twist the dial to wind it; let go and it unwinds in real time, then rings.", "拧动表盘上发条，松手后实时回转，归零时响铃摇晃。"),
         prompt: L(
             "A kitchen-timer dial (210 pt) whose numbered face rotates under a fixed red index at 12 o'clock, with a coral wedge showing the remaining time like a Time Timer. Twisting clockwise winds it: the face follows the finger's angle, ratcheting to 5-second notches with a selection haptic on each click, up to one full turn (60 s). On release it unwinds at a constant, linear rate back to zero — here sped up 4× — while the wedge shrinks and the centre readout counts down every second. At zero the whole timer rings: it shakes ±8° with a decaying keyframed wobble for 600 ms, the index glows and a success haptic fires. Grabbing it mid-run freezes it where it is. Mechanical, playful and immediately understandable.",
-            "一只 210pt 的厨房计时器表盘：带数字的表面在 12 点钟方向固定的红色指针下转动，珊瑚色扇形像 Time Timer 一样显示剩余时间。顺时针拧动即上发条：表面跟随手指角度转动，并以 5 秒一格的棘轮吸附，每一格一次选择触觉，最多一整圈（60 秒）。松手后以恒定的线性速度回转到零（演示中加速 4 倍），扇形随之缩小，中心读数逐秒倒数。归零时整个计时器“响铃”：以关键帧衰减摆动左右摇晃 ±8°，持续 600 毫秒，指针发光并触发成功触觉。运行中抓住它会让它停在当前位置。机械、俏皮、一看就懂。"
+            "一只 210pt 厨房计时器：带数字的表面在 12 点钟方向固定的红色指针下转动，珊瑚色扇形像 Time Timer 一样显示剩余时间。顺时针拧动即上发条：表面跟随手指角度，以 5 秒一格的棘轮吸附，每格一次选择触觉，最多一整圈（60 秒）。松手后以恒定线性速度回转到零（演示中加速 4 倍），扇形缩小，中心读数逐秒倒数。归零时计时器“响铃”：以衰减关键帧左右摇晃 ±8°，持续 600 毫秒，指针发光并触发成功触觉。运行中抓住它会停在原处。机械、俏皮。"
         ),
         implementation: L(
             "Wrapped atan2 deltas accumulate into a clamped angle; release starts a linear animation back to zero whose duration is angle ÷ rate, and an Animatable face redraws the wedge and seconds per frame. Grabbing computes the elapsed position and sets it inside a transaction with animations disabled.",

@@ -59,8 +59,7 @@ private struct LifeEvChargeDemo: View {
         }
         // Previews also show the tap: pause, then resume. The detail stage already animates on its own,
         // so it skips the one-shot intro (which would leave the charger paused).
-        .autoplay(ctx.isPreview, every: 2.2, delay: 2.4) { togglePause() }
-        .environment(\.demoIntroPlay, false)
+        .autoplay(ctx.isPreview, every: 2.2, delay: 2.4, intro: false) { togglePause() }
     }
 
     private var card: some View {

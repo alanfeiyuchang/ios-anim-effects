@@ -36,6 +36,8 @@ private struct DownloadDemo: View {
     @State private var state: DownloadState = .idle
     @State private var progress: Double = 0
     @State private var run = 0
+    /// Bumped only when a download completes, so the checkmark bounces on arrival and not when leaving `.done`.
+    @State private var doneCount = 0
 
     var body: some View {
         VStack(spacing: 18) {
@@ -51,7 +53,7 @@ private struct DownloadDemo: View {
                     caption
                 }
                 Spacer(minLength: 0)
-                DownloadButton(state: state, progress: progress, lineWidth: ctx.cg("ring")) { tap() }
+                DownloadButton(state: state, progress: progress, lineWidth: ctx.cg("ring"), doneCount: doneCount) { tap() }
             }
             .padding(16)
             .frame(width: 300)
@@ -79,21 +81,23 @@ private struct DownloadDemo: View {
     }
 
     private func autoStep() {
+        // Scripted taps stay silent, including the delayed ones below.
+        let muted = Haptics.isMuted || ctx.isPreview
         if state == .done {
-            tap()
+            tap(muted: muted)
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(0.5))
-                tap()
+                tap(muted: muted)
             }
         } else {
-            tap()
+            tap(muted: muted)
         }
     }
 
-    private func tap() {
+    private func tap(muted: Bool = false) {
         switch state {
         case .idle:
-            start()
+            start(muted: muted)
         case .downloading, .done:
             run += 1
             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
@@ -103,12 +107,13 @@ private struct DownloadDemo: View {
         }
     }
 
-    private func start() {
+    private func start(muted: Bool) {
         run += 1
         let current = run
         let duration = ctx["duration"]
+        let silent = muted || ctx.isPreview
         withAnimation(.snappy) { state = .downloading }
-        if !ctx.isPreview { Haptics.tap(.light) }
+        if !silent { Haptics.tap(.light) }
         Task { @MainActor in
             // Let the ring and percentage label mount at 0 before the long progress animation starts.
             try? await Task.sleep(for: .milliseconds(80))
@@ -118,7 +123,8 @@ private struct DownloadDemo: View {
             } completion: {
                 guard current == run else { return }
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { state = .done }
-                if !ctx.isPreview { Haptics.success() }
+                doneCount += 1
+                if !silent { Haptics.success() }
             }
         }
     }
@@ -128,6 +134,7 @@ private struct DownloadButton: View {
     let state: DownloadState
     let progress: Double
     let lineWidth: CGFloat
+    let doneCount: Int
     let action: () -> Void
 
     private var symbol: String {
@@ -153,7 +160,7 @@ private struct DownloadButton: View {
                     .font(.system(size: state == .downloading ? 14 : 20, weight: .bold))
                     .foregroundStyle(state == .done ? Color.white : Palette.blue)
                     .contentTransition(.symbolEffect(.replace))
-                    .symbolEffect(.bounce, value: state == .done)
+                    .symbolEffect(.bounce, value: doneCount)
             }
             .frame(width: 52, height: 52)
         }

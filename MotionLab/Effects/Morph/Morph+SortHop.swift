@@ -87,7 +87,7 @@ private struct SortHopDemo: View {
         let arc: CGFloat = delta == 0 ? -4 : direction * perSlot * CGFloat(abs(delta))
         let color = Palette.spectrum[bar % Palette.spectrum.count]
         return VStack(spacing: 6) {
-            Text("\(value)")
+            Text(verbatim: "\(value)")
                 .font(.caption.weight(.bold).monospacedDigit())
                 .foregroundStyle(.secondary)
             RoundedRectangle(cornerRadius: 10, style: .continuous)

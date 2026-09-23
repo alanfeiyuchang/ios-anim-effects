@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A liquid highlight chases the finger across a button bar, stretching with speed.", "液态高光在按钮条上追随手指，速度越快拉得越长。"),
         prompt: L(
             "A 288 × 64 pt frosted capsule holds four icon buttons (home, search, camera, profile). Wherever the finger slides, a 60 × 48 pt violet-tinted highlight blob follows it on a spring (response 0.28 s, damping 0.62). Its width stretches with the finger's horizontal speed — up to +80% at ~1500 pt/s — while its height slims by up to 25%, and the stretch is anchored on the leading edge of travel so the blob trails like a droplet; when the finger stops for 120 ms it relaxes back into a pill. The icon under the blob tints and grows to 112%. On release the blob snaps to the nearest button with a bouncy settle, that icon bounces and a selection haptic ticks. Fluid, gooey and very finger-aware.",
-            "一枚 288 × 64pt 的磨砂胶囊中排着四个图标按钮（首页、搜索、相机、个人）。手指滑到哪里，一团 60 × 48pt 的淡紫色高光就以弹簧（响应 0.28 秒、阻尼 0.62）跟到哪里。高光宽度随手指水平速度拉伸——约 1500pt/秒时最多加宽 80%——高度同时最多收窄 25%，且以运动方向的前沿为锚点，拖出水滴般的尾巴；手指停下 120 毫秒后恢复成胶囊形。高光下方的图标变为强调色并放大到 112%。松手后高光吸附到最近的按钮并弹性落定，对应图标跳动一下，同时触发一次选择触感。流体感、黏稠感十足，并且非常“懂手指”。"
+            "288 × 64pt 的磨砂胶囊按钮条里排着四个图标（首页、搜索、相机、个人）。一团 60 × 48pt 的淡紫色高光以弹簧（响应 0.28 秒、阻尼 0.62）追随手指：宽度随水平速度拉伸，约 1500pt/秒时加宽 80%，高度同时收窄至多 25%，并以运动前沿为锚，拖出水滴般的尾巴；手指停住 120 毫秒后缩回胶囊形。高光下的图标变色并放大到 112%。松手后高光吸附到最近的按钮、弹性落定，该图标跳一下并触发选择触感。黏稠流动，处处跟手。"
         ),
         implementation: L(
             "A DragGesture feeds location and value.velocity into a spring: position follows the finger, while scaleEffect(x:y:anchor:), anchored at the front edge of the motion, stretches the blob backwards. A generation-tagged Task relaxes the stretch once the finger rests; onEnded snaps to the nearest slot.",

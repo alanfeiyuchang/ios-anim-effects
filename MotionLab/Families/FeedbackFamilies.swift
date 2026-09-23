@@ -32,7 +32,7 @@ enum FeedbackFamilies {
             id: "feedback.badge",
             category: .feedback,
             name: L("Badges & Reactions", "角标与回应"),
-            summary: L("Counters and emoji reactions that hop, roll and fly into place.", "跳动、滚动并飞到位的计数角标与表情回应。"),
+            summary: L("Counters, emoji reactions, streak flames, presence pings and floating hearts that hop, roll, burn and fly.", "计数角标、表情回应、连胜火苗、在线涟漪与漂浮爱心——跳动、滚动、燃烧、飞舞。"),
             symbol: "app.badge.fill"
         ),
         EffectFamily(

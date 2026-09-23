@@ -11,8 +11,8 @@ extension Effect {
             "页面向侧边滑开、缩小并三维转动，露出导航抽屉。"
         ),
         prompt: L(
-            "A full-screen page sits over a deep indigo drawer. Tapping the ☰ menu button — or dragging right from anywhere — slides the page ~190 pt to the right while it scales to 82%, rounds its corners to 26 pt and rotates about 12° around the vertical axis (perspective ≈0.6) so its far edge recedes, with a softer ghost copy trailing behind for depth. Everything is driven by one 0–1 progress value that follows the finger 1:1 and, on release, springs (response ≈0.45 s, damping ≈0.82) to open or closed based on fling velocity. Drawer items slide in from 20 pt left and fade up in a cascade as progress passes each one's threshold. Spatial, layered and silky.",
-            "一个全屏页面覆盖在深靛蓝色的抽屉之上。点击 ☰ 菜单按钮或在任意位置向右拖拽时，页面向右滑开约 190pt，同时缩小到 82%、圆角变为 26pt，并绕竖直轴旋转约 12°（透视约 0.6），使远端边缘向后退去；后方还跟随一层更淡的页面「残影」增强纵深。一切由一个 0–1 的进度值驱动：拖拽时 1:1 跟手，松手后根据甩动速度以弹簧（响应约 0.45 秒、阻尼约 0.82）吸附到打开或关闭。抽屉菜单项随进度越过各自阈值，从左侧 20pt 处依次滑入并淡入。空间感强、层次分明、丝般顺滑。"
+            "A phone-sized page sits over a deep indigo drawer. Tapping the ☰ menu button — or dragging right from anywhere — slides the page ~150 pt to the right while it scales to 82%, rounds its corners to 26 pt and rotates about 12° around the vertical axis (perspective ≈0.6) so its far edge recedes, with a softer ghost copy trailing behind for depth. Everything is driven by one 0–1 progress value that follows the finger 1:1 and, on release, springs (response ≈0.45 s, damping ≈0.82) to open or closed based on fling velocity. Drawer items slide in from 20 pt left and fade up in a cascade as progress passes each one's threshold. Spatial, layered and silky.",
+            "一个手机尺寸的页面覆盖在深靛蓝色的抽屉之上。点击 ☰ 菜单按钮或在任意位置向右拖拽时，页面向右滑开约 150pt，同时缩小到 82%、圆角变为 26pt，并绕竖直轴旋转约 12°（透视约 0.6），使远端边缘向后退去；后方还跟随一层更淡的页面「残影」增强纵深。一切由一个 0–1 的进度值驱动：拖拽时 1:1 跟手，松手后根据甩动速度以弹簧（响应约 0.45 秒、阻尼约 0.82）吸附到打开或关闭。抽屉菜单项随进度越过各自阈值，从左侧 20pt 处依次滑入并淡入。空间感强、层次分明、丝般顺滑。"
         ),
         implementation: L(
             "A single progress value (driven by DragGesture or a spring) feeds offset, scaleEffect, rotation3DEffect and corner radius of the page plus per-item opacity ramps in the drawer.",
@@ -43,17 +43,24 @@ private struct SideDrawerDemo: View {
     @State private var progress: CGFloat = 0
     @State private var dragStart: CGFloat?
 
-    private let travel: CGFloat = 190
+    private let travel: CGFloat = 150
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            LinearGradient(colors: [Color(hex: 0x1A1F4D), Color(hex: 0x3B2A7A)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            DrawerMenu(progress: progress, language: ctx.language)
-            page(ghost: true)
-            page(ghost: false)
+        VStack(spacing: 14) {
+            ZStack(alignment: .topLeading) {
+                LinearGradient(colors: [Color(hex: 0x1A1F4D), Color(hex: 0x3B2A7A)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                DrawerMenu(progress: progress, language: ctx.language)
+                page(ghost: true)
+                page(ghost: false)
+            }
+            .frame(width: 250, height: 320)
+            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+            .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
+            .contentShape(Rectangle())
+            .gesture(drag)
+            DemoHint(text: L("Tap ☰ or drag right to open the menu", "点击 ☰ 或向右拖动打开菜单"), ctx: ctx)
         }
-        .contentShape(Rectangle())
-        .gesture(drag)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) { toggle() }
     }
 
@@ -120,9 +127,9 @@ private struct DrawerMenu: View {
                 Circle()
                     .fill(Palette.sunset)
                     .frame(width: 38, height: 38)
-                    .overlay(Text("A").font(.headline).foregroundStyle(.white))
+                    .overlay(Text(verbatim: "A").font(.headline).foregroundStyle(.white))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Alex Chen").font(.subheadline.weight(.semibold))
+                    Text(verbatim: "Alex Chen").font(.subheadline.weight(.semibold))
                     Text(language == .zh ? "专业版" : "Pro plan").font(.caption).opacity(0.6)
                 }
             }
@@ -167,7 +174,7 @@ private struct DrawerPage: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Button(action: onMenu) {
                     Image(systemName: "line.3.horizontal")
@@ -180,10 +187,9 @@ private struct DrawerPage: View {
                     .font(.headline)
                 Spacer()
             }
-            DemoHint(text: L("Tap ☰ or drag right to open the menu", "点击 ☰ 或向右拖动打开菜单"), ctx: ctx)
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Palette.aurora)
-                .frame(height: 104)
+                .frame(height: 90)
                 .overlay(alignment: .bottomLeading) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(language == .zh ? "早上好，Alex" : "Good morning, Alex")
@@ -201,7 +207,7 @@ private struct DrawerPage: View {
                 }
             }
         }
-        .padding(20)
+        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(uiColor: .systemBackground))
     }

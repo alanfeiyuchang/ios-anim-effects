@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Satellite actions spiral out of a central button onto a full orbit.", "卫星般的操作按钮从中心螺旋飞出，落在一整圈轨道上。"),
         prompt: L(
             "A 68 pt glowing violet core button sits at the centre of the stage. On tap it spins its sparkle glyph 180° while five 48 pt satellite actions spiral out onto a full 92 pt orbit: each travels on a polar path — its radius grows from 0 while its angle sweeps 140° into place — so they swirl out like a galaxy rather than sliding straight, 40 ms apart, on a spring (response 0.5 s, damping 0.72), and each stays upright while it travels. A dashed orbit ring draws itself behind them (trim 0 → 1 in 0.5 s). Tapping a satellite pulses it and collapses the orbit back into the core in reverse, with a success haptic; tapping the core toggles with a light one. Cosmic and playful.",
-            "舞台中央有一枚 68pt 的发光紫罗兰核心按钮。点击后，核心的闪光图标旋转 180°，五个 48pt 的卫星操作沿极坐标轨迹螺旋飞出，落到一整圈半径 92pt 的轨道上：每个卫星的半径从 0 增长，同时角度扫过 140° 就位，因此它们像星系一样旋出，而不是直线滑出；彼此错开 40 毫秒，使用弹簧（响应 0.5 秒、阻尼 0.72），飞行中始终保持正立。身后一圈虚线轨道随之绘制（trim 0 → 1，0.5 秒）。点击某个卫星会让它脉冲一下，并让整条轨道反向收回核心，伴随成功触感；点击核心则以轻触感切换。充满宇宙感、俏皮且令人印象深刻。"
+            "舞台中央是一枚 68pt 的发光紫罗兰核心按钮。点击后闪光图标旋转 180°，五个 48pt 卫星操作沿极坐标轨迹螺旋飞出、落到半径 92pt 的整圈轨道：半径从 0 增长的同时角度扫过 140°，像星系旋开而非直线滑出，彼此间隔 40 毫秒，弹簧（响应 0.5 秒、阻尼 0.72）驱动，途中始终保持正立。身后一圈虚线轨道在 0.5 秒内绘出（trim 0 → 1）。点击卫星会让它脉冲一下，整条轨道反向收回核心，并触发成功触感；点击核心则轻触切换。宇宙感十足又俏皮。"
         ),
         implementation: L(
             "Each satellite is offset by the radius and then rotated by its angle with rotationEffect, and counter-rotated inside, so animating radius and angle together with a delayed spring traces a true spiral; the dashed ring is a trimmed Circle stroke.",

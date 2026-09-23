@@ -83,11 +83,9 @@ private struct HeatmapDemo: View {
                 ripple(column: 0, row: 0, refresh: false)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 3.0, delay: 2.6) {
-            if ctx.isPreview {
-                ripple(column: Int.random(in: 0..<heatColumns), row: Int.random(in: 0..<heatRows), refresh: true)
-            }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 3.0, delay: 2.6, intro: false) {
+            ripple(column: Int.random(in: 0..<heatColumns), row: Int.random(in: 0..<heatRows), refresh: true)
         }
     }
 

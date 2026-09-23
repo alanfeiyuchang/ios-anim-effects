@@ -53,10 +53,10 @@ private struct MarqueeDemo: View {
 
     var body: some View {
         VStack(spacing: 22) {
-            MarqueeRow(speed: ctx["speed"], reversed: false) {
+            MarqueeRow(speed: ctx["speed"], reversed: false, preview: ctx.isPreview) {
                 ForEach(quotes) { QuoteChip(quote: $0) }
             }
-            MarqueeRow(speed: ctx["speed"] * 0.8, reversed: ctx.bool("opposite")) {
+            MarqueeRow(speed: ctx["speed"] * 0.8, reversed: ctx.bool("opposite"), preview: ctx.isPreview) {
                 ForEach(words, id: \.self) { word in
                     HeadlineWord(word: word)
                 }
@@ -69,6 +69,8 @@ private struct MarqueeDemo: View {
 private struct MarqueeRow<Content: View>: View {
     let speed: Double
     let reversed: Bool
+    /// Grid previews tick at the capped frame rate.
+    let preview: Bool
     @ViewBuilder let content: () -> Content
     @State private var stripWidth: CGFloat = 0
 
@@ -84,7 +86,7 @@ private struct MarqueeRow<Content: View>: View {
             .frame(width: 0)
             .frame(maxWidth: .infinity)
             .overlay(alignment: .leading) {
-                TimelineView(.animation) { timeline in
+                TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
                     HStack(spacing: 0) {
                         strip
                             .onGeometryChange(for: CGFloat.self) { proxy in

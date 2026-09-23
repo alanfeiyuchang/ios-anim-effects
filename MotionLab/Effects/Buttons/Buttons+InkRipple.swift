@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A soft wave of light spreads from the exact touch point.", "从手指触点扩散开的一圈柔光涟漪。"),
         prompt: L(
             "A rounded-rectangle button with a sky-to-blue gradient and a faint glossy top highlight. Each tap spawns a translucent white circle exactly at the touch point that expands with an ease-out curve until it covers the farthest corner of the button (about 600 ms), while its opacity fades from 35% to zero on an ease-in over the same duration, so the wave dissolves as it reaches the edges. Ripples are clipped to the button shape and can overlap when tapped rapidly. A bright 28 pt glint flashes at the touch point and melts within ~300 ms, while a thin sky-blue outline leaves the button's edge, growing 14 pt outward as it fades. The button itself dips to 96% and springs back with a bouncy keyframe, plus a light haptic. It feels liquid, precise and responsive to exactly where you touched.",
-            "圆角矩形按钮，天蓝到湛蓝渐变，顶部有一道淡淡的高光。每次点击都会在手指的精确落点生成一个半透明白色圆，以缓出曲线扩散到覆盖按钮最远的角（约 600 毫秒）；透明度在同一时长内以缓入曲线从 35% 渐隐到 0，让涟漪在触及边缘时恰好消散。涟漪被裁切在按钮形状内，快速连点时可相互叠加。触点处还会闪现一粒 28pt 的亮光，约 300 毫秒内融化；同时一圈天蓝色细描边从按钮边缘脱离，向外扩出 14pt 并淡出。按钮本身下沉到 96% 并以弹性关键帧回弹，伴随轻触觉。整体如液体般细腻，且精准回应触点位置。"
+            "天蓝到湛蓝渐变的圆角按钮，顶部有淡淡高光。每次点击都在精确落点生成一个半透明白圆，以缓出曲线约 600 毫秒扩散到最远的角，透明度同时以缓入曲线从 35% 降到 0，恰好在触及边缘时消散。涟漪裁切在按钮内，连点可叠加。触点处闪现一粒 28pt 亮光，约 300 毫秒融化；一圈天蓝细描边从按钮边缘脱离，外扩 14pt 并淡出。按钮下沉到 96% 并以弹性关键帧回弹，伴随轻触觉。如液体般细腻，精准回应触点。"
         ),
         implementation: L(
             "onTapGesture's location closure appends a ripple model; each ripple view animates its own scale and opacity on appear and is removed after the duration, all clipped to the button shape.",

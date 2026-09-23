@@ -29,12 +29,22 @@ extension Effect {
 
 private struct CheckmarkDemo: View {
     let ctx: DemoContext
-    @State private var ring: CGFloat = 0
-    @State private var tick: CGFloat = 0
-    @State private var pop = false
+    @State private var ring: CGFloat
+    @State private var tick: CGFloat
+    @State private var pop: Bool
     @State private var halo = false
     /// The halo ring is invisible until the burst, so nothing shows before the stroke draws.
     @State private var haloVisible = false
+    /// Identifies the latest play; an older, superseded sequence stops at its next await.
+    @State private var playID = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never play: show the finished badge.
+        _ring = State(initialValue: ctx.isStill ? 1 : 0)
+        _tick = State(initialValue: ctx.isStill ? 1 : 0)
+        _pop = State(initialValue: ctx.isStill)
+    }
 
     private var color: Color {
         switch ctx.int("color") {
@@ -85,6 +95,10 @@ private struct CheckmarkDemo: View {
 
     private func play() {
         let duration = ctx["duration"]
+        let id = playID + 1
+        playID = id
+        // Captured now: the success haptic lands after autoplay (or the detail intro) has unmuted Haptics.
+        let muted = Haptics.isMuted || ctx.isPreview
         var reset = Transaction()
         reset.disablesAnimations = true
         withTransaction(reset) {
@@ -96,16 +110,18 @@ private struct CheckmarkDemo: View {
         }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(60))
+            guard id == playID else { return }
             withAnimation(.easeInOut(duration: duration)) { ring = 1 }
             withAnimation(.easeOut(duration: 0.35).delay(duration * 0.7)) { tick = 1 }
             try? await Task.sleep(for: .seconds(duration * 0.7 + 0.25))
+            guard id == playID else { return }
             // Burst: the halo appears at 50% at the badge's edge, then expands and fades out.
             var instant = Transaction()
             instant.disablesAnimations = true
             withTransaction(instant) { haloVisible = true }
             withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) { pop = true }
             withAnimation(.easeOut(duration: 0.7)) { halo = true }
-            if !ctx.isPreview { Haptics.success() }
+            if !muted { Haptics.success() }
         }
     }
 }

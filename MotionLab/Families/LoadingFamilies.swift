@@ -11,7 +11,7 @@ enum LoadingFamilies {
             id: "loading.spinner",
             category: .loading,
             name: L("Spinner", "旋转加载"),
-            summary: L("Indeterminate spinners: arcs, orbits and petals turning with easing.", "不确定进度的旋转指示器：弧线、轨道与花瓣。"),
+            summary: L("Indeterminate spinners: eased arcs, orbits, petals, metaballs, 3D gimbals, flipping tiles and comet trails.", "不确定进度旋转器：缓动弧线、轨道、花瓣、融球、三维陀螺、翻转方块与彗星拖尾。"),
             symbol: "progress.indicator"
         ),
         EffectFamily(
@@ -25,14 +25,14 @@ enum LoadingFamilies {
             id: "loading.progress-bar",
             category: .loading,
             name: L("Progress Bar", "进度条"),
-            summary: L("Linear progress: glowing fills, racing segments and story bars.", "线性进度：辉光填充、追逐线段与快拍进度条。"),
+            summary: L("Linear progress: glowing fills, racing segments, story bars, LED cells, sloshing liquid, a swinging tooltip and barber-pole stripes.", "线性进度：辉光填充、追逐线段、快拍进度条、LED 格子、晃动液体、摇摆气泡与理发店条纹。"),
             symbol: "slider.horizontal.below.rectangle"
         ),
         EffectFamily(
             id: "loading.progress-ring",
             category: .loading,
             name: L("Progress Ring", "进度环"),
-            summary: L("Circular progress: gradient rings and liquid levels with a rolling value.", "环形进度：渐变圆环与液面，数值同步滚动。"),
+            summary: L("Circular progress: gradient rings, liquid levels, radial ticks, install pies, elastic arcs, ring-to-check and flowing dashes.", "环形进度：渐变圆环、液面、放射刻度、安装饼图、弹性圆弧、圆环变对勾与流动虚线。"),
             symbol: "circle.dashed"
         ),
         EffectFamily(

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The sun rolls across and becomes a cratered moon under the stars.", "太阳滚动到另一端化作月亮，星空随之浮现。"),
         prompt: L(
             "A large illustrated theme switch (180 × 76 pt capsule). Day: a sky-blue gradient track, a golden sun knob on the left — given depth by a radial gradient from a pale-yellow core to a deep-orange rim, a soft specular highlight near 10 o'clock and a warm outer glow — wrapped in three concentric translucent halo rings, and puffy white clouds resting along the bottom right. On tap the knob rolls to the right on a spring (response 0.6 s, damping 0.78), rotating as it travels while its fill shifts from warm amber to pale lunar gray and three craters fade in. The track crossfades to a deep navy night gradient, the clouds sink out of view, and five tiny stars scale in on the left with a 60 ms stagger and a gentle twinkle. Toggling back plays everything in reverse. Whimsical, cinematic and instantly readable.",
-            "大尺寸插画风主题开关（180 × 76pt 胶囊）。白天：天蓝渐变轨道，左侧是金色太阳旋钮——由浅黄内核到深橙边缘的径向渐变、10 点钟方向的柔和高光和一圈暖色外发光营造立体感——外围环绕三圈半透明同心光晕，右下方铺着蓬松的白云。点击后旋钮以弹簧（响应 0.6 秒、阻尼 0.78）滚向右侧，一边移动一边旋转，填充从暖琥珀色过渡为浅月灰，并浮现三个陨石坑。轨道交叉过渡为深藏青夜空渐变，云朵下沉消失，左侧五颗小星星以 60 毫秒错峰缩放出现并轻轻闪烁。再次点击全部反向播放。充满童趣与电影感，一眼就懂。"
+            "大尺寸插画主题开关（180 × 76pt 胶囊）。白天：天蓝渐变轨道，左侧金色太阳旋钮由浅黄内核到深橙边缘的径向渐变、10 点钟方向高光和暖色外发光塑造立体感，外围三圈半透明同心光晕，右下铺着蓬松白云。点击后旋钮以弹簧（响应 0.6 秒、阻尼 0.78）边滚边转滑向右侧，填充由暖琥珀变为浅月灰并浮现三个陨石坑；轨道过渡为深藏青夜空，云朵下沉消失，五颗小星星以 60 毫秒错峰缩放出现并轻轻闪烁。再点则全部倒放。童趣而有电影感。"
         ),
         implementation: L(
             "Every layer (track gradients, halos, clouds, stars, craters) reads one isNight flag; a single spring transaction animates offsets, rotation and opacities, with per-star delays via animation(_:value:).",

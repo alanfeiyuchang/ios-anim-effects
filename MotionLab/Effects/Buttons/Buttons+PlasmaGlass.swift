@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Soft colour blobs swirl inside a glass capsule and bleed a matching halo.", "柔和色团在玻璃胶囊内缓缓游动，并向外晕出同色光晕。"),
         prompt: L(
             "A 230 × 64 pt glass capsule labelled \"Ask anything\". Inside it, four heavily blurred colour blobs (violet, pink, sky, mint; ~70 pt, blur 18 pt) drift on slow independent Lissajous orbits — periods between 5 and 9 s — so the fill is a living, never-repeating gradient. A glossy white top highlight, a hairline rim and a 20% white wash sell the glass. Behind it, a copy of the blob layer, blurred 26 pt more and unclipped, leaks out as a soft halo that shifts colour with the blobs. On tap the button dips to 96% on a spring, the blobs swell 35% and brighten for ~0.9 s before easing back, with a soft haptic. Dreamy, intelligent and premium — the feel of an AI entry point.",
-            "一枚 230 × 64pt 的玻璃胶囊按钮“随便问问”，带闪光图标。胶囊内有四团高度模糊的色团（紫罗兰、粉、天蓝、薄荷；约 70pt，模糊 18pt），各自沿缓慢的利萨如轨迹漂移——周期在 5 到 9 秒之间——让填充成为不断流动、永不重复的渐变。顶部白色光泽高光、细描边与 20% 白色蒙层营造玻璃质感。胶囊后方有一份未裁切、额外模糊 26pt 的色团副本向外渗出柔和光晕，颜色随色团变化。点击时按钮以弹簧下沉到 96%，色团膨胀 35% 并变亮，约 0.9 秒后缓缓恢复，伴随柔和触感。梦幻、智能又高级——很有 AI 入口的感觉。"
+            "一枚 230 × 64pt 的玻璃胶囊“随便问问”。胶囊内四团高度模糊的色团（紫罗兰、粉、天蓝、薄荷；约 70pt，模糊 18pt）各自沿缓慢的利萨如轨迹漂移，周期 5–9 秒，让填充成为永不重复的流动渐变。顶部白色光泽、细描边与 20% 白色蒙层塑造玻璃感。后方一份未裁切、再模糊 26pt 的色团副本外溢成柔和光晕，颜色随之变化。点击时按钮以弹簧下沉到 96%，色团膨胀 35% 并变亮，约 0.9 秒后缓缓恢复，伴随柔和触感。梦幻、聪明，很有 AI 入口的气质。"
         ),
         implementation: L(
             "A TimelineView(.animation) offsets four blurred circles along sine/cosine orbits inside a capsule clip, flattened with drawingGroup; the same layer, blurred further and unclipped, forms the halo. A tap drives a keyframeAnimator that scales the blobs and brightness.",

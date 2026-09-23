@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A brutalist button of offset layers that collapse on press and fan back out.", "由错位叠层组成的粗野风按钮，按下时层层塌缩，松手后依次弹开。"),
         prompt: L(
             "A bold neo-brutalist 220 × 60 pt button built from three identical rounded slabs with 2 pt ink outlines: a pink back slab offset 12 pt down-right, a coral middle slab offset 6 pt, and an amber face on top with the label \"Publish\". On touch-down the slabs collapse into one — the face travels first, the middle slab 40 ms later — each on a quick spring (response 0.3 s), so the stack visibly telescopes shut. On release they fan back out in the same order: the face pops up first and the lower layers trail behind with the 40 ms stagger and a lively bounce (damping 0.55), like a deck of cards springing open. A rigid haptic confirms the press. Graphic, loud and satisfyingly mechanical.",
-            "一枚大胆的新粗野主义风格按钮，220 × 60pt，由三块相同的圆角板叠成，均带 2pt 墨色描边：粉色底板向右下偏移 12pt，珊瑚色中板偏移 6pt，最上面是琥珀色面板，写着“发布”。按下时三层塌缩成一层——面板先动，中板晚 40 毫秒——每层都走一段利落的弹簧（响应 0.3 秒），像望远镜一样层层收拢。松手后按相同顺序展开：面板先弹起，下层以 40 毫秒错峰依次跟上，并带活泼回弹（阻尼 0.55），像一叠卡片被弹开。按下生效时伴随一次清脆的硬触感。图形感强、张扬，机械感十足。"
+            "一枚 220 × 60pt 的新粗野主义按钮，由三块带 2pt 墨色描边的相同圆角板叠成：粉色底板向右下偏移 12pt，珊瑚色中板偏移 6pt，最上面是写着“发布”的琥珀色面板。按下时三层塌成一层——面板先动，中板晚 40 毫秒——各走一段利落弹簧（响应 0.3 秒），像望远镜层层收拢。松手后按同样顺序展开：面板先弹起，下层错开 40 毫秒跟上，带活泼回弹（阻尼 0.55），像一叠卡片被弹开。按下时一次清脆的硬触感。图形感强，机械感十足。"
         ),
         implementation: L(
             "A ButtonStyle draws the three slabs itself: each rests at its own depth and, while pressed, travels to the back slab's depth; every layer carries its own delayed spring keyed on the pressed state, so upper layers lead and lower ones trail.",

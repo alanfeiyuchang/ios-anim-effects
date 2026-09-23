@@ -54,9 +54,9 @@ private struct GaugeDemo: View {
                 set(0.74)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 2.0, delay: 1.8) {
-            if ctx.isPreview { set(Double.random(in: 0.15...0.95)) }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 2.0, delay: 1.8, intro: false) {
+            set(Double.random(in: 0.15...0.95))
         }
     }
 

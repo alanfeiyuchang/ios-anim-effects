@@ -80,7 +80,8 @@ private struct DonutDemo: View {
                 sweepIn()
             })
         }
-        .autoplay(ctx.isPreview, every: 1.5, delay: 1.6) { cycle() }
+        // The sweep already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 1.5, delay: 1.6, intro: false) { cycle() }
         .sensoryFeedback(.selection, trigger: selected) { _, _ in !ctx.isPreview }
     }
 

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Holding compresses and rattles the button with growing energy until it launches.", "按住时按钮被压缩并越抖越厉害，蓄满后一飞冲天。"),
         prompt: L(
             "A 120 pt rounded-square launch key with a paper-plane glyph on a violet-to-pink gradient,. While held for 1.4 s the key compresses with an ease-in from 100% to 86%, its glow swells from 10 to 30 pt, and a jitter builds with the charge: a fast ~40 Hz shake whose amplitude grows from 0 to 3 pt and a ±2° wobble, so it visibly strains. Releasing early lets it spring back with a bouncy overshoot (response 0.4 s, damping 0.5). When fully charged the key snaps to 115% and settles, the plane shoots 140 pt up while fading, leaving a short gradient exhaust trail, and a heavy then success haptic fire; after 1.2 s a fresh plane drops back in. Energetic, playful and physical.",
-            "一枚 120pt 的圆角方形发射键，紫罗兰到粉色渐变，中间是纸飞机图标。按住 1.4 秒的过程中，按键以 ease-in 从 100% 压缩到 86%，辉光从 10pt 膨胀到 30pt，并随蓄力产生抖动：约 40 Hz 的高速震颤，幅度从 0 增至 3pt，外加 ±2° 的摇晃，看得出它在“憋劲”。中途松手，按键带弹性过冲弹回（响应 0.4 秒、阻尼 0.5）。蓄满后按键瞬间弹到 115% 再落定，纸飞机向上冲出 140pt 并淡出，身后拖出一段渐变尾焰，先后触发重触感与成功触感；1.2 秒后新的纸飞机落回原位。充满能量、俏皮又有物理感。"
+            "一枚 120pt 的圆角方形发射键，紫罗兰到粉色渐变，中间是纸飞机。按住 1.4 秒期间，按键以 ease-in 从 100% 压到 86%，辉光从 10pt 涨到 30pt，并随蓄力抖动：约 40 Hz 震颤幅度从 0 增至 3pt，外加 ±2° 摇晃，像在憋劲。中途松手则带过冲弹回（响应 0.4 秒、阻尼 0.5）。蓄满时按键弹到 115% 再落定，纸飞机拖着渐变尾焰向上冲出 140pt 并淡出，先后触发重触感与成功触感；1.2 秒后新纸飞机落回。充满能量。"
         ),
         implementation: L(
             "onLongPressGesture's onPressingChanged records the hold start; a TimelineView derives charge = elapsed / duration and turns it into sine jitter, wobble and glow, while scale uses a separate easeIn animation. Completion runs a keyframeAnimator for the launch.",

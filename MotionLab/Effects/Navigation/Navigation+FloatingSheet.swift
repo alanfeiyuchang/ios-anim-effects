@@ -7,19 +7,19 @@ extension Effect {
         interaction: .gesture,
         name: L("Floating to Edge Sheet", "悬浮到贴边面板"),
         summary: L(
-            "A small floating glass card grows into a full sheet, its margins and corners melting into the screen edges.",
-            "小巧的悬浮玻璃卡片长成完整面板，边距与圆角逐渐融入屏幕边缘。"
+            "A floating glass mini player grows into a full Now Playing sheet, its margins and corners melting into the screen edges.",
+            "悬浮的玻璃迷你播放条长成完整的“正在播放”面板，边距与圆角逐渐融入屏幕边缘。"
         ),
         prompt: L(
-            "Over a map, a compact sheet floats 12 pt above the bottom and in from the sides as a glass card with 30 pt corners. Dragging it up (or tapping) moves through three detents — compact 96 pt, medium 190 pt, full — and every property is a function of height: side and bottom margins shrink from 12 pt to 0, the bottom corners flatten while the top corners ease from 30 to 24 pt, and the material shifts from translucent glass to an opaque surface. The sheet tracks the finger 1:1 with rubber-banding past the ends, and on release springs (response ≈0.45 s, damping 0.8) to the detent nearest the drag's projected end, with a light tick per detent. Like an iOS 26 floating sheet settling into the device.",
-            "地图上方，一块紧凑面板以玻璃卡片的形态悬浮在距底部与两侧 12pt 处，圆角 30pt。向上拖动（或点击）会经过三个档位——紧凑 96pt、中等 190pt、全屏——而且所有属性都是高度的函数：左右与底部边距从 12pt 缩小到 0，底部圆角逐渐变平、顶部圆角从 30pt 缓和到 24pt，材质从半透明玻璃过渡到不透明表面。面板 1:1 跟手，超出两端时有橡皮筋阻尼；松手后依据拖拽的预测终点以弹簧（响应约 0.45 秒、阻尼 0.8）吸附到最近的档位，每到一个档位轻触一次。就像 iOS 26 的悬浮面板落定到设备边缘。"
+            "Over full-bleed album art, a single-row glass mini player (artwork, title, play and skip) floats 12 pt above the bottom and in from the sides with 30 pt corners. Dragging it up, or tapping, moves through three detents: 72 pt mini player, 190 pt controls, full sheet. Every property follows the height: margins shrink from 12 pt to 0, bottom corners flatten while top corners ease from 30 to 24 pt, glass turns into an opaque surface, and the scrubber, transport and 'Up Next' fade in as room appears. The sheet tracks the finger 1:1, rubber-bands past the ends and springs (response 0.45 s, damping 0.8) to the detent nearest the projected end, with a light tick each time. Floating becomes grounded in one gesture.",
+            "整屏专辑封面之上，一条单行玻璃迷你播放条（封面、歌名、播放与下一首）悬浮在距底部与两侧 12 pt 处，圆角 30 pt。向上拖动或轻点，依次经过三档：72 pt 迷你条、190 pt 控制区、全屏面板。一切都随高度变化：边距从 12 pt 收到 0，底部圆角渐平、顶部圆角由 30 缓到 24 pt，玻璃渐变为不透明表面；进度条、播放控件与“待播清单”随空间出现依次淡入。面板 1:1 跟手，越界有橡皮筋阻尼，松手按预测终点以弹簧（响应 0.45 秒、阻尼 0.8）吸附到最近档位，每档一记轻触。一个手势，由悬浮到贴边。"
         ),
         implementation: L(
             "Sheet height is the only state; margins, corner radii (UnevenRoundedRectangle) and the opacity of an opaque layer over the material are all interpolated from it in body, so drag and spring stay in lockstep.",
             "面板高度是唯一的状态；边距、圆角（UnevenRoundedRectangle）以及叠在材质上的不透明层的透明度都在 body 中由高度插值得出，因此拖拽与弹簧始终同步。"
         ),
         apis: ["UnevenRoundedRectangle", "DragGesture", "predictedEndTranslation", "Material", "spring(response:dampingFraction:)"],
-        tags: ["sheet", "detents", "floating", "glass", "面板", "档位", "悬浮", "玻璃"],
+        tags: ["sheet", "detents", "now playing", "mini player", "面板", "档位", "正在播放", "迷你播放器"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.25...0.8, default: 0.45, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.55...1.0, default: 0.8),
@@ -32,17 +32,17 @@ extension Effect {
 
 private struct FloatingSheetDemo: View {
     let ctx: DemoContext
-    @State private var height: CGFloat = 96
+    @State private var height: CGFloat = 72
     @State private var dragStart: CGFloat?
     @State private var autoStep = 0
 
     private let frameSize = CGSize(width: 250, height: 330)
-    private var detents: [CGFloat] { [96, 190, frameSize.height - 30] }
+    private var detents: [CGFloat] { [72, 190, frameSize.height - 30] }
 
     var body: some View {
         VStack(spacing: 14) {
             ZStack(alignment: .bottom) {
-                FloatingMapBackdrop()
+                FloatingAlbumBackdrop()
                 sheet
             }
             .frame(width: frameSize.width, height: frameSize.height)
@@ -74,7 +74,7 @@ private struct FloatingSheetDemo: View {
         )
         let solid: Double = ctx.bool("glass") ? Double(min(t * 1.6, 1)) : 1
         return FloatingSheetContent(expansion: t, language: ctx.language)
-            .frame(width: frameSize.width - margin * 2, height: max(height, 60), alignment: .top)
+            .frame(width: frameSize.width - margin * 2, height: max(height, 56), alignment: .top)
             .background {
                 ZStack {
                     shape.fill(.ultraThinMaterial)
@@ -132,61 +132,105 @@ private struct FloatingSheetContent: View {
     let expansion: CGFloat
     let language: AppLanguage
 
+    private func reveal(from start: CGFloat, span: CGFloat = 0.3) -> Double {
+        Double(min(max((expansion - start) / span, 0), 1))
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Capsule()
                 .fill(Color.secondary.opacity(0.45))
-                .frame(width: 36, height: 5)
+                .frame(width: 36, height: 5 * (0.4 + expansion))
                 .frame(maxWidth: .infinity)
-                .padding(.top, 8)
-            HStack(spacing: 10) {
-                Image(systemName: "cup.and.saucer.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Palette.coral.gradient, in: Circle())
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L("Harbor Coffee", "港湾咖啡"), language)
-                        .font(.subheadline.weight(.bold))
-                    Text(L("Open · 4 min walk", "营业中 · 步行 4 分钟"), language)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            HStack(spacing: 8) {
-                ForEach(0..<3, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Palette.spectrum[index + 3].opacity(0.3))
-                        .frame(height: 64)
-                }
-            }
-            .opacity(Double(min(max(expansion * 3 - 0.2, 0), 1)))
-            PlaceholderLines(count: 4)
-                .opacity(Double(min(max(expansion * 2 - 1, 0), 1)))
+                .padding(.top, 6)
+                .opacity(0.3 + 0.7 * Double(expansion))
+            miniRow
+            scrubber
+                .opacity(reveal(from: 0.1))
+            upNext
+                .opacity(reveal(from: 0.55))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
+    }
+
+    private var miniRow: some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(LinearGradient(colors: [Palette.violet, Palette.pink, Palette.amber], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 40, height: 40)
+                .overlay { Image(systemName: "music.note").font(.system(size: 15, weight: .bold)).foregroundStyle(.white) }
+            VStack(alignment: .leading, spacing: 1) {
+                Text(L("Midnight Drive", "午夜兜风"), language)
+                    .font(.subheadline.weight(.bold))
+                Text(L("Neon Coast", "霓虹海岸"), language)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            Spacer(minLength: 4)
+            Image(systemName: "pause.fill")
+                .font(.system(size: 18, weight: .semibold))
+            Image(systemName: "forward.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var scrubber: some View {
+        VStack(spacing: 6) {
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.12))
+                Capsule().fill(Color.primary.opacity(0.7)).frame(width: 84)
+            }
+            .frame(height: 4)
+            HStack {
+                Text(verbatim: "1:12")
+                Spacer()
+                Text(verbatim: "-2:31")
+            }
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.secondary)
+            HStack(spacing: 34) {
+                Image(systemName: "backward.fill")
+                Image(systemName: "pause.circle.fill").font(.system(size: 34))
+                Image(systemName: "forward.fill")
+            }
+            .font(.system(size: 18, weight: .semibold))
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var upNext: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L("Up Next", "待播清单"), language)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+            ForEach(0..<3, id: \.self) { index in
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Palette.spectrum[(index + 2) % Palette.spectrum.count].gradient)
+                        .frame(width: 26, height: 26)
+                    Capsule().fill(Color.primary.opacity(0.12)).frame(width: CGFloat(110 - index * 18), height: 8)
+                }
+            }
+        }
     }
 }
 
-private struct FloatingMapBackdrop: View {
+/// Full-bleed album art behind the player, so the glass has something colourful to blur.
+private struct FloatingAlbumBackdrop: View {
     var body: some View {
         ZStack {
-            Color.adaptive(light: 0xE8EEF2, dark: 0x1E2328)
-            Canvas { context, size in
-                var roads = Path()
-                roads.move(to: CGPoint(x: 0, y: size.height * 0.3))
-                roads.addCurve(to: CGPoint(x: size.width, y: size.height * 0.45), control1: CGPoint(x: size.width * 0.4, y: size.height * 0.15), control2: CGPoint(x: size.width * 0.6, y: size.height * 0.6))
-                roads.move(to: CGPoint(x: size.width * 0.35, y: 0))
-                roads.addLine(to: CGPoint(x: size.width * 0.55, y: size.height))
-                context.stroke(roads, with: .color(.white.opacity(0.7)), lineWidth: 10)
-                context.stroke(roads, with: .color(.gray.opacity(0.25)), lineWidth: 1)
-                let park = Path(roundedRect: CGRect(x: size.width * 0.62, y: size.height * 0.08, width: 70, height: 50), cornerRadius: 14)
-                context.fill(park, with: .color(Palette.green.opacity(0.25)))
-            }
-            Image(systemName: "mappin.circle.fill")
-                .font(.system(size: 30))
-                .foregroundStyle(.white, Palette.coral)
-                .offset(x: 10, y: -70)
+            LinearGradient(colors: [Color(hex: 0x2B1A4F), Palette.violet, Palette.pink, Palette.amber], startPoint: .top, endPoint: .bottom)
+            Circle()
+                .fill(Palette.amber.opacity(0.55))
+                .frame(width: 140, height: 140)
+                .blur(radius: 30)
+                .offset(x: 60, y: -80)
+            Image(systemName: "music.note")
+                .font(.system(size: 96, weight: .bold))
+                .foregroundStyle(.white.opacity(0.28))
+                .offset(y: -60)
         }
     }
 }

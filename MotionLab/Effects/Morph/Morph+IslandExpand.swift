@@ -77,7 +77,7 @@ private struct IslandExpandDemo: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Palette.green)
             Spacer()
-            Text("4m")
+            Text(verbatim: "4m")
                 .font(.system(size: 13, weight: .semibold).monospacedDigit())
                 .foregroundStyle(Palette.green)
         }

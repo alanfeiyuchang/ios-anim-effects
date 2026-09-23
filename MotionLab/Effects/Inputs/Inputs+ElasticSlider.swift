@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A thick slider that stretches like rubber when you drag past its ends.", "拖过两端时像橡皮一样被拉长的粗滑块。"),
         prompt: L(
             "A 56 pt-tall, 280 pt-wide rounded volume slider inside a Now Playing card, in the style of Control Center: a tinted track, a sky-to-blue fill and a speaker glyph whose waves light up with the level. Dragging is relative, so the fill follows the finger from wherever it lands, and the slider swells to 103% while touched. Pushing past either end no longer changes the value; instead the whole bar stretches along the drag axis with rubber-band resistance (up to ~24 pt), anchored at the opposite end, thinning slightly as it lengthens while the glyph grows. A medium haptic marks the moment you hit the limit. On release it snaps back on an underdamped spring (response 0.45 s, damping 0.55) with a visible wobble. Solid, physical and honest about its bounds.",
-            "“正在播放”卡片里有一条 56pt 高、280pt 宽的圆角音量滑块，风格类似控制中心：浅色轨道、天蓝到湛蓝的填充，扬声器图标的声波随音量逐格点亮。拖动采用相对位移，手指落在哪里，填充就从那里跟随；按住时滑块整体膨胀到 103%。拖过任一端时数值不再变化，整条滑块改为沿拖动方向、以对侧为锚点被“拉长”，带橡皮筋阻尼（最多约 24pt），拉长的同时略微变细，图标同步放大；触及边界的瞬间给出一次中等触觉。松手后以欠阻尼弹簧（响应 0.45 秒、阻尼 0.55）弹回，带有明显的回弹晃动。扎实、有物理感，并诚实地表达边界。"
+            "“正在播放”卡片里有一条 56 × 280pt 的圆角音量滑块，风格类似控制中心：浅色轨道、天蓝到湛蓝填充，扬声器图标的声波随音量点亮。拖动为相对位移，填充从手指落点开始跟随；按住时滑块膨胀到 103%。拖过两端后数值不再变化，整条滑块以对侧为锚、带橡皮筋阻尼被拉长（最多约 24pt），同时略微变细、图标放大，触及边界时一次中等触觉。松手后以欠阻尼弹簧（响应 0.45 秒、阻尼 0.55）弹回，明显回晃。扎实，诚实地表达边界。"
         ),
         implementation: L(
             "A DragGesture stores the value at touch-down and adds translation / width; any overflow beyond 0…1 goes through a rubber-band function into a stretch amount that drives scaleEffect(x:y:anchor:), released with a spring. The glyph uses Image(systemName:variableValue:).",

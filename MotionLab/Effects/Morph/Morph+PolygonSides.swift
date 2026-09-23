@@ -79,8 +79,8 @@ private struct PolygonSidesDemo: View {
             Text(polygonNames[rounded - 3], ctx.language)
                 .id(rounded)
                 .transition(.blurReplace)
-            Text("·").foregroundStyle(.tertiary)
-            Text("\(rounded)")
+            Text(verbatim: "·").foregroundStyle(.tertiary)
+            Text(verbatim: "\(rounded)")
                 .monospacedDigit()
                 .contentTransition(.numericText(value: Double(rounded)))
         }

@@ -28,8 +28,16 @@ extension Effect {
 
 private struct TypewriterDemo: View {
     let ctx: DemoContext
-    @State private var typed = ""
-    @State private var isTyping = true
+    @State private var typed: String
+    @State private var isTyping: Bool
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run the typing task: show the first phrase fully typed.
+        let first = ctx.language == .zh ? "好的设计，会在指尖轻轻呼吸。" : "Hello, world."
+        _typed = State(initialValue: ctx.isStill ? first : "")
+        _isTyping = State(initialValue: !ctx.isStill)
+    }
 
     private var phrases: [String] {
         ctx.language == .zh

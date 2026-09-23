@@ -8,8 +8,8 @@ extension Effect {
         name: L("Hold to Charge & Burst", "长按蓄力爆发"),
         summary: L("Press and hold to fill the ring; release at full power for a particle burst.", "长按蓄满圆环，满格松手迸发粒子。"),
         prompt: L(
-            "A 112 pt circular core (indigo-to-violet gradient, bolt glyph) sits inside a 168 pt track ring. Pressing and holding fills the ring clockwise from 12 o’clock with a mint → sky → violet → pink angular gradient over a linear 1.2 s, while the core sinks to 90% and its colored glow grows; a percentage counts up beneath in tabular digits. At 100% a heavy haptic fires and the core trembles with a fast 1.5 pt jitter to signal it is primed. Releasing early drains the ring on a smooth spring; releasing when full triggers a burst: a white flash blooms from the core and fades in 0.3 s, 14 capsule particles fly outward with ±10° angle jitter and 70–130% speed variance, arcing downward under light gravity while shrinking and fading, a shock-wave ring expands and dissolves over 0.8 s, and the core pops past 100% on a bouncy spring (damping 0.45). Suspense, then payoff.",
-            "一个 112pt 的圆形核心（靛蓝到紫色渐变、闪电图标）位于 168pt 的轨道圆环中。长按时，圆环以薄荷绿 → 天蓝 → 紫 → 粉的角向渐变从 12 点方向顺时针线性填充（1.2 秒），同时核心下沉至 90%、彩色光晕逐渐增强，下方百分比以等宽数字同步递增。满格瞬间触发重触感，核心以 1.5pt 的高频抖动示意“已蓄满”。提前松手，圆环以平滑弹簧回落；满格松手则爆发：核心处先绽开一团白色闪光并在 0.3 秒内褪去，14 枚胶囊粒子带着 ±10° 的角度抖动与 70%～130% 的速度差异向外飞散，在轻微重力下划出下坠弧线并逐渐缩小淡出，一圈冲击波在 0.8 秒内扩散消散，核心以高弹性弹簧（阻尼 0.45）回弹并略微超过原尺寸。先蓄势，后释放，张力十足。"
+            "A 112 pt indigo-to-violet core with a bolt glyph sits inside a 168 pt track ring. Pressing and holding fills the ring clockwise from 12 o'clock with a mint-sky-violet-pink angular gradient over a linear 1.2 s while the core sinks to 90%, its glow grows and a tabular percentage counts up beneath. At 100% a heavy haptic fires and the core trembles with a fast 1.5 pt jitter to show it is primed; releasing early just drains the ring on a smooth spring. Releasing when full bursts: a white flash blooms and fades in 0.3 s, 14 capsule particles fly out with ±10° angle and 70–130% speed jitter, arcing down under light gravity as they shrink and fade, a shock-wave ring dissolves over 0.8 s, and the core pops back past full size on a bouncy spring (damping 0.45).",
+            "112 pt 的靛蓝紫渐变核心（闪电图标）嵌在 168 pt 的轨道圆环中。长按时，圆环以薄荷、天蓝、紫、粉的角向渐变从 12 点顺时针线性填满，用时 1.2 秒；核心下沉到 90%，光晕渐强，下方百分比同步递增。满格时一下重触感，核心以 1.5 pt 高频抖动示意蓄满；提前松手，圆环只以平滑弹簧回落。满格松手则爆发：白光绽开、0.3 秒褪去，14 枚胶囊粒子带着 ±10° 角度与 70%–130% 速度差异飞散，受轻微重力下坠并缩小淡出，冲击波 0.8 秒内消散，核心以高弹性弹簧（阻尼 0.45）弹回并略超原尺寸。"
         ),
         implementation: L(
             "A zero-distance DragGesture marks press and release; charge animates linearly and is interrupted by a spring on release. An Animatable ring view shows the live percentage, TimelineView drives the primed jitter, and a re-identified burst view animates its particles on appear.",
@@ -161,7 +161,7 @@ private struct ChargeRing: View, Animatable {
                 .rotationEffect(.degrees(-90))
         }
         .overlay(alignment: .bottom) {
-            Text("\(Int((p * 100).rounded()))%")
+            Text(verbatim: "\(Int((p * 100).rounded()))%")
                 .font(.system(size: 13, weight: .semibold, design: .rounded).monospacedDigit())
                 .foregroundStyle(.secondary)
                 .offset(y: 30)

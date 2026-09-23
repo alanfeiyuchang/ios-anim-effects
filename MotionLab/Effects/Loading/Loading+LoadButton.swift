@@ -8,8 +8,8 @@ extension Effect {
         name: L("Load Button", "加载按钮"),
         summary: L("A pill that collapses into a spinner, then blooms into a success check.", "胶囊按钮收缩成旋转圆环，再绽放为成功对勾。"),
         prompt: L(
-            "A 240×58 pt pill button with an indigo-to-violet gradient, a bold label and a trailing arrow. On tap it dips to 96%, then its width springs down into a 58 pt circle (response ≈0.5 s, damping 0.75) while the label blurs, fades and shrinks to 80%; a white 260° arc with a transparent comet tail scales in at the center and spins once every 0.9 s. When the work finishes, the fill cross-fades to green, the circle pops 86% → 114% → 100% on a bouncy spring, a thin green ring radiates out to 190% while fading, and a rounded checkmark draws itself in 0.35 s with a success haptic. After a 1.3 s hold the circle springs back into the full pill. It must read as one object changing state — continuous, confident and physical.",
-            "一枚 240×58 pt 的胶囊主按钮，靛蓝到紫罗兰渐变，粗体文字后跟一个箭头。点击时先按压到 96%，随后宽度以弹簧（响应约 0.5 秒、阻尼 0.75）收拢成 58 pt 的正圆，文字同时模糊、淡出并缩小到 80%；圆心处缩放浮现一段 260° 的白色圆弧，尾部渐隐如彗星，每 0.9 秒匀速旋转一圈。任务完成时底色渐变为绿色，圆形沿弹性曲线“啵”地弹一下（86% → 114% → 100%），一圈细绿光环向外扩散到 190% 并消散，圆角对勾在 0.35 秒内被一笔画出，伴随成功触感。停留 1.3 秒后，圆形弹性舒展回完整胶囊。全程必须像同一个物体在连续变形，而非切换视图——连贯、笃定、有物理感。"
+            "A 240 × 58 pt indigo-to-violet pill with a bold label and trailing arrow. On tap it dips to 96%, then its width springs into a 58 pt circle (response 0.5 s, damping 0.75) as the label blurs, fades and shrinks to 80%; a white 260° arc with a comet tail scales in and spins once every 0.9 s. When the work finishes the fill cross-fades to green, the circle pops 86% → 114% → 100% on a bouncy spring, a thin ring radiates to 190% and fades, and a rounded check draws in 0.35 s with a success haptic. After 1.3 s it springs back into the pill. One object changing state, never a view swap.",
+            "靛蓝到紫罗兰渐变的 240 × 58 pt 胶囊按钮，粗体文字后跟箭头。点击先压到 96%，宽度随即以弹簧（响应 0.5 秒、阻尼 0.75）收成 58 pt 正圆，文字边模糊边淡出、缩到 80%；圆心浮现一段带彗尾的 260° 白色圆弧，每 0.9 秒转一圈。完成时底色渐变为绿，圆形按弹性曲线 86% → 114% → 100% 一弹，细光环外扩到 190% 后消散，圆角对勾 0.35 秒一笔画出，伴随成功触感。停 1.3 秒再舒展回胶囊。始终是同一个物体在变形，而非换视图。"
         ),
         implementation: L(
             "A three-phase state drives the capsule's frame width, a cross-faded green layer and a trimmed check path; a TimelineView spins the arc and a keyframeAnimator plays the success pop and ring.",
@@ -44,6 +44,7 @@ private struct LoadButtonDemo: View {
     let ctx: DemoContext
     @State private var phase: LoadPhase = .idle
     @State private var successCount = 0
+    @State private var token = 0
 
     var body: some View {
         let showRing = ctx.bool("ring")
@@ -88,14 +89,18 @@ private struct LoadButtonDemo: View {
         let morph = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
         let wait = ctx["duration"]
         let live = !ctx.isPreview
+        token += 1
+        let current = token
         if live { Haptics.tap(.medium) }
         withAnimation(morph) { phase = .loading }
         Task {
             try? await Task.sleep(for: .seconds(wait))
+            guard token == current else { return }
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .success }
             successCount += 1
             if live { Haptics.success() }
             try? await Task.sleep(for: .seconds(1.3))
+            guard token == current else { return }
             withAnimation(morph) { phase = .idle }
         }
     }

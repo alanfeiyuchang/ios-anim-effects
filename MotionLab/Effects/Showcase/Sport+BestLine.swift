@@ -71,6 +71,12 @@ private struct SportBestLineDemo: View {
     @State private var progress: CGFloat = 0
     @State private var runID = 0
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run `task`, so they show the finished trail.
+        _progress = State(initialValue: ctx.isStill ? 1 : 0)
+    }
+
     var body: some View {
         SignatureStage {
             VStack(spacing: 0) {
@@ -94,9 +100,8 @@ private struct SportBestLineDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task(id: runID) { await play() }
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: ctx["duration"] + 1.8) { runID += 1 }
         // The trail already draws on appear, so the detail stage skips its one-shot intro replay.
-        .environment(\.demoIntroPlay, false)
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: ctx["duration"] + 1.8, intro: false) { runID += 1 }
     }
 
     private var scrubGesture: some Gesture {

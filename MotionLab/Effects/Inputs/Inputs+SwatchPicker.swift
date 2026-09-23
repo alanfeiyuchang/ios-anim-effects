@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A selection ring glides between swatches as the preview card re-tints.", "选中圆环在色块间滑行，预览卡片随之换色。"),
         prompt: L(
             "A card-colour picker: a 250 × 150 pt payment-card preview above a row of six 34 pt colour swatches and the colour's name. Tapping a swatch sends a 44 pt outline ring gliding to it on a spring (response 0.4 s, damping 0.72) via shared geometry, while the chosen dot grows from 82% to 100% and reveals a small checkmark. The preview card cross-fades to the new two-tone gradient over 350 ms and gives a tactile flick — rotating 10° around its vertical axis and dipping to 97% before springing back — its glossy diagonal highlight catching the light as it turns. The colour name swaps with a push from the side the ring came from. A selection haptic ticks on each change. Precise, satisfying and very Apple Store.",
-            "银行卡配色选择器：上方是一张 250 × 150pt 的卡片预览，下方一排六个 34pt 色块和当前颜色名称。点击某个色块，一圈 44pt 的描边选中圆环借助共享几何，以弹簧（响应 0.4 秒、阻尼 0.72）滑行到该色块；被选中的色点从 82% 放大到 100%，并浮现一个小对勾。预览卡片在 350 毫秒内交叉渐变为新的双色渐变，同时像被指尖轻弹一下——绕纵轴转 10°、缩到 97% 后弹回，斜向高光随之转动、映出光泽。颜色名称从圆环移来的方向推入切换。每次切换伴随一次选择触觉。精准、满足，颇有 Apple Store 选配的味道。"
+            "卡片配色选择器：上方是 250 × 150pt 的银行卡预览，下方一排六个 34pt 色块与颜色名称。点击色块，一圈 44pt 描边圆环借共享几何以弹簧（响应 0.4 秒、阻尼 0.72）滑到该色块；被选色点从 82% 放大到 100% 并浮现小对勾。预览卡片 350 毫秒内交叉渐变为新的双色渐变，同时像被指尖轻弹：绕纵轴转 10°、缩到 97% 后弹回，斜向高光随之转动。颜色名称从圆环移来的方向推入切换，每次切换一次选择触觉。精准而令人满足。"
         ),
         implementation: L(
             "The ring is a single Circle with matchedGeometryEffect rendered only behind the selected swatch; the card stacks one gradient layer per colour and fades opacities, while a keyframeAnimator keyed on the selection runs the rotation3DEffect flick.",

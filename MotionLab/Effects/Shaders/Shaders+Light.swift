@@ -14,8 +14,8 @@ extension Effect {
             "一列图片信息流在醒目清晰的“图库”大标题下缓慢滚动。这里没有生硬的材质条，而是由 Metal layerEffect 着色器沿竖直遮罩平滑改变模糊半径：对焦线以下完全清晰，向上约 70pt 内以 smoothstep 缓动增强到 14pt 的圆盘模糊，列表行像 iOS 滚动边缘效果一样柔和地融进标题。移轴模式则保留 40pt 高的清晰带、上下两侧同时模糊，宛如微缩摄影。点击时对焦线以弹簧（响应 0.5 秒、阻尼 0.8）移到手指处。柔和、光学、高级。"
         ),
         implementation: L(
-            "A [[stitchable]] layer shader computes a per-pixel radius from a smoothstepped mask and averages 32 golden-angle taps with a hashed per-pixel rotation; an Animatable modifier springs the focus line, and ShaderClock scrolls the feed.",
-            "[[stitchable]] layerEffect 着色器按 smoothstep 遮罩逐像素计算模糊半径，以黄金角分布的 32 个采样点（每像素哈希旋转）求平均；Animatable 修饰器以弹簧移动对焦线，ShaderClock 驱动信息流滚动。"
+            "A [[stitchable]] layer shader computes a per-pixel radius from a smoothstepped mask and averages 32 golden-angle taps (16 in grid previews) with a hashed per-pixel rotation; an Animatable modifier springs the focus line, and ShaderClock scrolls the feed.",
+            "[[stitchable]] layerEffect 着色器按 smoothstep 遮罩逐像素计算模糊半径，以黄金角分布的 32 个采样点（网格预览中为 16 个，每像素哈希旋转）求平均；Animatable 修饰器以弹簧移动对焦线，ShaderClock 驱动信息流滚动。"
         ),
         apis: ["layerEffect", "Animatable", "TimelineView", "onTapGesture(coordinateSpace:)", "Metal"],
         tags: ["progressive blur", "variable blur", "tilt shift", "scroll edge", "渐进模糊", "可变模糊", "移轴", "滚动边缘"],
@@ -61,6 +61,8 @@ private struct ProgressiveBlurModifier: ViewModifier, Animatable {
     let radius: Double
     let fade: Double
     let tiltShift: Bool
+    /// Blur samples per pixel: 16 in grid previews, 32 on the detail stage.
+    let taps: Double
 
     var animatableData: Double {
         get { focusY }
@@ -74,7 +76,8 @@ private struct ProgressiveBlurModifier: ViewModifier, Animatable {
                 .float(focusY),
                 .float(20),
                 .float(fade),
-                .float(tiltShift ? 1 : 0)
+                .float(tiltShift ? 1 : 0),
+                .float(taps)
             ),
             maxSampleOffset: CGSize(width: radius, height: radius)
         )
@@ -99,7 +102,8 @@ private struct ProgressiveBlurDemo: View {
                         focusY: focus ?? restFocus,
                         radius: ctx["radius"],
                         fade: ctx["fade"],
-                        tiltShift: tiltShift
+                        tiltShift: tiltShift,
+                        taps: ctx.isPreview ? 16 : 32
                     ))
             }
             .frame(width: 300, height: Self.height)

@@ -5,7 +5,7 @@ extension Effect {
         id: "text.slot-reel",
         category: .text,
         interaction: .tap,
-        name: L("Slot-Machine Reels", "老虎机滚轮"),
+        name: L("Slot-Machine Digits", "老虎机数字"),
         summary: L("Four reels whip downward with speed blur and stop one by one with a kickback.", "四个滚轮带着速度模糊向下飞转，逐个停下并轻轻回弹。"),
         prompt: L(
             "Four ivory digit reels sit in a dark cabinet behind a thin amber payline, each window showing the current digit plus slivers of its neighbours on a curved, shaded drum. Tapping Spin sends every reel rolling downward through at least two full cycles: while fast the digits blur (up to 5 pt) and stretch 12% vertically, and they sharpen as the reel slows. The reels stop left to right, each 0.22 s after the previous one, on a spring with ~20% bounce, so every digit overshoots the payline by about half a digit and kicks back into place. A rigid haptic tick marks each stop. It feels like a real one-armed bandit: suspense, then four decisive clunks.",

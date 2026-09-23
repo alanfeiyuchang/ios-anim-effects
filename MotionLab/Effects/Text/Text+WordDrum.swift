@@ -61,7 +61,10 @@ private struct WordDrumDemo: View {
         let turn: Double = min(0.55, hold * 0.8)
         let elapsed: Double = Date().timeIntervalSince(start)
         let steps: Double = (elapsed / hold).rounded(.down)
-        let target: Double = steps * hold + (hold - turn)
+        let inStep: Double = elapsed - steps * hold
+        // Mid-turn, jump to the start of the *next* turn so the drum never rolls backwards.
+        let base: Double = inStep > hold - turn ? steps + 1 : steps
+        let target: Double = base * hold + (hold - turn)
         start = Date().addingTimeInterval(-target)
     }
 

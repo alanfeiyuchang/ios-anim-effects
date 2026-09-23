@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A hairline media scrubber that swells when grabbed, with fine-scrubbing as you slide down.", "细如发丝的播放进度条，按住即膨胀，手指下移可精细拖动。"),
         prompt: L(
             "A Now Playing scrubber in the style of Apple Music: a knobless 6 pt hairline track under the song title with elapsed and remaining times beneath. Touching it anywhere grabs it: the bar swells to 18 pt tall and 104% wide on a smooth spring (response 0.3 s, damping 0.8), the fill brightens from secondary grey to full primary, and the time labels grow bold and slide 6 pt down to make room. Movement is relative, and dragging the finger below the bar slows the scrub rate — full speed, then half-speed past 40 pt and fine (¼) past 90 pt — with a capsule label that swaps in via a blur transition to announce the mode. Releasing shrinks everything back in 350 ms. Quiet at rest, generous and precise in the hand.",
-            "仿 Apple Music 的“正在播放”进度条：歌曲名下方是一条没有滑块、仅 6pt 高的细线轨道，下面是已播放与剩余时间。按住任意位置即“抓起”它：进度条以顺滑弹簧（响应 0.3 秒、阻尼 0.8）膨胀到 18pt 高、104% 宽，填充从次级灰提亮为主色，时间标签变粗并下移 6pt 让出空间。拖动为相对位移，手指向下离开进度条会降低拖动速率——正常速度，超过 40pt 变为半速，超过 90pt 变为精细（¼ 速），并有一枚胶囊标签以模糊过渡切换提示当前模式。松手后一切在 350 毫秒内收回。静止时低调，握在手里宽厚而精准。"
+            "仿 Apple Music 的“正在播放”进度条：歌名下方是一条无滑块的 6pt 细线轨道，下面是已播放与剩余时间。按住任意处即“抓起”：进度条以顺滑弹簧（响应 0.3 秒、阻尼 0.8）膨胀到 18pt 高、104% 宽，填充由次级灰提亮为主色，时间标签加粗并下移 6pt。拖动为相对位移，手指向下离开进度条会降低速率——正常、超过 40pt 半速、超过 90pt 精细（¼ 速），一枚胶囊标签以模糊过渡提示当前模式。松手后 350 毫秒内收回。静时低调，握时精准。"
         ),
         implementation: L(
             "A DragGesture tracks the last x to apply incremental, rate-scaled changes; the vertical translation picks the scrub rate, and the grabbed state animates the bar's frame height, a horizontal scaleEffect and the label offsets.",

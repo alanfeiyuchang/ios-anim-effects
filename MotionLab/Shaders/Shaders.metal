@@ -47,16 +47,6 @@ half4 mlRipple(float2 position, SwiftUI::Layer layer, float2 origin, float time,
     return color;
 }
 
-// MARK: - Wave (distortion effect)
-
-[[ stitchable ]]
-float2 mlWave(float2 position, float time, float amplitude, float wavelength, float speed) {
-    float2 p = position;
-    p.y += sin(time * speed + position.x / wavelength) * amplitude;
-    p.x += cos(time * speed * 0.8 + position.y / wavelength) * amplitude * 0.5;
-    return p;
-}
-
 // MARK: - Pixelate (layer effect)
 
 [[ stitchable ]]
@@ -158,13 +148,20 @@ static float3 mlPlasmaRamp(float t) {
     return mix(a, b, smoothstep(0.0, 1.0, fract(x)));
 }
 
+// `origin` / `age` (seconds, < 0 when idle) inject a tap ripple: a ring travelling at ~260 pt/s that
+// perturbs the field and fades out over ~2.5 s.
 [[ stitchable ]]
-half4 mlPlasma(float2 position, half4 color, float2 size, float time, float scale) {
+half4 mlPlasma(float2 position, half4 color, float2 size, float time, float scale, float2 origin, float age) {
     float2 uv = position / max(size, float2(1.0));
     float v = sin(uv.x * 6.0 * scale + time)
             + sin(uv.y * 7.0 * scale - time * 1.3)
             + sin((uv.x + uv.y) * 5.0 * scale + time * 0.7)
             + sin(length(uv - 0.5) * 12.0 * scale - time * 2.0);
+    if (age >= 0.0 && age < 2.5) {
+        float d = length(position - origin);
+        float ring = (d - age * 260.0) / 46.0;
+        v += 1.6 * exp(-ring * ring) * exp(-age * 1.4) * sin(d * 0.07 - age * 9.0);
+    }
     v *= 0.25;
     float3 col = mlPlasmaRamp(v * 0.8 + time * 0.03);
     float shade = 0.62 + 0.38 * cos(v * 6.28318);
@@ -237,7 +234,8 @@ half4 mlHalftoneCMYK(float2 position, SwiftUI::Layer layer, float cell, float an
 }
 
 // MARK: - Shaded flag wave (layer effect)
-// Same displacement as mlWave, plus fold lighting from the wave's slope: crests catch light, troughs shade.
+// A sine along x displaces y, a slower cosine along y displaces x at half the amplitude,
+// plus fold lighting from the wave's slope: crests catch light, troughs shade.
 
 [[ stitchable ]]
 half4 mlFlagWave(float2 position, SwiftUI::Layer layer, float time, float amplitude, float wavelength, float shade) {
@@ -399,7 +397,7 @@ half4 mlGlassLens(float2 position, SwiftUI::Layer layer, float2 center, float ra
 
 [[ stitchable ]]
 half4 mlProgressiveBlur(float2 position, SwiftUI::Layer layer, float maxRadius, float focusY,
-                        float band, float fade, float mode) {
+                        float band, float fade, float mode, float taps) {
     float d = mode < 0.5 ? (focusY - position.y) : (abs(position.y - focusY) - band);
     float amount = smoothstep(0.0, max(fade, 1.0), d);
     float radius = maxRadius * amount;
@@ -407,11 +405,14 @@ half4 mlProgressiveBlur(float2 position, SwiftUI::Layer layer, float maxRadius, 
         return layer.sample(position);
     }
     float jitter = mlHash(floor(position * 3.0)) * 6.2831853;
+    // `taps` (1…32) trades quality for cost: small grid thumbnails use 16, the detail stage 32.
+    int count = int(clamp(taps, 1.0, 32.0));
+    float n = float(count);
     half4 acc = half4(0.0h);
     float total = 0.0;
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < count; i++) {
         float fi = float(i) + 0.5;
-        float rr = sqrt(fi / 32.0) * radius;
+        float rr = sqrt(fi / n) * radius;
         float th = fi * 2.3999632 + jitter;
         float w = 1.0 - 0.45 * (rr / radius);
         acc += layer.sample(position + float2(cos(th), sin(th)) * rr) * half(w);

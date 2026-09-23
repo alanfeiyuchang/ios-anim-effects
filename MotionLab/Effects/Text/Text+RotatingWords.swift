@@ -49,13 +49,8 @@ private struct RotatingWordsDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { advance() }
-        .task(id: ctx["interval"]) {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(max(ctx["interval"], 0.5)))
-                if Task.isCancelled { return }
-                advance()
-            }
-        }
+        // A continuous loop that still honours the shell's autoplay switch (paused thumbnails stop ticking).
+        .autoplay(true, every: max(ctx["interval"], 0.5), delay: max(ctx["interval"], 0.5)) { advance() }
     }
 
     private var wordSlot: some View {

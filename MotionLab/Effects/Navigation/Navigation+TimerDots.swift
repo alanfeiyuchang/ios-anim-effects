@@ -11,14 +11,14 @@ extension Effect {
             "当前圆点伸展成胶囊并像计时器一样填满，然后交接给下一页。"
         ),
         prompt: L(
-            "An onboarding card (icon, title, one-line body) above four 8 pt page dots. The current dot stretches into a 28 pt capsule on a spring (response ≈0.4 s, damping 0.75) and fills left to right in a linear sweep over the page's 2.4 s dwell time, like a story timer. When full, the card cross-fades with a blur-replace to the next page and the capsule shrinks back to a dot while the next dot widens and begins filling from empty. Tapping the right or left half of the card skips forward or back, and tapping a dot jumps straight to it, restarting its timer. Calm, self-driving, and always legible about what comes next.",
-            "一张引导卡片（图标、标题、一行说明）下方有四个 8pt 页码圆点。当前圆点以弹簧（响应约 0.4 秒、阻尼 0.75）伸展为 28pt 的胶囊，并在每页 2.4 秒的停留时间内从左到右线性填满，像故事计时器一样。填满后，卡片以模糊替换过渡到下一页，胶囊收回成圆点，下一个圆点同时展宽并从空开始填充。点击卡片右半或左半可前进或后退，点击圆点可直接跳转并重新计时。安静、自驱动，始终清楚地告诉你接下来是什么。"
+            "An onboarding card (icon, title, one-line body) above four 8 pt page dots. The current dot stretches into a 28 pt capsule on a spring (response 0.4 s, damping 0.75) and fills over the page's 2.4 s dwell on an ease-in-out curve: a slow start, a confident middle and a soft landing. When full, the card blur-replaces to the next page while the capsule shrinks back to a dot and the next one widens. Press and hold the card to pause: the fill freezes and the capsule breathes (opacity 60–100%, 1.6 s cycle) until release, when it resumes from where it stopped. A quick tap on the left or right half skips; tapping a dot jumps and restarts its timer. Calm, patient, in your control.",
+            "引导卡片（图标、标题、一行说明）下方有四个 8 pt 页码圆点。当前圆点以弹簧（响应 0.4 秒、阻尼 0.75）拉成 28 pt 胶囊，在每页 2.4 秒的停留里按缓入缓出曲线填满：起步从容，中段利落，收尾轻柔。填满后卡片以模糊替换翻到下一页，胶囊缩回圆点，下一颗随之展宽。按住卡片即可暂停：填充冻结，胶囊轻轻呼吸（透明度 60%–100%，1.6 秒一周），松手后从停下处继续。轻点左右两半可前后跳页，点圆点则直接跳转并重新计时。从容不迫，节奏由你掌控。"
         ),
         implementation: L(
-            "A task keyed on the page sleeps for the dwell time and then advances, so any manual jump cancels and restarts it; a TimelineView computes the fill from the page's start date, and the dot widths animate on the page value.",
-            "以页码为 id 的 task 休眠一段停留时间后翻页，因此任何手动跳转都会取消并重新计时；TimelineView 根据当前页的开始时间计算填充，圆点宽度随页码值做动画。"
+            "Elapsed time is banked on pause and resumed from a new run start, so the fill is (banked + running) / dwell passed through smoothstep; a task keyed on page and pause state sleeps for the remaining time, and one DragGesture(minimumDistance: 0) tells a quick tap (skip by side) from a hold (pause).",
+            "暂停时把已播放时长存入“余额”，恢复时从新的起点继续计时，填充 = (余额 + 本段时长) / 停留时长，再经 smoothstep 缓动；以页码与暂停状态为 id 的 task 休眠剩余时间后翻页；同一个 DragGesture(minimumDistance: 0) 区分轻点（按左右跳页）与长按（暂停）。"
         ),
-        apis: ["task(id:)", "TimelineView(.animation)", "Task.sleep(for:)", "transition(.blurReplace)", "animation(_:value:)"],
+        apis: ["task(id:)", "TimelineView(.animation(minimumInterval:))", "DragGesture(minimumDistance: 0)", "transition(.blurReplace)", "animation(_:value:)"],
         tags: ["page dots", "onboarding", "timer", "stories", "页码圆点", "引导页", "计时", "快拍"],
         params: [
             .slider("dwell", L("Time per page", "每页停留"), 1.2...5.0, default: 2.4, unit: "s"),
@@ -44,21 +44,32 @@ private let timerPages: [TimerPage] = [
     TimerPage(symbol: "checkmark.seal.fill", title: L("Done", "完成"), body: L("Celebrate every small win.", "为每个小成就喝彩。"), color: Palette.green),
 ]
 
+private struct TimerRunKey: Hashable {
+    let page: Int
+    let paused: Bool
+    let dwell: Double
+}
+
 private struct TimerDotsDemo: View {
     let ctx: DemoContext
     @State private var page = 0
-    @State private var pageStart = Date()
+    @State private var runStart = Date()
+    @State private var banked: Double = 0
+    @State private var paused = false
+    @State private var pressStart: Date?
+
+    private var dwell: Double { max(ctx["dwell"], 0.1) }
 
     var body: some View {
         VStack(spacing: 24) {
             card
             dots
-            DemoHint(text: L("Tap the card's edges or a dot", "点击卡片左右两侧或圆点"), ctx: ctx)
+            DemoHint(text: L("Hold the card to pause · tap its edges or a dot", "按住卡片暂停 · 点击两侧或圆点跳页"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task(id: page) {
-            pageStart = Date()
-            try? await Task.sleep(for: .seconds(ctx["dwell"]))
+        .task(id: TimerRunKey(page: page, paused: paused, dwell: dwell)) {
+            guard !paused else { return }
+            try? await Task.sleep(for: .seconds(max(dwell - banked, 0.05)))
             guard !Task.isCancelled else { return }
             show((page + 1) % timerPages.count, byUser: false)
         }
@@ -84,16 +95,31 @@ private struct TimerDotsDemo: View {
         .transition(.blurReplace)
         .frame(width: 270, height: 210)
         .demoCard(cornerRadius: 26)
-        .overlay {
-            HStack(spacing: 0) {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture { show((page + timerPages.count - 1) % timerPages.count) }
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture { show((page + 1) % timerPages.count) }
+        .scaleEffect(paused ? 0.98 : 1)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: paused)
+        .contentShape(Rectangle())
+        .gesture(pressGesture)
+    }
+
+    /// A quick tap skips by side; holding pauses until release.
+    private var pressGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { _ in
+                guard pressStart == nil else { return }
+                pressStart = Date()
+                pause()
             }
-        }
+            .onEnded { value in
+                let held: Double = Date().timeIntervalSince(pressStart ?? Date())
+                pressStart = nil
+                let moved: CGFloat = abs(value.translation.width) + abs(value.translation.height)
+                if held < 0.25 && moved < 12 {
+                    let forward: Bool = value.startLocation.x > 135
+                    show((page + (forward ? 1 : timerPages.count - 1)) % timerPages.count)
+                } else {
+                    resume()
+                }
+            }
     }
 
     private var dots: some View {
@@ -119,18 +145,36 @@ private struct TimerDotsDemo: View {
 
     private func fill(width: CGFloat, height: CGFloat) -> some View {
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-            let elapsed: Double = timeline.date.timeIntervalSince(pageStart)
-            let progress: Double = min(max(elapsed / max(ctx["dwell"], 0.1), 0), 1)
+            let running: Double = paused ? 0 : timeline.date.timeIntervalSince(runStart)
+            let linear: Double = min(max((banked + running) / dwell, 0), 1)
+            let eased: Double = linear * linear * (3 - 2 * linear)
+            let breath: Double = paused ? 0.8 + 0.2 * cos(timeline.date.timeIntervalSince(runStart) * 2 * .pi / 1.6) : 1
             Capsule()
                 .fill(timerPages[page].color)
-                .frame(width: max(width * CGFloat(progress), height), height: height)
+                .frame(width: max(width * CGFloat(eased), height), height: height)
+                .opacity(breath)
         }
+    }
+
+    private func pause() {
+        guard !paused else { return }
+        banked += Date().timeIntervalSince(runStart)
+        runStart = Date()
+        paused = true
+    }
+
+    private func resume() {
+        guard paused else { return }
+        runStart = Date()
+        paused = false
     }
 
     private func show(_ index: Int, byUser: Bool = true) {
         guard index != page else { return }
         if byUser && !ctx.isPreview { Haptics.selection() }
-        pageStart = Date()
+        runStart = Date()
+        banked = 0
+        paused = false
         withAnimation(.easeInOut(duration: 0.35)) { page = index }
     }
 }

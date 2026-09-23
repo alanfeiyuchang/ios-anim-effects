@@ -115,9 +115,9 @@ private struct KPICountDemo: View {
                 refresh(fromZero: true)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 2.0, delay: ctx["duration"] + 1.6) {
-            if ctx.isPreview { replay() }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 2.0, delay: ctx["duration"] + 1.6, intro: false) {
+            replay()
         }
     }
 

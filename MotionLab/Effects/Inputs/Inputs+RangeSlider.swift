@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A “Price per night” filter card: a 24-bar price histogram above a 6 pt track with two white 26 pt handles, a gradient fill between them, and a small blue value bubble riding above each handle. Touching the track grabs the nearest handle — if the touch lands away from it, the handle leaps there on a spring (response 0.35 s, damping 0.7) — and the grabbed handle swells to 115% with a blue ring while its bubble lifts 4 pt and grows. Dragging updates the price in $10 steps with a selection tick each step; histogram bars inside the range light up blue as the edges pass them, the header range and the “Show N stays” count roll with numeric transitions. The handles can't cross: they stop a minimum gap apart with a rigid haptic, and bubbles that would overlap slide apart. Precise, lively and legible.",
-            "“每晚价格”筛选卡片：上方是 24 根价格分布柱，下方是 6pt 轨道、两个 26pt 白色手柄、手柄之间的渐变填充，以及悬在每个手柄上方的小号蓝色数值气泡。触摸轨道会抓取最近的手柄——若触点离手柄较远，手柄会以弹簧（响应 0.35 秒、阻尼 0.7）跳到触点——被抓住的手柄放大到 115% 并出现蓝色描边，气泡上移 4pt 并放大。拖动时价格以 10 美元为步进更新，每一步一次选择触感；区间内的分布柱随边界经过依次点亮为蓝色，标题中的区间和“查看 N 处住宿”的数量以数字滚动过渡更新。两个手柄不能交叉：相距最小间隔时停住并给出一次硬朗触感，可能重叠的气泡会自动错开。精准、灵动、清晰易读。"
+            "“每晚价格”筛选卡片：上方 24 根价格分布柱，下方是 6pt 轨道、两个 26pt 白色手柄、其间的渐变填充，以及悬在手柄上方的蓝色数值气泡。触摸轨道会抓取最近的手柄，触点较远时手柄以弹簧（响应 0.35 秒、阻尼 0.7）跳过去；被抓手柄放大到 115% 并现蓝色描边，气泡上移 4pt 并放大。拖动以 10 美元步进，每步一次选择触感；区间内分布柱随边界经过点亮，标题区间与“查看 N 处住宿”滚动更新。手柄不能交叉：到最小间距时停住并硬朗触感，重叠的气泡自动错开。"
         ),
         implementation: L(
             "One zero-distance DragGesture over the track picks the nearest handle on touch-down and then drives that handle's value, clamped against the other plus a minimum gap; jumps and the active state animate with a spring, while prices are quantized to $10 for haptics and numericText.",

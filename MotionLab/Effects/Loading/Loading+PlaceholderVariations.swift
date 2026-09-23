@@ -179,8 +179,14 @@ extension Effect {
 
 private struct MosaicResolveDemo: View {
     let ctx: DemoContext
-    @State private var columns = 0
+    @State private var columns: Int
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so they start on the fully resolved image.
+        _columns = State(initialValue: ctx.isStill ? 96 : 0)
+    }
 
     var body: some View {
         let zh = ctx.language == .zh

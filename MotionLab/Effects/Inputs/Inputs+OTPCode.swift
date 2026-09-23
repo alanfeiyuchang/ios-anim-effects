@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Digits pop into boxes; a wrong code shakes, the right one waves.", "数字弹入格子，错误时抖动，正确时波浪跳动。"),
         prompt: L(
             "A row of six rounded code boxes (44 × 54 pt, 12 pt continuous corners). The active box is outlined in indigo, scaled to 106% and shows a blinking 2 pt caret (0.5 s ease-in-out fade). Each typed digit pops in from 40% scale with a bouncy spring (response 0.3 s, damping 0.6) and the caret hops to the next box. When all six are entered: a wrong code turns every border red, shakes the whole row horizontally ±10 pt three times with decaying amplitude over 450 ms, fires an error haptic and clears after 600 ms; the correct code turns the borders green and runs a wave — each box hops up 10 pt with a 50 ms stagger — plus a success haptic. Clear, forgiving and satisfying.",
-            "一排六个圆角验证码格子（44 × 54pt，12pt 连续圆角）。当前格子描边为靛蓝色、放大到 106%，内部显示一根 2pt 闪烁光标（0.5 秒缓入缓出淡入淡出）。每输入一位数字，数字就以弹性弹簧（响应 0.3 秒、阻尼 0.6）从 40% 缩放弹入，光标跳到下一格。六位输满后：若错误，所有描边变红，整排在 450 毫秒内左右抖动三次（幅度 ±10pt 并逐渐衰减），触发错误触觉，600 毫秒后清空；若正确，描边变绿，格子以 50 毫秒错峰依次向上跳 10pt 形成波浪，并触发成功触觉。清晰、宽容又令人满足。"
+            "一排六个圆角验证码格子（44 × 54pt，12pt 连续圆角）。当前格描边为靛蓝、放大到 106%，内有一根 2pt 闪烁光标（0.5 秒缓入缓出）。每输入一位，数字以弹性弹簧（响应 0.3 秒、阻尼 0.6）从 40% 缩放弹入，光标跳到下一格。输满后：若错误，描边全部变红，整排 450 毫秒内以衰减幅度左右抖动三次（±10pt），触发错误触觉，600 毫秒后清空；若正确，描边变绿，格子以 50 毫秒错峰依次上跳 10pt 形成波浪，并触发成功触觉。清晰而宽容。"
         ),
         implementation: L(
             "A hidden numberPad TextField owns the input; boxes render its characters with an insertion transition. A GeometryEffect with animatable progress produces the decaying shake, and per-box keyframeAnimators with index delays create the success wave.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Checking a task pops the box, strikes the text through, then sinks the row to the bottom.", "勾选任务时方框弹起、文字被划线，随后整行沉到列表底部。"),
         prompt: L(
             "A four-item to-do card with a progress count. Tapping a round checkbox runs a three-beat choreography: the box fills with mint and pops to 120% then settles on a bouncy spring while the checkmark draws in; 100 ms later a 1.5 pt strike line sweeps across the title from left to right over 280 ms as the text fades to 45%; after a 500 ms pause the whole row sinks below the unfinished ones, the other rows sliding up to close the gap on a smooth spring (response 0.5 s, damping 0.85). Unchecking reverses it: the line retracts and the row rises back to its original place among the open tasks. The header's \"2 of 4 done\" rolls with numeric digits and a success haptic fires when everything is done. Orderly, rewarding and easy to follow.",
-            "一张包含四项任务与进度计数的待办卡片。点击圆形复选框会触发三段式编排：方框填充薄荷绿并弹到 120%，再以弹性弹簧回落，同时对勾被描绘出来；100 毫秒后，一条 1.5pt 的删除线在 280 毫秒内从左到右扫过标题，文字淡到 45%；停顿 500 毫秒后，整行沉到所有未完成任务的下方，其余行以顺滑弹簧（响应 0.5 秒、阻尼 0.85）上移补位。取消勾选则反向进行：删除线收回，该行升回未完成任务中原来的位置。标题处的“已完成 2/4”以数字滚动更新，全部完成时触发一次成功触觉。井然有序、有成就感，也很容易跟上节奏。"
+            "带进度计数的四项待办卡片。点击圆形复选框触发三段式编排：方框填充薄荷绿、弹到 120% 再以弹性弹簧回落，同时对勾被描出；100 毫秒后一条 1.5pt 删除线在 280 毫秒内从左到右扫过标题，文字淡到 45%；停顿 500 毫秒后整行沉到未完成任务下方，其余行以顺滑弹簧（响应 0.5 秒、阻尼 0.85）上移补位。取消勾选则倒放：删除线收回，该行升回原位。标题“已完成 2/4”数字滚动，全部完成时触发成功触觉。井然有序、有成就感。"
         ),
         implementation: L(
             "Each item stores a done flag and a completion order; the list is sorted with unfinished first and animated with animation(_:value:) keyed on the id order. The strike is a Capsule overlay scaled on x from the leading anchor, and a Task delays the reorder.",

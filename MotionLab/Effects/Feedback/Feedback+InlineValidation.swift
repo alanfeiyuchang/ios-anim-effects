@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A sign-up card with an 'Email' label, a 52 pt rounded field and a Continue button. An invalid submit shakes the field −14 → +11 → −7 → +3 → 0 pt over ~330 ms, turns its 1.5 pt border and glyph red, pops a red exclamation in from 40% scale and slides a red 'Enter a valid email address' message 8 pt down from under the field on a spring (response 0.4 s, damping 0.8) as the card grows; an error haptic fires. Editing retracts it. A valid submit turns the border green, springs in a green check with slight overshoot and swaps the message to 'Looks good' with a success haptic. With live validation on, later keystrokes update the state without shaking. Clear, corrective, never scolding.",
-            "注册卡片上有“邮箱”标签、一个 52 pt 的圆角输入框（信封图标、文本、尾部状态图标）和“继续”按钮。提交无效地址时，输入框在约 330 毫秒内按 −14 → +11 → −7 → +3 → 0 pt 抖动，1.5 pt 描边与图标变红，红色感叹号从 40% 缩放弹入，一行红色“请输入有效的邮箱地址”以弹簧（响应 0.4 秒、阻尼 0.8）从输入框下方滑出 8 pt，卡片随之增高让位，并伴随错误触感。一旦编辑，提示立即收回。提交有效地址时描边变绿，绿色对勾带轻微过冲弹入，提示换成绿色“看起来不错”，并伴随成功触感。开启“即时校验”后，首次提交之后每次输入都会实时更新状态，但不再抖动。清晰、及时纠正，却从不责备。"
+            "注册卡片上是“邮箱”标签、52 pt 圆角输入框和“继续”按钮。提交无效地址，输入框在约 330 毫秒内按 −14 → +11 → −7 → +3 → 0 pt 摇头，1.5 pt 描边和图标转红，红色感叹号从 40% 弹入；一行红字“请输入有效的邮箱地址”以弹簧（响应 0.4 秒、阻尼 0.8）从框下滑出 8 pt，卡片随之长高，伴随错误触感。一旦修改，提示即刻收回。地址有效时描边变绿，绿色对勾带点过冲弹入，提示换成“看起来不错”，伴随成功触感。开启即时校验后，之后每次输入都实时更新，不再摇动。纠错清楚，语气从不责备。"
         ),
         implementation: L(
             "A three-state enum drives the border color, the trailing status symbol (inserted with a scale + opacity transition) and a message row inserted below the field with an offset + opacity transition; a keyframeAnimator keyed on a failed-attempt counter plays the shake. A custom Binding resets or re-validates the state as the user types.",

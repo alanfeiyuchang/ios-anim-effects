@@ -124,9 +124,9 @@ struct ShaderGridArtwork: View {
                 context.stroke(path, with: .color(.white.opacity(0.18)), lineWidth: 1)
             }
             VStack(spacing: 6) {
-                Text("Aa 永")
+                Text(verbatim: "Aa 永")
                     .font(.system(size: 64, weight: .bold, design: .serif))
-                Text("The quick brown fox · 动效词典")
+                Text(verbatim: "The quick brown fox · 动效词典")
                     .font(.system(size: 13, weight: .medium, design: .monospaced))
                     .opacity(0.8)
             }

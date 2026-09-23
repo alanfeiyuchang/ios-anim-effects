@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The thumb winds back, flicks forward and tosses a +1 into the air.", "大拇指先向后蓄力，再向前一弹，抛出一个 +1。"),
         prompt: L(
             "A comment row ends in a 116 × 44 pt pill holding a thumbs-up glyph and a like count. On tap the thumb plays a wind-up and flick anchored at its bottom-left knuckle: it cocks back −18° while shrinking to 88% (120 ms, ease-out), whips forward to +12° at 122% while lifting 6 pt (140 ms), then settles upright on a bouncy spring. The outline glyph swaps to a filled blue one mid-flick, the pill tints 12% blue, the count rolls up, and a small blue \"+1\" pops out above the thumb, rising 36 pt while scaling 0.6 → 1 and fading over 0.7 s. A light haptic lands at the flick's peak. Un-liking just drops the fill and count. Friendly, emphatic and quick.",
-            "评论行末尾是一枚 116 × 44pt 的胶囊，里面是竖大拇指图标与点赞数。点击后大拇指以左下角“指节”为锚点，先蓄力再弹出：向后翘起 −18° 并缩小到 88%（120 毫秒，ease-out），再猛地向前甩到 +12°、放大到 122% 并上抬 6pt（140 毫秒），最后以弹性弹簧回正。甩出途中空心图标切换为蓝色实心，胶囊染上 12% 的蓝色，点赞数上滚，同时一个蓝色小“+1”从拇指上方弹出，在 0.7 秒内上升 36pt、缩放 0.6 → 1 并淡出。甩到最高点时有一次轻触感。取消点赞只会褪去填充并减少计数。友好、有力、干脆。"
+            "评论行末尾是 116 × 44pt 的胶囊，内有竖拇指与点赞数。点击后拇指以左下“指节”为锚先蓄力再甩出：后翘 −18° 并缩到 88%（120 毫秒，ease-out），再甩到 +12°、放大到 122%、上抬 6pt（140 毫秒），最后以弹性弹簧回正。途中空心图标换成蓝色实心，胶囊染上 12% 蓝，计数上滚，一个蓝色“+1”从拇指上方弹出，0.7 秒内上升 36pt、缩放 0.6 → 1 并淡出。甩到顶点时轻触一下；取消点赞只褪去填充与计数。友好、干脆。"
         ),
         implementation: L(
             "A keyframeAnimator on a like counter drives rotation (anchored .bottomLeading), scale and lift tracks; the glyph swaps with a symbol replace transition, a second keyframeAnimator floats the +1 label, and the count uses numericText.",

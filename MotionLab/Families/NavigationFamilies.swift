@@ -38,8 +38,8 @@ enum NavigationFamilies {
         EffectFamily(
             id: "navigation.sheet",
             category: .navigation,
-            name: L("Sheets & Pushes", "面板与推入"),
-            summary: L("Pages and sheets that slide over with parallax and detents.", "带视差与档位吸附、滑入覆盖的页面与面板。"),
+            name: L("Pages & Sheets", "页面与面板"),
+            summary: L("Page pushes, cross-page transitions and sheets with parallax and detents.", "页面推入、页面间转场，以及带视差与档位的面板。"),
             symbol: "rectangle.bottomthird.inset.filled"
         ),
         EffectFamily(

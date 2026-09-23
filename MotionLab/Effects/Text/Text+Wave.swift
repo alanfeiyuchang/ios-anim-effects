@@ -32,7 +32,7 @@ private struct WaveDemo: View {
     let ctx: DemoContext
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
             // Leave room for both lines' vertical travel so they never collide.
             VStack(spacing: 6 + ctx.cg("amplitude") * 1.4) {

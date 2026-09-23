@@ -65,8 +65,8 @@ private struct SegmentedGaugeDemo: View {
                 setRandom(haptic: false)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 2.4, delay: 2.2) { if ctx.isPreview { setRandom(haptic: false) } }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 2.4, delay: 2.2, intro: false) { setRandom(haptic: false) }
     }
 
     private var readout: some View {

@@ -156,6 +156,7 @@ private struct RadarDemo: View {
             .frame(width: size, height: size)
             .padding(24)
             pills
+            ChartTapCue(text: L("Pick a product to compare", "选择产品进行对比"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sensoryFeedback(.selection, trigger: selection) { _, _ in !ctx.isPreview }

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The button squashes flat under your finger, then wobbles like jelly on release.", "按下时像软糖一样被压扁，松手后果冻般晃动回弹。"),
         prompt: L(
             "A plump 210 × 64 pt mint-to-sky capsule \"Play\" button resting on a soft contact shadow. On touch-down it squashes toward its bottom edge in ~180 ms — about 110% wide and 84% tall — while the ground shadow spreads wider and darker, like a gummy pressed into a table. On release a squash-and-stretch wobble plays over ~0.7 s: it shoots up to ~114% tall and 90% wide, dips back to 95% / 105%, overshoots once more slightly and settles on a spring, the scale always anchored to the bottom so it never leaves the floor. The play glyph lags a few points behind the body for secondary motion. A soft haptic lands on press, a light one on release. Cartoonish, squishy and joyful.",
-            "一枚 210 × 64pt 的圆润胶囊“播放”按钮，薄荷绿到天蓝渐变，下方有一片柔和的接触阴影。手指按下后约 180 毫秒内，按钮朝底边被压扁——宽约 110%、高约 84%，地面阴影同时变宽变深，像一颗软糖被按在桌面上。松手后播放一段约 0.7 秒的挤压-拉伸晃动：先向上拉长到约 114% 高、90% 宽，再回落到 95% / 105%，又轻微过冲一次，最后以弹簧落定；缩放始终以底边为锚点，按钮从不离开“地面”。播放图标比本体慢几个点，形成跟随的次级运动。按下时柔和触感，松手时轻触感。卡通、Q 弹、充满快乐。"
+            "一枚 210 × 64pt 的圆润胶囊“播放”按钮，薄荷绿到天蓝渐变，下方有柔和接触阴影。按下后约 180 毫秒内朝底边压扁到宽 110%、高 84%，阴影随之变宽变深，像软糖被按在桌上。松手播放约 0.7 秒的挤压-拉伸：先拉长到高 114%、宽 90%，回落到 95% / 105%，再轻微过冲一次后以弹簧落定；缩放始终以底边为锚，按钮从不离地。播放图标比本体慢几拍，形成次级运动。按下柔和触感，松手轻触感。卡通、Q 弹、快乐。"
         ),
         implementation: L(
             "A zero-distance DragGesture flips a pressed flag that squashes the face with a stiff spring via scaleEffect(x:y:anchor: .bottom); a release counter triggers a keyframeAnimator whose independent x/y tracks multiply in the wobble.",

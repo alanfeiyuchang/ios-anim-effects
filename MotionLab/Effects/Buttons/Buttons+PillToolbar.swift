@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A round plus stretches sideways into a pill toolbar whose tools blur in one by one.", "圆形加号横向拉伸成胶囊工具栏，工具依次由模糊中浮现。"),
         prompt: L(
             "A photo-editing card with a 56 pt dark circular \"+\" button docked at its bottom-right. On tap the circle stretches leftward into a 280 pt pill on a spring (response 0.45 s, damping 0.78) while the plus rotates 45° into a close mark that stays pinned at the trailing end. Four tools (crop, adjust, filters, text) materialise inside the growing pill from right to left — each fades in from a 6 pt blur and 50% scale, 45 ms apart — so they appear to be unveiled by the expanding edge. Picking a tool bounces its glyph, lights it amber and shows its name above the photo. Closing reverses: tools blur out left-to-right and the pill retracts into the circle. A light haptic accompanies each change. Compact, tidy and fluid.",
-            "一张修图卡片，右下角停靠着一枚 56pt 的深色圆形“+”按钮。点击后，圆形以弹簧（响应 0.45 秒、阻尼 0.78）向左拉伸成 280pt 的胶囊，加号旋转 45° 变为关闭符号并固定在尾端。四个工具（裁剪、调节、滤镜、文字）在不断变长的胶囊中从右到左依次浮现——每个都从 6pt 模糊、50% 缩放淡入，间隔 45 毫秒——仿佛被扩展的边缘逐一揭开。选中某个工具，图标会弹跳一下并亮起琥珀色，照片上方显示工具名称。收起时反向播放：工具从左到右模糊消失，胶囊缩回圆形。每次变化都有轻触感。紧凑、整洁、流畅。"
+            "修图卡片右下角停着一枚 56pt 深色圆形“+”按钮。点击后圆形以弹簧（响应 0.45 秒、阻尼 0.78）向左拉伸成 280pt 胶囊，加号旋转 45° 成关闭符号并固定在尾端。裁剪、调节、滤镜、文字四个工具在变长的胶囊里从右到左依次浮现——各自从 6pt 模糊、50% 缩放淡入，间隔 45 毫秒——像被扩展的边缘逐一揭开。选中工具时图标弹跳并亮起琥珀色，照片上方显示工具名。收起时倒放：工具从左到右模糊消失，胶囊缩回圆形。每次变化都有轻触感。紧凑、利落。"
         ),
         implementation: L(
             "A trailing-aligned capsule animates its width with a spring; each tool reads the same open flag through its own delayed animation(_:value:) for blur, scale and opacity, with delays mirrored on close. Selection triggers symbolEffect(.bounce) and a blurReplace caption.",

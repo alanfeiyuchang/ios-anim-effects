@@ -51,6 +51,7 @@ private struct RadialMenuDemo: View {
     @State private var chosen: Int?
     @State private var previewPhase = 0
     @State private var pressBeganOpen: Bool?
+    @State private var token = 0
 
     private let buttonSize: CGFloat = 60
 
@@ -208,9 +209,11 @@ private struct RadialMenuDemo: View {
         highlighted = nil
         open = false
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { chosen = index }
+        token += 1
+        let current = token
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.1))
-            if chosen == index {
+            if token == current && chosen == index {
                 withAnimation(.easeOut(duration: 0.25)) { chosen = nil }
             }
         }

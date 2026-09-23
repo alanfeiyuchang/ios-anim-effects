@@ -134,9 +134,9 @@ private struct LineDrawDemo: View {
                 draw()
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.6, delay: ctx["duration"] + 1.2) {
-            if ctx.isPreview { replay() }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.6, delay: ctx["duration"] + 1.2, intro: false) {
+            replay()
         }
     }
 

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Scrub across hearts to fill them continuously; the one under your finger magnifies, then it snaps to halves.", "划过爱心即可连续填充，指尖下的那颗会放大，松手吸附到半颗。"),
         prompt: L(
             "A recipe-rating row of five 40 pt hearts with a large score readout. Dragging across them fills continuously — each heart is clipped by a pink-to-coral fill whose width tracks the finger to the point — and the heart under the finger magnifies to 125% like a loupe while its neighbours ease to 108%, all on a quick interactive spring. Releasing snaps the score to the nearest half on a spring (response 0.4 s, damping 0.7), so partial fills glide to half or whole hearts, the magnification settles back, and the score (\"3.5\") rolls with numeric digits. Any heart that becomes completely full gives a single heartbeat (100 → 118 → 100% over 350 ms) and a selection haptic. Fine-grained and honest, yet still playful.",
-            "菜谱评分行：五颗 40pt 爱心，旁边是大号分数。横向拖动即可连续填充——每颗爱心都被一层粉到珊瑚色的填充裁剪，填充宽度精确跟随手指位置；手指下方的爱心像放大镜一样放大到 125%，相邻爱心缓缓放大到 108%，均由快速交互弹簧驱动。松手后分数以弹簧（响应 0.4 秒、阻尼 0.7）吸附到最近的半分，未满的填充会滑到半颗或整颗，放大效果回落，分数（“3.5”）以数字滚动更新。每当一颗爱心被完全填满，它就“心跳”一次（350 毫秒内 100 → 118 → 100%）并伴随选择触觉。细腻、诚实，又不失俏皮。"
+            "菜谱评分行：五颗 40pt 爱心与大号分数。横向拖动连续填充——每颗爱心被一层粉到珊瑚色的填充裁剪，宽度精确跟随手指；指下爱心像放大镜般放大到 125%，相邻爱心放大到 108%，均由快速交互弹簧驱动。松手后分数以弹簧（响应 0.4 秒、阻尼 0.7）吸附到最近的半分，残缺填充滑到半颗或整颗，放大回落，分数（“3.5”）滚动更新。每当一颗爱心被填满，就“心跳”一次（350 毫秒内 100 → 118 → 100%）并触发选择触觉。细腻又俏皮。"
         ),
         implementation: L(
             "Each heart overlays a filled symbol masked by a leading-aligned Rectangle whose width is clamp(rating − index, 0, 1); magnification is derived from the finger's distance, and a per-heart keyframeAnimator keyed on a fill counter produces the heartbeat.",

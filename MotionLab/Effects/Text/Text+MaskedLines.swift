@@ -35,8 +35,14 @@ private enum TextMaskedPhase: Equatable {
 
 private struct TextMaskedLinesDemo: View {
     let ctx: DemoContext
-    @State private var phase: TextMaskedPhase = .below
+    @State private var phase: TextMaskedPhase
     @State private var index = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run the loop: show the headline at rest.
+        _phase = State(initialValue: ctx.isStill ? .shown : .below)
+    }
 
     private var headlines: [(eyebrow: String, lines: [String])] {
         ctx.language == .zh

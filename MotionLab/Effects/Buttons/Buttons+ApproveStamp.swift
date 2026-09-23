@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Approve slams an inked stamp onto the document, which jolts on impact.", "点击批准，一枚印章重重盖在单据上，纸面随冲击一震。"),
         prompt: L(
             "An expense report card (merchant, amount, date) with a wide green \"Approve\" button in its footer. On tap a rubber stamp reading \"APPROVED\" — 3 pt rounded border, heavy rounded caps, rotated −12° — falls onto the card from 220% scale, 6 pt blur and zero opacity to 100% in 180 ms on an accelerating ease-in, with no overshoot, like real weight. On impact the card jolts (3 pt down, 1 pt back up, settle in ~200 ms), six tiny ink specks splash outward and fade, and a rigid haptic thuds. The button then morphs into a quiet grey \"Approved ✓\" pill with an Undo affordance; tapping it lifts the stamp away — it grows, blurs and fades in 0.25 s. Decisive, official and satisfying.",
-            "一张报销单卡片（商户、金额、日期），底部是一枚宽大的绿色“批准”按钮。点击后，一枚写着“APPROVED / 已批准”的橡皮印章——3pt 圆角边框、粗壮的圆体大字、旋转 −12°——从 220% 缩放、6pt 模糊、零透明度，以加速的 ease-in 在 180 毫秒内落到 100%，没有任何过冲，像真实的重量砸下。落下瞬间卡片一震（下沉 3pt、回弹 1pt，约 200 毫秒内稳住），六颗细小的墨点向外溅开并淡出，同时一次硬朗的触感“咚”地落下。随后按钮形变为低调的灰色“已批准 ✓”胶囊，并提供撤销；点击它，印章被抬起移走——0.25 秒内放大、模糊并淡出。果断、正式、令人满足。"
+            "报销单卡片（商户、金额、日期）底部是绿色“批准”宽按钮。点击后，一枚“已批准”橡皮印章（3pt 圆角边框、粗圆体字、旋转 −12°）从 220% 缩放、6pt 模糊、全透明，以加速 ease-in 在 180 毫秒内砸到 100%，毫无过冲，像真有分量。落下瞬间卡片一震（下沉 3pt、回弹 1pt，约 200 毫秒稳住），六颗墨点溅开淡出，伴随一次硬朗触感。按钮随即变为灰色“已批准 ✓”胶囊，可撤销：印章 0.25 秒内放大、模糊、淡出。果断、正式。"
         ),
         implementation: L(
             "The stamp's scale, blur and opacity animate with a 0.18 s easeIn keyed on the approved flag; a keyframeAnimator on an impact counter holds for the fall time, then jolts the card and throws the ink specks. The footer swaps pills with a blurReplace transition.",

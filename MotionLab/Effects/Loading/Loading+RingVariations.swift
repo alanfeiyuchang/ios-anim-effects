@@ -64,9 +64,15 @@ extension Effect {
 
 private struct TickRingDemo: View {
     let ctx: DemoContext
-    @State private var level: Double = 0
+    @State private var level: Double
     @State private var ripple = false
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _level = State(initialValue: ctx.isStill ? 0.72 : 0)
+    }
 
     var body: some View {
         let count: Int = max(ctx.int("count"), 8)
@@ -128,6 +134,19 @@ private struct TickRingDemo: View {
     }
 }
 
+/// Interpolates evenly spaced hex colour stops at `f` (0…1) in sRGB.
+private func tickRingColor(_ stops: [UInt32], at f: Double) -> Color {
+    let u: Double = min(max(f, 0), 1) * Double(stops.count - 1)
+    let i: Int = min(Int(u), stops.count - 2)
+    let t: Double = u - Double(i)
+    let a: UInt32 = stops[i]
+    let b: UInt32 = stops[i + 1]
+    let r: Double = Double((a >> 16) & 0xFF) + (Double((b >> 16) & 0xFF) - Double((a >> 16) & 0xFF)) * t
+    let g: Double = Double((a >> 8) & 0xFF) + (Double((b >> 8) & 0xFF) - Double((a >> 8) & 0xFF)) * t
+    let bl: Double = Double(a & 0xFF) + (Double(b & 0xFF) - Double(a & 0xFF)) * t
+    return Color(.sRGB, red: r / 255, green: g / 255, blue: bl / 255, opacity: 1)
+}
+
 private struct TickView: View {
     let index: Int
     let count: Int
@@ -139,7 +158,8 @@ private struct TickView: View {
         let f: Double = Double(index) / Double(count)
         let on: Bool = level > f
         let head: Bool = on && level < f + 1 / Double(count) + 0.001
-        let color: Color = f < 0.33 ? Palette.green : (f < 0.66 ? Palette.mint : Palette.sky)
+        // Green → mint → sky, interpolated per tick so the gradient wraps the dial smoothly.
+        let color: Color = tickRingColor([0x34C77B, 0x21D4A8, 0x3AC4FF], at: f)
         let delay: Double = ripple ? Double(index) * 0.008 : 0
         Capsule()
             .fill(on ? color : Color.primary.opacity(0.12))
@@ -190,11 +210,17 @@ private struct InstallApp {
 
 private struct InstallPieDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var holeRadius: CGFloat = 17
     @State private var installed = false
     @State private var bounce = 0
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.6 : 0)
+    }
 
     private let apps: [InstallApp] = [
         InstallApp(symbol: "message.fill", colors: [Palette.green, Palette.mint], name: L("Messages", "信息")),
@@ -346,9 +372,15 @@ extension Effect {
 
 private struct ElasticRingDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var steps = 0
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.7 : 0)
+    }
 
     var body: some View {
         let zh = ctx.language == .zh
@@ -472,9 +504,15 @@ private enum RingCheckPhase: Int {
 
 private struct RingToCheckDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var phase: RingCheckPhase = .uploading
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.7 : 0)
+    }
 
     var body: some View {
         let docked = phase == .docked
@@ -590,10 +628,16 @@ extension Effect {
 
 private struct DashFlowRingDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var done = false
     @State private var pops = 0
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.7 : 0)
+    }
 
     var body: some View {
         let zh = ctx.language == .zh

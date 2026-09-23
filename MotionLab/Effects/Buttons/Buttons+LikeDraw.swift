@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A pen traces the heart's outline, then it floods with colour and sparks.", "一笔勾勒出爱心轮廓，随后填满颜色并迸出光芒。"),
         prompt: L(
             "An editorial bookmark bar with a 72 pt heart drawn as a thin grey outline. On tap a 3 pt pink stroke traces the heart's contour from the bottom tip, both lobes and back around in 0.45 s (ease-in-out), like a pen signing. Just before the line closes, the interior floods with a pink-to-coral fill that scales from 60% to 100% on a bouncy spring (response 0.35 s, damping 0.55), and eight short radial spark lines shoot from 40 pt to 58 pt from the centre, shortening and fading over 0.4 s. A success haptic lands with the fill and the label switches to \"Saved to favourites\". Tapping again shrinks the fill away and un-draws the outline in reverse with a light tick. Crafted, calligraphic and precise.",
-            "一条图文收藏栏，左侧是一枚 72pt 的细灰色空心爱心。点击后，一条 3pt 的粉色描边从爱心底尖出发，沿两瓣弧线绕回原点，在 0.45 秒内（ease-in-out）勾勒完整轮廓，像用笔签名。线条即将闭合时，内部被粉到珊瑚色填满：填充以弹性弹簧（响应 0.35 秒、阻尼 0.55）从 60% 放大到 100%，同时八道短短的放射光线从距中心 40pt 射到 58pt，边飞边缩短并在 0.4 秒内淡出。填满时触发成功触感，文字切换为“已加入收藏”。再次点击，填充缩小消失，描边反向擦除，伴随一次轻触感。精致、有书写感、干净利落。"
+            "图文收藏栏左侧是一枚 72pt 的细灰空心爱心。点击后，一条 3pt 粉色描边从爱心底尖出发，沿两瓣绕回原点，在 0.45 秒内（ease-in-out）勾完轮廓，像用笔签名。线条将要闭合时，内部被粉到珊瑚色填满：填充以弹性弹簧（响应 0.35 秒、阻尼 0.55）从 60% 放大到 100%，八道放射短线从距中心 40pt 射到 58pt，边飞边缩短，0.4 秒内淡出。填满时触发成功触感，文字变为“已加入收藏”。再次点击，填充缩走、描边反向擦除，并轻触一下。"
         ),
         implementation: L(
             "A hand-built heart Shape is stroked with trim(from:to:) animated by withAnimation; a delayed spring scales the filled copy in, and a keyframeAnimator on a like counter holds for the draw time before pushing the spark capsules outward.",

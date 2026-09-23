@@ -44,9 +44,15 @@ private let cardsFanHand: [CardsPlayingCardModel] = [
 
 private struct CardsFanDemo: View {
     let ctx: DemoContext
-    @State private var fanned = false
+    @State private var fanned: Bool
     @State private var lifted: Int?
     @State private var autoStep = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run the arrival task: show the dealt fan.
+        _fanned = State(initialValue: ctx.isStill)
+    }
 
     var body: some View {
         VStack(spacing: 20) {
@@ -60,8 +66,8 @@ private struct CardsFanDemo: View {
             DemoHint(text: L("Tap to fan, tap a card to draw it", "点击展开，点击单张抽出"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // The detail stage deals the fan itself (below), so the intro play must not advance the script again.
-        .autoplay(ctx.isPreview, every: 1.3) { if ctx.isPreview { autoAdvance() } }
+        // The detail stage deals the fan itself (below), so no intro play on top.
+        .autoplay(ctx.isPreview, every: 1.3, intro: false) { autoAdvance() }
         .task {
             // In the detail stage, deal the fan once on arrival so the stage never opens on a static pile.
             guard !ctx.isPreview else { return }

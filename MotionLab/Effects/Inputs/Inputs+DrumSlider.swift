@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A ruler wrapped around a cylinder that you spin and fling, landing on whole values.", "包裹在圆柱上的刻度尺，可拨动、甩动，最终停在整数上。"),
         prompt: L(
             "A target-weight picker: a horizontal ruler printed on a 3D drum under a fixed coral index line. Each 1 kg tick sits 6° apart on a 150 pt-radius cylinder, so ticks are spaced ~16 pt at the centre and compress, narrow (cosine foreshortening) and fade toward the edges where the surface curves away; 5 kg ticks are taller and 10 kg ticks carry labels. Dragging rotates the drum 1:1 under the finger with a selection haptic per kilogram; releasing flings it using the gesture's predicted end translation, and the drum decelerates and lands exactly on a whole value on a spring (response 0.7 s, damping 0.82). The big readout counts every value the drum passes. Mechanical, dimensional, satisfying to spin.",
-            "目标体重选择器：一把横向刻度尺印在一只 3D 滚筒上，上方是固定的珊瑚色指针线。每 1 kg 一格，在半径 150pt 的圆柱上间隔 6°，因此中心处刻度间距约 16pt，越往两侧越密、越窄（余弦透视压缩）并逐渐淡出，仿佛表面向后弯去；5 kg 刻度更长，10 kg 刻度带数字。拖动时滚筒随手指 1:1 转动，每过 1 kg 触发一次选择触觉；松手后按手势预测的终点位移甩出，滚筒减速并以弹簧（响应 0.7 秒、阻尼 0.82）精确停在整数上。大号读数会逐一数过滚筒经过的每个值。机械、立体，转起来很过瘾。"
+            "目标体重选择器：横向刻度尺印在一只 3D 滚筒上，上方是固定的珊瑚色指针线。每 1 kg 一格，在半径 150pt 的圆柱上相隔 6°，中心处间距约 16pt，越往两侧越密、越窄（余弦透视）并渐隐，像表面向后弯去；5 kg 刻度更长，10 kg 刻度带数字。拖动时滚筒 1:1 跟手，每过 1 kg 触发一次选择触觉；松手后按手势预测的终点甩出，滚筒减速并以弹簧（响应 0.7 秒、阻尼 0.82）精确停在整数上，大号读数逐一数过经过的值。机械、立体。"
         ),
         implementation: L(
             "An Animatable view receives the value as animatableData and positions each visible tick at x = R·sin θ with cos θ scale and opacity; DragGesture.predictedEndTranslation picks the landing value, animated with a spring so every frame re-lays the drum.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Each tap squashes the number and floats a +1 chip; rapid taps merge into +3, +4…", "每次点击都会压扁数字并飘出 +1 气泡，连续快点会合并成 +3、+4……"),
         prompt: L(
             "A tip-jar card with a big rounded count between − and + buttons. Every tap squashes the number to 112% × 90% and springs it back (bouncy, ~350 ms) while a small capsule chip labelled +1 or −1 rises 44 pt from the number and fades out over 900 ms on an ease-out. Taps within a 500 ms window combine: the previous chip is replaced by a larger one showing the running total (+2, +3…) that pops in from 60% scale, so bursts of tapping read as a single growing gesture. Increments float up in mint, decrements drift down in coral, and the price total rolls with numeric digits. A light haptic accompanies each tap. Rewarding, game-like feedback that makes counting feel generous.",
-            "一张打赏罐卡片：− 与 + 按钮之间是大号圆体计数。每次点击，数字先被压成 112% × 90% 再弹性回弹（约 350 毫秒），同时从数字处升起一枚写着 +1 或 −1 的小胶囊，在 900 毫秒内以缓出上浮 44pt 并淡出。500 毫秒内的连续点击会合并：旧气泡被一个更大的新气泡取代，显示累计值（+2、+3……），从 60% 缩放弹出，让一连串点击读起来像一个不断累积的动作。增加时气泡为薄荷绿并向上飘，减少时为珊瑚红并向下沉，金额以数字滚动更新。每次点击伴随一次轻触觉。像游戏一样的奖励感反馈，让计数显得慷慨。"
+            "打赏罐卡片：− 与 + 按钮之间是大号圆体计数。每次点击，数字先压成 112% × 90% 再弹性回弹（约 350 毫秒），同时一枚写着 +1 或 −1 的小胶囊从数字处升起，900 毫秒内以缓出上浮 44pt 并淡出。500 毫秒内的连续点击会合并：旧气泡被一个显示累计值（+2、+3……）的更大气泡取代，从 60% 缩放弹出，连点读起来像一个不断累积的动作。增加为薄荷绿向上飘，减少为珊瑚红向下沉，金额数字滚动更新，每次点击轻触一下。像游戏奖励一样慷慨。"
         ),
         implementation: L(
             "Chips are Identifiable values in an array; each one animates its own rise and fade in onAppear and is removed by a Task, while a combine window replaces the newest chip with a new id. A keyframeAnimator keyed on a tap counter squashes the number.",

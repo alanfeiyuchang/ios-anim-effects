@@ -77,8 +77,8 @@ private struct ActivityRingsDemo: View {
                 play()
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 3.6, delay: 3.6) { if ctx.isPreview { play() } }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 3.6, delay: 3.6, intro: false) { play() }
     }
 
     private func play() {

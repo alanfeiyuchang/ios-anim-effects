@@ -40,7 +40,7 @@ private struct TextLyricsDemo: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 TextLyricsColumn(
                     lines: lines,
                     elapsed: timeline.date.timeIntervalSince(start),

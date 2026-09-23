@@ -116,6 +116,13 @@ private struct LifeSleepDemo: View {
     /// Only a real finger on the chart ticks the selection haptic; the preview scrub stays silent.
     @State private var userScrubbing = false
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run `task`, so they show the fully revealed night.
+        _reveal = State(initialValue: ctx.isStill ? 1 : 0)
+        _counted = State(initialValue: ctx.isStill ? LifeSleepData.total : 0)
+    }
+
     private static let chartSize = CGSize(width: 264, height: 108)
     private static let previewScrubs: [Double?] = [0.12, 0.3, 0.55, nil, 0.87, nil]
 
@@ -138,9 +145,8 @@ private struct LifeSleepDemo: View {
         .sensoryFeedback(.selection, trigger: focusStage) { old, new in
             userScrubbing && new != nil && old != new
         }
-        .autoplay(ctx.isPreview, every: 1.1, delay: 2.0) { previewTick() }
         // The reveal already plays on appear; the detail stage must not start a preview scrub that never clears.
-        .environment(\.demoIntroPlay, false)
+        .autoplay(ctx.isPreview, every: 1.1, delay: 2.0, intro: false) { previewTick() }
     }
 
     private var card: some View {

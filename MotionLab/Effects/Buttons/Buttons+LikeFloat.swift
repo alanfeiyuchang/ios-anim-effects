@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Every tap releases a heart that sways up the live stream and fades.", "每次点击都放飞一颗爱心，沿直播画面摇摆上升并淡出。"),
         prompt: L(
             "A live-stream card (landscape video, LIVE badge, viewer count) with a 52 pt circular heart button in its bottom-right corner. Every tap releases a small heart from the button: it pops from 40% to full size in the first 15% of its life, then rises ~170 pt over 1.8 s while swaying left and right on a sine path (±14 pt, each heart with its own phase and frequency), tilting with the sway and fading out over the last 40% of its climb. Hearts get a random colour from a warm palette and slightly different sizes, so rapid tapping builds a lively column. The button itself squashes to 86% and rebounds on each tap with a light haptic, and a tap counter rolls up. Social, energetic, communal.",
-            "一张直播卡片（风景视频画面、LIVE 标识、观看人数），右下角是一枚 52pt 的圆形爱心按钮。每次点击都从按钮放飞一颗小爱心：在生命周期前 15% 内从 40% 弹到原尺寸，随后在 1.8 秒内上升约 170pt，沿正弦路径左右摇摆（±14pt，每颗爱心的相位与频率各不相同），身体随摆动倾斜，并在上升的最后 40% 淡出。爱心从暖色系中随机取色、大小略有差异，连续快点会堆出一串热闹的心流。按钮本身每次被点击都压缩到 86% 再回弹，伴随轻触感，点赞计数同步上滚。社交感强、热烈、有共鸣。"
+            "直播卡片（风景画面、LIVE 标识、观看人数）右下角是一枚 52pt 的圆形爱心按钮。每次点击放飞一颗小爱心：在生命周期前 15% 从 40% 弹到原尺寸，随后 1.8 秒内上升约 170pt，沿正弦路径左右摇摆（±14pt，相位与频率各异），身体随摆动倾斜，最后 40% 行程淡出。爱心从暖色系随机取色、大小略有差异，连点就会堆出一串热闹心流。按钮每次压到 86% 再回弹并轻触一下，计数同步上滚。热烈、有现场感。"
         ),
         implementation: L(
             "Each tap appends a heart with a seed and birth date; a TimelineView (paused when empty) positions every heart from its age — scale pop, sine sway, tilt and fade — and a Task removes it when its life ends. The button pops with a keyframeAnimator.",

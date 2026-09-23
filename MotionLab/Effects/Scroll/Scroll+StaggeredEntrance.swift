@@ -44,7 +44,8 @@ private struct ScrollStaggerDemo: View {
                             language: ctx.language,
                             delay: settled ? 0 : Double(i) * ctx["stagger"],
                             distance: ctx.cg("distance"),
-                            response: ctx["response"]
+                            response: ctx["response"],
+                            still: ctx.isStill
                         )
                     }
                 }
@@ -75,8 +76,8 @@ private struct ScrollStaggerDemo: View {
             guard !Task.isCancelled else { return }
             settled = true
         }
-        // Rows already enter on appear; the detail intro play must not replay them a second time.
-        .autoplay(ctx.isPreview, every: 3.2) { if ctx.isPreview { replay() } }
+        // Rows already enter on appear, so no intro play replaying them a second time.
+        .autoplay(ctx.isPreview, every: 3.2, intro: false) { replay() }
     }
 
     private func replay() {
@@ -91,7 +92,17 @@ private struct ScrollStaggerRow: View {
     let delay: Double
     let distance: CGFloat
     let response: Double
-    @State private var visible = false
+    @State private var visible: Bool
+
+    init(index: Int, language: AppLanguage, delay: Double, distance: CGFloat, response: Double, still: Bool) {
+        self.index = index
+        self.language = language
+        self.delay = delay
+        self.distance = distance
+        self.response = response
+        // Still snapshots never run onAppear: rows start in place.
+        _visible = State(initialValue: still)
+    }
 
     var body: some View {
         ScrollKitRow(index: index, language: language)

@@ -105,8 +105,8 @@ private struct RoseBloomDemo: View {
                 load(haptic: false)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 2.8, delay: 2.8) { if ctx.isPreview { load(haptic: false) } }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 2.8, delay: 2.8, intro: false) { load(haptic: false) }
     }
 
     private var monthLabels: some View {

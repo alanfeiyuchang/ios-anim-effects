@@ -113,6 +113,13 @@ private struct SportSpeedDemo: View {
     @State private var scrub: Int?
     @State private var runID = 0
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run `task`, so they start from the fully drawn chart.
+        _progress = State(initialValue: ctx.isStill ? 1 : 0)
+        _shown = State(initialValue: ctx.isStill ? Int(SpeedData.values.max() ?? 0) : 0)
+    }
+
     private var displayed: Int {
         if let scrub { return Int(SpeedData.values[scrub]) }
         return shown
@@ -135,9 +142,8 @@ private struct SportSpeedDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task(id: runID) { await play() }
-        .autoplay(ctx.isPreview, every: 4.4, delay: 4.4) { runID += 1 }
         // The run already starts on appear, so the detail stage skips its one-shot intro replay.
-        .environment(\.demoIntroPlay, false)
+        .autoplay(ctx.isPreview, every: 4.4, delay: 4.4, intro: false) { runID += 1 }
     }
 
     private var card: some View {

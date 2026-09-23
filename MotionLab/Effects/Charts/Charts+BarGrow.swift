@@ -67,8 +67,8 @@ private struct BarGrowDemo: View {
                 play()
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 3.2, delay: 3.2) { if ctx.isPreview { play() } }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 3.2, delay: 3.2, intro: false) { play() }
     }
 
     private var header: some View {

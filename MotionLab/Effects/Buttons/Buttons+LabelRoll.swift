@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Each letter rolls out and back in, one after another.", "按钮文字逐字向上翻滚，替换成一模一样的新文字。"),
         prompt: L(
             "A near-black capsule CTA (\"Get started\" with a trailing arrow) with a faint top sheen, paired with a quieter outline button. On tap every character of the label slides up out of a 24 pt clipping line while an identical copy rises in from below, each letter on its own spring (response 0.45 s, damping 0.85) with a 25 ms left-to-right stagger, so the word ripples like a split-flap wave while keeping its original kerning. As the wave reaches the last letter, the arrow shoots out to the right and a fresh one slides in from the left. The swap is invisible at rest, so it can repeat forever. The button dips to 97% on press with a light haptic. Crisp, editorial and quietly playful — the web's favourite hover, adapted for touch.",
-            "接近纯黑的胶囊主按钮（“立即开始”+ 尾部箭头），顶部带一层极淡的光泽，旁边是一枚更安静的描边次按钮。点击后，文字中的每个字符都在 24pt 高的裁切行内向上滑出，一模一样的副本同时从下方升起；每个字各自使用弹簧（响应 0.45 秒、阻尼 0.85），从左到右错开 25 毫秒，整行文字像翻牌一样掀起一道波浪，且保持原有字距。波浪抵达最后一个字时，箭头向右射出，新的箭头从左侧滑入。静止时替换不可见，因此可以无限重复。按下时按钮轻压到 97% 并伴随轻触觉。利落、有编辑感又带点俏皮——把网页上最受欢迎的悬停动效搬到了触屏上。"
+            "近黑色胶囊主按钮（“立即开始”+ 箭头）顶部带淡淡光泽，旁边是一枚安静的描边次按钮。点击后，每个字符在 24pt 高的裁切行内向上滑出，相同的副本从下方升起；每个字各用弹簧（响应 0.45 秒、阻尼 0.85），从左到右错开 25 毫秒，整行像翻牌一样掀起波浪，字距不变。波浪到达末字时，箭头向右射出、新箭头从左侧滑入。静止时替换不可见，可无限重复。按下时按钮轻压到 97% 并伴随轻触觉。利落、克制，又带点俏皮。"
         ),
         implementation: L(
             "The label stays one Text (so kerning is intact) drawn by a custom TextRenderer: an animatable clock runs linearly, and each glyph slice is drawn twice — leaving and arriving — offset by an analytic spring evaluated at clock − index × stagger; afterwards the clock resets instantly with disablesAnimations.",

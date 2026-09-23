@@ -75,7 +75,7 @@ private struct ShimmerText: View {
     let ctx: DemoContext
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             Text(verbatim: text)
                 .font(font)
                 .foregroundStyle(gradient(at: timeline.date))

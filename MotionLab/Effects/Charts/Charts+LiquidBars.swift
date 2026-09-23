@@ -90,8 +90,8 @@ private struct LiquidBarsDemo: View {
                 refill(haptic: false)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 3.0, delay: 3.0) { if ctx.isPreview { refill(haptic: false) } }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 3.0, delay: 3.0, intro: false) { refill(haptic: false) }
     }
 
     private var header: some View {

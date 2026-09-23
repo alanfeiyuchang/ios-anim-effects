@@ -33,6 +33,8 @@ private struct BentoMotion {
     let stagger: Double
     let response: Double
     let damping: Double
+    /// Rendering a still snapshot: numbers start at their targets because `task` never runs.
+    var still: Bool = false
 
     func animation(_ index: Int) -> Animation {
         if assembled {
@@ -53,7 +55,14 @@ private struct BentoCountUp: View {
     let target: Double
     let decimals: Int
     let delay: Double
-    @State private var shown: Double = 0
+    @State private var shown: Double
+
+    init(target: Double, decimals: Int, delay: Double, still: Bool = false) {
+        self.target = target
+        self.decimals = decimals
+        self.delay = delay
+        _shown = State(initialValue: still ? target : 0)
+    }
 
     var body: some View {
         Text(verbatim: decimals == 0 ? "\(Int(shown.rounded()))" : String(format: "%.\(decimals)f", shown))
@@ -98,8 +107,14 @@ private struct SportRunSummaryDemo: View {
     @State private var assembled = false
     @State private var runID = 0
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run `task`, so they show the assembled bento with final numbers.
+        _assembled = State(initialValue: ctx.isStill)
+    }
+
     private var motion: BentoMotion {
-        BentoMotion(assembled: assembled, stagger: ctx["stagger"], response: ctx["response"], damping: ctx["damping"])
+        BentoMotion(assembled: assembled, stagger: ctx["stagger"], response: ctx["response"], damping: ctx["damping"], still: ctx.isStill)
     }
 
     var body: some View {
@@ -116,9 +131,8 @@ private struct SportRunSummaryDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task(id: runID) { await replay() }
-        .autoplay(ctx.isPreview, every: 3.8, delay: 3.8) { runID += 1 }
         // The bento already assembles on appear, so the detail stage skips its one-shot intro replay.
-        .environment(\.demoIntroPlay, false)
+        .autoplay(ctx.isPreview, every: 3.8, delay: 3.8, intro: false) { runID += 1 }
     }
 
     private var bento: some View {
@@ -181,7 +195,7 @@ private struct BentoStatTile: View {
                 .lineLimit(1)
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                BentoCountUp(target: Double(value), decimals: 0, delay: motion.landingDelay(index))
+                BentoCountUp(target: Double(value), decimals: 0, delay: motion.landingDelay(index), still: motion.still)
                     .font(Signature.number(22))
                     .foregroundStyle(accent ? Signature.accent : Color.white)
                     .lineLimit(1)
@@ -215,7 +229,7 @@ private struct BentoDistanceTile: View {
                     .signatureEyebrow()
                 Spacer(minLength: 0)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    BentoCountUp(target: assembled ? 24.6 : 0, decimals: 1, delay: motion.landingDelay(1))
+                    BentoCountUp(target: assembled ? 24.6 : 0, decimals: 1, delay: motion.landingDelay(1), still: motion.still)
                         .font(Signature.number(30))
                         .foregroundStyle(Color.white)
                         .lineLimit(1)

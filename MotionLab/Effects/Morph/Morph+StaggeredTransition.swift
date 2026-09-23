@@ -67,7 +67,13 @@ private struct RiseTransition: Transition {
 
 private struct StaggeredTransitionDemo: View {
     let ctx: DemoContext
-    @State private var shown = false
+    @State private var shown: Bool
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails show the filled list instead of an empty stage.
+        _shown = State(initialValue: ctx.isStill)
+    }
 
     private var visible: [Int] { shown ? Array(notices.indices) : [] }
 

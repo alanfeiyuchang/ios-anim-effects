@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Drag a bead around a ring; the whole dial warms or cools in colour and glow.", "沿圆环拖动小珠，整个表盘的颜色与光晕随之变暖或变冷。"),
         prompt: L(
             "A smart-thermostat ring: a 230 pt, 270°-sweep track with 54 hairline ticks, a white bead riding the arc and a large rounded temperature in the centre (10–30 °C in 0.5° steps). Dragging anywhere near the ring slides the bead along the arc, with a selection haptic on every step; the filled portion is an angular gradient from cool blue to warm coral, and a soft ambient glow behind the dial crossfades between blue and orange as the setpoint moves. The number rolls with numeric digits and the caption swaps between \"Cooling to\" and \"Heating to\" with a blur transition around 21 °C. On release, a highlight ripples outward through the ticks from the bead, each tick lengthening then settling with a 12 ms stagger. Calm, ambient, warm to the touch.",
-            "智能温控环：一条 230pt、270° 扫角的轨道，周围 54 根细刻度，白色小珠沿弧线滑动，中央是大号圆体温度（10–30 °C，步进 0.5°）。在圆环附近任意拖动，小珠即沿弧线移动，每跨一步触发一次选择触觉；已填充部分是从冷蓝到暖珊瑚的角向渐变，表盘后方柔和的环境光也会随设定值在蓝与橙之间交叉过渡。数字以数字滚动更新，说明文字在 21 °C 附近以模糊过渡在“制冷至”和“制热至”之间切换。松手后，一道高光从小珠处沿刻度向外涟漪扩散，每根刻度以 12 毫秒错峰先伸长再回落。安静、氛围感强，触感温暖。"
+            "智能温控环：230pt、270° 扫角的轨道，周围 54 根细刻度，白色小珠沿弧线滑动，中央是大号圆体温度（10–30 °C，步进 0.5°）。在圆环附近拖动，小珠沿弧移动，每跨一步触发选择触觉；已填充部分是冷蓝到暖珊瑚的角向渐变，表盘后的环境光随设定值在蓝与橙间过渡。数字滚动更新，说明文字在 21 °C 附近以模糊过渡在“制冷至”与“制热至”间切换。松手后一道高光从小珠处沿刻度向外涟漪，每根刻度以 12 毫秒错峰先伸长再回落。安静而温暖。"
         ),
         implementation: L(
             "atan2 maps the touch onto the 270° arc and quantises it; Circle().trim draws the fill with an AngularGradient, two blurred circles crossfade for the glow, and a release counter drives per-tick keyframeAnimators delayed by their distance from the bead.",

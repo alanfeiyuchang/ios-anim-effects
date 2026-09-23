@@ -36,12 +36,12 @@ extension Effect {
         name: L("Flag Wave", "旗帜波动"),
         summary: L("Continuous sine distortion like fabric in the wind.", "如风中布料般持续起伏的正弦扭曲。"),
         prompt: L(
-            "A card undulates continuously like a flag in a gentle breeze. Every pixel is displaced vertically by a sine wave traveling along the x-axis and horizontally by a slower cosine along the y-axis at half the amplitude, so the surface ripples diagonally rather than bouncing uniformly. The slope of the wave also lights the fabric: rising faces brighten and falling faces darken by up to ~30%, so folds read as real cloth. The loop is seamless with no easing — amplitude ≈6 pt, a wavelength parameter of 30 pt (≈190 pt crest to crest, i.e. 2π × 30), a ≈2 s cycle — calm and hypnotic, ideal for hero artwork or ambient headers.",
-            "卡片像微风中的旗帜一样持续起伏。每个像素在竖直方向受沿 x 轴传播的正弦波推移，在水平方向受沿 y 轴、速度更慢、振幅减半的余弦波推移，使表面呈斜向涟漪而非整体上下跳动。波形斜率同时为布面打光：迎光面最多提亮约 30%，背光面相应变暗，褶皱因此具有真实布料的体积感。运动无缝循环、无缓动：振幅约 6pt，波长参数 30pt（波峰间距约 190pt，即 2π × 30），周期约 2 秒，平静而催眠，适合头图或氛围型标题区。"
+            "A card undulates continuously like a flag in a gentle breeze. Every pixel is displaced vertically by a sine wave traveling along the x-axis and horizontally by a slower cosine along the y-axis at half the amplitude, so the surface ripples diagonally rather than bouncing uniformly. The wave’s slope also lights the fabric: rising faces brighten and falling faces darken by up to ~30%, so folds read as real cloth. The loop is seamless with no easing — amplitude ≈ 6 pt, wavelength parameter 30 pt (≈ 190 pt crest to crest), ≈ 2 s cycle. Dragging sideways is wind: the amplitude grows with the drag distance up to 2.5×, and on release it springs back with a loose, flapping overshoot (response 0.8 s, damping 0.35). Calm and hypnotic, ideal for hero artwork.",
+            "卡片像微风中的旗帜一样持续起伏。每个像素在竖直方向受沿 x 轴传播的正弦波推移，在水平方向受沿 y 轴、更慢且振幅减半的余弦波推移，表面因此呈斜向涟漪，而非整体上下跳动。波形斜率同时为布面打光：迎光面最多提亮约 30%，背光面相应变暗，褶皱具有真实布料的体积感。运动无缝循环、无缓动：振幅约 6pt，波长参数 30pt（波峰间距约 190pt），周期约 2 秒。横向拖动就是风：振幅随拖动距离增大，最多到 2.5 倍；松手后以松弛的弹簧（响应 0.8 秒、阻尼 0.35）回弹，带着旗面甩动般的过冲。平静而催眠，适合头图美术。"
         ),
         implementation: L(
-            "A Metal layer shader samples the view at a sin/cos-displaced position and scales brightness by the wave's analytic slope for fold shading; a TimelineView(.animation) feeds accumulated, speed-scaled time.",
-            "Metal layerEffect 着色器在经 sin/cos 位移后的坐标采样，并按波形的解析斜率调节亮度形成褶皱明暗；TimelineView(.animation) 提供按速度累积的时间。"
+            "A Metal layer shader samples the view at a sin/cos-displaced position and scales brightness by the wave's analytic slope for fold shading; a TimelineView(.animation) feeds accumulated, speed-scaled time. A horizontal-first drag sets a wind gain that an Animatable modifier springs back to zero.",
+            "Metal layerEffect 着色器在经 sin/cos 位移后的坐标采样，并按波形的解析斜率调节亮度形成褶皱明暗；TimelineView(.animation) 提供按速度累积的时间。水平优先的拖动设定风力增益，由 Animatable 修饰器以弹簧回零。"
         ),
         apis: ["layerEffect", "TimelineView", "ShaderLibrary", "Metal"],
         tags: ["wave", "flag", "cloth", "distortion", "波浪", "旗帜", "布料", "扭曲"],
@@ -59,7 +59,7 @@ extension Effect {
         id: "shader.magnifier",
         category: .shaders,
         interaction: .gesture,
-        name: L("Glass Lens", "玻璃透镜"),
+        name: L("Refracting Sphere", "球面折射透镜"),
         summary: L("Drag a glass sphere that magnifies, bends light at its rim and splits it into color.", "拖动一颗玻璃球：中心放大、边缘折光，并把光分解出彩色色边。"),
         prompt: L(
             "A glass sphere with a 70 pt radius floats over dense typography on a dark grid. A Metal layer shader treats it as a spherical cap: the core magnifies up to 2× with a quadratic falloff, the steep rim bends rays inward so the grid lines curve hard at the edge, and red and blue refract by different amounts near the rim, leaving a thin cyan/orange dispersion fringe. A specular highlight from the top-left and slight rim shading give it volume. Grabbing anywhere on the lens keeps the finger's offset; on release it springs home (response 0.45 s, damping 0.7). Optical, precise and tangible.",
@@ -87,8 +87,8 @@ extension Effect {
         name: L("Twirl", "漩涡扭转"),
         summary: L("Drag to twist the content into a vortex that springs back.", "拖动将内容拧成漩涡，松手后弹回。"),
         prompt: L(
-            "Pressing and dragging on the surface twists the content into a vortex whose center rides under the finger, so the swirl can be stirred around the card. Rotation is strongest at the core and falls off quadratically to zero at a ≈110 pt radius, so the pattern spirals smoothly without tearing. Drag distance maps to twist angle (up to ±2.5 rad), with the sign taken from the horizontal direction. Releasing lets the vortex unwind in place with an underdamped spring (response 0.6 s, damping 0.5), overshooting slightly the other way before settling — playful, liquid and tactile.",
-            "在画面上按住拖动，内容会被拧成漩涡，漩涡中心始终跟随手指，可以在卡片上“搅动”。旋转在中心最强，并以二次方衰减至约 110pt 半径处为零，因此图案平滑盘旋而不撕裂。拖动距离映射为扭转角度（最大 ±2.5 弧度），方向由水平拖动方向决定。松手后漩涡在原地以欠阻尼弹簧（响应 0.6 秒、阻尼 0.5）解旋，并轻微反向过冲后稳定——俏皮、流体、富有触感。"
+            "Pressing for a beat (120 ms) and then dragging twists the content into a vortex whose center rides under the finger, so the swirl can be stirred around the card. Rotation is strongest at the core and falls off quadratically to zero at a ≈ 110 pt radius, so the pattern spirals smoothly without tearing. Drag distance maps to twist angle (up to ±2.5 rad), with the sign taken from the horizontal direction. Releasing lets the vortex unwind in place with an underdamped spring (response 0.6 s, damping 0.5), overshooting slightly the other way before settling. A quick swipe without the press still scrolls the page. Playful, liquid and tactile.",
+            "先按住片刻（120 毫秒）再拖动，内容就会被拧成漩涡，漩涡中心始终跟随手指，可以在卡片上四处“搅动”。旋转在中心最强，并以二次方衰减至约 110pt 半径处归零，图案因此平滑盘旋而不撕裂。拖动距离映射为扭转角度（最大 ±2.5 弧度），方向取决于水平拖动方向。松手后漩涡在原地以欠阻尼弹簧（响应 0.6 秒、阻尼 0.5）解旋，轻微反向过冲后稳定。不按住直接快速滑动时，页面照常滚动。俏皮、流体、富有触感。"
         ),
         implementation: L(
             "A Metal distortion shader rotates sample coordinates by an angle that decays with distance. The angle and center live in an Animatable ViewModifier; the center tracks the drag location and a spring animates the angle back to zero.",
@@ -204,6 +204,9 @@ private struct RippleShaderModifier: ViewModifier {
 
 private struct WaveDemo: View {
     let ctx: DemoContext
+    /// Extra amplitude factor from a sideways drag ("wind"), sprung back to 0 on release.
+    @State private var gust: Double = 0
+    @State private var dragStartX: CGFloat?
 
     var body: some View {
         let amplitude = ctx["amplitude"]
@@ -214,12 +217,45 @@ private struct WaveDemo: View {
         ShaderClock(preview: ctx.isPreview, speed: speed) { time in
             ShaderArtwork(variant: 7)
                 .padding(20)
-                .layerEffect(
-                    ShaderLibrary.mlFlagWave(.float(time), .float(amplitude), .float(wavelength), .float(shade)),
-                    maxSampleOffset: CGSize(width: amplitude, height: amplitude)
-                )
+                .modifier(FlagWaveModifier(time: time, amplitude: amplitude * (1 + gust), wavelength: wavelength, shade: shade))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Horizontal-first, so a vertical swipe on the stage still scrolls the page.
+        .backgroundsTouch { location in
+            let start = dragStartX ?? location.x
+            dragStartX = start
+            gust = min(Double(abs(location.x - start)) / 80, 1.5)
+        } onEnded: {
+            dragStartX = nil
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.35)) { gust = 0 }
+        }
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Drag sideways to blow wind", "横向拖动吹起风"), ctx: ctx)
+                .padding(.bottom, 4)
+                .allowsHitTesting(false)
+        }
+    }
+}
+
+/// Animatable on amplitude, so the wind gust springs back smoothly while time keeps ticking.
+private struct FlagWaveModifier: ViewModifier, Animatable {
+    var time: Double
+    var amplitude: Double
+    var wavelength: Double
+    var shade: Double
+
+    var animatableData: Double {
+        get { amplitude }
+        set { amplitude = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        // The underdamped spring can briefly dip below zero; the shader handles a negative amplitude (phase flip).
+        let reach = abs(amplitude)
+        content.layerEffect(
+            ShaderLibrary.mlFlagWave(.float(time), .float(amplitude), .float(wavelength), .float(shade)),
+            maxSampleOffset: CGSize(width: reach, height: reach)
+        )
     }
 }
 
@@ -340,29 +376,47 @@ private struct SwirlDemo: View {
     let ctx: DemoContext
     @State private var center = CGPoint(x: 130, y: 150)
     @State private var angle: Double = 0
+    /// Resets itself if the system cancels the gesture, so the vortex always unwinds.
+    @GestureState private var stirring = false
 
     var body: some View {
         VStack(spacing: 14) {
             ShaderArtwork(variant: 4)
                 .modifier(SwirlModifier(center: center, radius: ctx["radius"], angle: angle))
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            // The vortex rides under the finger; distance sets the twist, horizontal direction its sign.
-                            center = value.location
-                            let maxAngle = ctx["maxAngle"]
-                            let distance = Double(hypot(value.translation.width, value.translation.height))
-                            let sign: Double = value.translation.width < 0 ? -1 : 1
-                            angle = (sign * distance / 60).clamped(to: -maxAngle...maxAngle)
-                        }
-                        .onEnded { _ in
-                            withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) { angle = 0 }
-                        }
-                )
-            DemoHint(text: L("Press and stir around", "按住并拖动搅动"), ctx: ctx)
+                .gesture(stirGesture)
+                .onChange(of: stirring) { _, isStirring in
+                    if !isStirring { unwind() }
+                }
+            DemoHint(text: L("Press, then stir around", "按住片刻再拖动搅动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8, delay: 0.2) { stir() }
+    }
+
+    /// A short press arms the stir, so a quick vertical swipe on the card still scrolls the page.
+    private var stirGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.12)
+            .sequenced(before: DragGesture(minimumDistance: 0))
+            .updating($stirring) { _, state, _ in state = true }
+            .onChanged { value in
+                guard case .second(true, let drag) = value else { return }
+                guard let drag else {
+                    Haptics.tap(.soft)
+                    return
+                }
+                // The vortex rides under the finger; distance sets the twist, horizontal direction its sign.
+                center = drag.location
+                let maxAngle = ctx["maxAngle"]
+                let distance = Double(hypot(drag.translation.width, drag.translation.height))
+                let sign: Double = drag.translation.width < 0 ? -1 : 1
+                angle = (sign * distance / 60).clamped(to: -maxAngle...maxAngle)
+            }
+            .onEnded { _ in unwind() }
+    }
+
+    private func unwind() {
+        guard angle != 0 else { return }
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) { angle = 0 }
     }
 
     /// Simulated stir: the vortex travels diagonally while twisting, then unwinds in place.

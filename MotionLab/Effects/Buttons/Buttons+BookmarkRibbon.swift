@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Saving drops a ribbon over the card's edge that swings like fabric.", "点击收藏，一条书签丝带从卡片顶边垂下并像布料一样摆动。"),
         prompt: L(
             "An article card with a thumbnail, headline and a compact \"Save\" pill in its footer. On tap a violet ribbon bookmark (26 pt wide, V-notched tail) unrolls from the card's top edge near the right corner: its length springs from 0 to 46 pt with a visible overshoot (response 0.45 s, damping 0.55), then it swings like hanging fabric around its top edge — 7°, −4°, 2°, 0° over ~0.8 s. Meanwhile the pill morphs into a wider tonal \"Saved\" state: the outline bookmark glyph replaces with a filled one and the label blur-replaces, and a medium haptic fires. Unsaving rolls the ribbon back up quickly (0.25 s, no bounce) with a light tick. Crafted, editorial and tactile.",
-            "一张文章卡片，含缩略图、标题，底部是一枚紧凑的“收藏”胶囊。点击后，一条紫罗兰色书签丝带（宽 26pt，末端 V 形缺口）从卡片顶边靠右处垂落：长度以明显过冲的弹簧（响应 0.45 秒、阻尼 0.55）从 0 伸到 46pt，随后以顶边为轴像悬挂的布料一样摆动——约 0.8 秒内依次摆到 7°、−4°、2°，再回到 0°。与此同时，胶囊形变为更宽的低饱和“已收藏”状态：空心书签图标替换为实心，文字模糊替换，并伴随中等触感。取消收藏时丝带快速卷回（0.25 秒，无回弹），并有一次轻触感。精致、有编辑感、触感十足。"
+            "文章卡片带缩略图和标题，底部是紧凑的“收藏”胶囊。点击后，一条紫罗兰色书签丝带（宽 26pt，末端 V 形缺口）从卡片顶边靠右垂下：长度以明显过冲的弹簧（响应 0.45 秒、阻尼 0.55）从 0 伸到 46pt，随后以顶边为轴像布料一样摆动，约 0.8 秒内依次摆到 7°、−4°、2°、0°。胶囊同时变宽为低饱和的“已收藏”：空心书签换成实心，文字模糊替换，伴随中等触感。取消收藏时丝带 0.25 秒内无回弹地卷回，并轻触一下。精致而有手作感。"
         ),
         implementation: L(
             "A custom notched-ribbon Shape hangs from a topTrailing overlay; its frame height springs between 0 and the ribbon length, and a keyframeAnimator on a save counter rotates it around its .top anchor. The pill uses symbol replace and blurReplace transitions inside the same spring.",

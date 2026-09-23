@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Hold + or − and the value runs faster and in bigger jumps, with a speed ring and motion blur.", "按住加减号，数值越跑越快、步子越来越大，并有速度环与动态模糊。"),
         prompt: L(
             "A calorie-goal stepper: a large rounded number flanked by 60 pt circular − and + buttons. A tap changes the value by 10. Holding a button repeats: the first repeat waits 400 ms, then each interval shrinks by 18% down to 50 ms, and after 8 repeats the step grows to 50, after 20 to 100 — announced by a small capsule badge (×1 → ×5 → ×10) that pops in with a spring. A progress ring around the held button fills with the current speed, and the number blurs up to 3 pt and rolls faster as it accelerates, each change rolling vertically with numeric digits and a soft haptic. Releasing snaps the blur away, drains the ring in 300 ms and settles the badge. Efficient for big ranges, and you can feel it gaining momentum.",
-            "卡路里目标步进器：中间是大号圆体数字，两侧是 60pt 的圆形 − 与 + 按钮。单击时数值变化 10。按住则连续重复：第一次重复前等待 400 毫秒，此后每次间隔缩短 18%，最短 50 毫秒；重复 8 次后步长增至 50，20 次后增至 100——由一个小胶囊角标（×1 → ×5 → ×10）以弹簧弹出提示。被按住的按钮外圈有一道进度环，随当前速度填满；数字随加速产生最多 3pt 的模糊并越滚越快，每次变化都以纵向数字滚动呈现并伴随柔和触觉。松手后模糊立即消失，进度环在 300 毫秒内清空，角标归位。适合大范围取值，而且能感到它在“加速”。"
+            "卡路里目标步进器：大号圆体数字两侧是 60pt 圆形 − 与 + 按钮，单击变化 10。按住则连续重复：首次重复前等 400 毫秒，之后每次间隔缩短 18%，最短 50 毫秒；重复 8 次后步长变为 50，20 次后变为 100，由一枚小胶囊角标（×1 → ×5 → ×10）以弹簧弹出提示。被按住的按钮外圈进度环随速度填满，数字随加速最多模糊 3pt、越滚越快，每次变化都纵向滚动并伴随柔和触觉。松手后模糊立刻消失，进度环 300 毫秒内清空，角标归位。能感到它在加速。"
         ),
         implementation: L(
             "A zero-distance DragGesture starts a Task loop that shortens its sleep geometrically and escalates the step size; the speed fraction drives a trimmed Circle ring and a blur radius, and the digits use contentTransition(.numericText).",

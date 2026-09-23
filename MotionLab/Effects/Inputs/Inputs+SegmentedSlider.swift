@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A staircase of LED segments that light up in a staggered run, with a peak-hold marker.", "阶梯状 LED 灯段依次点亮，并带峰值保持标记。"),
         prompt: L(
             "A microphone-gain control made of 20 rounded LED segments whose heights ramp from 14 to 46 pt like a volume staircase, coloured mint → amber → red along the scale. Dragging across the meter sets the level; segments switch on and off one at a time with a 15 ms stagger that runs away from the previous level, each lighting with a 120 ms ease-out, a 4% vertical pop and a coloured glow, while unlit segments recede to a faint tint. The highest level reached is held by a thin outlined peak segment that lingers 600 ms after the level falls and then fades out over 400 ms, like studio hardware. A selection haptic ticks per segment and the dB readout rolls with numeric digits. Precise, rhythmic and electronic.",
-            "麦克风增益控件由 20 段圆角 LED 灯组成，高度从 14pt 递增到 46pt，像一道音量阶梯，颜色沿刻度由薄荷绿渐变到琥珀再到红色。在电平表上拖动即可设定音量；灯段以 15 毫秒错峰、从上一次的电平处向外逐段亮起或熄灭，每段以 120 毫秒缓出点亮，伴随 4% 的纵向弹起与同色辉光，未点亮的灯段退为淡淡底色。到达过的最高电平由一段细描边的峰值灯保持：电平回落后它仍停留 600 毫秒，再用 400 毫秒淡出，就像录音棚硬件。每跨一段触发一次选择触觉，dB 读数以数字滚动更新。精准、有节奏、电子感十足。"
+            "麦克风增益控件由 20 段圆角 LED 组成，高度从 14pt 递增到 46pt，像一道音量阶梯，颜色沿刻度由薄荷绿到琥珀再到红。在电平表上拖动设定音量：灯段以 15 毫秒错峰、从上次电平处向外逐段亮灭，每段以 120 毫秒缓出点亮，伴随 4% 纵向弹起与同色辉光，未亮的段退为淡色。到过的最高电平由一段细描边的峰值灯保持：回落后停留 600 毫秒，再用 400 毫秒淡出，如同录音棚硬件。每跨一段触发选择触觉，dB 读数滚动更新。精准、有节奏。"
         ),
         implementation: L(
             "Each segment has its own animation(_:value:) whose delay is its distance from the previous level times the stagger; the peak marker is a separate state that a debounced Task eases back down.",

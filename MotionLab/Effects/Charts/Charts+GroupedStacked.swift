@@ -67,7 +67,7 @@ private struct GroupedStackedDemo: View {
         .onTapGesture { toggle(haptic: true) }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Tap to restack", "点击切换堆叠"), ctx: ctx)
+            ChartTapCue(text: L("Tap to restack", "点击切换堆叠"), ctx: ctx)
                 .padding(.bottom, 6)
         }
         .autoplay(ctx.isPreview, every: 2.8, delay: 1.0) { toggle(haptic: false) }

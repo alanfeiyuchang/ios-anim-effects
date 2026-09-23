@@ -163,6 +163,8 @@ final class PreviewSnapshotCache: @unchecked Sendable {
     /// `ImageRenderer`, so they are never snapshotted.
     private static let liveOnlyIDs: Set<String> = [
         "inputs.otp-code", "inputs.floating-label", "inputs.password-strength", "inputs.expanding-search",
+        // Liquid Glass does not render in ImageRenderer.
+        "buttons.liquid-glass", "morph.liquid-glass", "shader.glassmorphism", "shader.liquid-glass-lens",
     ]
 
     static func canSnapshot(_ effect: Effect) -> Bool {

@@ -72,11 +72,30 @@ extension Effect {
     }
 }
 
+/// Interpolates evenly spaced hex colour stops at `f` (0…1) in sRGB.
+private func segmentBarColor(_ stops: [UInt32], at f: Double) -> Color {
+    let u: Double = min(max(f, 0), 1) * Double(stops.count - 1)
+    let i: Int = min(Int(u), stops.count - 2)
+    let t: Double = u - Double(i)
+    let a: UInt32 = stops[i]
+    let b: UInt32 = stops[i + 1]
+    let r: Double = Double((a >> 16) & 0xFF) + (Double((b >> 16) & 0xFF) - Double((a >> 16) & 0xFF)) * t
+    let g: Double = Double((a >> 8) & 0xFF) + (Double((b >> 8) & 0xFF) - Double((a >> 8) & 0xFF)) * t
+    let bl: Double = Double(a & 0xFF) + (Double(b & 0xFF) - Double(a & 0xFF)) * t
+    return Color(.sRGB, red: r / 255, green: g / 255, blue: bl / 255, opacity: 1)
+}
+
 private struct SegmentBarDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var run = 0
     @State private var flash = false
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.65 : 0)
+    }
 
     var body: some View {
         let count: Int = max(ctx.int("count"), 2)
@@ -99,7 +118,14 @@ private struct SegmentBarDemo: View {
         .contentShape(Rectangle())
         .onTapGesture { run += 1 }
         .onChange(of: lit) { old, new in
-            if new > old && !ctx.isPreview { Haptics.selection() }
+            guard new > old && !ctx.isPreview else { return }
+            // One tick per newly lit cell, 30 ms apart, even when a chunk lights several at once.
+            Task {
+                for step in 0..<(new - old) {
+                    if step > 0 { try? await Task.sleep(for: .milliseconds(30)) }
+                    Haptics.selection()
+                }
+            }
         }
         .task(id: run) { await play() }
     }
@@ -124,8 +150,6 @@ private struct SegmentRow: View {
     let damping: Double
     let flash: Bool
 
-    private let colors: [Color] = [Palette.mint, Palette.sky, Palette.indigo]
-
     var body: some View {
         HStack(spacing: 3) {
             ForEach(0..<count, id: \.self) { index in
@@ -135,11 +159,10 @@ private struct SegmentRow: View {
         .frame(height: 24)
     }
 
+    /// Mint → sky → indigo, interpolated across the row.
     private func color(_ index: Int) -> Color {
         let f: Double = Double(index) / Double(max(count - 1, 1))
-        if f < 0.34 { return colors[0] }
-        if f < 0.67 { return colors[1] }
-        return colors[2]
+        return segmentBarColor([0x21D4A8, 0x3AC4FF, 0x6E7BFF], at: f)
     }
 
     private func cell(_ index: Int) -> some View {
@@ -367,9 +390,15 @@ extension Effect {
 
 private struct TooltipBarDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var steps = 0
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.62 : 0)
+    }
 
     private let width: CGFloat = 250
 
@@ -512,9 +541,15 @@ extension Effect {
 
 private struct CandyStripesDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var run = 0
     @State private var pulse = false
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.6 : 0)
+    }
 
     private let width: CGFloat = 250
 

@@ -82,8 +82,14 @@ extension Effect {
 
 private struct GlowBarDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.68 : 0)
+    }
 
     private let width: CGFloat = 250
 
@@ -204,8 +210,14 @@ extension Effect {
 
 private struct ProgressRingDemo: View {
     let ctx: DemoContext
-    @State private var progress: Double = 0
+    @State private var progress: Double
     @State private var run = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnails never run `task`, so seed a representative filled frame.
+        _progress = State(initialValue: ctx.isStill ? 0.72 : 0)
+    }
 
     private let size: CGFloat = 170
 
@@ -311,8 +323,8 @@ extension Effect {
         name: L("Indeterminate Bar", "不确定进度条"),
         summary: L("Two segments race across a track with offset easing.", "两段色条以错位缓动在轨道上追逐。"),
         prompt: L(
-            "A 240 × 5 pt capsule track in a floating card, under a 42 pt gradient Wi-Fi tile whose arcs light up one by one (iterative variable color), a 'Joining “Studio 5G”' title and a 'Connecting…' caption. Within each 1.8 s cycle a first segment sweeps from off-screen left to off-screen right over 80% of the cycle, its head and tail on staggered cubic ease-in-out curves so it stretches to about a third of the track mid-flight and compresses at the edges; half a cycle later a second segment launches, also lasting 80%, with an ease-out head and ease-in tail, shooting out into a long streak that spans nearly the whole track before its tail whips after it. The two windows overlap, so one segment is always entering while the other leaves — the track never sits empty. Both are filled with the brand gradient, clipped to the track, and cast a soft colored glow. The overlapping rhythm signals 'working' without implying a duration.",
-            "悬浮卡片里，一枚 42 pt 渐变 Wi-Fi 图块（信号弧逐格点亮的可变色符号动画）、“加入 “Studio 5G””标题与“正在连接…”说明的下方，是一条 240 × 5 pt 的胶囊轨道。每个 1.8 秒周期内，第一段色条用周期的 80% 从左侧画外扫到右侧画外，头尾分别走错开的三次缓入缓出曲线，行至中段拉长到约三分之一轨道、到两端又被压缩；半个周期后第二段出发，同样历时 80%，头部缓出、尾部缓入，先猛地拉成几乎横贯整条轨道的长光带，尾部再“嗖”地追上。两段的时间窗彼此重叠，总有一段正在进入、另一段正在离开，轨道从不空置。两段都填充品牌渐变、裁切在轨道内，并带有柔和的彩色辉光。交错的节奏传达“正在处理”，却不暗示具体时长。"
+            "A 240 × 5 pt capsule track sits in a card under a Wi-Fi tile whose arcs light one by one and a 'Connecting…' caption. In each 1.8 s cycle a first segment sweeps from off-track left to off-track right over 80% of the cycle, head and tail on staggered cubic ease-in-out curves, so it stretches to about a third of the track mid-flight and compresses at the edges. Half a cycle later a second segment, also 80% long, shoots out with an ease-out head and ease-in tail into a streak spanning nearly the whole track before its tail whips after it. Both use the brand gradient with a soft glow, clipped to the track, and one is always entering as the other leaves. Busy, without implying a duration.",
+            "卡片里，Wi-Fi 图块的信号弧逐格点亮，下方写着“正在连接…”，再下面是一条 240 × 5 pt 的胶囊轨道。每个 1.8 秒周期里，第一段色条用 80% 的时间从轨道左外扫到右外，头尾走错开的三次缓入缓出，行至中段拉长到约三分之一、到两端又被压扁。半个周期后第二段出发，同样历时 80%：头部缓出、尾部缓入，先猛地拉成几乎横贯轨道的长光带，尾巴再“嗖”地追上。两段都填品牌渐变、带柔和辉光并裁切在轨道内，总有一段在进、一段在出。只说“在忙”，不暗示时长。"
         ),
         implementation: L(
             "A TimelineView computes eased head/tail fractions for two segments and positions capsules inside a clipped track; the Wi-Fi glyph runs symbolEffect(.variableColor.iterative).",

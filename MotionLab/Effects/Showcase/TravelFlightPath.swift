@@ -67,9 +67,16 @@ private struct TravelFlightRoute {
 
 private struct TravelFlightDemo: View {
     let ctx: DemoContext
-    @State private var launch = Date()
+    @State private var launch: Date
     /// The clock only ticks while something is moving; it pauses once the pin has settled.
     @State private var running = true
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run `task`: date the launch far enough back that the pin has landed.
+        let settled = max(ctx["duration"], 0.1) + 3
+        _launch = State(initialValue: ctx.isStill ? Date(timeIntervalSinceNow: -settled) : Date())
+    }
 
     var body: some View {
         SignatureStage {
@@ -79,9 +86,8 @@ private struct TravelFlightDemo: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: 0.1) { launch = Date() }
         // The first flight already launches on appear, so the detail stage skips its one-shot intro replay.
-        .environment(\.demoIntroPlay, false)
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 1.8, delay: 0.1, intro: false) { launch = Date() }
         .task(id: launch) {
             running = true
             try? await Task.sleep(for: .seconds(max(ctx["duration"], 0.1) + 2.2))

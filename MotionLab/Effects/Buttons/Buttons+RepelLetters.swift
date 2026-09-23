@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The label's letters scatter away from your finger and spring back into line.", "按钮文字逐个躲开手指，离开后弹回原位。"),
         prompt: L(
             "A 290 × 68 pt near-black capsule with a monospaced label \"EXPLORE MORE\" set letter by letter on a 16 pt grid. As the finger slides across the button, every letter within a 56 pt radius is pushed directly away from the touch point — up to 18 pt at the centre, fading linearly to zero at the rim — while tilting up to 25° away and growing to 120%, so the word parts like a school of fish around the fingertip. Each letter chases its target on its own spring (response 0.35 s, damping 0.55) with a 10 ms left-to-right stagger, so the ripple feels fluid; on release they all regroup into a perfect line with a soft overshoot. Tapping fires a light haptic. Playful, curious and typographic.",
-            "一枚 290 × 68pt 的近黑色胶囊按钮，等宽字体标签“EXPLORE MORE”按 16pt 网格逐字排列。手指在按钮上滑动时，距离触点 56pt 以内的每个字母都会被直接推离触点——中心处最多 18pt，向边缘线性衰减到零——同时向外倾斜最多 25°、放大到 120%，整行文字像鱼群一样绕开指尖分开。每个字母以各自的弹簧（响应 0.35 秒、阻尼 0.55）追随目标，并从左到右错开 10 毫秒，使涟漪流畅自然；松手后所有字母带轻微过冲重新排成一条直线。点击时有轻触感。俏皮、好奇、充满字体趣味。"
+            "一枚 290 × 68pt 的近黑胶囊，等宽字体“EXPLORE MORE”按 16pt 网格逐字排列。手指滑过时，触点 56pt 内的每个字母被径直推开——中心处最多 18pt，向边缘线性衰减为零——同时向外倾斜至多 25°、放大到 120%，整行字像鱼群一样绕开指尖。每个字母以各自的弹簧（响应 0.35 秒、阻尼 0.55）追随，从左到右错开 10 毫秒，涟漪流畅；松手后所有字母带轻微过冲重新排齐。点击有轻触感。俏皮、好奇，充满字体趣味。"
         ),
         implementation: L(
             "Letters sit on a fixed-advance grid so each centre is known; a zero-distance DragGesture stores the finger point and every letter derives its offset, rotation and scale from its distance to that point, animated by a per-letter spring keyed on the finger.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Four PIN dots fill, then slide together and fuse into a single success check.", "四个 PIN 圆点依次填满，随后滑向中心融合成一个成功对勾。"),
         prompt: L(
             "A compact unlock screen: four 16 pt PIN dots above a 3 × 4 keypad of rounded keys. Each key press dims the key to 88% and fills the next dot with an indigo core that springs from 30% to full size (response 0.28 s, damping 0.55). When the fourth digit lands and the PIN is right, the dots hold for 150 ms, then glide to the centre on a spring (response 0.45 s, damping 0.75) and fuse, and the single merged dot swells into a 44 pt green disc as a checkmark draws itself on — with a success haptic. A wrong PIN instead shakes the row ±10 pt with decaying amplitude, turns the dots red and empties them right-to-left with a 60 ms stagger. Satisfying closure: four separate taps become one confirmed whole.",
-            "精简的解锁界面：四个 16pt 的 PIN 圆点，下方是 3 × 4 圆角数字键盘。每次按键，按键缩到 88% 并变暗，下一个圆点的靛蓝内核以弹簧（响应 0.28 秒、阻尼 0.55）从 30% 放大填满。输入第四位且密码正确时，圆点停留 150 毫秒，随后以弹簧（响应 0.45 秒、阻尼 0.75）滑向中心并融为一体，合并后的圆点膨胀为 44pt 的绿色圆盘，对勾随之描绘出现，并伴随成功触觉。若密码错误，整排圆点以衰减幅度左右抖动 ±10pt，变为红色，并以 60 毫秒错峰从右到左清空。令人满足的收尾：四次独立的点击最终合成一个确认的整体。"
+            "精简解锁界面：四个 16pt PIN 圆点，下方 3 × 4 圆角数字键盘。每次按键，按键缩到 88% 并变暗，下一个圆点的靛蓝内核以弹簧（响应 0.28 秒、阻尼 0.55）从 30% 放大填满。第四位输入正确时，圆点停留 150 毫秒，再以弹簧（响应 0.45 秒、阻尼 0.75）滑向中心融为一体，膨胀成 44pt 绿色圆盘，对勾随之描出，并触发成功触觉。若错误，圆点以衰减幅度左右抖动 ±10pt、变红，并以 60 毫秒错峰从右到左清空。四次点击合成一个确认。"
         ),
         implementation: L(
             "Dot x-offsets are derived from a merged flag so one spring collapses them to the centre; a Circle().trim checkmark and a scaled disc appear after a Task delay. Errors use a GeometryEffect shake and per-dot delayed animations.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Flick the number knob left or right; it stretches on a leash, clicks the value and springs home.", "左右拨动数字旋钮：像被绳牵着一样拉伸，“咔哒”改值后弹回原位。"),
         prompt: L(
             "A 230 × 64 pt pill with faint chevrons at both ends and a 56 pt knob in the middle showing the value. Dragging the knob sideways moves it on a leash: rubber-band resistance caps travel at ~90 pt, and the knob stretches up to 12% along the drag while the chevron on that side brightens and slides outward. Crossing 36 pt fires the step — the number rolls toward the drag direction with numeric digits and a medium haptic — and holding past the threshold repeats every 350 ms. On release the knob snaps back to centre on an underdamped spring (response 0.4 s, damping 0.52), wobbling once. Vertical flicks are ignored. A compact, gesture-first stepper that feels like flicking a physical toggle.",
-            "一枚 230 × 64pt 的胶囊，两端是淡淡的箭头，中间是一个 56pt 的数字旋钮。横向拖动旋钮时，它像被绳子牵着：橡皮筋阻尼把行程限制在约 90pt 以内，旋钮沿拖动方向最多拉伸 12%，同侧箭头随之变亮并向外滑出。越过 36pt 即触发一步——数字朝拖动方向以数字滚动更新，伴随一次中等触觉——若一直保持在阈值之外，则每 350 毫秒重复一次。松手后旋钮以欠阻尼弹簧（响应 0.4 秒、阻尼 0.52）弹回中心，轻晃一下。纵向拨动会被忽略。一个以手势为先的紧凑步进器，手感就像拨动实体开关。"
+            "一枚 230 × 64pt 胶囊，两端是淡淡的箭头，中间是显示数值的 56pt 旋钮。横向拖动时旋钮像被绳子牵着：橡皮筋阻尼把行程限制在约 90pt，旋钮沿拖动方向最多拉伸 12%，同侧箭头变亮并外滑。越过 36pt 即触发一步——数字朝拖动方向滚动更新，伴随中等触觉——保持在阈值外则每 350 毫秒重复一次。松手后旋钮以欠阻尼弹簧（响应 0.4 秒、阻尼 0.52）弹回中心并轻晃一下，纵向拨动被忽略。手感像拨动实体开关。"
         ),
         implementation: L(
             "DragGesture translation is passed through rubberBand for the knob offset and a proportional scaleEffect(x:); crossing the threshold changes the value and starts a repeating Task, and release springs the offset back.",

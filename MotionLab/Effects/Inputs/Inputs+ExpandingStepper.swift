@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A plus button unfurls into a full stepper, then tucks back into a count badge when idle.", "加号按钮展开成完整步进器，闲置后又收回成数量角标。"),
         prompt: L(
             "A menu row (Oat Latte, price, thumbnail) ending in a 38 pt circular + button. Tapping it adds one item and unfurls the button leftward into a 120 pt capsule stepper — minus, count, plus — on a spring (response 0.42 s, damping 0.72); the minus and the number slide in from the right edge and fade up, trailing the growing capsule. Further taps roll the digits vertically. After 2 s without interaction the capsule retracts into a 38 pt filled circle that shows only the count, which pops in with a quick scale overshoot; tapping the badge reopens the stepper. Decrementing to zero collapses straight back to the + button. Space-saving, discoverable and fluid, like modern delivery apps.",
-            "一条菜单项（燕麦拿铁、价格、缩略图）末尾是一个 38pt 的圆形 + 按钮。点击会加入一件商品，并让按钮以弹簧（响应 0.42 秒、阻尼 0.72）向左展开成 120pt 的胶囊步进器——减号、数量、加号；减号与数字从右侧边缘滑入并淡出显现，紧随不断变宽的胶囊。之后的点击会让数字纵向滚动。闲置 2 秒后，胶囊收缩为一个 38pt 的实心圆，只显示数量，数字以快速过冲的缩放弹出；点击角标即可再次展开。减到 0 时直接收回为 + 按钮。节省空间、易于发现、流畅自然，就像现代外卖应用。"
+            "菜单项（燕麦拿铁、价格、缩略图）末尾是一枚 38pt 圆形 + 按钮。点击加入一件，按钮以弹簧（响应 0.42 秒、阻尼 0.72）向左展开成 120pt 的胶囊步进器——减号、数量、加号；减号与数字从右缘滑入淡现，紧随变宽的胶囊。之后的点击让数字纵向滚动。闲置 2 秒后胶囊收成 38pt 实心圆，只显示数量，数字以快速过冲缩放弹出；点角标可再展开。减到 0 则直接收回 + 按钮。省空间、易发现，像现代外卖应用。"
         ),
         implementation: L(
             "One capsule's frame width animates between collapsed and expanded states on a spring; the minus and count use a combined move(edge: .trailing) + opacity transition, and a generation-stamped Task collapses it after the idle delay.",

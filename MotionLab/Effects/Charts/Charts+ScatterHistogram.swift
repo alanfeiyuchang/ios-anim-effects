@@ -109,7 +109,7 @@ private struct ScatterHistogramDemo: View {
         .onTapGesture { toggle(haptic: true) }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Tap to bin the dots", "点击将散点分箱"), ctx: ctx)
+            ChartTapCue(text: L("Tap to bin the dots", "点击将散点分箱"), ctx: ctx)
                 .padding(.bottom, 8)
         }
         .autoplay(ctx.isPreview, every: 2.8, delay: 1.0) { toggle(haptic: false) }

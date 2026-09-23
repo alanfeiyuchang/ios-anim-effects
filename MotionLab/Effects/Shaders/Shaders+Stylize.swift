@@ -83,12 +83,12 @@ extension Effect {
         name: L("CRT Monitor", "CRT 显示器"),
         summary: L("Curved glass, rolling scanlines and a soft vignette.", "弧面玻璃、滚动扫描线与柔和暗角。"),
         prompt: L(
-            "Content is rendered as if on a vintage CRT: the image is barrel-distorted so edges bow outward, with pure black outside the curved glass; fine horizontal scanlines crawl continuously while a slow brightness roll sweeps down the screen every ~3 s; red and blue channels are offset by ~1.2 pt with a faint trailing smear for phosphor bleed, and a radial vignette darkens the edges by ~28%, more in the corners. The result feels warm, nostalgic and analog without sacrificing legibility.",
-            "内容仿佛显示在复古 CRT 显示器上：画面呈桶形畸变、边缘向外鼓起，弧面玻璃外为纯黑；细密的水平扫描线持续蠕动，同时每约 3 秒有一道缓慢的亮度波自上而下扫过屏幕；红、蓝通道偏移约 1.2pt 并带一丝拖尾，模拟荧光粉溢色；径向暗角使边缘变暗约 28%，四角更暗。整体温暖、怀旧、充满模拟质感，同时不牺牲可读性。"
+            "Content is rendered as if on a vintage CRT: the image is barrel-distorted so edges bow outward, with pure black outside the curved glass; fine horizontal scanlines crawl continuously while a slow brightness roll sweeps down the screen every ~3 s; red and blue channels are offset by ~1.2 pt with a faint trailing smear for phosphor bleed, and a radial vignette darkens the edges by ~28%, more in the corners. A tap degausses the tube: the glass curvature wobbles at about 3.5 Hz and the color fringe spikes by ~5 pt, both decaying exponentially within about a second, with a heavy haptic thunk. Warm, nostalgic and analog without sacrificing legibility.",
+            "内容仿佛显示在复古 CRT 显示器上：画面呈桶形畸变、边缘向外鼓起，弧面玻璃之外是纯黑；细密的水平扫描线持续蠕动，每约 3 秒还有一道缓慢的亮度波自上而下扫过；红、蓝通道偏移约 1.2pt 并带一丝拖尾，模拟荧光粉溢色；径向暗角让边缘变暗约 28%，四角更甚。点击即“消磁”：玻璃曲率以约 3.5Hz 来回颤动，色边瞬间加宽约 5pt，二者在一秒左右内指数衰减，并伴随一记沉重的触感。温暖、怀旧、充满模拟质感，又不牺牲可读性。"
         ),
         implementation: L(
-            "A Metal layer shader remaps UVs with barrel distortion, samples R/B at a bleed offset plus a trailing smear, and multiplies scanline (depth-controlled), roll and vignette terms; visualEffect provides the view size.",
-            "Metal layerEffect 通过桶形畸变重映射 UV，按溢色偏移采样 R/B 并叠加拖尾，再叠乘可调深度的扫描线、亮度滚动与暗角；visualEffect 提供视图尺寸。"
+            "A Metal layer shader remaps UVs with barrel distortion, samples R/B at a bleed offset plus a trailing smear, and multiplies scanline, roll and vignette terms; visualEffect provides the view size. A tap timestamps a degauss whose decaying sine is added to the curvature and bleed arguments each frame.",
+            "Metal layerEffect 通过桶形畸变重映射 UV，按溢色偏移采样 R/B 并叠加拖尾，再叠乘扫描线、亮度滚动与暗角；visualEffect 提供视图尺寸。点击记录消磁时刻，其衰减正弦每帧叠加到曲率与溢色参数上。"
         ),
         apis: ["layerEffect", "visualEffect", "TimelineView", "Metal"],
         tags: ["crt", "retro", "scanline", "vhs", "复古", "扫描线", "显示器", "怀旧"],
@@ -108,12 +108,12 @@ extension Effect {
         name: L("CMYK Halftone", "CMYK 半色调"),
         summary: L("Live artwork separated into four rotated ink screens, like a press print.", "实时画面被分解为四层旋转网屏，如同印刷机印出。"),
         prompt: L(
-            "A slowly animating sunset poster is printed live with process inks. A Metal layer shader separates each pixel into cyan, magenta, yellow and black, then draws each ink as its own dot screen at the classic angles (C 15°, M 75°, Y 0°, K 45°): every rotated cell samples the artwork at its center and grows a dot whose area follows that ink's amount. The inks multiply over warm off-white paper, so overlapping dots mix into reds, greens and deep blues and the familiar rosette moiré appears. As the sun drifts and the hills scroll, dots swell and shrink in waves — tactile, editorial and unmistakably printed.",
-            "一张缓慢变化的日落海报被实时“印刷”出来。Metal layerEffect 着色器把每个像素分解为青、品红、黄、黑四种油墨，并按经典网角（C 15°、M 75°、Y 0°、K 45°）分别绘制网屏：每个旋转网格在中心对画面采样，网点面积随该油墨的用量变化。四色在暖白纸张上相乘叠印，重叠的网点混出红、绿与深蓝，经典的玫瑰斑网纹随之出现。随着太阳漂移、山丘滚动，网点成片地胀缩——富有触感、杂志感十足，一眼就是印刷品。"
+            "A slowly animating sunset poster is printed live with process inks. A Metal layer shader separates each pixel into cyan, magenta, yellow and black and draws each ink as its own dot screen at the classic angles (C 15°, M 75°, Y 0°, K 45°): every rotated cell samples the artwork at its center and grows a dot whose area follows that ink’s amount. The inks multiply over warm off-white paper, so overlapping dots mix into reds, greens and deep blues and the familiar rosette moiré appears. As the sun drifts and the hills scroll, dots swell and shrink in waves; dragging pulls the sun under the finger on a spring (response 0.35 s), and on release it eases back into its drift. Tactile, editorial and unmistakably printed.",
+            "一张缓慢变化的日落海报被实时“印刷”出来。Metal layerEffect 着色器把每个像素分解为青、品红、黄、黑四种油墨，并按经典网角（C 15°、M 75°、Y 0°、K 45°）分别绘制网屏：每个旋转网格在中心对画面采样，网点面积随该油墨的用量变化。四色在暖白纸上相乘叠印，重叠的网点混出红、绿与深蓝，经典的玫瑰斑网纹随之出现。太阳漂移、山丘滚动时，网点成片胀缩；拖动可让太阳以弹簧（响应 0.35 秒）跟到指尖下，松手后再缓缓回到原本的漂移轨迹。富有触感、杂志感十足，一眼就是印刷品。"
         ),
         implementation: L(
-            "A [[stitchable]] layer shader loops over four screens: rotate the position into screen space, snap to the cell center, rotate back, sample, convert RGB to CMYK and draw an anti-aliased dot, multiplying each ink over paper; a Canvas scene animates underneath.",
-            "[[stitchable]] layerEffect 着色器循环处理四层网屏：把坐标旋转到网屏空间、吸附到网格中心再旋回，采样后将 RGB 转为 CMYK，绘制抗锯齿网点并把各色油墨相乘叠印在纸色上；下层由 Canvas 绘制动态场景。"
+            "A [[stitchable]] layer shader loops over four screens: rotate the position into screen space, snap to the cell center, rotate back, sample, convert RGB to CMYK and draw an anti-aliased dot, multiplying each ink over paper. The Canvas scene underneath is Animatable on a hold factor that blends the sun between its drift and the finger.",
+            "[[stitchable]] layerEffect 着色器循环处理四层网屏：把坐标旋转到网屏空间、吸附到网格中心再旋回，采样后将 RGB 转为 CMYK，绘制抗锯齿网点并把各色油墨相乘叠印在纸色上。下层 Canvas 场景以“握持系数”为 Animatable 数据，在自身漂移与手指位置之间混合太阳位置。"
         ),
         apis: ["layerEffect", "TimelineView", "Canvas", "Metal"],
         tags: ["halftone", "cmyk", "print", "risograph", "半色调", "网点", "印刷", "四色"],
@@ -133,12 +133,12 @@ extension Effect {
         name: L("Plasma Field", "等离子场"),
         summary: L("A generative, endlessly flowing iridescent field.", "程序生成、无限流动的虹彩能量场。"),
         prompt: L(
-            "A full-bleed generative background of flowing iridescent plasma: four overlapping sine fields (horizontal, vertical, diagonal and radial) are summed and mapped onto a deliberately limited, cyclic three-stop ramp — cyan → violet → gold — while the troughs of the field sink into deep indigo, so luminous bands fold into one another over dark valleys. The ramp slowly advances, the motion never repeats visibly, and there are no hard edges — an ambient, liquid, high-energy surface suited to splash screens or premium paywalls.",
-            "全屏程序化生成的流动虹彩等离子背景：水平、竖直、对角与径向四组正弦场叠加后，映射到刻意克制的三色循环色带——青 → 紫 → 金——场的低谷则沉入深靛蓝，明亮的色带在暗色谷底之上持续翻卷。色带缓慢推进，画面无可见重复、没有硬边——一种充满能量的液态氛围表面，适合启动页或高级付费墙。"
+            "A full-bleed generative background of flowing iridescent plasma: four overlapping sine fields (horizontal, vertical, diagonal and radial) are summed and mapped onto a deliberately limited, cyclic three-stop ramp — cyan → violet → gold — while the troughs sink into deep indigo, so luminous bands fold into one another over dark valleys. The ramp slowly advances, the motion never visibly repeats, and there are no hard edges. A tap injects a ripple into the field: a ring travelling at ~260 pt/s bends the bands as it passes and fades out within about 2.5 s. Ambient, liquid and high-energy — suited to splash screens or premium paywalls.",
+            "全屏程序化生成的流动虹彩等离子背景：水平、竖直、对角与径向四组正弦场叠加后，映射到刻意克制的三色循环色带——青 → 紫 → 金——场的低谷沉入深靛蓝，明亮的色带在暗色谷底之上持续翻卷。色带缓慢推进，画面没有可见的重复，也没有硬边。点击会向能量场注入一道涟漪：波环以约 260pt/秒扩散，经过之处色带随之弯折，约 2.5 秒内淡去。充满能量的液态氛围表面，适合启动页或高级付费墙。"
         ),
         implementation: L(
-            "A Metal color shader computes the color purely from position, size and time on a Rectangle — four sine fields feed a smoothstepped three-stop ramp shaded toward indigo in the troughs; no source pixels are needed.",
-            "在 Rectangle 上使用 Metal colorEffect，仅依据位置、尺寸与时间计算颜色——四组正弦场驱动平滑过渡的三色色带，低谷向靛蓝压暗，无需源像素。"
+            "A Metal color shader computes the color purely from position, size and time on a Rectangle — four sine fields feed a smoothstepped three-stop ramp shaded toward indigo in the troughs; a tap passes an origin and age that add a travelling, decaying ring to the field.",
+            "在 Rectangle 上使用 Metal colorEffect，仅依据位置、尺寸与时间计算颜色——四组正弦场驱动平滑过渡的三色色带，低谷向靛蓝压暗；点击传入圆心与经过时间，为场叠加一道向外扩散并衰减的波环。"
         ),
         apis: ["colorEffect", "visualEffect", "TimelineView", "Metal"],
         tags: ["plasma", "generative", "iridescent", "background", "等离子", "生成艺术", "虹彩", "背景"],
@@ -190,6 +190,30 @@ private struct DissolveModifier: ViewModifier, Animatable {
 
 // MARK: - Demos
 
+/// Bottom hint for the tap-only transitions. With Reduce Motion the stage's arrival intro is skipped,
+/// so a hand glyph pulses three times to show the card is tappable.
+private struct StylizeTapCue: View {
+    let text: LocalizedText
+    let ctx: DemoContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulses = 0
+
+    var body: some View {
+        if !ctx.isPreview {
+            HStack(spacing: 5) {
+                if reduceMotion {
+                    Image(systemName: "hand.tap.fill")
+                        .symbolEffect(.pulse, options: .repeat(3), value: pulses)
+                        .onAppear { pulses += 1 }
+                }
+                Text(text, ctx.language)
+            }
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(.secondary)
+        }
+    }
+}
+
 private struct PixelateDemo: View {
     let ctx: DemoContext
     @State private var size: Double = 1
@@ -207,7 +231,7 @@ private struct PixelateDemo: View {
             .modifier(PixelateModifier(size: size))
             .contentShape(Rectangle())
             .onTapGesture(perform: swapContent)
-            DemoHint(text: L("Tap to swap content", "点击切换内容"), ctx: ctx)
+            StylizeTapCue(text: L("Tap to swap content", "点击切换内容"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.0, delay: 0.4) { swapContent() }
@@ -248,7 +272,7 @@ private struct DissolveDemo: View {
                 .modifier(DissolveModifier(progress: gone ? 1 : 0, scale: ctx["scale"], edge: edgeColor))
                 .contentShape(Rectangle())
                 .onTapGesture { toggle() }
-            DemoHint(text: L("Tap to burn / restore", "点击溶解 / 复原"), ctx: ctx)
+            StylizeTapCue(text: L("Tap to burn / restore", "点击溶解 / 复原"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["duration"] * 2 + 1.0, delay: 0.4) { autoplayCycle() }
@@ -307,10 +331,10 @@ private struct GlitchDemo: View {
 private struct GlitchCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SYSTEM://")
+            Text(verbatim: "SYSTEM://")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .foregroundStyle(Palette.mint)
-            Text("NEON\nDRIFT")
+            Text(verbatim: "NEON\nDRIFT")
                 .font(.system(size: 54, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
                 .lineSpacing(-6)
@@ -330,13 +354,16 @@ private struct GlitchCard: View {
 
 private struct CRTDemo: View {
     let ctx: DemoContext
+    @State private var degaussAt = Date.distantPast
 
     var body: some View {
-        let curvature = ctx["curvature"]
         let scanlines = ctx["scanlines"]
-        let bleed = ctx["bleed"]
         ShaderClock(preview: ctx.isPreview) { time in
-            CRTScreen(time: time)
+            // Degauss: a decaying ~3.5 Hz wobble of the glass curvature plus a colour-fringe spike.
+            let wobble = CRTDemo.degauss(since: degaussAt)
+            let curvature = ctx["curvature"] + 0.16 * wobble.bend
+            let bleed = ctx["bleed"] + 5 * wobble.fringe
+            CRTScreen(time: time, language: ctx.language)
                 .visualEffect { content, proxy in
                     content.layerEffect(
                         ShaderLibrary.mlCRT(.float2(proxy.size), .float(time), .float(curvature), .float(scanlines), .float(bleed)),
@@ -346,21 +373,48 @@ private struct CRTDemo: View {
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                 // Bounded size keeps the bezel clear of the stage's replay button and edges.
                 .frame(maxWidth: 290, maxHeight: 320)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    degaussAt = Date()
+                    Haptics.tap(.heavy)
+                }
                 .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap to degauss", "点击消磁"), ctx: ctx)
+                .padding(.bottom, 2)
+                .allowsHitTesting(false)
+        }
+        .autoplay(ctx.isPreview, every: 4.0, delay: 1.5) { degaussAt = Date() }
+    }
+
+    /// Curvature wobble (±1) and fringe (0…1) for a degauss that started at `start`; both decay over ~0.9 s.
+    private static func degauss(since start: Date) -> (bend: Double, fringe: Double) {
+        let age = Date().timeIntervalSince(start)
+        guard age >= 0, age < 1.2 else { return (bend: 0, fringe: 0) }
+        let envelope = exp(-age * 4)
+        return (bend: sin(age * 22) * envelope, fringe: envelope)
     }
 }
 
 private struct CRTScreen: View {
     let time: Double
+    let language: AppLanguage
+
+    private static let lines: [LocalizedText] = [
+        L("> BOOT MOTION.LEXICON", "> 启动 MOTION.LEXICON"),
+        L("> LOADING SPRINGS…  OK", "> 载入弹簧……  完成"),
+        L("> LOADING SHADERS… OK", "> 载入着色器…… 完成"),
+        L("> MOTION LEXICON READY_", "> 动效词典 就绪_"),
+    ]
 
     var body: some View {
-        let lines = ["> BOOT MOTION.LEXICON", "> LOADING SPRINGS…  OK", "> LOADING SHADERS… OK", "> 动效词典 READY_"]
+        let lines = CRTScreen.lines
         let visible = Int(time * 1.2) % (lines.count + 2)
         VStack(alignment: .leading, spacing: 8) {
             ForEach(0..<lines.count, id: \.self) { index in
-                Text(lines[index])
+                Text(lines[index], language)
                     .opacity(index < visible ? 1 : 0)
             }
             Spacer()
@@ -383,28 +437,55 @@ private struct CRTScreen: View {
 
 private struct HalftoneDemo: View {
     let ctx: DemoContext
+    /// Where the finger last held the sun, in unit coordinates of the poster.
+    @State private var sunTarget = CGPoint(x: 0.5, y: 0.42)
+    /// 0 = free drift, 1 = held by the finger; sprung so the sun eases in and back out.
+    @State private var hold: Double = 0
+
+    private static let posterSize = CGSize(width: 270, height: 300)
 
     var body: some View {
         let cell = ctx["cell"]
         let angle = ctx["angle"] * .pi / 180
         let gain = ctx["gain"]
-        ShaderClock(preview: ctx.isPreview) { time in
-            HalftonePoster(time: time)
-                .frame(width: 270, height: 300)
-                .layerEffect(
-                    ShaderLibrary.mlHalftoneCMYK(.float(cell), .float(angle), .float(gain)),
-                    maxSampleOffset: CGSize(width: cell, height: cell)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
+        VStack(spacing: 12) {
+            ShaderClock(preview: ctx.isPreview) { time in
+                HalftonePoster(time: time, sunTarget: sunTarget, hold: hold)
+                    .frame(width: HalftoneDemo.posterSize.width, height: HalftoneDemo.posterSize.height)
+                    .layerEffect(
+                        ShaderLibrary.mlHalftoneCMYK(.float(cell), .float(angle), .float(gain)),
+                        maxSampleOffset: CGSize(width: cell, height: cell)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                    .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
+            }
+            // Horizontal-first (then free) drag plus tap, so a vertical swipe still scrolls the page.
+            .backgroundsTouch { location in
+                let size = HalftoneDemo.posterSize
+                sunTarget = CGPoint(x: (location.x / size.width).clamped(to: 0...1), y: (location.y / size.height).clamped(to: 0...1))
+                if hold < 1 {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { hold = 1 }
+                }
+            } onEnded: {
+                withAnimation(.spring(response: 0.9, dampingFraction: 0.75)) { hold = 0 }
+            }
+            DemoHint(text: L("Drag the sun across the poster", "拖动太阳划过海报"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
 /// A sunset poster: warm sky, drifting sun and two scrolling hill silhouettes.
-private struct HalftonePoster: View {
+/// Animatable on `hold`, so the sun eases between its own drift and the finger.
+private struct HalftonePoster: View, Animatable {
     let time: Double
+    let sunTarget: CGPoint
+    var hold: Double
+
+    var animatableData: Double {
+        get { hold }
+        set { hold = newValue }
+    }
 
     var body: some View {
         Canvas { context, size in
@@ -414,7 +495,12 @@ private struct HalftonePoster: View {
                 startPoint: .zero,
                 endPoint: CGPoint(x: 0, y: size.height * 0.75)
             ))
-            let sun = CGPoint(x: size.width * (0.5 + 0.18 * cos(time * 0.4)), y: size.height * (0.42 + 0.06 * sin(time * 0.5)))
+            let drift = CGPoint(x: 0.5 + 0.18 * cos(time * 0.4), y: 0.42 + 0.06 * sin(time * 0.5))
+            let k = CGFloat(hold)
+            let sun = CGPoint(
+                x: size.width * (drift.x + (sunTarget.x - drift.x) * k),
+                y: size.height * (drift.y + (sunTarget.y - drift.y) * k)
+            )
             context.fill(Path(ellipseIn: CGRect(x: sun.x - 56, y: sun.y - 56, width: 112, height: 112)), with: .color(Color(hex: 0xFFE27A)))
             context.fill(hill(size, base: 0.66, amplitude: 22, frequency: 1.6, phase: time * 0.35), with: .color(Color(hex: 0xE2365B)))
             context.fill(hill(size, base: 0.8, amplitude: 16, frequency: 2.3, phase: -time * 0.5), with: .color(Color(hex: 0x14365A)))
@@ -438,20 +524,25 @@ private struct HalftonePoster: View {
 
 private struct PlasmaDemo: View {
     let ctx: DemoContext
+    @State private var rippleOrigin = CGPoint.zero
+    @State private var rippleAt = Date.distantPast
 
     var body: some View {
         let scale = ctx["scale"]
         let speed = ctx["speed"]
         ShaderClock(preview: ctx.isPreview, speed: speed) { time in
+            // Real seconds since the last tap; the shader ignores the ripple when age < 0 or ≥ 2.5 s.
+            let age = min(Date().timeIntervalSince(rippleAt), 10)
+            let origin = rippleOrigin
             Rectangle()
                 .visualEffect { content, proxy in
                     content.colorEffect(
-                        ShaderLibrary.mlPlasma(.float2(proxy.size), .float(time), .float(scale))
+                        ShaderLibrary.mlPlasma(.float2(proxy.size), .float(time), .float(scale), .float2(origin), .float(age))
                     )
                 }
                 .overlay {
                     VStack(spacing: 6) {
-                        Text("Pro")
+                        Text(verbatim: "Pro")
                             .font(.system(size: 44, weight: .heavy, design: .rounded))
                         Text(ctx.language == .zh ? "解锁全部动效" : "Unlock every effect")
                             .font(.subheadline.weight(.semibold))
@@ -461,7 +552,20 @@ private struct PlasmaDemo: View {
                     .padding(.vertical, 18)
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .environment(\.colorScheme, .dark)
+                    .allowsHitTesting(false)
                 }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { location in
+            rippleOrigin = location
+            rippleAt = Date()
+            Haptics.tap(.soft)
+        }
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap to send a ripple", "点击激起涟漪"), ctx: ctx)
+                .padding(.bottom, 14)
+                .environment(\.colorScheme, .dark)
+                .allowsHitTesting(false)
         }
     }
 }

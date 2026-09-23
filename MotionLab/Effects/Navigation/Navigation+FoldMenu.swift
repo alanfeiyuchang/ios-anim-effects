@@ -38,6 +38,7 @@ private struct FoldMenuDemo: View {
     @Namespace private var ns
     @State private var open = false
     @State private var choice = 0
+    @State private var token = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -142,8 +143,11 @@ private struct FoldMenuDemo: View {
     private func pick(_ index: Int) {
         if !ctx.isPreview { Haptics.selection() }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { choice = index }
+        token += 1
+        let current = token
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.25))
+            guard token == current else { return }
             open = false
         }
     }

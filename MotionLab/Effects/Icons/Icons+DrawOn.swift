@@ -29,7 +29,13 @@ extension Effect {
 
 private struct DrawOnDemo: View {
     let ctx: DemoContext
-    @State private var hidden = true
+    @State private var hidden: Bool
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run the arrival task: show the symbols drawn.
+        _hidden = State(initialValue: !ctx.isStill)
+    }
 
     private let symbols = ["signature", "wind", "checkmark.seal", "sun.max"]
 
@@ -52,18 +58,20 @@ private struct DrawOnDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { toggle() }
-        .autoplay(ctx.isPreview, every: 2.4, delay: 0.3) { toggle() }
+        // The detail stage draws once in the task below, so no intro play erasing it again.
+        .autoplay(ctx.isPreview, every: 2.4, delay: 0.3, intro: false) { toggle() }
         .task {
             if !ctx.isPreview {
                 try? await Task.sleep(for: .seconds(0.3))
-                toggle()
+                guard !Task.isCancelled, hidden else { return }
+                toggle(haptic: false)
             }
         }
     }
 
-    private func toggle() {
+    private func toggle(haptic: Bool = true) {
         withAnimation(.smooth) { hidden.toggle() }
-        if !ctx.isPreview && !hidden { Haptics.tap(.soft) }
+        if haptic && !ctx.isPreview && !hidden { Haptics.tap(.soft) }
     }
 }
 

@@ -78,6 +78,13 @@ private struct LifeFinanceDemo: View {
     @State private var angle: Double = 0
     @State private var step = 0
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run `onAppear`, so seed the balance and a fully drawn sparkline.
+        _drawn = State(initialValue: ctx.isStill ? 1 : 0)
+        _balance = State(initialValue: ctx.isStill ? (ctx.language == .zh ? 176_240.18 : 24_815.42) : 0)
+    }
+
     private var zh: Bool { ctx.language == .zh }
     private var baseBalance: Double { zh ? 176_240.18 : 24_815.42 }
 

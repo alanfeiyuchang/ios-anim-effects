@@ -29,8 +29,14 @@ extension Effect {
 
 private struct BlurRevealDemo: View {
     let ctx: DemoContext
-    @State private var visible = false
+    @State private var visible: Bool
     @State private var index = 0
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run onAppear: show the revealed phrase.
+        _visible = State(initialValue: ctx.isStill)
+    }
 
     private var phrases: [String] {
         ctx.language == .zh
@@ -55,8 +61,8 @@ private struct BlurRevealDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { toggle() }
-        // The detail stage reveals once in onAppear (also under Reduce Motion), so the intro play is a no-op there.
-        .autoplay(ctx.isPreview, every: max(ctx["duration"], 0.6) + 1.2, delay: 0.2) { if ctx.isPreview { toggle() } }
+        // The detail stage reveals once in onAppear (also under Reduce Motion), so no intro play on top.
+        .autoplay(ctx.isPreview, every: max(ctx["duration"], 0.6) + 1.2, delay: 0.2, intro: false) { toggle() }
         .onAppear {
             if !ctx.isPreview { toggle() }
         }

@@ -49,6 +49,7 @@ private struct PushParallaxDemo: View {
     @State private var progress: CGFloat = 0
     @State private var selected = 0
     @State private var previewStep = 0
+    @State private var token = 0
 
     private let size = CGSize(width: 300, height: 320)
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: 1) }
@@ -112,8 +113,11 @@ private struct PushParallaxDemo: View {
             push((previewStep / 2) % pushItems.count)
         } else {
             withAnimation(.easeOut(duration: 0.35)) { progress = 0.55 }
+            token += 1
+            let current = token
             Task {
                 try? await Task.sleep(for: .seconds(0.4))
+                guard token == current else { return }
                 pop()
             }
         }

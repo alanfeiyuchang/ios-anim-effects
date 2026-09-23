@@ -9,7 +9,7 @@ extension Effect {
         summary: L("An NPS scale of rising bars: a wave grows up to your score and a bubble glides to it.", "NPS 打分的柱状阶梯：波浪般长到所选分数，气泡随之滑过去。"),
         prompt: L(
             "A \"How likely are you to recommend us?\" card with eleven bars (0–10) whose resting heights ramp gently from 18 to 38 pt. Tapping or scrubbing picks a score: every bar up to it rises to its full ramp height plus 14 pt in a wave that travels outward from the previous score with a 25 ms stagger on a bouncy spring (response 0.4 s, damping 0.62), and takes the category colour — coral for 0–6, amber for 7–8, mint for 9–10 — while bars above it sink back to a faint tint. A score bubble glides above the chosen bar on a matched-geometry spring, and the caption (Detractor / Passive / Promoter) swaps with a blur transition. A selection haptic ticks per score. Clear, quantified and lively.",
-            "“您有多大可能向朋友推荐我们？”卡片中有 11 根柱子（0–10），静止高度从 18pt 缓缓递增到 38pt。点击或横向拖动来打分：所选分数及以下的柱子会升到各自阶梯高度再加 14pt，以 25 毫秒错峰、从上一次的分数处向外传播的波浪方式，由弹性弹簧（响应 0.4 秒、阻尼 0.62）驱动，并染上所属区间的颜色——0–6 珊瑚红、7–8 琥珀、9–10 薄荷绿；高于所选分数的柱子退回淡淡底色。分数气泡借助 matchedGeometry 弹簧滑到所选柱子上方，说明文字（贬损者 / 被动者 / 推荐者）以模糊过渡切换。每换一个分数触发一次选择触觉。清晰、量化且充满活力。"
+            "“您有多大可能推荐我们？”卡片上有 11 根柱子（0–10），静止高度从 18pt 缓升到 38pt。点击或拖动打分：所选分数及以下的柱子升到各自高度再加 14pt，以 25 毫秒错峰、从上次分数处向外传播的波浪方式，由弹性弹簧（响应 0.4 秒、阻尼 0.62）驱动，并染上区间色：0–6 珊瑚红、7–8 琥珀、9–10 薄荷绿；更高的柱子退回淡色。分数气泡借共享几何滑到所选柱上方，说明文字（贬损者 / 被动者 / 推荐者）模糊切换，每换一分一次选择触觉。"
         ),
         implementation: L(
             "Each bar has its own animation(_:value:) delayed by its distance from the previous score; the bubble uses matchedGeometryEffect inside the selected bar's overlay, and a DragGesture maps x-position to a score.",

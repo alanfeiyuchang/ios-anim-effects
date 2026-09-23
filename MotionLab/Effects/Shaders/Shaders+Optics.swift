@@ -119,6 +119,8 @@ private struct ChromaticDemo: View {
     @State private var flip = false
     @State private var awake = true
     @State private var sleepWatcher: Task<Void, Never>?
+    /// The card only starts following once a drag has moved mostly sideways, so vertical swipes scroll the page.
+    @State private var engaged = false
 
     var body: some View {
         let strength = ctx["strength"]
@@ -135,19 +137,26 @@ private struct ChromaticDemo: View {
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // Hit area = the card at rest (260 × 300), so swipes around it still scroll the page.
+            // Hit area = the card at rest (260 × 300). The drag engages only after 10 pt of mostly
+            // horizontal travel (then follows in any direction), so a vertical swipe still scrolls the page.
             .overlay {
                 Color.clear
                     .frame(width: 260, height: 300)
                     .contentShape(Rectangle())
                     .gesture(
-                        DragGesture(minimumDistance: 0)
+                        DragGesture(minimumDistance: 10)
                             .onChanged { value in
+                                if !engaged {
+                                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                                    engaged = true
+                                }
                                 // While awake the watcher is alive and a held card never settles.
                                 if !awake { wake() }
                                 model.target = value.translation
                             }
                             .onEnded { _ in
+                                guard engaged else { return }
+                                engaged = false
                                 model.target = .zero
                                 if !ctx.isPreview { Haptics.tap(.soft) }
                             }

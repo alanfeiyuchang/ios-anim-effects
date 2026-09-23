@@ -69,7 +69,7 @@ private struct DonutBarsDemo: View {
         .onTapGesture { toggle() }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Tap to switch chart type", "点击切换图表类型"), ctx: ctx)
+            ChartTapCue(text: L("Tap to switch chart type", "点击切换图表类型"), ctx: ctx)
                 .padding(.bottom, 8)
         }
         .autoplay(ctx.isPreview, every: 2.4, delay: 1.0) { toggle() }

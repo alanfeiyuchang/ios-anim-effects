@@ -32,6 +32,8 @@ private struct TextCircularBadgeDemo: View {
     @State private var spin: Double = 0
     @State private var taps = 0
     @State private var pressed = false
+    /// Integrated ring angle, so moving the speed slider changes the rate without snapping the ring.
+    @State private var phase = TextBadgePhase()
 
     private var phrase: String {
         ctx.language == .zh
@@ -46,10 +48,10 @@ private struct TextCircularBadgeDemo: View {
             Circle()
                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                 .frame(width: radius * 2 - 30, height: radius * 2 - 30)
-            TimelineView(.animation) { timeline in
-                let t = timeline.date.timeIntervalSinceReferenceDate
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+                let angle = phase.advance(to: timeline.date, rate: ctx["speed"] * sign)
                 TextCircularRing(text: phrase, radius: radius, chinese: ctx.language == .zh)
-                    .rotationEffect(.degrees((t * ctx["speed"]).truncatingRemainder(dividingBy: 360) * sign))
+                    .rotationEffect(.degrees(angle))
             }
             .rotationEffect(.degrees(spin * sign))
             disc
@@ -84,6 +86,22 @@ private struct TextCircularBadgeDemo: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.5)) { pressed = false }
         }
+    }
+}
+
+/// Accumulates the ring angle frame by frame (a plain reference model: reading it never invalidates the view).
+private final class TextBadgePhase {
+    private var angle: Double = 0
+    private var last: Date?
+
+    func advance(to date: Date, rate: Double) -> Double {
+        if let last {
+            // Clamp the step so a paused or backgrounded timeline resumes smoothly.
+            let dt = min(max(date.timeIntervalSince(last), 0), 0.1)
+            angle = (angle + dt * rate).truncatingRemainder(dividingBy: 360)
+        }
+        last = date
+        return angle
     }
 }
 

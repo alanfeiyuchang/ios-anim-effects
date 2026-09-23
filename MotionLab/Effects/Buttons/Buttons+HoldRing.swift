@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A ring draws itself around a round button while you hold, then blooms into a check.", "按住圆形按钮时外环逐渐画满，完成后绽放为对勾。"),
         prompt: L(
             "A 112 pt round payment button with a fingerprint glyph sits inside a 138 pt track ring, above \"Hold to pay €24.90\". While the finger holds, a 6 pt mint-to-sky arc draws clockwise from 12 o'clock over 1.2 s at constant speed, the button sinks to 94% and the glyph dims slightly, as if pressure builds. Releasing early retracts the arc on a soft spring (response 0.4 s, no overshoot). When the ring closes, the glyph blur-replaces with a bold checkmark, the button pops to 108% and back, a mint shockwave ring expands to 150% and fades over 0.6 s, the caption changes to \"Paid\" and a success haptic fires; ~1.5 s later it resets. Secure, deliberate and reassuring.",
-            "一枚 112pt 的圆形支付按钮，中间是指纹图标，外围是 138pt 的轨道环，下方写着“长按支付 €24.90”。手指按住时，一条 6pt 的薄荷绿到天蓝色弧线从 12 点方向顺时针匀速绘制，1.2 秒画满；按钮随之下沉到 94%，图标略微变暗，像压力在积蓄。中途松手，弧线以柔和的弹簧（响应 0.4 秒、无过冲）收回。圆环闭合时，指纹图标模糊替换为粗对勾，按钮弹到 108% 再回落，一圈薄荷绿冲击波在 0.6 秒内扩张到 150% 并淡出，说明文字变为“已支付”，同时触发成功触感；约 1.5 秒后复位。安全、郑重、令人安心。"
+            "一枚 112pt 圆形支付按钮，中心是指纹图标，外围 138pt 轨道环，下方写着“长按支付 €24.90”。按住时，一条 6pt 薄荷绿到天蓝弧线从 12 点方向顺时针匀速绘制，1.2 秒画满；按钮下沉到 94%、图标略暗，像压力在积蓄。中途松手，弧线以无过冲的柔和弹簧（响应 0.4 秒）收回。圆环闭合时指纹模糊替换为对勾，按钮弹到 108% 再回落，薄荷绿冲击波 0.6 秒内扩到 150% 并淡出，文字变为“已支付”并触发成功触感；约 1.5 秒后复位。"
         ),
         implementation: L(
             "onLongPressGesture(minimumDuration:perform:onPressingChanged:) starts a linear trim animation on a rotated Circle stroke or springs it back; completion swaps the glyph with a blurReplace transition and fires a keyframeAnimator for the pop and shockwave.",

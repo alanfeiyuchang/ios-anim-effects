@@ -60,7 +60,7 @@ private struct BarsToLineDemo: View {
         .onTapGesture { toggle(haptic: true) }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Tap to switch chart type", "点击切换图表类型"), ctx: ctx)
+            ChartTapCue(text: L("Tap to switch chart type", "点击切换图表类型"), ctx: ctx)
                 .padding(.bottom, 6)
         }
         .autoplay(ctx.isPreview, every: 2.6, delay: 1.0) { toggle(haptic: false) }

@@ -23,7 +23,7 @@ extension Effect {
             .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.7),
         ]
     ) { ctx in
-        SpringChainDemo(ctx: ctx)
+        GestureSpringChainDemo(ctx: ctx)
     }
 }
 
@@ -68,7 +68,7 @@ private final class ChainModel {
     }
 }
 
-private struct SpringChainDemo: View {
+private struct GestureSpringChainDemo: View {
     let ctx: DemoContext
     @State private var model = ChainModel()
     @State private var target: CGPoint?

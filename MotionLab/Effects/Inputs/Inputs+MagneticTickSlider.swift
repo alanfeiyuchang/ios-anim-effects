@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The thumb clings to each stop, then jumps to the next once you pull far enough.", "滑块会吸附在每个刻度上，拉过一半才跳到下一格。"),
         prompt: L(
             "A Text Size card: a 260 pt track with 7 stops, a 28 pt white thumb and a live \"Aa\" preview. The thumb does not follow the finger linearly — each stop is a magnet: within half a step, the thumb is pulled toward the nearest tick with a smoothstep falloff, so it lingers on the stop, then leaps across the midpoint on a tight interactive spring (response 0.18 s, damping 0.7) and clicks onto the next one with a selection haptic. Ticks under the thumb magnify like a dock (up to +10 pt within 40 pt), the active tick turns indigo, and the preview text scales smoothly to the new size. On release the thumb settles onto its stop on a bouncy spring (response 0.35 s, damping 0.6). Precise and reassuring: you can feel the grid.",
-            "“文字大小”卡片：一条 260pt 的轨道分为 7 档，配一个 28pt 白色滑块与实时“Aa”预览。滑块并不线性跟随手指——每个档位都是一块磁铁：在半格范围内，滑块按 smoothstep 衰减被吸向最近的刻度，因此会在档位上“赖着不走”；越过中点后，再以紧致的交互弹簧（响应 0.18 秒、阻尼 0.7）一跃而过，“咔哒”吸到下一档并伴随选择触觉。滑块附近的刻度像程序坞一样放大（40pt 内最多加长 10pt），当前刻度变为靛蓝色，预览文字平滑缩放到新字号。松手后滑块以弹性弹簧（响应 0.35 秒、阻尼 0.6）落定到所在档位。精准、踏实：你能“摸到”网格。"
+            "“文字大小”卡片：260pt 轨道分 7 档，配 28pt 白色滑块与实时“Aa”预览。滑块并不线性跟手——每个档位都是磁铁：半格范围内按 smoothstep 衰减被吸向最近刻度，于是在档位上“赖着不走”；越过中点后以紧致的交互弹簧（响应 0.18 秒、阻尼 0.7）一跃吸到下一档，并伴随选择触觉。附近刻度像程序坞一样放大（40pt 内最多加长 10pt），当前刻度变靛蓝，预览文字平滑缩放。松手后以弹性弹簧（响应 0.35 秒、阻尼 0.6）落定。能“摸到”网格。"
         ),
         implementation: L(
             "The raw finger position is stored and the displayed thumb x is derived by pulling it toward the nearest stop with a smoothstep weight; each drag update runs in an interactiveSpring transaction so the leap between stops animates.",

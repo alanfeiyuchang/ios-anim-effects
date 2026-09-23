@@ -85,8 +85,8 @@ private struct OdometerKPIDemo: View {
                 refresh(haptic: false)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 2.8, delay: 2.8) { if ctx.isPreview { refresh(haptic: false) } }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 2.8, delay: 2.8, intro: false) { refresh(haptic: false) }
     }
 
     private var sparkline: some View {

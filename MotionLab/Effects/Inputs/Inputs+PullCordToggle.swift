@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Tug a hanging cord past its click point; it springs back and the lamp floods on.", "把垂下的拉绳拽过“咔哒”点，松手弹回，台灯随之亮起。"),
         prompt: L(
             "A pendant lamp shade hangs at the top of the stage with a thin cord and a 20 pt wooden bead dangling 80 pt below it. Dragging the bead stretches the cord downward with rubber-band resistance that tightens toward ~110 pt and lets it sway sideways up to 12° from the pivot. Crossing the 38 pt click point fires a medium haptic and arms the switch; releasing snaps the cord back up on an underdamped spring (response 0.5 s, damping 0.42), so the bead bobs above its rest and swings a couple of times before settling. If armed, the lamp toggles: a warm light cone fades in beneath the shade over 350 ms, the bulb blooms and a soft pool of light spreads on the floor; switching off drops everything to dark in 200 ms. Nostalgic, tactile, with real rope physics.",
-            "舞台顶部悬着一盏吊灯灯罩，下方垂着一根细绳，末端 20pt 的木珠挂在灯罩下 80pt 处。拖动木珠会以逐渐收紧的橡皮筋阻尼把绳子向下拉长（上限趋近 110pt），并允许它以挂点为轴左右摆动至多 12°。拉过 38pt 的“咔哒”点时给出一次中等触觉并进入待触发状态；松手后绳子以欠阻尼弹簧（响应 0.5 秒、阻尼 0.42）弹回，木珠会先弹到静止位置上方，再来回摆动几下才停稳。若已触发则切换灯光：暖色光锥在 350 毫秒内于灯罩下淡入，灯泡晕开光芒，地面铺开一片柔和光斑；关灯时 200 毫秒内全部暗下。怀旧、可触，带有真实的绳索物理。"
+            "舞台顶部悬着吊灯灯罩，细绳末端的 20pt 木珠垂在灯罩下 80pt。拖动木珠会以渐紧的橡皮筋阻尼把绳子向下拉长（上限趋近 110pt），并允许以挂点为轴左右摆动至多 12°。拉过 38pt 的“咔哒”点时中等触觉一下并进入待触发；松手后绳子以欠阻尼弹簧（响应 0.5 秒、阻尼 0.42）弹回，木珠先弹过静止位再摆几下才停。若已触发则切换：暖色光锥 350 毫秒内在灯罩下淡入，灯泡晕开，地面铺开柔和光斑；关灯时 200 毫秒内全部暗下。怀旧，带真实绳索物理。"
         ),
         implementation: L(
             "A DragGesture feeds rubberBand(_:limit:) into the cord length and a clamped sway angle applied with rotationEffect(anchor: .top); release resets both on an underdamped spring and, past the threshold, toggles the light layers.",

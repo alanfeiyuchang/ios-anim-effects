@@ -11,8 +11,8 @@ extension Effect {
             "悬浮标签栏：选中胶囊在标签间滑行，图标轻快弹跳。"
         ),
         prompt: L(
-            "A floating, frosted capsule tab bar with four icon tabs. The selected tab sits on a gradient pill and reveals its label beside the icon. Tapping another tab slides the pill to it as one continuous shape on a spring (response ≈0.4 s, damping ≈0.78) — it stretches to fit the new label rather than jumping — while the old label collapses and the new one fades in from 80% scale anchored to the icon. The newly selected icon plays a single symbol bounce, icon tints cross-fade between white and secondary gray, and a selection haptic fires. Page content above swaps with a soft blur-replace. Fluid, tactile and unmistakably iOS.",
-            "一条悬浮的磨砂胶囊标签栏，包含四个图标标签。选中项位于渐变胶囊之上，并在图标旁显示文字。点击其他标签时，胶囊作为同一个连续形状以弹簧（响应约 0.4 秒、阻尼约 0.78）滑向目标，并伸缩以容纳新文字而非瞬移；旧标签文字收起，新文字以图标为锚点从 80% 缩放淡入。新选中的图标轻快地弹跳一次，图标颜色在白色与次级灰之间过渡，并触发选择触觉。上方页面内容以柔和的模糊替换切换。流畅、有触感，极具 iOS 味道。"
+            "A floating, frosted capsule tab bar with four icon tabs. The selected tab sits on a gradient pill and reveals its label beside the icon. Tapping another tab slides the pill to it as one continuous shape on a spring (response ≈0.4 s, damping ≈0.78), stretching to fit the new label rather than jumping (the alternative style skips the glide and blooms a soft tint in place), while the old label collapses and the new one fades in from 80% scale anchored to the icon. The newly selected icon plays a single symbol bounce, icon tints cross-fade between white and secondary gray, and a selection haptic fires. Page content above swaps with a soft blur-replace. Fluid, tactile and unmistakably iOS.",
+            "一条悬浮的磨砂胶囊标签栏，包含四个图标标签。选中项位于渐变胶囊之上，并在图标旁显示文字。点击其他标签时，胶囊作为同一个连续形状以弹簧（响应约 0.4 秒、阻尼约 0.78）滑向目标，并伸缩以容纳新文字而非瞬移（另一种样式不滑行，而是在原地晕开柔和色块）；旧标签文字收起，新文字以图标为锚点从 80% 缩放淡入。新选中的图标轻快地弹跳一次，图标颜色在白色与次级灰之间过渡，并触发选择触觉。上方页面内容以柔和的模糊替换切换。流畅、有触感，极具 iOS 味道。"
         ),
         implementation: L(
             "The pill is a Capsule in the selected tab's background tagged with a single matchedGeometryEffect id, so it travels between tabs; icons use symbolEffect(.bounce, value:) driven by per-tab tap counters.",
@@ -23,7 +23,7 @@ extension Effect {
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...0.8, default: 0.4, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.5...1.0, default: 0.78),
-            .choice("style", L("Indicator", "指示器样式"), [L("Pill + label", "胶囊 + 文字"), L("Dot", "圆点")], default: 0),
+            .choice("style", L("Indicator", "指示器样式"), [L("Gliding pill", "滑行胶囊"), L("Tint in place", "原地着色")], default: 0),
         ]
     ) { ctx in
         TabIndicatorDemo(ctx: ctx)
@@ -81,7 +81,7 @@ private struct TabIndicatorDemo: View {
     }
 
     private var tabBar: some View {
-        HStack(spacing: pillStyle ? 2 : 10) {
+        HStack(spacing: 2) {
             ForEach(0..<tabSpecs.count, id: \.self) { index in
                 tabItem(index)
             }
@@ -99,7 +99,7 @@ private struct TabIndicatorDemo: View {
                 Image(systemName: tabSpecs[index].symbol)
                     .font(.system(size: 17, weight: .semibold))
                     .symbolEffect(.bounce, value: bounces[index])
-                if isSelected && pillStyle {
+                if isSelected {
                     Text(tabSpecs[index].title, ctx.language)
                         .font(.subheadline.weight(.semibold))
                         .fixedSize()
@@ -123,18 +123,16 @@ private struct TabIndicatorDemo: View {
                     .fill(Palette.primary)
                     .matchedGeometryEffect(id: "indicator", in: ns)
             } else {
-                Circle()
-                    .fill(Palette.indigo)
-                    .frame(width: 5, height: 5)
-                    .matchedGeometryEffect(id: "indicator", in: ns)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, 2)
+                // No travelling shape: each tab blooms its own tint where it stands.
+                Capsule()
+                    .fill(tabSpecs[selected].color.opacity(0.16))
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
         }
     }
 
     private func foreground(_ isSelected: Bool) -> Color {
-        if isSelected { return pillStyle ? .white : Palette.indigo }
+        if isSelected { return pillStyle ? .white : tabSpecs[selected].color }
         return .secondary
     }
 

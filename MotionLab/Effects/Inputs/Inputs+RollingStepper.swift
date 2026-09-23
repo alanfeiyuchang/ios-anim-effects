@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Digits roll in the direction you step and resist at the limits.", "数字按步进方向滚动，到达边界时产生阻力回弹。"),
         prompt: L(
             "A booking card for a lakeside cabin (photo thumbnail, dates, a guests row and a total) whose guest count is a compact capsule stepper: circular minus and plus buttons flanking a large rounded, monospaced number. Each tap presses its button to 88% and springs back, and the number rolls vertically in the direction of change — incoming digits slide up and blur-in when incrementing, down when decrementing — on a snappy spring (~300 ms); the number also nudges 4 pt toward the tapped side. The card's total price rolls to its new value with the same numeric transition. At a limit (1 guest, or the maximum) the disabled button dims, and further taps make the number lurch 8 pt toward that side and bounce back with a keyframed wobble, tinting red briefly, with a rigid haptic. Precise, tactile and honest about boundaries.",
-            "一张湖畔小屋的预订卡片（照片缩略图、日期、入住人数与总价），人数由紧凑的胶囊步进器控制：左右是圆形的减号与加号按钮，中间是大号圆体等宽数字。每次点击，对应按钮压缩到 88% 后弹回，数字按变化方向纵向滚动——增加时新数字自下而上模糊入场，减少时自上而下——由约 300 毫秒的利落弹簧驱动，同时数字朝被点击的一侧轻推 4pt。卡片底部的总价也以同样的数字滚动过渡更新。到达上下限（1 人或最大人数）时，对应按钮变暗；继续点击会让数字朝该侧冲出 8pt 再以关键帧摆动弹回，短暂泛红，并伴随一次硬朗的触觉。精准、可触，并诚实地表达边界。"
+            "湖畔小屋预订卡片（缩略图、日期、入住人数与总价）里，人数由紧凑的胶囊步进器控制：圆形减号与加号夹着大号圆体等宽数字。每次点击，对应按钮压到 88% 后弹回，数字按变化方向纵向滚动——增加时新数字自下而上模糊入场，减少时自上而下——由约 300 毫秒的利落弹簧驱动，同时朝被点一侧轻推 4pt。总价以同样的数字滚动更新。到达上下限时对应按钮变暗，继续点击会让数字朝该侧冲出 8pt 再以关键帧摆回，短暂泛红，并伴随硬朗触觉。诚实地表达边界。"
         ),
         implementation: L(
             "contentTransition(.numericText(value:)) rolls digits in the right direction; a keyframeAnimator keyed on a limit-hit counter adds the rubber-band wobble, and a ButtonStyle provides the press scale.",

@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Double-tap the photo: a big heart pops where you tapped, then flies into the like button.", "双击照片，大爱心在触点弹出，再飞进点赞按钮。"),
         prompt: L(
             "A photo post card: a 300 × 196 pt landscape image above an action row with a small heart button and a like count. Double-tapping anywhere on the photo pops a 90 pt white heart right under the finger — scale 0 → 118% → 100% on a bouncy spring (response 0.35 s, damping 0.5), tilted a random ±12° with a soft shadow. It hangs for ~0.45 s, then flies along a curved path into the small heart button while shrinking to 22% and straightening out (0.4 s, ease-in). On arrival the button fills pink, pops to 130% and settles, the count rolls up and a success haptic fires. A single tap on the small heart toggles it directly with a lighter pop. Social, direct and delightful.",
-            "一张照片动态卡片：上方是 300 × 196pt 的风景照片，下方操作栏里有一枚小爱心按钮与点赞数。在照片任意位置双击，一枚 90pt 的白色大爱心就在指尖下弹出——以弹性弹簧（响应 0.35 秒、阻尼 0.5）从 0 放大到 118% 再落到 100%，随机倾斜 ±12°，带柔和投影。停留约 0.45 秒后，它沿一条弧线飞向下方的小爱心按钮，途中缩小到 22% 并摆正（0.4 秒，ease-in）。抵达时小按钮变为粉色实心，弹到 130% 再落定，计数上滚并触发成功触感。单击小爱心则直接切换状态，弹跳更轻。社交感强、直接、令人愉悦。"
+            "照片动态卡片：上方是 300 × 196pt 的风景照，下方操作栏有小爱心按钮与点赞数。在照片任意处双击，指尖下弹出一枚 90pt 白色大爱心——以弹性弹簧（响应 0.35 秒、阻尼 0.5）从 0 放大到 118% 再落到 100%，随机倾斜 ±12°，带柔和投影。停留约 0.45 秒后沿弧线飞向小爱心按钮，途中缩到 22% 并摆正（0.4 秒，ease-in）。抵达时小按钮变粉色实心、弹到 130% 再落定，计数上滚并触发成功触感。单击小爱心则直接切换，弹跳更轻。"
         ),
         implementation: L(
             "onTapGesture(count: 2, coordinateSpace: .local) reports the tap point; an async Task springs a positioned heart in, then animates its position (split into x with ease-in and y with ease-out for a curved flight) and scale toward the button's known frame, before toggling the like state and a keyframe pop.",

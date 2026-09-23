@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Glowing embers drift up off a warm button; a tap stokes the fire.", "发光的余烬从暖色按钮上方飘起，点击会让火势更旺。"),
         prompt: L(
             "On a dark ember-tinted panel sits a 220 × 60 pt charcoal capsule \"Go live\" with a 1.5 pt amber-to-coral rim. A steady stream of ~24 tiny embers (2–4 pt) rises from its top edge: each drifts up ~100 pt over 1.6–2.6 s along a gentle sine sway, shrinks as it cools from pale amber to coral and fades out, blended additively so overlaps flare. The rim glow flickers softly with layered noise (radius 12 ± 4 pt). A tap stokes the fire: for ~0.8 s the plume climbs 40% higher and burns brighter, the glow swells, the button dips to 96% and a medium haptic fires. Warm, alive and a little dangerous — perfect for live or hot-deal CTAs.",
-            "在带余烬色调的深色面板上，一枚 220 × 60pt 的炭黑胶囊“开始直播”，外沿是 1.5pt 的琥珀到珊瑚色描边。约 24 颗细小余烬（2–4pt）持续从按钮顶边升起：每颗在 1.6–2.6 秒内沿柔和的正弦摆动上升约 100pt，冷却时从浅琥珀色变为珊瑚色、逐渐缩小并淡出，采用叠加混合，重叠处会更亮。描边辉光以叠加噪声轻轻闪烁（半径 12 ± 4pt）。点击会“添柴”：约 0.8 秒内火花升得高出 40%、更亮，辉光膨胀，按钮下沉到 96%，并触发中等触感。温暖、鲜活、带点危险气息——很适合直播或限时特惠按钮。"
+            "余烬色调的深色面板上，一枚 220 × 60pt 的炭黑胶囊“开始直播”，外沿是 1.5pt 琥珀到珊瑚色描边。约 24 颗 2–4pt 的余烬持续从顶边升起：每颗在 1.6–2.6 秒内沿正弦摆动上升约 100pt，冷却时由浅琥珀变珊瑚色、逐渐缩小淡出，叠加混合让重叠处更亮。描边辉光随叠加噪声轻轻闪烁（半径 12 ± 4pt）。点击即“添柴”：约 0.8 秒内火苗蹿高 40%、更亮，辉光膨胀，按钮下沉到 96% 并伴随中等触感。温暖、鲜活，带点危险气息。"
         ),
         implementation: L(
             "A TimelineView(.animation) redraws a Canvas each frame; every ember derives its life phase, sway and colour from its seeded index and the time, drawn with plusLighter blending. The last tap time feeds a decaying boost that scales plume height and brightness.",

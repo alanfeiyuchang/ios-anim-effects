@@ -74,8 +74,8 @@ private struct WaffleKPIDemo: View {
                 update(haptic: false)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 2.8, delay: 2.6) { if ctx.isPreview { update(haptic: false) } }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 2.8, delay: 2.6, intro: false) { update(haptic: false) }
     }
 
     private func delay(for order: Int) -> Double {

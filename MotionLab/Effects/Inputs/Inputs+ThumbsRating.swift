@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Thumbs up or down with a wind-up flick, a particle burst and a rolling count.", "点赞或点踩时拇指先蓄力再甩动，伴随粒子迸发与计数滚动。"),
         prompt: L(
             "A \"Was this helpful?\" card with two 64 pt pill buttons — thumbs up with a count, thumbs down with a count. Choosing one plays a wind-up and flick: the glyph first cocks back 10° (90 ms), then whips 22° the other way and springs home (bouncy, 400 ms) while scaling to 125% and filling with colour (indigo for up, coral for down); eight small particles burst radially 26 pt from the glyph and fade within 450 ms. The count rolls up by one with numeric digits. The opposite button, if it was selected, deflates to 96% and gives its count back. Tapping the selected button again clears the rating and its count rolls back down. A medium haptic accompanies the flick. Expressive, cartoon-snappy and clear about the choice.",
-            "“这篇内容有帮助吗？”卡片上有两个 64pt 胶囊按钮——带计数的点赞与点踩。选中其中一个时会播放“蓄力再甩出”：图标先向后扳 10°（90 毫秒），再向反方向甩出 22° 并弹回（弹性，400 毫秒），同时放大到 125% 并填充颜色（点赞为靛蓝、点踩为珊瑚红）；八颗小粒子从图标处径向迸发 26pt，并在 450 毫秒内消失。计数以数字滚动加一。另一个按钮若原本被选中，会缩到 96% 并退回计数。再次点击已选按钮则取消评分，计数滚动减回。甩动时伴随一次中等触觉。富有表现力、卡通般干脆，选择一目了然。"
+            "“这篇内容有帮助吗？”卡片上有两个 64pt 胶囊——带计数的点赞与点踩。选中一个时先蓄力再甩出：图标先后扳 10°（90 毫秒），再向反方向甩 22° 并弹性回位（400 毫秒），同时放大到 125% 并填色（点赞靛蓝、点踩珊瑚红）；八颗小粒子从图标径向迸出 26pt，450 毫秒内消失。计数滚动加一。另一个按钮若原已选中，则缩到 96% 并退回计数；再次点击已选按钮会取消，计数滚回。甩动时一次中等触觉。卡通般干脆，选择一目了然。"
         ),
         implementation: L(
             "A keyframeAnimator with rotation and scale tracks, keyed on a per-button trigger, produces the wind-up and flick; the particles are a ForEach of circles driven by a second keyframed progress value; counts use contentTransition(.numericText).",

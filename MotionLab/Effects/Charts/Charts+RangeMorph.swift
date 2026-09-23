@@ -116,7 +116,7 @@ private struct RangeMorphDemo: View {
         .demoCard()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Switch the time range", "切换时间区间"), ctx: ctx)
+            ChartTapCue(text: L("Switch the time range", "切换时间区间"), ctx: ctx)
                 .padding(.bottom, 8)
         }
         .sensoryFeedback(.selection, trigger: selection) { _, _ in !ctx.isPreview }

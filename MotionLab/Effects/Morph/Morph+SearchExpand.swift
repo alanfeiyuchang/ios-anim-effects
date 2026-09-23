@@ -35,7 +35,7 @@ private struct SearchResult {
     let title: LocalizedText
 }
 
-private let searchResults: [SearchResult] = [
+private let searchExpandResults: [SearchResult] = [
     SearchResult(symbol: "hand.tap.fill", title: L("Spring Button", "弹簧按钮")),
     SearchResult(symbol: "dock.rectangle", title: L("Springy Tab Bar", "弹簧标签栏")),
     SearchResult(symbol: "atom", title: L("Spring Physics", "弹簧物理")),
@@ -169,8 +169,8 @@ private struct SearchPanel: View {
                 .foregroundStyle(.secondary)
                 .contentTransition(.numericText())
                 .padding(.bottom, 6)
-            ForEach(0..<searchResults.count, id: \.self) { index in
-                resultRow(searchResults[index])
+            ForEach(0..<searchExpandResults.count, id: \.self) { index in
+                resultRow(searchExpandResults[index])
                     .opacity(hasQuery ? 1 : 0)
                     .offset(y: hasQuery ? 0 : 10)
                     .animation(
@@ -188,7 +188,7 @@ private struct SearchPanel: View {
 
     private var headline: String {
         if !hasQuery { return language == .zh ? "最近搜索" : "RECENT" }
-        return language == .zh ? "\(searchResults.count) 个结果" : "\(searchResults.count) RESULTS"
+        return language == .zh ? "\(searchExpandResults.count) 个结果" : "\(searchExpandResults.count) RESULTS"
     }
 
     private func resultRow(_ result: SearchResult) -> some View {

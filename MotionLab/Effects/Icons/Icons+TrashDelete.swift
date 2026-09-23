@@ -125,11 +125,13 @@ private struct IconsTrashDemo: View {
     private func delete() {
         drops += 1
         if !ctx.isPreview { Haptics.tap(.medium) }
+        // Captured now: the lid-thud haptic runs after autoplay (or the detail intro) has unmuted Haptics.
+        let muted = Haptics.isMuted || ctx.isPreview
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             withAnimation(.snappy) { deleted += 1 }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.72) {
-            if !ctx.isPreview { Haptics.tap(.rigid) }
+            if !muted { Haptics.tap(.rigid) }
         }
     }
 }

@@ -70,7 +70,7 @@ private struct SlideToConfirmDemo: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
         } else {
-            ShimmerText(text: ctx.language == .zh ? "滑动以确认" : "Slide to confirm", preview: ctx.isPreview, paused: progress > 0.5)
+            SlideShimmerLabel(text: ctx.language == .zh ? "滑动以确认" : "Slide to confirm", preview: ctx.isPreview, paused: progress > 0.5)
                 .padding(.leading, knob)
                 .frame(maxWidth: .infinity)
                 .opacity(Double(max(1 - progress * 2, 0)))
@@ -145,7 +145,7 @@ private struct SlideToConfirmDemo: View {
     }
 }
 
-private struct ShimmerText: View {
+private struct SlideShimmerLabel: View {
     let text: String
     let preview: Bool
     /// Stops the shimmer once the label has faded out.

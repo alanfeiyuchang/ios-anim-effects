@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A More button unfolds its actions row by row, like a folded paper strip.", "“更多”按钮把操作一行行展开，像打开一条折叠的纸带。"),
         prompt: L(
             "A file card with a 44 pt round \"…\" button in its header. On tap the ellipsis turns into a close mark via a symbol replace, and a four-row action menu (Share, Rename, Duplicate, Delete) unfolds below the button like a folded paper strip: each 46 pt row starts rotated −90° around its top edge (perspective 0.5) and swings down flat on a spring (response 0.45 s, damping 0.72), 50 ms after the row above, darkening slightly while it is still edge-on so the fold reads in 3D. The destructive last row is tinted red. Closing folds the rows back up bottom-first. The card behind dims to 60% while the menu is open; choosing a row folds the menu and flashes a confirmation. Tactile, crafted and spatial.",
-            "一张文件卡片，头部有一枚 44pt 的圆形“…”按钮。点击后，省略号通过符号替换变为关闭符号，一个四行操作菜单（分享、重命名、复制副本、删除）像折叠的纸带一样在按钮下方展开：每行高 46pt，起始时绕自身顶边旋转 −90°（透视 0.5），再以弹簧（响应 0.45 秒、阻尼 0.72）翻折下来铺平，每行比上一行晚 50 毫秒；行在接近侧立时略微变暗，让折叠更有立体感。最后一行“删除”带红色。收起时从最底行开始向上折回。菜单打开时背后的卡片内容降到 60% 透明度；选中某一行会收起菜单并闪现确认提示。有触感、有工艺感、有空间感。"
+            "文件卡片头部有一枚 44pt 圆形“…”按钮。点击后省略号经符号替换变为关闭符号，一个四行菜单（分享、重命名、复制副本、删除）像折好的纸带在按钮下方展开：每行高 46pt，起始时绕顶边旋转 −90°（透视 0.5），再以弹簧（响应 0.45 秒、阻尼 0.72）翻折铺平，比上一行晚 50 毫秒；接近侧立时略微变暗，折叠更有立体感。末行“删除”为红色。收起时从最底行向上折回。菜单打开时卡片内容降到 60% 透明度；选中一行即收起菜单并闪现确认。有工艺感，也有空间感。"
         ),
         implementation: L(
             "Each row is its own slab (UnevenRoundedRectangle for the first and last) with rotation3DEffect(anchor: .top) and a brightness tied to the same open flag, animated by a per-row delayed spring whose order flips on close.",

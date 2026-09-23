@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A glass you fill by dragging; the surface sloshes with your speed and settles.", "拖动即可“倒水”的玻璃杯，液面随拖动速度晃荡后平息。"),
         prompt: L(
             "A vertical 96 × 220 pt glass with 28 pt continuous corners sits next to a daily-water readout. Dragging up or down anywhere on the glass sets the level relative to where the finger landed. The water surface is a living meniscus: two layered sine waves (front opaque sky-to-blue, back 45% lighter and phase-shifted) drift continuously with a 2 pt idle ripple. Drag velocity pumps the wave amplitude up to 12 pt; once the finger slows or lifts (80 ms debounce) it decays on an underdamped spring (response 0.8 s, damping 0.3), so the surface inverts a few times like sloshing water before calming. The litre readout rolls with numeric digits and a selection haptic ticks every 10%. Refreshing, physical, almost drinkable.",
-            "一只 96 × 220pt、28pt 连续圆角的竖直玻璃杯，旁边是每日饮水读数。在杯身任意位置上下拖动，都会以手指落点为基准相对调整水位。水面是一道“活”的弯月面：两层正弦波叠加（前层为不透明的天蓝到湛蓝渐变，后层浅 45% 并错开相位），持续漂移并保留 2pt 的静态微波。拖动速度会把波幅推高到最多 12pt；手指减速或抬起（80 毫秒去抖）后，波幅以欠阻尼弹簧（响应 0.8 秒、阻尼 0.3）衰减，水面会像真的晃荡一样来回翻转几次才平息。升数读数以数字滚动更新，每跨 10% 给出一次选择触觉。清爽、有物理感，几乎能喝。"
+            "每日饮水读数旁有一只 96 × 220pt、28pt 连续圆角的竖直玻璃杯。在杯身任意位置上下拖动，以落点为基准相对调整水位。水面是一道“活”的弯月面：两层正弦波（前层不透明天蓝到湛蓝，后层浅 45% 并错相）持续漂移，静止时保留 2pt 微波。拖动速度把波幅推高到最多 12pt；手指减速或抬起（80 毫秒去抖）后，波幅以欠阻尼弹簧（响应 0.8 秒、阻尼 0.3）衰减，水面来回翻转几次才平息。升数滚动更新，每跨 10% 触发选择触觉。清爽、有物理感。"
         ),
         implementation: L(
             "A TimelineView advances the wave phase each frame while a custom Shape animates level and amplitude through AnimatablePair; DragGesture velocity sets the amplitude and a debounced Task releases it on an underdamped spring.",

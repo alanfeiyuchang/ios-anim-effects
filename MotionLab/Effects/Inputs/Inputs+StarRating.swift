@@ -9,7 +9,7 @@ extension Effect {
         summary: L("Stars fill in a cascading wave and pop with a bounce.", "星星以波浪式依次点亮并弹跳。"),
         prompt: L(
             "A review card (\"How was your stay?\") with five 36 pt stars, a caption and a Submit button. Tapping or scrubbing across sets the rating: newly lit stars fill with a warm amber-to-coral gradient one after another with a 50 ms stagger, each punching up to 135% in 120 ms then settling on a bouncy spring (response 0.45 s, damping 0.6), while stars being cleared shrink to 85% and dim back to a soft outline tint. The caption (\"Terrible\" … \"Amazing!\") swaps with a push transition from below. The Submit capsule wakes from a faint tint to a warm sunset gradient once any star is set. A selection haptic ticks on every change. The cascade makes a single tap feel like a small celebration while keeping the value unmistakable.",
-            "一张评价卡片（“这次入住体验如何？”）：五颗 36pt 星星、一行说明文字与“提交评价”按钮。点击或横向拖动设置评分：新点亮的星星以 50 毫秒错峰依次填充琥珀到珊瑚色渐变，每颗先在 120 毫秒内弹到 135%，再以弹性弹簧（响应 0.45 秒、阻尼 0.6）回落；被取消的星星缩到 85% 并褪回柔和的空心色。说明文字（“很差”……“太棒了！”）以自下而上的推入过渡切换。一旦有评分，“提交评价”胶囊就从淡灰底色唤醒为温暖的日落渐变。每次评分变化触发一次选择触觉。依次点亮的节奏让一次点击也像一场小小的庆祝，同时数值一目了然。"
+            "评价卡片（“这次入住体验如何？”）：五颗 36pt 星星、一行说明与“提交评价”按钮。点击或横向拖动设定评分：新点亮的星星以 50 毫秒错峰依次填充琥珀到珊瑚色渐变，每颗先在 120 毫秒内弹到 135%，再以弹性弹簧（响应 0.45 秒、阻尼 0.6）回落；被取消的星星缩到 85% 并褪回空心色。说明文字（“很差”……“太棒了！”）自下而上推入切换。一旦有评分，“提交评价”就从淡灰唤醒为温暖的日落渐变。每次变化触发选择触觉。一次点击也像小小的庆祝。"
         ),
         implementation: L(
             "A zero-distance DragGesture maps x-position to a rating; each star runs a keyframeAnimator on the change trigger with an index-based delay, and a gradient layer fades in with the same delay via animation(_:value:).",

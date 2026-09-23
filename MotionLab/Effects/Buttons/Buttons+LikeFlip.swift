@@ -9,7 +9,7 @@ extension Effect {
         summary: L("The like button hops and flips like a coin to reveal its filled side.", "点赞按钮像硬币一样跳起翻面，露出实心的一面。"),
         prompt: L(
             "A 92 pt coin-like disc on a recipe card: the front is a soft neutral face with an outlined heart, the back a glossy pink-to-coral face with a white filled heart. On tap the coin hops 34 pt (250 ms up, ease-out; 250 ms down, ease-in) while flipping 180° around its vertical axis on a spring (response 0.6 s, damping 0.7) with strong perspective; the face swaps exactly when the disc is edge-on. A diagonal glint sweeps across it at the top of the hop, its ground shadow shrinks to 60% and fades while airborne, and on landing it squashes to 92% tall before settling. A success haptic lands with it. Tapping again flips it onward to the neutral side. Playful, tangible and a little lucky.",
-            "一张菜谱卡片上有一枚 92pt 的硬币状圆盘：正面是柔和中性色配空心爱心，背面是粉到珊瑚色的光亮面配白色实心爱心。点击后硬币向上跳起 34pt（上升 250 毫秒 ease-out，下落 250 毫秒 ease-in），同时绕竖直轴以弹簧（响应 0.6 秒、阻尼 0.7）翻转 180°，透视感强烈；圆盘侧立的瞬间正好切换正反面。跳到最高点时一道斜向高光扫过盘面，地面投影在空中缩小到 60% 并变淡，落地时高度被压扁到 92% 再回弹。落地伴随成功触感。再次点击则继续翻到中性面。俏皮、有实物感，还带点好运气。"
+            "菜谱卡片上有一枚 92pt 的硬币状圆盘：正面柔和中性色配空心爱心，背面粉到珊瑚色亮面配白色实心爱心。点击后硬币跳起 34pt（上升 250 毫秒 ease-out，下落 250 毫秒 ease-in），同时绕竖直轴以弹簧（响应 0.6 秒、阻尼 0.7）翻转 180°，透视强烈，侧立瞬间切换正反面。跳到顶点时一道斜向高光扫过，地面投影在空中缩到 60% 并变淡；落地时高度压扁到 92% 再回弹，伴随成功触感。再次点击则翻回中性面。俏皮、有实物感。"
         ),
         implementation: L(
             "An Animatable view receives the accumulated flip angle and picks the visible face from it (the back is pre-rotated 180°), under rotation3DEffect with perspective; a keyframeAnimator on a flip counter drives hop, squash, glint and shadow.",

@@ -87,8 +87,8 @@ private struct BrickBarsDemo: View {
                 play(haptic: false)
             })
         }
-        // The entrance already runs in onAppear, so the detail stage's one-shot intro is skipped.
-        .autoplay(ctx.isPreview, every: 3.4, delay: 3.4) { if ctx.isPreview { play(haptic: false) } }
+        // The entrance already runs in onAppear, so the detail stage's one-shot intro is turned off.
+        .autoplay(ctx.isPreview, every: 3.4, delay: 3.4, intro: false) { play(haptic: false) }
     }
 
     private func play(haptic: Bool) {

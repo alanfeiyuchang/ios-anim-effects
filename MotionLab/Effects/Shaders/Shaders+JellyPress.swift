@@ -15,8 +15,8 @@ extension Effect {
             "按住卡片时，指尖下方会隆起一个柔软的玻璃质圆顶：在 95pt 半径内，内容以 (1 − t²)² 的衰减向触点放大，边缘看不到任何接缝；圆顶受左上方光照，读起来就是一个凸起。按下时它以弹簧（响应 0.28 秒、阻尼 0.62）鼓起，并以交互弹簧跟随手指，同时像黏稠凝胶一样，沿拖动速度的反方向拖出最多 28pt 的拖影。松手后强度以强欠阻尼弹簧（响应 0.55 秒、阻尼 0.3）回到零，会越过零点变成凹陷、再弹回，反复数次才平息——这就是果冻般的颤动。软糯、可触、令人愉悦。"
         ),
         implementation: L(
-            "A [[stitchable]] layer shader pulls samples toward the center by d·strength·(1 − t²)² and offsets them by the velocity smear, shading by the dome's slope; center, strength and smear live in an Animatable modifier so springs (including negative overshoot) drive the shader.",
-            "[[stitchable]] layerEffect 着色器按 d·strength·(1 − t²)² 把采样点拉向中心，并叠加速度拖影偏移，再依据圆顶斜率打光；中心、强度与拖影放在 Animatable 修饰器中，由弹簧（包括越过零点的负向过冲）驱动着色器。"
+            "A [[stitchable]] layer shader pulls samples toward the center by d·strength·(1 − t²)² and offsets them by the velocity smear, shading by the dome's slope; center, strength and smear live in an Animatable modifier so springs (including negative overshoot) drive the shader. The drag is attached simultaneously, so the page can still scroll.",
+            "[[stitchable]] layerEffect 着色器按 d·strength·(1 − t²)² 把采样点拉向中心，并叠加速度拖影偏移，再依据圆顶斜率打光；中心、强度与拖影放在 Animatable 修饰器中，由弹簧（包括越过零点的负向过冲）驱动着色器。拖动手势以 simultaneousGesture 附加，页面仍可滚动。"
         ),
         apis: ["layerEffect", "Animatable", "DragGesture.Value.velocity", "spring(response:dampingFraction:)", "Metal"],
         tags: ["jelly", "bulge", "wobble", "squishy", "果冻", "凸起", "颤动", "按压"],
@@ -36,12 +36,22 @@ private struct JellyPressDemo: View {
     @State private var strength: Double = 0
     @State private var smear: CGSize = .zero
     @State private var pressing = false
+    /// Resets itself if the system cancels the touch (e.g. the page starts scrolling), so the dome never sticks.
+    @GestureState private var touching = false
 
     var body: some View {
         VStack(spacing: 14) {
             ShaderArtwork(variant: 1)
                 .modifier(JellyModifier(center: center, strength: strength, smear: smear, radius: ctx["radius"]))
-                .gesture(press)
+                // Simultaneous, so a vertical swipe that starts on the card still scrolls the page;
+                // a tap still pops a dome because the drag reports touch-down immediately.
+                .simultaneousGesture(press)
+                .onChange(of: touching) { _, isTouching in
+                    if !isTouching && pressing {
+                        pressing = false
+                        release()
+                    }
+                }
             DemoHint(text: L("Press, hold and drag, then let go", "按住拖动，然后松手"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -50,6 +60,7 @@ private struct JellyPressDemo: View {
 
     private var press: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 if !pressing {
                     pressing = true
@@ -65,6 +76,7 @@ private struct JellyPressDemo: View {
                 }
             }
             .onEnded { _ in
+                guard pressing else { return }
                 pressing = false
                 release()
             }

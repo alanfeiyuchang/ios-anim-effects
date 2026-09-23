@@ -82,7 +82,8 @@ private struct LiquidWipeDemo: View {
     var body: some View {
         let amplitude = ctx["amplitude"]
         VStack(spacing: 14) {
-            ShaderClock(preview: ctx.isPreview) { time in
+            // The waves only show while the wipe runs, so the clock (and the two artworks) idle at rest.
+            ShaderClock(paused: !busy, preview: ctx.isPreview) { time in
                 ZStack {
                     ShaderArtwork(variant: SwapScenes.variant(current + 1))
                     ShaderArtwork(variant: SwapScenes.variant(current))

@@ -35,6 +35,8 @@ private struct BounceTileModel {
 private struct BounceDemo: View {
     let ctx: DemoContext
     @State private var counts = [0, 0, 0, 0]
+    /// Scripted press dips for simulated taps (real touches get theirs from `TilePressStyle`).
+    @State private var pressed = [false, false, false, false]
     @State private var autoIndex = 0
 
     private let tiles: [BounceTileModel] = [
@@ -57,7 +59,8 @@ private struct BounceDemo: View {
                         model: tiles[i],
                         count: counts[i],
                         effect: effect,
-                        speed: ctx["speed"]
+                        speed: ctx["speed"],
+                        pressed: pressed[i]
                     ) { tap(i) }
                 }
             }
@@ -65,14 +68,23 @@ private struct BounceDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 0.7) {
-            tap(autoIndex % tiles.count)
+            simulatePress(autoIndex % tiles.count)
             autoIndex += 1
         }
     }
 
-    private func tap(_ i: Int) {
+    /// A simulated tap: dip the tile to 92% like a real press, then release and bounce the symbol.
+    private func simulatePress(_ i: Int) {
+        withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) { pressed[i] = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { pressed[i] = false }
+            tap(i, haptic: false)
+        }
+    }
+
+    private func tap(_ i: Int, haptic: Bool = true) {
         counts[i] += 1
-        if !ctx.isPreview { Haptics.tap(.light) }
+        if haptic && !ctx.isPreview { Haptics.tap(.light) }
     }
 }
 
@@ -81,6 +93,7 @@ private struct BounceTile: View {
     let count: Int
     let effect: BounceSymbolEffect
     let speed: Double
+    let pressed: Bool
     let action: () -> Void
 
     var body: some View {
@@ -99,6 +112,7 @@ private struct BounceTile: View {
                         .strokeBorder(.white.opacity(0.25), lineWidth: 1)
                 )
                 .shadow(color: (model.colors.last ?? .black).opacity(0.35), radius: 14, y: 8)
+                .scaleEffect(pressed ? 0.92 : 1)
         }
         .buttonStyle(TilePressStyle())
     }

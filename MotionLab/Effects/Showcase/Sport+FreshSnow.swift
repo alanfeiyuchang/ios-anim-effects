@@ -36,6 +36,13 @@ private struct SportSnowDemo: View {
 
     private static let preset: [CGFloat] = [0.32, 0.55, 0.22, 0.7, 0.48, 0.82, 1.0]
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run `task`, so they start with the bars risen and the total counted.
+        _bars = State(initialValue: ctx.isStill ? Self.preset : Array(repeating: 0.05, count: 7))
+        _total = State(initialValue: ctx.isStill ? 46 : 0)
+    }
+
     var body: some View {
         SignatureStage {
             VStack(spacing: 0) {
@@ -48,9 +55,8 @@ private struct SportSnowDemo: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task(id: runID) { await refresh() }
-        .autoplay(ctx.isPreview, every: 3.4, delay: 3.4) { runID += 1 }
         // The first refresh already runs on appear, so the detail stage skips its one-shot intro replay.
-        .environment(\.demoIntroPlay, false)
+        .autoplay(ctx.isPreview, every: 3.4, delay: 3.4, intro: false) { runID += 1 }
     }
 
     private var card: some View {

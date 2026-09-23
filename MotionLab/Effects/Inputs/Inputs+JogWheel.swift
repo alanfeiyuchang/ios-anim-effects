@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A video-editor jog wheel you spin by hand; flick it and it coasts to a stop.", "视频剪辑用的飞梭轮：手动转动，甩一下还会自己滑行减速。"),
         prompt: L(
             "A 220 pt jog wheel from a video-editing console: a brushed disc ringed with 36 grip dimples and a finger well, above a timecode readout. Circular dragging turns the wheel 1:1 with the finger's angle around the centre; every 10° advances one frame with a selection haptic, and the readout counts in monospaced digits. The angular velocity of the last moments is tracked, so a flick keeps the wheel coasting after release: it travels velocity × 0.35 s further on a strong ease-out curve (0.15, 0.7, 0.3, 1) lasting 1.2 s, capped at three turns, while the timecode keeps counting every frame it passes. A faint motion-blur arc trails the finger well while spinning. Weighty, precise and addictive.",
-            "一只 220pt 的视频剪辑台飞梭轮：拉丝质感的圆盘，外圈一周 36 个防滑凹点，另有一个指窝，下方是时间码读数。沿圆周拖动时，飞梭轮随手指绕中心的角度 1:1 转动；每转 10° 前进一帧并触发一次选择触觉，读数以等宽数字计数。系统记录最后时刻的角速度，因此甩动松手后轮子会继续滑行：额外转过 角速度 × 0.35 秒 的角度，采用强缓出曲线（0.15, 0.7, 0.3, 1），历时 1.2 秒，最多三圈，时间码会数过它经过的每一帧。高速转动时指窝后方拖出一道淡淡的动态模糊弧。厚重、精准、让人上瘾。"
+            "220pt 的视频剪辑飞梭轮：拉丝圆盘外圈 36 个防滑凹点，一个指窝，下方是时间码读数。沿圆周拖动时轮子随手指角度 1:1 转动，每 10° 前进一帧并触发选择触觉，读数以等宽数字计数。系统记录松手前的角速度，甩动后轮子继续滑行：额外转过“角速度 × 0.35 秒”，采用强缓出曲线（0.15, 0.7, 0.3, 1），历时 1.2 秒，最多三圈，时间码数过经过的每一帧。高速转动时指窝后拖出一道淡淡的动态模糊弧。厚重、精准、让人上瘾。"
         ),
         implementation: L(
             "atan2 of the touch relative to the centre gives an angle whose wrapped delta accumulates into rotation; timestamps give angular velocity for the coast, animated with a timingCurve. An Animatable face view recomputes the timecode on every interpolated frame.",

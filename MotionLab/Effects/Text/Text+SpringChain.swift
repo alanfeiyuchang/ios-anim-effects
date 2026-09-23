@@ -23,11 +23,11 @@ extension Effect {
             .slider("lean", L("Lean", "倾斜"), 0...40, default: 18, decimals: 0, unit: "°"),
         ]
     ) { ctx in
-        SpringChainDemo(ctx: ctx)
+        TextSpringChainDemo(ctx: ctx)
     }
 }
 
-private struct SpringChainDemo: View {
+private struct TextSpringChainDemo: View {
     let ctx: DemoContext
     @State private var drag: CGSize = .zero
     @State private var dragging = false

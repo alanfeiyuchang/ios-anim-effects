@@ -8,8 +8,8 @@ extension Effect {
         name: L("Gravity Drop Digits", "重力坠落数字"),
         summary: L("Only the digits that change fall in from above and bounce; old ones tumble out.", "只有变化的数字从上方坠落并弹跳，旧数字翻滚着掉出。"),
         prompt: L(
-            "A step counter shows a large rounded number (e.g. 18,452) with a small caption. When the value increases, only the digits that actually changed are replaced: each old digit drops 60 pt out of its clipped slot while tilting up to 14° and fading, and the new digit falls in from 60 pt above on a bouncy spring (≈0.55 s, 45% bounce), hitting the baseline and hopping twice before resting. Changed digits land right to left, 50 ms apart, so a carry reads like objects stacking up. Unchanged digits never move. A medium haptic fires on tap. The feeling is physical and playful — numbers with weight.",
-            "步数卡片上显示一个大号圆体数字（如 18,452）和一行小标题。数值增加时，只有真正变化的数位会被替换：旧数字在自己的裁切槽位里向下掉出 60 pt，同时倾斜最多 14° 并淡出；新数字从上方 60 pt 处坠入，使用高回弹弹簧（约 0.55 秒、45% 回弹），砸到基线后再轻跳两下才停稳。变化的数位从右到左依次落下，间隔 50 毫秒，进位就像物体一个个叠上去。没有变化的数位纹丝不动。点击时伴随中等强度触感。整体感觉俏皮而有分量——数字仿佛有了重量。"
+            "A step counter shows a large rounded number such as 18,452 above a small caption. When the value increases, only the digits that changed are replaced: each old digit drops 60 pt out of its clipped slot, tilting 14° as it fades, while the new one falls in from 60 pt above on a bouncy spring (0.55 s, 45% bounce) that overshoots the baseline and settles in a couple of rebounds. Changed digits land right to left 50 ms apart, so a carry reads like objects stacking up, and unchanged digits never move. A medium haptic fires on tap. Physical and playful: numbers with weight.",
+            "步数卡片上是一个大号圆体数字（如 18,452）和一行小标题。数值增加时只替换真正变化的数位：旧数字在裁切槽里向下掉出 60 pt，倾斜 14° 并淡出；新数字从上方 60 pt 处坠入，由高回弹弹簧（0.55 秒、45% 回弹）驱动，冲过基线后再弹两下才停稳。变化的数位从右到左错开 50 毫秒落下，进位像物体一个个叠上去，没变的数位纹丝不动。点击时伴随中等触感。俏皮而有分量，数字仿佛真的有了重量。"
         ),
         implementation: L(
             "Each digit sits in its own clipped slot and is keyed with .id(digit), so a change swaps the view; a custom Transition offsets, tilts and fades it by TransitionPhase, and AnyTransition.animation adds a per-column delayed bouncy spring.",

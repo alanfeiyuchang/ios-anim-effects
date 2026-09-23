@@ -29,8 +29,16 @@ extension Effect {
 
 private struct HighlighterDemo: View {
     let ctx: DemoContext
-    @State private var first: CGFloat = 0
-    @State private var second: CGFloat = 0
+    @State private var first: CGFloat
+    @State private var second: CGFloat
+
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still snapshots never run onAppear: show both strokes drawn.
+        let drawn: CGFloat = ctx.isStill ? 1 : 0
+        _first = State(initialValue: drawn)
+        _second = State(initialValue: drawn)
+    }
 
     private var color: Color {
         switch ctx.int("color") {
@@ -59,7 +67,8 @@ private struct HighlighterDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { replay() }
-        .autoplay(ctx.isPreview, every: 3.2, delay: 0.1) { replay() }
+        // The detail stage strokes once in onAppear, so no intro play restarting it mid-sweep.
+        .autoplay(ctx.isPreview, every: 3.2, delay: 0.1, intro: false) { replay() }
         .onAppear {
             if !ctx.isPreview { replay() }
         }

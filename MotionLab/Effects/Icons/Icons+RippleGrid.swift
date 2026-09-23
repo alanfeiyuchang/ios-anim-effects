@@ -12,8 +12,8 @@ extension Effect {
             "4×4的彩色分层SF Symbol画廊，每个图标置于柔和的淡色方块上。点击任意方块，一圈涟漪便在矩阵中扩散：每个符号按与起点的距离延迟触发一次离散动效（弹跳、摇摆或旋转，约每格70毫秒），同时所在方块的底色短暂提亮并缩放到108%再回落。波前呈一个干净的圆形向外扩张，约0.3秒即可扫过整个矩阵，像一颗石子落入由图标组成的池塘，起点处伴随一次轻触感。俏皮、编排精致、充满系统感。"
         ),
         implementation: L(
-            "Each cell owns a trigger counter incremented by a delayed Task (distance × stagger); the symbol uses .symbolEffect(_:value:) and the tile pulse is a keyframeAnimator on the same trigger.",
-            "每个单元持有一个触发计数，由按（距离 × 错开）延迟的 Task 递增；符号使用 .symbolEffect(_:value:)，方块脉冲是绑定同一触发器的 keyframeAnimator。"
+            "Each cell owns a trigger counter; one stored Task per wave walks the cells sorted by distance and increments each after distance × stagger; the symbol uses .symbolEffect(_:value:) and the tile pulse is a keyframeAnimator on the same trigger.",
+            "每个单元持有一个触发计数；每道波纹由一个保存的 Task 按距离排序依次在（距离 × 错开）时刻递增；符号使用 .symbolEffect(_:value:)，方块脉冲是绑定同一触发器的 keyframeAnimator。"
         ),
         apis: ["symbolEffect(_:options:value:)", "keyframeAnimator", "LazyVGrid", "Task.sleep(for:)"],
         tags: ["ripple", "grid", "wave", "stagger", "sf symbols", "涟漪", "矩阵", "波纹", "错开"],
@@ -29,6 +29,9 @@ extension Effect {
 private struct RippleGridDemo: View {
     let ctx: DemoContext
     @State private var triggers = Array(repeating: 0, count: 16)
+    /// The running wave: one Task walks the cells in distance order. A new tap replaces it
+    /// (its wavefront re-covers the grid anyway), and leaving the screen cancels it.
+    @State private var wave: Task<Void, Never>?
 
     private let symbols = [
         "heart.fill", "star.fill", "bolt.fill", "flame.fill",
@@ -54,6 +57,10 @@ private struct RippleGridDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8, delay: 0.3) { ripple(from: Int.random(in: 0..<16)) }
+        .onDisappear {
+            wave?.cancel()
+            wave = nil
+        }
     }
 
     private func ripple(from origin: Int) {
@@ -61,13 +68,22 @@ private struct RippleGridDemo: View {
         let ox = Double(origin % 4)
         let oy = Double(origin / 4)
         if !ctx.isPreview { Haptics.tap(.light) }
-        for i in 0..<16 {
+        let schedule: [(cell: Int, delay: Double)] = (0..<16).map { i in
             let dx = Double(i % 4) - ox
             let dy = Double(i / 4) - oy
-            let delay = (dx * dx + dy * dy).squareRoot() * stagger
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(delay))
-                triggers[i] += 1
+            return (i, (dx * dx + dy * dy).squareRoot() * stagger)
+        }.sorted { $0.delay < $1.delay }
+        wave?.cancel()
+        wave = Task { @MainActor in
+            var elapsed: Double = 0
+            for step in schedule {
+                let wait = step.delay - elapsed
+                if wait > 0.001 {
+                    try? await Task.sleep(for: .seconds(wait))
+                    elapsed = step.delay
+                }
+                guard !Task.isCancelled else { return }
+                triggers[step.cell] += 1
             }
         }
     }

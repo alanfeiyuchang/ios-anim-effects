@@ -149,6 +149,8 @@ private struct VerletRopeDemo: View {
     @State private var isHeld = false
     @State private var awake = true
     @State private var sleepWatcher: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the charm pinned to a ghost finger.
+    @GestureState private var pressing = false
 
     var body: some View {
         let length = ctx.cg("length")
@@ -178,6 +180,11 @@ private struct VerletRopeDemo: View {
         .onDisappear { sleepWatcher?.cancel() }
         .onChange(of: length) { wake() }
         .onChange(of: gravity) { wake() }
+        .onChange(of: iterations) { wake() }
+        .onChange(of: pressing) { _, isPressing in
+            // System cancellation (no onEnded): let go with no fling.
+            if !isPressing { letGo(velocity: .zero) }
+        }
     }
 
     /// Runs the timeline while the cord moves; a watcher pauses it once it hangs still.
@@ -197,6 +204,7 @@ private struct VerletRopeDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if grabOffset == nil {
                     let center = charmCenter
@@ -212,13 +220,16 @@ private struct VerletRopeDemo: View {
                 guard let offset = grabOffset else { return }
                 model.grab = CGPoint(x: value.location.x - offset.width, y: value.location.y - offset.height)
             }
-            .onEnded { value in
-                guard grabOffset != nil else { return }
-                grabOffset = nil
-                model.release(velocity: value.velocity)
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isHeld = false }
-                if !ctx.isPreview { Haptics.tap(.soft) }
-            }
+            .onEnded { value in letGo(velocity: value.velocity) }
+    }
+
+    /// Single, guarded release (lift hands over the finger's velocity; cancellation passes zero).
+    private func letGo(velocity: CGSize) {
+        guard grabOffset != nil else { return }
+        grabOffset = nil
+        model.release(velocity: velocity)
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isHeld = false }
+        if !ctx.isPreview { Haptics.tap(.soft) }
     }
 
     private var charmCenter: CGPoint {

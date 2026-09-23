@@ -33,6 +33,14 @@ private struct NotchSlideDemo: View {
     @State private var raw: CGFloat = 0
     @State private var done = false
     @State private var passed = 0
+    /// The scripted (preview / intro) slide, cancelled on the first real touch and on disappear.
+    @State private var script: Task<Void, Never>?
+    /// The delayed un-commit after a completed slide.
+    @State private var resetTask: Task<Void, Never>?
+    /// True while a real finger holds the knob.
+    @State private var held = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the knob mid-track.
+    @GestureState private var pressing = false
 
     private let trackWidth: CGFloat = 290
     private let knob: CGFloat = 56
@@ -55,6 +63,10 @@ private struct NotchSlideDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 3.6, delay: 0.6) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { settleNow() }
     }
 
     private func labels(active: Int) -> some View {
@@ -132,8 +144,15 @@ private struct NotchSlideDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 guard !done else { return }
+                if !held {
+                    // The first real touch takes over from a scripted slide.
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 let t = value.translation.width
                 if t < 0 {
                     raw = rubberBand(t, limit: 16)
@@ -146,14 +165,35 @@ private struct NotchSlideDemo: View {
                 if now > passed && !ctx.isPreview { Haptics.tap(.rigid) }
                 passed = now
             }
-            .onEnded { _ in
-                guard !done else { return }
-                if raw >= maxX * 0.97 {
-                    commit(haptic: true)
-                } else {
-                    reset()
-                }
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Single, guarded end of a real drag (lift or system cancellation).
+    private func endHold() {
+        guard held else { return }
+        held = false
+        guard !done else { return }
+        if raw >= maxX * 0.97 {
+            commit(haptic: true)
+        } else {
+            reset()
+        }
+    }
+
+    /// Leaving the screen: stop every sequence and put the slider back at rest.
+    private func settleNow() {
+        script?.cancel()
+        script = nil
+        resetTask?.cancel()
+        resetTask = nil
+        held = false
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            raw = 0
+            done = false
+        }
+        passed = 0
     }
 
     private func commit(haptic: Bool) {
@@ -163,8 +203,10 @@ private struct NotchSlideDemo: View {
         }
         passed = 4
         if haptic && !ctx.isPreview { Haptics.success() }
-        Task { @MainActor in
+        resetTask?.cancel()
+        resetTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.8))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { done = false }
             reset()
         }
@@ -176,11 +218,13 @@ private struct NotchSlideDemo: View {
     }
 
     private func simulate() {
-        guard !done else { return }
-        Task { @MainActor in
+        guard !done && !held else { return }
+        script?.cancel()
+        script = Task { @MainActor in
             for k in 1...4 {
                 withAnimation(.easeInOut(duration: 0.32)) { raw = notch(k) + (k < 4 ? 4 : 0) }
                 try? await Task.sleep(for: .seconds(0.4))
+                guard !Task.isCancelled else { return }
             }
             commit(haptic: false)
         }

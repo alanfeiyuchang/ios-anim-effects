@@ -12,10 +12,10 @@ extension Effect {
             "舞台上是一段衬线体的编辑感引文，关键短语由一支手绘感的荧光笔从左到右在文字后方扫过来强调。笔触是一条略微倾斜（−1.5°）的圆角色带，覆盖行高的下半部分左右，以缓入缓出曲线在约0.7秒内沿水平方向从0伸展到100%；第二个短语在前一笔完成80%时接力开始，引导视线像读者现场划重点一样读完整句。变体可换成粗下划线或手绘方框描边。富有人情味、温暖且有明确意图。"
         ),
         implementation: L(
-            "Each phrase has a background shape scaled on X from the leading anchor (or a trimmed rounded-rect stroke for the box style); two progress states animate with staggered delays.",
-            "每个短语都有一个背景形状，以前缘为锚点沿 X 轴缩放（方框样式则为 trim 的圆角矩形描边）；两个进度状态以错开的延迟分别动画。"
+            "Each phrase has a background shape scaled on X from the leading anchor (or a trimmed rounded-rect stroke for the box style); two progress states animate from one stored Task that starts the second stroke at 80% of the first and restarts on each tap.",
+            "每个短语都有一个背景形状，以前缘为锚点沿 X 轴缩放（方框样式则为 trim 的圆角矩形描边）；两个进度状态由一个保存的 Task 依次驱动，第一笔完成80%时开始第二笔，每次点击都会重新开始。"
         ),
-        apis: ["scaleEffect(x:y:anchor:)", "trim(from:to:)", "rotationEffect", "Animation.delay"],
+        apis: ["scaleEffect(x:y:anchor:)", "trim(from:to:)", "rotationEffect", "Task.sleep(for:)"],
         tags: ["highlight", "marker", "underline", "emphasis", "荧光笔", "高亮", "划重点", "下划线"],
         params: [
             .slider("duration", L("Stroke duration", "笔触时长"), 0.3...1.5, default: 0.7, unit: "s"),
@@ -31,6 +31,8 @@ private struct HighlighterDemo: View {
     let ctx: DemoContext
     @State private var first: CGFloat
     @State private var second: CGFloat
+    /// The running stroke sequence: a new tap replaces it, leaving the screen cancels it.
+    @State private var sequence: Task<Void, Never>?
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -72,18 +74,27 @@ private struct HighlighterDemo: View {
         .onAppear {
             if !ctx.isPreview { replay() }
         }
+        .onDisappear {
+            sequence?.cancel()
+            sequence = nil
+        }
     }
 
     private func replay() {
         let duration = ctx["duration"]
-        Task { @MainActor in
+        // One sequence at a time: overlapping taps restart it instead of racing each other.
+        sequence?.cancel()
+        sequence = Task { @MainActor in
             withAnimation(.easeOut(duration: 0.25)) {
                 first = 0
                 second = 0
             }
             try? await Task.sleep(for: .seconds(0.35))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeInOut(duration: duration)) { first = 1 }
-            withAnimation(.easeInOut(duration: duration).delay(duration * 0.8)) { second = 1 }
+            try? await Task.sleep(for: .seconds(duration * 0.8))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: duration)) { second = 1 }
         }
     }
 }

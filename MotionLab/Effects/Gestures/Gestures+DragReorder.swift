@@ -48,6 +48,10 @@ private struct DragReorderDemo: View {
     @State private var dragFrom = 0
     @State private var dragY: CGFloat = 0
     @State private var target = 0
+    /// The scripted (preview / intro) drag, cancelled on the first real touch and on disappear.
+    @State private var script: Task<Void, Never>?
+    /// True while a real finger holds a handle.
+    @State private var held = false
 
     private let rowHeight: CGFloat = 50
     private let spacing: CGFloat = 8
@@ -62,8 +66,8 @@ private struct DragReorderDemo: View {
                         language: ctx.language,
                         isLifted: draggingID == item.id,
                         lift: ctx.cg("lift"),
-                        onChanged: { dy in changed(id: item.id, index: index, dy: dy) },
-                        onEnded: { ended() }
+                        onChanged: { dy in userChanged(id: item.id, dy: dy) },
+                        onEnded: { userEnded() }
                     )
                     .frame(height: rowHeight)
                     .offset(y: rowOffset(index: index, id: item.id))
@@ -75,6 +79,7 @@ private struct DragReorderDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.2, delay: 0.4) { autoDrag() }
+        .onDisappear { settleNow() }
     }
 
     private func rowOffset(index: Int, id: Int) -> CGFloat {
@@ -83,6 +88,41 @@ private struct DragReorderDemo: View {
         if dragFrom < index && index <= target { return -slot }
         if target <= index && index < dragFrom { return slot }
         return 0
+    }
+
+    /// A real finger: the first event takes over from a scripted drag (landing it at once), then drives the row.
+    private func userChanged(id: Int, dy: CGFloat) {
+        if !held {
+            held = true
+            if script != nil {
+                script?.cancel()
+                script = nil
+                ended()
+            }
+        }
+        guard draggingID == nil || draggingID == id else { return }
+        guard let index = order.firstIndex(where: { $0.id == id }) else { return }
+        changed(id: id, index: index, dy: dy)
+    }
+
+    /// Single, guarded end of a real drag (lift or system cancellation).
+    private func userEnded() {
+        guard held else { return }
+        held = false
+        ended()
+    }
+
+    /// Leaving the screen: stop the script and drop any lifted row back without reordering.
+    private func settleNow() {
+        script?.cancel()
+        script = nil
+        held = false
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            draggingID = nil
+            dragY = 0
+        }
     }
 
     private func changed(id: Int, index: Int, dy: CGFloat) {
@@ -114,7 +154,7 @@ private struct DragReorderDemo: View {
     }
 
     private func autoDrag() {
-        guard order.count > 1 else { return }
+        guard order.count > 1, !held, draggingID == nil else { return }
         let from = Int.random(in: 0..<order.count)
         var to = Int.random(in: 0..<order.count)
         if to == from { to = (from + 2) % order.count }
@@ -125,8 +165,11 @@ private struct DragReorderDemo: View {
             dragY = distance
             target = to
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.8))
+            guard !Task.isCancelled else { return }
+            script = nil
             ended()
         }
     }
@@ -139,6 +182,8 @@ private struct ReorderRow: View {
     let lift: CGFloat
     let onChanged: (CGFloat) -> Void
     let onEnded: () -> Void
+    /// Resets on system cancellation too, so a stolen touch still drops the row (the demo guards double ends).
+    @GestureState private var pressing = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -171,8 +216,12 @@ private struct ReorderRow: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                    .updating($pressing) { _, state, _ in state = true }
                     .onChanged { value in onChanged(value.translation.height) }
                     .onEnded { _ in onEnded() }
             )
+            .onChange(of: pressing) { _, isPressing in
+                if !isPressing { onEnded() }
+            }
     }
 }

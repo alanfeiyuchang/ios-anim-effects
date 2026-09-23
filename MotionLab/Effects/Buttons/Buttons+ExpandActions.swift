@@ -82,10 +82,7 @@ private struct ButtonExpandActionsDemo: View {
         let target = position(for: index)
         let stagger = ctx["stagger"]
         let delay = open ? Double(index) * stagger : Double(items.count - 1 - index) * stagger
-        return Button {
-            if !ctx.isPreview { Haptics.tap() }
-            toggle()
-        } label: {
+        return Button(action: toggle) {
             Image(systemName: item.symbol)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)

@@ -42,6 +42,8 @@ private struct MiniPlayerDemo: View {
     @State private var playing = true
     @State private var dragY: CGFloat = 0
     @State private var previewStep = 0
+    /// Resets on system cancellation too, so a cancelled pull-down never leaves the player hanging offset.
+    @GestureState private var dragging = false
 
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
 
@@ -57,6 +59,9 @@ private struct MiniPlayerDemo: View {
                     .offset(y: dragY)
                     .gesture(dismissDrag)
                     .padding(10)
+                    .onChange(of: dragging) { _, active in
+                        if !active && dragY != 0 { withAnimation(spring) { dragY = 0 } }
+                    }
             } else {
                 MiniBar(ns: ns, playing: playing, language: ctx.language, onPlay: togglePlay, onExpand: expand)
                     .padding(12)
@@ -78,6 +83,7 @@ private struct MiniPlayerDemo: View {
 
     private var dismissDrag: some Gesture {
         DragGesture()
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 let t = value.translation.height
                 dragY = t > 0 ? t : rubberBand(t, limit: 20)

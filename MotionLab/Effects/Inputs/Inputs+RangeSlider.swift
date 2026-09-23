@@ -42,6 +42,8 @@ private struct InputRangeSliderDemo: View {
     @State private var active: InputRangeThumb?
     @State private var pinned = false
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let width: CGFloat = 264
     private static let maxPrice = 500.0
@@ -155,6 +157,9 @@ private struct InputRangeSliderDemo: View {
         .frame(width: width, height: 28)
         .contentShape(Rectangle())
         .gesture(drag)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endDrag() }
+        }
     }
 
     /// Keeps the two 52 pt bubbles apart and inside the track.
@@ -201,6 +206,7 @@ private struct InputRangeSliderDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { gesture in
                 let v = Double(gesture.location.x / width).clamped(to: 0...1)
                 if let thumb = active {
@@ -214,10 +220,14 @@ private struct InputRangeSliderDemo: View {
                     move(pick, to: v, animated: abs(v - current) * Double(width) > 14)
                 }
             }
-            .onEnded { _ in
-                active = nil
-                pinned = false
-            }
+            .onEnded { _ in endDrag() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger.
+    private func endDrag() {
+        guard active != nil || pinned else { return }
+        active = nil
+        pinned = false
     }
 
     private func move(_ thumb: InputRangeThumb, to value: Double, animated: Bool) {

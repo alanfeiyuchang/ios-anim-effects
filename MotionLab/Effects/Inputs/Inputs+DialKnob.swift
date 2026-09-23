@@ -38,6 +38,8 @@ private struct InputDialKnobDemo: View {
     @State private var atStop = false
     @State private var lastRaw: Double?
     @State private var step = 0
+    /// Resets on system cancellation too (Control Center pull, incoming call), so a cancelled touch still releases.
+    @GestureState private var touching = false
 
     private let knobSize: CGFloat = 170
     private let padSize: CGFloat = 250
@@ -94,6 +96,9 @@ private struct InputDialKnobDemo: View {
         .frame(width: padSize, height: padSize)
         .contentShape(Circle())
         .gesture(dragGesture)
+        .onChange(of: touching) { _, isTouching in
+            if !isTouching { endTurn() }
+        }
     }
 
     private var ticks: some View {
@@ -147,6 +152,7 @@ private struct InputDialKnobDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { value in
                 let center = padSize / 2
                 let dx = Double(value.location.x - center)
@@ -165,11 +171,15 @@ private struct InputDialKnobDemo: View {
                     index = newIndex
                 }
             }
-            .onEnded { _ in
-                lastRaw = nil
-                atStop = false
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.5)) { overshoot = 0 }
-            }
+            .onEnded { _ in endTurn() }
+    }
+
+    /// Single cleanup for a lifted or cancelled finger: the indicator springs back off the end stop.
+    private func endTurn() {
+        guard lastRaw != nil || atStop || overshoot != 0 else { return }
+        lastRaw = nil
+        atStop = false
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.5)) { overshoot = 0 }
     }
 
     /// Past either end the indicator follows with rubber-band resistance and a rigid haptic marks the stop.

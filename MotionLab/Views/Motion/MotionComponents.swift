@@ -59,7 +59,8 @@ struct GlyphBlurRenderer: TextRenderer {
 
 // MARK: - Living mesh hero
 
-/// Slowly drifting 3×3 mesh gradient in the brand hues, used behind the Browse header.
+/// Slowly drifting 3×3 mesh gradient in the brand's ember hues, used behind the Browse header:
+/// warm amber/peach light on the grouped page in light mode, glowing embers over near-black ink in dark.
 /// Ticks at 30 fps and freezes completely whenever `isAnimating` is false
 /// (off-screen, another tab, app inactive, Reduce Motion).
 struct HeroMeshBackground: View {
@@ -77,15 +78,16 @@ struct HeroMeshBackground: View {
     }
 
     private static let lightColors: [Color] = [
-        Color(hex: 0xB9C1FF), Color(hex: 0xD9C6FF), Color(hex: 0xFFC6DF),
-        Color(hex: 0xC6E4FF), Color(hex: 0xE6E0FF), Color(hex: 0xFFD9C9),
-        Color(hex: 0xEEEEF8), Color(hex: 0xF0ECFA), Color(hex: 0xF2F2F7),
+        Color(hex: 0xFFC79E), Color(hex: 0xFFDDBB), Color(hex: 0xFFBFA8),
+        Color(hex: 0xFFE6CF), Color(hex: 0xFFF0E2), Color(hex: 0xFFD6C4),
+        Color(hex: 0xF2F2F7), Color(hex: 0xF4F1F0), Color(hex: 0xF2F2F7),
     ]
 
+    /// The bottom row matches the dark page ink (#0B0B0D), so the fade below the header is seamless.
     private static let darkColors: [Color] = [
-        Color(hex: 0x1D2270), Color(hex: 0x3B1E78), Color(hex: 0x5A1B4E),
-        Color(hex: 0x0E3160), Color(hex: 0x241C58), Color(hex: 0x4A2240),
-        Color(hex: 0x05050C), Color(hex: 0x08060F), Color(hex: 0x000000),
+        Color(hex: 0x6A2A08), Color(hex: 0x8C3A0C), Color(hex: 0x4E1A12),
+        Color(hex: 0x2E1206), Color(hex: 0x5C260A), Color(hex: 0x24100E),
+        Color(hex: 0x0B0B0D), Color(hex: 0x0D0B0C), Color(hex: 0x0B0B0D),
     ]
 
     /// Corners stay pinned; edge midpoints glide and the centre wanders on slow,
@@ -122,7 +124,7 @@ private struct BurstFrame {
 struct BurstParticles: View {
     let trigger: Int
     var radius: CGFloat = 20
-    var colors: [Color] = [Palette.pink, Palette.amber, Palette.violet]
+    var colors: [Color] = [Palette.pink, Palette.amber, Palette.ember]
 
     var body: some View {
         KeyframeAnimator(initialValue: BurstFrame(), trigger: trigger) { frame in
@@ -222,17 +224,17 @@ struct ShimmerCapsuleButton: View {
                 }
             }
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(Palette.onAccent)
             .padding(.horizontal, 20)
             .padding(.vertical, 11)
-            .background(Palette.primaryStrong, in: Capsule())
+            .background(Palette.accentFill, in: Capsule())
             .overlay {
                 if !reduceMotion {
                     ShimmerSweep()
                         .clipShape(Capsule())
                 }
             }
-            .shadow(color: Palette.indigo.opacity(0.3), radius: 10, y: 5)
+            .shadow(color: Palette.accentGlow, radius: 10, y: 5)
             .contentShape(Capsule())
         }
         .buttonStyle(PressableCardStyle())

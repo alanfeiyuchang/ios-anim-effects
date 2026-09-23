@@ -21,7 +21,7 @@ enum LaunchIntro {
     static var shouldPlay: Bool { isEligible && !didFinish }
 }
 
-/// ~1.15 s cold-start intro: the app icon's three orbs pop in along their diagonal trail, gather and
+/// ~1.15 s cold-start intro: three ember orbs pop in along a diagonal trail, gather and
 /// melt into one (metaball), then the merged orb blooms into a ring that opens a circular window onto
 /// the app underneath. Tap anywhere to skip.
 struct LaunchIntroView: View {
@@ -92,7 +92,7 @@ private struct IntroCanvas: View {
             let size = proxy.size
             let state = IntroState(time: time, size: size)
             ZStack {
-                Color(uiColor: .systemBackground)
+                IntroPalette.backdrop
                 if state.isMerging {
                     IntroOrbCluster(orbs: state.orbs, screen: size)
                 } else {
@@ -109,8 +109,8 @@ private struct IntroCanvas: View {
     }
 }
 
-/// Three orbs rendered as one gooey metaball (blur + alpha threshold), filled with the brand gradient
-/// and a white core like the app icon's leading orb.
+/// Three orbs rendered as one gooey metaball (blur + alpha threshold), filled with the ember gradient
+/// and a white-hot core.
 private struct IntroOrbCluster: View {
     let orbs: [IntroState.Orb]
     let screen: CGSize
@@ -262,15 +262,19 @@ private enum IntroEase {
 }
 
 private enum IntroPalette {
-    /// The app icon's backdrop: deep indigo → indigo → violet → pink.
+    /// The shell's ember palette: deep ember → hot orange → orange → amber → pale gold.
     static let stops: [Gradient.Stop] = [
-        Gradient.Stop(color: Color(hex: 0x2B2378), location: 0),
-        Gradient.Stop(color: Color(hex: 0x4F5BE0), location: 0.42),
-        Gradient.Stop(color: Color(hex: 0x6E7BFF), location: 0.58),
-        Gradient.Stop(color: Color(hex: 0xA46BFF), location: 0.8),
-        Gradient.Stop(color: Color(hex: 0xFF5FA2), location: 1),
+        Gradient.Stop(color: Color(hex: 0x3A1204), location: 0),
+        Gradient.Stop(color: Color(hex: 0xD2410F), location: 0.4),
+        Gradient.Stop(color: Color(hex: 0xFF5E3A), location: 0.52),
+        Gradient.Stop(color: Color(hex: 0xFF7A1A), location: 0.66),
+        Gradient.Stop(color: Color(hex: 0xFFB45C), location: 0.84),
+        Gradient.Stop(color: Color(hex: 0xFFE2AE), location: 1),
     ]
-    static let glow = Color(hex: 0x7B6BFF, opacity: 0.55)
+    static let glow = Color(hex: 0xFF6A1A, opacity: 0.55)
+    /// Near-black ink in dark mode (the dark page colour), the system background in light mode
+    /// (which matches the generated launch screen, so the hand-off never flashes).
+    static let backdrop = Color.adaptive(light: 0xFFFFFF, dark: 0x0B0B0D)
 
     /// The full-screen diagonal gradient expressed in the unit space of a `frame`-sized square centred
     /// on screen, so the orbs, the bloom and the ring all sample the same colours as they grow.

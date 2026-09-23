@@ -54,6 +54,10 @@ private struct ZoomSheetDemo: View {
                     .offset(y: dragY)
                     .gesture(dismissDrag)
                     .onAppear { showContent = true }
+                    .onChange(of: dragging) { _, active in
+                        // System cancellation skips onEnded: settle the half-dragged sheet back into place.
+                        if !active && dragY != 0 { withAnimation(spring) { dragY = 0 } }
+                    }
             } else {
                 shareButton
             }
@@ -102,6 +106,7 @@ private struct ZoomSheetDemo: View {
 
     private var dismissDrag: some Gesture {
         DragGesture()
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 let t = value.translation.height
                 dragY = t > 0 ? t : rubberBand(t, limit: 24)

@@ -33,6 +33,7 @@ struct FavoritesView: View {
                 .transition(.opacity)
             }
         }
+        .shellPageScroll()
         .animation(.smooth(duration: 0.4), value: favorites.ids)
         .background(Palette.pageBackground)
         .navigationTitle(Strings.favorites(language))
@@ -83,7 +84,7 @@ private struct FloatingHeartArt: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Palette.pink.opacity(0.24), Palette.violet.opacity(0.08), .clear],
+                        colors: [Palette.pink.opacity(0.24), Palette.ember.opacity(0.1), .clear],
                         center: .center,
                         startRadius: 0,
                         endRadius: 72
@@ -92,13 +93,13 @@ private struct FloatingHeartArt: View {
                 .frame(width: 150, height: 150)
                 .modifier(FloatingModifier(active: animated, amplitude: 2, duration: 3.2))
             accent("sparkle", size: 18, color: Palette.amber, x: -54, y: -30, duration: 2.1)
-            accent("heart.fill", size: 13, color: Palette.violet, x: 56, y: -36, duration: 2.7)
+            accent("heart.fill", size: 13, color: Palette.ember, x: 56, y: -36, duration: 2.7)
             accent("sparkle", size: 11, color: Palette.sky, x: 50, y: 34, duration: 2.4)
             accent("circle.fill", size: 6, color: Palette.pink, x: -46, y: 36, duration: 1.9)
             Image(systemName: "heart.fill")
                 .font(.system(size: 62, weight: .semibold))
                 .foregroundStyle(
-                    LinearGradient(colors: [Palette.pink, Palette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    LinearGradient(colors: [Palette.pink, Palette.emberHot], startPoint: .topLeading, endPoint: .bottomTrailing)
                 )
                 .symbolEffect(.breathe, isActive: animated)
                 .shadow(color: Palette.pink.opacity(0.35), radius: 16, y: 8)

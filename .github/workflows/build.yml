@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            name: Xcode 16
+          - runner: macos-26
+            name: Xcode 26
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        run: |
+          LATEST=$(ls -d /Applications/Xcode_*.app | grep -v beta | sort -V | tail -n 1)
+          echo "Using $LATEST"
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+
+      - name: Build for iOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project MotionLab.xcodeproj \
+            -scheme MotionLab \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build > build.log 2>&1 || {
+              echo "::group::Compiler errors"
+              grep -E "error:" build.log | sort -u | head -n 200
+              echo "::endgroup::"
+              tail -n 60 build.log
+              exit 1
+            }
+          grep -E "warning:" build.log | sort -u | head -n 100 || true
+          echo "Build succeeded"

@@ -9,7 +9,7 @@ and a professional **prompt** (written separately in English and Chinese) that d
 
 ## Features · 功能
 
-- **196 effects in 15 categories · 15 个分类共 196 个动效**: Signature Interactions (dark premium widget cards · 质感交互精选), Buttons, Inputs & Controls, Loading & Progress, Feedback & Alerts,
+- **249 effects in 15 categories · 15 个分类共 249 个动效**: Signature Interactions (dark premium widget cards · 质感交互精选), Buttons, Inputs & Controls, Loading & Progress, Feedback & Alerts,
   Transitions & Morphing, Navigation & Menus, Cards, Scroll & Lists, Text & Numbers, Icons & Symbols,
   Gestures & Physics, Data & Charts, Backgrounds & Ambience, Shaders & Materials.
 - **Live previews · 实时预览**: every card in a grid plays its own animation. Tap-driven demos autoplay in thumbnails.

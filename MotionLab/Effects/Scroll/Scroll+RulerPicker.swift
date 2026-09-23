@@ -69,16 +69,8 @@ private struct ScrollRulerDemo: View {
         return ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
                 ForEach(0..<count, id: \.self) { i in
-                    ScrollRulerTick(value: scrollRulerMin + i)
+                    ScrollRulerTick(value: scrollRulerMin + i, viewport: viewport, swell: swell, lens: lens)
                         .frame(width: stride, height: 96, alignment: .bottom)
-                        .visualEffect { content, proxy in
-                            let mid: CGFloat = proxy.frame(in: .scrollView).midX
-                            let t: CGFloat = min(abs(mid - viewport / 2) / lens, 1)
-                            let grow: CGFloat = 1 + (swell - 1) * (1 - t)
-                            return content
-                                .scaleEffect(x: 1, y: grow, anchor: .bottom)
-                                .opacity(0.35 + 0.65 * Double(1 - t))
-                        }
                 }
             }
             .padding(.horizontal, max((width - stride) / 2, 0))
@@ -128,21 +120,41 @@ private struct ScrollRulerDemo: View {
     }
 }
 
+/// One tick: the bar swells near the center needle, the label (every 5 kg) only fades so its digits never stretch.
 private struct ScrollRulerTick: View {
     let value: Int
+    let viewport: CGFloat
+    let swell: CGFloat
+    let lens: CGFloat
 
     var body: some View {
         let major = value % 5 == 0
+        let viewport = self.viewport
+        let swell = self.swell
+        let lens = self.lens
         VStack(spacing: 6) {
             if major {
                 Text(verbatim: "\(value)")
                     .font(.system(size: 10, weight: .semibold).monospacedDigit())
                     .foregroundStyle(.secondary)
                     .fixedSize()
+                    .visualEffect { content, proxy in
+                        let mid: CGFloat = proxy.frame(in: .scrollView).midX
+                        let t: CGFloat = min(abs(mid - viewport / 2) / lens, 1)
+                        return content.opacity(0.35 + 0.65 * Double(1 - t))
+                    }
             }
             Capsule()
                 .fill(Color.primary.opacity(major ? 0.7 : 0.35))
                 .frame(width: major ? 2 : 1.5, height: major ? 34 : 20)
+                .visualEffect { content, proxy in
+                    let mid: CGFloat = proxy.frame(in: .scrollView).midX
+                    let t: CGFloat = min(abs(mid - viewport / 2) / lens, 1)
+                    let grow: CGFloat = 1 + (swell - 1) * (1 - t)
+                    return content
+                        .scaleEffect(x: 1, y: grow, anchor: .bottom)
+                        .opacity(0.35 + 0.65 * Double(1 - t))
+                }
         }
     }
 }

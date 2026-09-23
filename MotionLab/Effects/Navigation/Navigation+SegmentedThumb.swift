@@ -38,6 +38,7 @@ private struct SegmentedThumbDemo: View {
     @State private var selected = 0
     @State private var dragX: CGFloat?
     @State private var hovered = 0
+    @State private var token = 0
 
     private let width: CGFloat = 300
     private let inset: CGFloat = 4
@@ -61,7 +62,7 @@ private struct SegmentedThumbDemo: View {
             DemoHint(text: L("Tap or drag the thumb", "点击或拖动滑块"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 1.3) { select((selected + 1) % segmentTitles.count) }
+        .autoplay(ctx.isPreview, every: 1.6) { simulateDrag() }
     }
 
     private var control: some View {
@@ -104,6 +105,7 @@ private struct SegmentedThumbDemo: View {
             .onChanged { value in
                 let x = (value.location.x - inset - segmentWidth / 2).clamped(to: 0...maxX)
                 if dragX == nil {
+                    token += 1 // a real finger cancels a simulated drag
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { dragX = x }
                 } else {
                     withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.86)) { dragX = x }
@@ -122,6 +124,33 @@ private struct SegmentedThumbDemo: View {
                     dragX = nil
                 }
             }
+    }
+
+    /// Autoplay stand-in for a finger: pick the thumb up, drag it slowly across one segment
+    /// (showing the squish and the mid-glyph re-ink), then release. Wraps back to Day with a tap.
+    private func simulateDrag() {
+        let next: Int = (selected + 1) % segmentTitles.count
+        guard next != 0 else {
+            select(0)
+            return
+        }
+        let from: CGFloat = CGFloat(selected) * segmentWidth
+        let to: CGFloat = CGFloat(next) * segmentWidth
+        token += 1
+        let current = token
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { dragX = from }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.2))
+            guard token == current else { return }
+            withAnimation(.easeInOut(duration: 0.6)) { dragX = to }
+            try? await Task.sleep(for: .seconds(0.7))
+            guard token == current else { return }
+            hovered = next
+            withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+                selected = next
+                dragX = nil
+            }
+        }
     }
 
     private func select(_ index: Int) {

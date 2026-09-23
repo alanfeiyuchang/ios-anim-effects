@@ -7,21 +7,21 @@ extension Effect {
         interaction: .tap,
         name: L("Inline Field Validation", "输入框即时校验"),
         summary: L(
-            "An email field that shakes and slides out a hint when wrong, then pops a green check when right.",
-            "邮箱输入框出错时抖动并滑出提示，填对后弹出绿色对勾。"
+            "An email field that dips and pulses red with a sliding hint when wrong, then pops a green check when right.",
+            "邮箱输入框出错时轻轻下沉、红框脉动并滑出提示，填对后弹出绿色对勾。"
         ),
         prompt: L(
-            "A sign-up card with an 'Email' label, a 52 pt rounded field and a Continue button. An invalid submit shakes the field −14 → +11 → −7 → +3 → 0 pt over ~330 ms, turns its 1.5 pt border and glyph red, pops a red exclamation in from 40% scale and slides a red 'Enter a valid email address' message 8 pt down from under the field on a spring (response 0.4 s, damping 0.8) as the card grows; an error haptic fires. Editing retracts it. A valid submit turns the border green, springs in a green check with slight overshoot and swaps the message to 'Looks good' with a success haptic. With live validation on, later keystrokes update the state without shaking. Clear, corrective, never scolding.",
-            "注册卡片上是“邮箱”标签、52 pt 圆角输入框和“继续”按钮。提交无效地址，输入框在约 330 毫秒内按 −14 → +11 → −7 → +3 → 0 pt 摇头，1.5 pt 描边和图标转红，红色感叹号从 40% 弹入；一行红字“请输入有效的邮箱地址”以弹簧（响应 0.4 秒、阻尼 0.8）从框下滑出 8 pt，卡片随之长高，伴随错误触感。一旦修改，提示即刻收回。地址有效时描边变绿，绿色对勾带点过冲弹入，提示换成“看起来不错”，伴随成功触感。开启即时校验后，之后每次输入都实时更新，不再摇动。纠错清楚，语气从不责备。"
+            "A sign-up card with an 'Email' label, a 52 pt rounded field and a Continue button. An invalid submit dips the field 4 pt and springs it back while its border, now red with the glyph, pulses 1.5 → 3 → 1.5 pt over ~400 ms under a fading 12 pt red glow; pops a red exclamation in from 40% scale and slides a red 'Enter a valid email address' message 8 pt down from under the field on a spring (response 0.4 s, damping 0.8) as the card grows; an error haptic fires. Editing retracts it. A valid submit turns the border green, springs in a green check with slight overshoot and swaps the message to 'Looks good' with a success haptic. With live validation on, later keystrokes update the state without pulsing. Clear, corrective, never scolding.",
+            "注册卡片上是“邮箱”标签、52 pt 圆角输入框和“继续”按钮。提交无效地址，输入框下沉 4 pt 再弹回，描边与图标转红，描边约 400 毫秒内 1.5 → 3 → 1.5 pt 脉动并泛起渐隐红光；红色感叹号从 40% 弹入；一行红字“请输入有效的邮箱地址”以弹簧（响应 0.4 秒、阻尼 0.8）从框下滑出 8 pt，卡片随之长高，伴随错误触感。一旦修改，提示即刻收回。地址有效时描边变绿，绿色对勾带点过冲弹入，提示换成“看起来不错”，伴随成功触感。开启即时校验后，每次输入实时更新，不再脉动。纠错清楚，从不责备。"
         ),
         implementation: L(
-            "A three-state enum drives the border color, the trailing status symbol (inserted with a scale + opacity transition) and a message row inserted below the field with an offset + opacity transition; a keyframeAnimator keyed on a failed-attempt counter plays the shake. A custom Binding resets or re-validates the state as the user types.",
-            "三态枚举驱动描边颜色、尾部状态图标（缩放加淡入转场插入）以及输入框下方以位移加淡入转场插入的提示行；以失败次数为触发器的 keyframeAnimator 播放抖动。自定义 Binding 在用户输入时重置或实时重新校验状态。"
+            "A three-state enum drives the border color, the trailing status symbol (inserted with a scale + opacity transition) and a message row inserted below the field with an offset + opacity transition; a keyframeAnimator keyed on a failed-attempt counter plays the dip, the border pulse and the glow. A custom Binding resets or re-validates the state as the user types.",
+            "三态枚举驱动描边颜色、尾部状态图标（缩放加淡入转场插入）以及输入框下方以位移加淡入转场插入的提示行；以失败次数为触发器的 keyframeAnimator 播放下沉、描边脉动与光晕。自定义 Binding 在用户输入时重置或实时重新校验状态。"
         ),
         apis: ["TextField", "keyframeAnimator", "transition(.offset.combined(with: .opacity))", "Binding(get:set:)", "onSubmit"],
-        tags: ["validation", "form", "text field", "error message", "表单校验", "输入框", "错误提示", "抖动"],
+        tags: ["validation", "form", "text field", "error message", "表单校验", "输入框", "错误提示", "脉动"],
         params: [
-            .slider("amplitude", L("Shake amplitude", "抖动幅度"), 4...24, default: 14, decimals: 0, unit: "pt"),
+            .slider("amplitude", L("Glow radius", "光晕半径"), 4...24, default: 12, decimals: 0, unit: "pt"),
             .slider("response", L("Message spring", "提示弹簧"), 0.2...0.8, default: 0.4, unit: "s"),
             .toggle("live", L("Live validation after submit", "提交后即时校验"), default: true),
         ]
@@ -36,8 +36,11 @@ private enum FieldStatus: Equatable {
     case valid
 }
 
-private struct FieldShake {
-    var x: CGFloat = 0
+/// The failed-submit cue: a 4 pt dip, an extra border width over the 1.5 pt stroke and a glow amount (0…1).
+private struct FieldPulse {
+    var dip: CGFloat = 0
+    var border: CGFloat = 0
+    var glow: Double = 0
 }
 
 private struct InlineValidationDemo: View {
@@ -124,15 +127,27 @@ private struct InlineValidationDemo: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(status == .idle ? Palette.stroke : tint, lineWidth: status == .idle ? 1 : 1.5)
         }
-        .keyframeAnimator(initialValue: FieldShake(), trigger: failures) { content, value in
-            content.offset(x: value.x)
+        .keyframeAnimator(initialValue: FieldPulse(), trigger: failures) { content, value in
+            content
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Palette.red, lineWidth: 1.5 + value.border)
+                        .opacity(value.glow > 0.001 ? 1 : 0)
+                }
+                .shadow(color: Palette.red.opacity(0.5 * value.glow), radius: a * CGFloat(value.glow))
+                .offset(y: value.dip)
         } keyframes: { _ in
-            KeyframeTrack(\.x) {
-                CubicKeyframe(-a, duration: 0.06)
-                CubicKeyframe(a * 0.78, duration: 0.08)
-                CubicKeyframe(-a * 0.5, duration: 0.07)
-                CubicKeyframe(a * 0.22, duration: 0.06)
-                SpringKeyframe(0, duration: 0.18, spring: .snappy)
+            KeyframeTrack(\.dip) {
+                CubicKeyframe(4, duration: 0.09)
+                SpringKeyframe(0, duration: 0.32, spring: .bouncy)
+            }
+            KeyframeTrack(\.border) {
+                CubicKeyframe(1.5, duration: 0.12)
+                CubicKeyframe(0, duration: 0.28)
+            }
+            KeyframeTrack(\.glow) {
+                CubicKeyframe(1, duration: 0.12)
+                CubicKeyframe(0, duration: 0.4)
             }
         }
     }

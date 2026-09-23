@@ -8,8 +8,8 @@ extension Effect {
         name: L("Wiggle · Rotate · Breathe", "摇摆 · 旋转 · 呼吸"),
         summary: L("The iOS 18 indefinite symbol effects, side by side.", "iOS 18 新增的三种持续型符号动效并排展示。"),
         prompt: L(
-            "Three status tiles show the iOS 18 ambient symbol effects running continuously: an incoming-call phone that wiggles side to side in quick, decaying shakes and then rests; a settings gear that rotates steadily around its centre like a working mechanism; and a heart that breathes — scaling gently between 100% and ~110% while its opacity softly pulses, about once per second. Each effect loops until its tile is tapped, which pauses it and dims the caption. Subtle, ambient signals that say \"something is happening\" without demanding attention.",
-            "三块状态卡片同时展示iOS 18的持续型符号动效：来电话筒左右快速摇摆、振幅逐渐衰减后短暂停顿；设置齿轮绕中心匀速旋转，像一台正在运转的机械；爱心则在“呼吸”——大小在100%与约110%之间轻柔缩放，透明度同步微微起伏，约每秒一次。每个效果持续循环，点击卡片即可暂停并让说明文字变暗。这些都是低调的环境信号，传达“正在发生”，却不抢夺注意力。"
+            "Three status tiles show the iOS 18 ambient symbol effects running continuously: an incoming-call phone with signal waves that wiggles side to side in quick, decaying shakes and then rests; a pair of settings gears that rotate steadily like a working mechanism; and a heart with a bolt that breathes — scaling gently between 100% and ~110% while its opacity softly pulses, about once per second. With By layer on, the layers move separately (waves apart from the handset, each gear on its own axis). Each effect loops until its tile is tapped, which pauses it and dims the caption. Subtle, ambient signals that say \"something is happening\" without demanding attention.",
+            "三块状态卡片同时展示iOS 18的持续型符号动效：带信号波的来电话筒左右快速摇摆、振幅逐渐衰减后短暂停顿；一对设置齿轮匀速旋转，像一台正在运转的机械；带闪电的爱心则在“呼吸”——大小在100%与约110%之间轻柔缩放，透明度同步微微起伏，约每秒一次。开启「按图层」后各图层分别运动（声波脱离话筒，两枚齿轮各绕自己的轴）。每个效果持续循环，点击卡片即可暂停并让说明文字变暗。这些都是低调的环境信号，传达“正在发生”，却不抢夺注意力。"
         ),
         implementation: L(
             ".symbolEffect(.wiggle / .rotate / .breathe, options: .speed(_:), isActive:) — iOS 18 effects that conform to IndefiniteSymbolEffect and loop while active.",
@@ -30,6 +30,7 @@ private struct AmbientTrioDemo: View {
     let ctx: DemoContext
     @State private var active = [true, true, true]
 
+    /// The glyphs are multi-layer symbols (phone + waves, two gears, heart + bolt), so By layer is visible.
     private var byLayer: Bool { ctx.bool("byLayer") }
     private var options: SymbolEffectOptions { .speed(ctx["speed"]) }
 
@@ -49,15 +50,15 @@ private struct AmbientTrioDemo: View {
         VStack(spacing: 18) {
             HStack(spacing: 14) {
                 tile(0, title: L("Wiggle", "摇摆"), tint: Palette.green) {
-                    Image(systemName: "phone.fill")
+                    Image(systemName: "phone.connection.fill")
                         .symbolEffect(wiggle, options: options, isActive: active[0])
                 }
                 tile(1, title: L("Rotate", "旋转"), tint: Palette.blue) {
-                    Image(systemName: "gearshape.fill")
+                    Image(systemName: "gearshape.2.fill")
                         .symbolEffect(rotate, options: options, isActive: active[1])
                 }
                 tile(2, title: L("Breathe", "呼吸"), tint: Palette.pink) {
-                    Image(systemName: "heart.fill")
+                    Image(systemName: "bolt.heart.fill")
                         .symbolEffect(breathe, options: options, isActive: active[2])
                 }
             }

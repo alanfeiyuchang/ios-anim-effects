@@ -11,8 +11,8 @@ extension Effect {
             "手指沿程序坞滑动，附近的图标像 macOS 程序坞一样膨胀放大。"
         ),
         prompt: L(
-            "A frosted dock holding seven 32 pt app icons with 8 pt gaps. As the finger slides along it, each icon's size follows a smooth cosine falloff of its distance to the finger — up to 1.8× directly under the touch, easing back to 1× about 100 pt away — so a gentle wave of magnification travels with the finger. Icons grow upward from a shared baseline and push their neighbours outward, the dock's frosted backing widening to fit; motion tracks the finger through a tight interactive spring (response ≈0.2 s). The icon under the finger lifts a label tooltip above it and a selection tick fires as it changes. On release everything settles back to rest on a softer spring.",
-            "一条磨砂程序坞中排列着七个 32pt 的应用图标，间距 8pt。手指沿程序坞滑动时，每个图标的尺寸按照它与手指距离的平滑余弦衰减变化——正下方最大放大到 1.8 倍，约 100pt 外回落到 1 倍——一道柔和的放大波随手指移动。图标以共同的底线为基准向上生长，并把相邻图标向两侧推开，磨砂底座随之变宽；运动通过紧致的交互式弹簧（响应约 0.2 秒）跟手。手指下方的图标会在上方弹出名称提示，每次切换时触发选择触觉。松手后一切以更柔和的弹簧回到静止状态。"
+            "A frosted dock holding seven 32 pt app icons with 8 pt gaps. As the finger slides along it, each icon's size follows a smooth cosine falloff of its distance to the finger — up to 1.6× directly under the touch, easing back to 1× about 100 pt away — so a gentle wave of magnification travels with the finger. Icons grow upward from a shared baseline and push their neighbours outward, the dock's frosted backing widening to fit; motion tracks the finger through a tight interactive spring (response ≈0.2 s). The icon under the finger lifts a label tooltip above it and a selection tick fires as it changes. On release everything settles back to rest on a softer spring.",
+            "一条磨砂程序坞中排列着七个 32pt 的应用图标，间距 8pt。手指沿程序坞滑动时，每个图标的尺寸按照它与手指距离的平滑余弦衰减变化——正下方最大放大到 1.6 倍，约 100pt 外回落到 1 倍——一道柔和的放大波随手指移动。图标以共同的底线为基准向上生长，并把相邻图标向两侧推开，磨砂底座随之变宽；运动通过紧致的交互式弹簧（响应约 0.2 秒）跟手。手指下方的图标会在上方弹出名称提示，每次切换时触发选择触觉。松手后一切以更柔和的弹簧回到静止状态。"
         ),
         implementation: L(
             "Icon sizes are computed from the finger's x against each icon's resting centre with a cosine falloff; positions are accumulated manually so the row widens symmetrically. Previews drive the finger with a TimelineView sine sweep.",
@@ -21,7 +21,7 @@ extension Effect {
         apis: ["DragGesture", "TimelineView", "position(x:y:)", "interactiveSpring", "cos falloff"],
         tags: ["dock", "magnification", "macos", "fisheye", "程序坞", "放大", "鱼眼", "悬停"],
         params: [
-            .slider("scale", L("Max magnification", "最大放大"), 1.2...2.4, default: 1.8, unit: "×"),
+            .slider("scale", L("Max magnification", "最大放大"), 1.2...2.4, default: 1.6, unit: "×"),
             .slider("range", L("Influence range", "影响范围"), 50...180, default: 100, decimals: 0, unit: "pt"),
         ]
     ) { ctx in

@@ -197,10 +197,10 @@ private struct SportSummitSparkles: View {
 
     var body: some View {
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview))) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 60)
+            let t = timeline.date.timeIntervalSinceReferenceDate
             ZStack {
                 ForEach(Self.spots.indices, id: \.self) { index in
-                    let phase = sin(t * 3 + Double(index) * 1.7)
+                    let phase: Double = sin(t * 3 + Double(index) * 1.7)
                     let glow = CGFloat(0.5 + 0.5 * phase)
                     Image(systemName: "sparkle")
                         .font(.system(size: 14, weight: .bold))

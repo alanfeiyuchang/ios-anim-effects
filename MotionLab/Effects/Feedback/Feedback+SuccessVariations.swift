@@ -204,183 +204,212 @@ private struct SparkRing: View {
     }
 }
 
-// MARK: - Rubber stamp
+// MARK: - Level up
 
 extension Effect {
-    static let feedbackStamp = Effect(
-        id: "feedback.stamp-approve",
+    static let feedbackLevelUp = Effect(
+        id: "feedback.level-up",
         category: .feedback,
         interaction: .tap,
-        name: L("Rubber Stamp", "橡皮图章"),
-        summary: L("An APPROVED stamp slams onto the document, the card flinches and the ink settles.", "“已批准”图章重重盖在单据上，卡片一震，墨迹随之沉定。"),
+        name: L("Level-Up Flip", "升级翻牌"),
+        summary: L("XP overflows the bar, the level badge flips to the next number and a gleam sweeps it.", "经验值溢出进度条，等级徽章翻面到下一个数字，一道高光扫过。"),
         prompt: L(
-            "An expense report card (title, line items, total) sits above an 'Approve' button. On tap a green 'APPROVED' stamp — heavy rounded caps inside a 3 pt double-ruled border — drops from 220% scale, 0% opacity and -18° rotation to 94% scale and -8° in 0.16 s ease-in, then settles to 100% on a spring; its ink starts at a 3 pt blur and sharpens over 0.25 s. At impact the card flinches down 4 pt and springs back, an outline of the stamp expands 30% and fades, and a heavy haptic thumps. Tapping again lifts the stamp off with a fade. Decisive, tactile, a little theatrical.",
-            "一张报销单卡片（标题、明细、合计）位于“批准”按钮上方。点击后一枚绿色“已批准”图章——粗体圆角字、外框为 3 pt 双线——从 220% 缩放、0% 透明度、-18° 旋转，在 0.16 秒缓入内砸到 94% 缩放、-8°，再以弹簧回到 100%；墨迹从 3 pt 模糊在 0.25 秒内变清晰。落下瞬间卡片向下一震 4 pt 再弹回，一圈图章轮廓向外扩大 30% 并淡出，同时伴随一次重触感。再次点击图章淡出抬起。果断、有触感、略带戏剧性。"
+            "A lesson card holds a 56 pt gradient level badge, a 180 × 10 pt XP bar with a '70 / 100 XP' readout, and a 'Complete lesson' pill. Each tap earns 50 XP: a '+50 XP' label floats 40 pt up from the button and fades over 0.9 s while the bar fills on a 0.5 s ease-in-out. When it overflows, the full bar flashes white, the badge flips 180° around its vertical axis in 0.8-perspective 3D on a spring (response 0.6 s, damping 0.6) and its number switches exactly when it is edge-on, then a diagonal gleam sweeps across it in 0.5 s; the bar empties and refills to the 20 XP carried over, and a success haptic plays. Without an overflow the bar simply fills. Rewarding, game-like, crisp.",
+            "一张课程卡片上有一枚 56 pt 的渐变等级徽章、一条 180 × 10 pt 的经验条（显示“70 / 100 XP”）以及“完成课程”胶囊按钮。每次点击获得 50 XP：“+50 XP”标签从按钮处上浮 40 pt，并在 0.9 秒内淡出，同时经验条以 0.5 秒缓入缓出填充。一旦溢出，满格的经验条闪一下白光，徽章以 0.8 透视绕竖直轴用弹簧（响应 0.6 秒、阻尼 0.6）翻转 180°，数字恰好在侧面朝向镜头时切换，随后一道斜向高光在 0.5 秒内扫过徽章；经验条清空再填到结转的 20 XP，并触发成功触感。未溢出时经验条只是正常填充。有奖励感、游戏感、干脆利落。"
         ),
         implementation: L(
-            "Two keyframeAnimators share one trigger: one drives the stamp's scale, rotation, opacity and blur from dramatic start values to its rest pose, the other drives the card's impact offset; the rest pose is the initial value so the stamp persists.",
-            "两个 keyframeAnimator 共用一个触发器：一个把图章的缩放、旋转、透明度与模糊从夸张的初值带回静止姿态，另一个驱动卡片的冲击位移；静止姿态即初始值，因此图章会保留在原处。"
+            "An Animatable badge interpolates a 'turns' value so rotation3DEffect and the displayed number stay in sync (the face is mirrored on odd turns); keyframeAnimators keyed on counters run the floating XP label and the gleam.",
+            "Animatable 徽章插值“翻转圈数”，让 rotation3DEffect 与显示的数字保持同步（奇数次翻转时镜像内容）；以计数器为触发器的 keyframeAnimator 驱动上浮的经验标签与高光。"
         ),
-        apis: ["keyframeAnimator(initialValue:trigger:)", "MoveKeyframe", "SpringKeyframe", "UIImpactFeedbackGenerator(.heavy)"],
-        tags: ["stamp", "approve", "slam", "impact", "图章", "批准", "盖章", "冲击"],
+        apis: ["Animatable", "rotation3DEffect(_:axis:perspective:)", "keyframeAnimator(initialValue:trigger:)", "contentTransition(.numericText)"],
+        tags: ["level up", "xp", "gamification", "flip", "升级", "经验值", "游戏化", "翻牌"],
         params: [
-            .slider("scale", L("Drop scale", "起始缩放"), 1.4...3.0, default: 2.2, decimals: 1),
-            .slider("tilt", L("Rest tilt", "静止倾角"), -20...20, default: -8, decimals: 0, unit: "°"),
-            .choice("tone", L("Stamp", "图章"), [L("Approved", "已批准"), L("Rejected", "已驳回")], default: 0),
+            .slider("gain", L("XP per lesson", "每课经验"), 10...100, default: 50, step: 10, decimals: 0, unit: " XP"),
+            .slider("response", L("Flip response", "翻转响应"), 0.3...1.0, default: 0.6, unit: "s"),
+            .slider("damping", L("Flip damping", "翻转阻尼"), 0.3...1.0, default: 0.6),
         ]
     ) { ctx in
-        StampDemo(ctx: ctx)
+        LevelUpDemo(ctx: ctx)
     }
 }
 
-private struct StampPose {
-    var scale: CGFloat = 1
-    var rotation: Double = 0
-    var opacity: Double = 1
-    var blur: CGFloat = 0
-    var ring: CGFloat = 1
-    var ringOpacity: Double = 0
+private struct FloatXP {
+    var y: CGFloat = 0
+    var opacity: Double = 0
 }
 
-private struct StampDemo: View {
+private struct LevelUpDemo: View {
     let ctx: DemoContext
-    @State private var stamped = false
-    @State private var hits = 0
+    @State private var xp: Double = 0.7
+    @State private var turns: Double = 0
+    @State private var gains = 0
+    @State private var gleams = 0
+    @State private var flash = false
+    @State private var busy = false
+
+    private let startLevel = 4
 
     var body: some View {
         let zh = ctx.language == .zh
-        VStack(spacing: 18) {
-            ZStack {
-                report(zh: zh)
-                // Always in the hierarchy so the keyframes see the trigger change.
-                stamp(zh: zh)
-                    .opacity(stamped ? 1 : 0)
-            }
-            .keyframeAnimator(initialValue: CGFloat(0), trigger: hits) { content, dip in
-                content.offset(y: dip)
-            } keyframes: { _ in
-                KeyframeTrack(\.self) {
-                    LinearKeyframe(0, duration: 0.16)
-                    CubicKeyframe(4, duration: 0.05)
-                    SpringKeyframe(0, duration: 0.4, spring: .bouncy)
+        let gain: Int = max(ctx.int("gain"), 10)
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 14) {
+                    LevelBadge(turns: turns, startLevel: startLevel, gleams: gleams)
+                        .frame(width: 56, height: 56)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(zh ? "西班牙语 · 第 12 课" : "Spanish · Lesson 12")
+                            .font(.subheadline.weight(.semibold))
+                        xpBar
+                        Text("\(Int((xp * 100).rounded())) / 100 XP")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .contentTransition(.numericText(value: xp))
+                    }
                 }
+                Button(action: { complete(gain: gain) }) {
+                    Text(zh ? "完成课程" : "Complete lesson")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(Palette.primary, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .overlay(alignment: .top) { floatingGain(gain) }
             }
-            Button(action: toggle) {
-                Text(stamped ? (zh ? "撤销" : "Undo") : (zh ? "批准" : "Approve"))
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(width: 200, height: 50)
-                    .background(Palette.primary, in: Capsule())
-                    .contentTransition(.opacity)
-            }
-            .buttonStyle(.plain)
-            DemoHint(text: L("Tap Approve", "点击批准"), ctx: ctx)
+            .frame(width: 262)
+            .padding(18)
+            .demoCard()
+            DemoHint(text: L("Tap Complete lesson", "点击“完成课程”"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 2.2, delay: 0.5) { toggle() }
+        .autoplay(ctx.isPreview, every: 2.6, delay: 0.5) { complete(gain: gain) }
     }
 
-    private func report(zh: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(zh ? "报销单 #2031" : "Expense #2031")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Text(zh ? "5月12日" : "May 12")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            reportLine(zh ? "机票" : "Flight", "$412.00")
-            reportLine(zh ? "酒店 · 2 晚" : "Hotel · 2 nights", "$286.00")
-            reportLine(zh ? "餐饮" : "Meals", "$64.50")
-            Divider()
-            reportLine(zh ? "合计" : "Total", "$762.50", bold: true)
+    private var xpBar: some View {
+        ZStack(alignment: .leading) {
+            Capsule().fill(Color.primary.opacity(0.08))
+            Capsule()
+                .fill(LinearGradient(colors: [Palette.amber, Palette.coral], startPoint: .leading, endPoint: .trailing))
+                .frame(width: max(10, 180 * CGFloat(min(xp, 1))))
+            Capsule()
+                .fill(.white)
+                .opacity(flash ? 0.8 : 0)
         }
-        .padding(18)
-        .frame(width: 260)
-        .demoCard()
+        .frame(width: 180, height: 10)
     }
 
-    private func reportLine(_ title: String, _ value: String, bold: Bool = false) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(value).monospacedDigit()
-        }
-        .font(bold ? Font.subheadline.weight(.bold) : Font.subheadline)
-        .foregroundStyle(bold ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
-    }
-
-    private func stamp(zh: Bool) -> some View {
-        let rejected = ctx.int("tone") == 1
-        let color: Color = rejected ? Palette.red : Palette.green
-        let text: String = rejected ? (zh ? "已驳回" : "REJECTED") : (zh ? "已批准" : "APPROVED")
-        let drop: CGFloat = ctx.cg("scale")
-        let tilt: Double = ctx["tilt"]
-        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
-        return Text(text)
-            .font(.system(size: 26, weight: .black, design: .rounded))
-            .tracking(zh ? 6 : 2)
-            .foregroundStyle(color)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .overlay { shape.strokeBorder(color, lineWidth: 3) }
-            .overlay { shape.inset(by: -5).stroke(color.opacity(0.7), lineWidth: 1.5) }
-            .keyframeAnimator(initialValue: StampPose(), trigger: hits) { content, pose in
+    private func floatingGain(_ gain: Int) -> some View {
+        Text("+\(gain) XP")
+            .font(.subheadline.weight(.heavy).monospacedDigit())
+            .foregroundStyle(Palette.coral)
+            .allowsHitTesting(false)
+            .keyframeAnimator(initialValue: FloatXP(), trigger: gains) { content, value in
                 content
-                    .blur(radius: pose.blur)
-                    .scaleEffect(pose.scale)
-                    .opacity(pose.opacity)
-                    .background {
-                        shape
-                            .stroke(color.opacity(pose.ringOpacity), lineWidth: 2)
-                            .scaleEffect(pose.ring)
-                    }
-                    .rotationEffect(.degrees(tilt + pose.rotation))
+                    .offset(y: value.y)
+                    .opacity(value.opacity)
             } keyframes: { _ in
-                KeyframeTrack(\.scale) {
-                    MoveKeyframe(drop)
-                    CubicKeyframe(0.94, duration: 0.16)
-                    SpringKeyframe(1.0, duration: 0.35, spring: .bouncy)
-                }
-                KeyframeTrack(\.rotation) {
-                    MoveKeyframe(-10)
-                    CubicKeyframe(0, duration: 0.16)
+                KeyframeTrack(\.y) {
+                    MoveKeyframe(0)
+                    CubicKeyframe(-40, duration: 0.9)
                 }
                 KeyframeTrack(\.opacity) {
-                    MoveKeyframe(0)
-                    LinearKeyframe(1, duration: 0.1)
-                }
-                KeyframeTrack(\.blur) {
-                    MoveKeyframe(3)
-                    LinearKeyframe(3, duration: 0.14)
-                    CubicKeyframe(0, duration: 0.25)
-                }
-                KeyframeTrack(\.ring) {
                     MoveKeyframe(1)
-                    LinearKeyframe(1, duration: 0.16)
-                    CubicKeyframe(1.3, duration: 0.45)
-                }
-                KeyframeTrack(\.ringOpacity) {
-                    MoveKeyframe(0)
-                    LinearKeyframe(0, duration: 0.15)
-                    LinearKeyframe(0.8, duration: 0.02)
-                    CubicKeyframe(0, duration: 0.45)
+                    LinearKeyframe(1, duration: 0.4)
+                    CubicKeyframe(0, duration: 0.5)
                 }
             }
     }
 
-    private func toggle() {
-        if stamped {
-            withAnimation(.easeOut(duration: 0.3)) { stamped = false }
-            return
-        }
-        stamped = true
-        hits += 1
-        guard !ctx.isPreview else { return }
+    private func complete(gain: Int) {
+        guard !busy else { return }
+        busy = true
+        let live = !ctx.isPreview
+        let step: Double = Double(gain) / 100
+        let total: Double = xp + step
+        let flipSpring = Animation.spring(response: ctx["response"], dampingFraction: ctx["damping"])
+        gains += 1
+        if live { Haptics.tap() }
+        withAnimation(.easeInOut(duration: 0.5)) { xp = min(total, 1) }
         Task {
-            try? await Task.sleep(for: .seconds(0.16))
-            Haptics.tap(.heavy)
+            try? await Task.sleep(for: .seconds(0.55))
+            guard total >= 1 else {
+                busy = false
+                return
+            }
+            withAnimation(.easeOut(duration: 0.12)) { flash = true }
+            withAnimation(flipSpring) { turns += 1 }
+            if live { Haptics.success() }
+            try? await Task.sleep(for: .seconds(0.2))
+            withAnimation(.easeIn(duration: 0.25)) { flash = false }
+            xp = 0
+            withAnimation(.easeOut(duration: 0.45)) { xp = total - 1 }
+            try? await Task.sleep(for: .seconds(0.25))
+            gleams += 1
+            try? await Task.sleep(for: .seconds(0.5))
+            busy = false
         }
+    }
+}
+
+/// The level badge. `turns` is animatable so the number flips exactly at 90°.
+private struct LevelBadge: View, Animatable {
+    var turns: Double
+    let startLevel: Int
+    let gleams: Int
+
+    var animatableData: Double {
+        get { turns }
+        set { turns = newValue }
+    }
+
+    var body: some View {
+        let passed: Int = Int((turns + 0.5).rounded(.down))
+        let mirrored: Bool = passed % 2 == 1
+        ZStack {
+            Circle()
+                .fill(LinearGradient(colors: [Palette.violet, Palette.indigo], startPoint: .topLeading, endPoint: .bottomTrailing))
+            Circle()
+                .strokeBorder(.white.opacity(0.35), lineWidth: 2)
+            VStack(spacing: -2) {
+                Text("LV")
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .opacity(0.8)
+                Text("\(startLevel + passed)")
+                    .font(.system(size: 22, weight: .heavy, design: .rounded).monospacedDigit())
+            }
+            .foregroundStyle(.white)
+            .scaleEffect(x: mirrored ? -1 : 1, y: 1)
+            LevelGleam(trigger: gleams)
+                .frame(width: 56, height: 56)
+                .clipShape(Circle())
+        }
+        .rotation3DEffect(.degrees(turns * 180), axis: (x: 0, y: 1, z: 0), perspective: 0.8)
+        .shadow(color: Palette.violet.opacity(0.4), radius: 10, y: 5)
+    }
+}
+
+private struct LevelGleam: View {
+    let trigger: Int
+
+    var body: some View {
+        LinearGradient(
+            colors: [.white.opacity(0), .white.opacity(0.7), .white.opacity(0)],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .frame(width: 24, height: 90)
+        .rotationEffect(.degrees(25))
+        .keyframeAnimator(initialValue: CGFloat(-70), trigger: trigger) { content, x in
+            content.offset(x: x)
+        } keyframes: { _ in
+            KeyframeTrack(\.self) {
+                MoveKeyframe(-60)
+                CubicKeyframe(60, duration: 0.5)
+                MoveKeyframe(-70)
+            }
+        }
+        .allowsHitTesting(false)
     }
 }

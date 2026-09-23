@@ -65,7 +65,7 @@ enum FeedbackFamilies {
         "feedback.confetti": "feedback.success",
         "feedback.copy-confirm": "feedback.success",
         "feedback.spark-burst": "feedback.success",
-        "feedback.stamp-approve": "feedback.success",
+        "feedback.level-up": "feedback.success",
         // Errors & validation
         "feedback.error-shake": "feedback.error",
         "feedback.inline-validation": "feedback.error",

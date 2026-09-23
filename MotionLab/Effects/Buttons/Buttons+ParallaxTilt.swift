@@ -9,7 +9,7 @@ extension Effect {
         summary: L("A layered tile button tilts under the finger while its layers drift in parallax.", "分层的卡片按钮随手指倾斜，内部图层产生视差漂移。"),
         prompt: L(
             "A 260 × 120 pt tile button: a sunset gradient backdrop with soft blobs, a glyph and a title on separate depth layers. While the finger rests on it, the tile rotates in 3D so the touched side sinks away — up to 12° around each axis with a 0.5 perspective — and grows to 104%. The layers slide in parallax: the backdrop shifts 12 pt against the tilt, the glyph 0.6× and the title 0.3× with it, while a white specular glare glides to the opposite corner and the drop shadow swings the other way. Every movement follows a smooth spring (response 0.3 s, damping 0.7); on release the tile levels out and the glare fades, with a light haptic on touch-down. Physical, deep and responsive.",
-            "一块 260 × 120pt 的卡片式按钮，灵感来自电视应用的海报：日落渐变背景配柔和光斑，图标与标题分处不同景深图层。手指按住时，卡片做 3D 旋转，被按住的一侧向里沉——每个轴最多 12°、透视 0.5——并放大到 104%。各图层产生视差：背景逆着倾斜方向移动 12pt，图标顺着方向移动 0.6 倍、标题 0.3 倍，一道白色镜面高光滑向对角，投影向相反方向摆动。所有运动都跟随平滑弹簧（响应 0.3 秒、阻尼 0.7）；松手后卡片回正、高光淡出，按下时伴随轻触感。立体、有景深、跟手。"
+            "一块 260 × 120pt 的海报式卡片按钮：日落渐变背景配柔和光斑，图标与标题分处不同景深图层。手指按住时，卡片做 3D 旋转，被按住的一侧向里沉——每个轴最多 12°、透视 0.5——并放大到 104%。各图层产生视差：背景逆着倾斜方向移动 12pt，图标顺着方向移动 0.6 倍、标题 0.3 倍，一道白色镜面高光滑向对角，投影向相反方向摆动。所有运动都跟随平滑弹簧（响应 0.3 秒、阻尼 0.7）；松手后卡片回正、高光淡出，按下时伴随轻触感。立体、有景深、跟手。"
         ),
         implementation: L(
             "A zero-distance DragGesture normalises the finger position to −1…1 on each axis; two rotation3DEffect calls tilt the tile, offsets scaled per layer create the parallax, and a RadialGradient glare is positioned opposite the finger, all driven by one spring.",

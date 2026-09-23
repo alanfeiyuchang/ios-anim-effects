@@ -20,7 +20,7 @@ enum FeedbackEffects {
         .feedbackMorphToast,
         // Success variations
         .feedbackSparkBurst,
-        .feedbackStamp,
+        .feedbackLevelUp,
         // Error variations
         .feedbackJellyDeny,
         .feedbackLimitBounce,

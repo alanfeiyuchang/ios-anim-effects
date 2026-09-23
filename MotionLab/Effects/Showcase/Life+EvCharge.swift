@@ -173,7 +173,6 @@ private struct LifeEvChargeDemo: View {
             guard !Task.isCancelled else { return }
             if percent >= 100 {
                 withAnimation(.smooth(duration: 0.3)) { charged = true }
-                if !ctx.isPreview { Haptics.success() }
                 try? await Task.sleep(for: .seconds(2))
                 guard !Task.isCancelled else { return }
                 withAnimation(.smooth(duration: 0.5)) {

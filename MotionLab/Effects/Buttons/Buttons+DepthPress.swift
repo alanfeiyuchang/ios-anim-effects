@@ -12,8 +12,8 @@ extension Effect {
             "由两层叠成的厚实游戏风按钮：上层是饱和渐变的面板，下层是同色系更深的底座，从面板下方露出 8pt，形成立体挤出感，并带柔和的落地投影。手指按下时，面板在约 120 毫秒内以接近临界阻尼的硬弹簧垂直下沉约 85% 的厚度，露出的底座随之消失，落地投影缩小收紧，读起来就是“按进去了”。松手时面板以更有弹性的弹簧（响应 0.35 秒、阻尼 0.55）弹回并轻微过冲，伴随一次中等强度的触觉反馈。手感机械、厚实、爽快，如同键盘键帽或街机按钮。"
         ),
         implementation: L(
-            "A ButtonStyle stacks a base shape offset by the depth under the label's face; configuration.isPressed offsets the face down and picks a stiff spring for press and a bouncy one for release.",
-            "ButtonStyle 在按钮面板下叠放一个按深度偏移的底座；configuration.isPressed 让面板下移，并在按下和松手时分别选用硬弹簧与弹性弹簧。"
+            "A ButtonStyle stacks a base shape offset by the depth under the label's face; configuration.isPressed, held for at least 140 ms so quick taps in a scroll view still bottom out, offsets the face down and picks a stiff spring for press and a bouncy one for release.",
+            "ButtonStyle 在按钮面板下叠放一个按深度偏移的底座；configuration.isPressed（至少保持 140 毫秒，确保在滚动视图里快速轻点也能按到底）让面板下移，并在按下和松手时分别选用硬弹簧与弹性弹簧。"
         ),
         apis: ["ButtonStyle", "offset", "spring(response:dampingFraction:)", "ZStack"],
         tags: ["3d", "depth", "keycap", "skeuomorphic", "立体", "按压", "键帽", "拟物"],
@@ -30,6 +30,7 @@ extension Effect {
 private struct ButtonDepthPressDemo: View {
     let ctx: DemoContext
     @State private var autoPressed = false
+    @State private var taps = 0
 
     private var colors: (top: Color, bottom: Color, base: Color) {
         (Color(hex: 0xFF9A7A), Palette.coral, Color(hex: 0xC2452F))
@@ -40,6 +41,7 @@ private struct ButtonDepthPressDemo: View {
         VStack(spacing: 0) {
             Spacer()
             Button {
+                taps += 1
                 Haptics.tap(.medium)
             } label: {
                 Text(ctx.language == .zh ? "开始游戏" : "PLAY NOW")
@@ -56,7 +58,8 @@ private struct ButtonDepthPressDemo: View {
                     bottom: palette.bottom,
                     base: palette.base,
                     releaseDamping: ctx["bounce"],
-                    forcePressed: autoPressed
+                    forcePressed: autoPressed,
+                    taps: taps
                 )
             )
             Spacer()
@@ -88,11 +91,36 @@ private struct ButtonDepthStyle: ButtonStyle {
     let base: Color
     let releaseDamping: Double
     let forcePressed: Bool
-
-    private let size = CGSize(width: 220, height: 62)
+    /// Counts completed taps, so a tap whose press the key never saw still plays a full press.
+    let taps: Int
 
     func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed || forcePressed
+        DepthKey(style: self, configuration: configuration)
+    }
+}
+
+/// The key itself. Inside a scroll view (the detail page) iOS delays a button's pressed state until
+/// it knows the touch isn't a scroll, so a quick tap reports press and release almost together and the
+/// face never visibly sinks. The key therefore holds its pressed look for a minimum time, so every
+/// tap bottoms out before it springs back.
+private struct DepthKey: View {
+    let style: ButtonDepthStyle
+    let configuration: ButtonStyleConfiguration
+    @State private var held = false
+    @State private var pressedAt = Date.distantPast
+    @State private var releasedAt = Date.distantPast
+    @State private var releaseTask: Task<Void, Never>?
+
+    private static let minimumHold: TimeInterval = 0.14
+    private let size = CGSize(width: 220, height: 62)
+
+    var body: some View {
+        let depth = style.depth
+        let travel = style.travel
+        let top = style.top
+        let bottom = style.bottom
+        let base = style.base
+        let pressed = held || style.forcePressed
         let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
         return ZStack(alignment: .top) {
             shape
@@ -118,8 +146,44 @@ private struct ButtonDepthStyle: ButtonStyle {
         .animation(
             pressed
                 ? .spring(response: 0.12, dampingFraction: 0.9)
-                : .spring(response: 0.35, dampingFraction: releaseDamping),
+                : .spring(response: 0.35, dampingFraction: style.releaseDamping),
             value: pressed
         )
+        .onChange(of: configuration.isPressed) { _, isPressed in
+            releaseTask?.cancel()
+            if isPressed {
+                pressedAt = .now
+                held = true
+            } else {
+                releasedAt = .now
+                let remaining = Self.minimumHold - Date.now.timeIntervalSince(pressedAt)
+                guard remaining > 0 else {
+                    held = false
+                    return
+                }
+                releaseTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(remaining))
+                    guard !Task.isCancelled else { return }
+                    held = false
+                }
+            }
+        }
+        // A very quick tap can deliver press and release in the same frame, before the key ever
+        // renders as pressed; the action still fires, so play one full press from it.
+        .onChange(of: style.taps) {
+            guard !held, Date.now.timeIntervalSince(releasedAt) > 0.3 else { return }
+            releaseTask?.cancel()
+            pressedAt = .now
+            held = true
+            releaseTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(Self.minimumHold))
+                guard !Task.isCancelled else { return }
+                held = false
+            }
+        }
+        .onDisappear {
+            releaseTask?.cancel()
+            held = false
+        }
     }
 }

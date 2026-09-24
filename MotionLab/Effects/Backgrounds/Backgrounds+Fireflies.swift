@@ -11,8 +11,8 @@ extension Effect {
             "温暖的光点在暮色森林中游走、明灭。"
         ),
         prompt: L(
-            "A dusky forest-green gradient backdrop with a darker floor. Dozens of fireflies — warm lime and honey-gold points, each wrapped in a soft radial halo — wander on slow, organic paths made of two layered sine drifts per axis (periods ≈ 5–25 s at the default pace, each with its own seeded phase), never in lockstep. Every firefly pulses independently: brightness rises and falls on a squared-sine curve every 2.5–5 s, lingering dim and flaring briefly, and halos add together where they overlap; halo size varies per particle to fake depth. Tapping startles the swarm: fireflies within ~120 pt flare to full brightness and scatter outward up to 60 pt, then drift back over about 1.5 s as the glow decays. Quiet, magical and nocturnal — a summer evening you could fall asleep to.",
-            "暮色森林绿渐变背景，底部更深。数十只萤火虫——暖青柠色与蜂蜜金色的光点，各自包裹一圈柔和的径向光晕——沿缓慢而有机的路径游走：每个轴由两层正弦漂移叠加（默认速度下周期约 5–25 秒，相位由种子决定），彼此从不同步。每只独立呼吸闪烁：亮度按正弦平方曲线每 2.5–5 秒起落一次，多数时间微暗、偶尔骤亮；光晕大小因粒子而异，营造景深。点击会惊动光群：约 120pt 内的萤火虫瞬间亮到最强，向外散开最多 60pt，再在约 1.5 秒内随光芒衰减漂回原处。安静奇幻，满是仲夏夜气息。"
+            "A dusky forest-green gradient backdrop with a darker floor. Dozens of fireflies — warm lime and honey-gold points, each wrapped in a soft radial halo — wander on slow, organic paths made of two layered sine drifts per axis (periods ≈ 5–25 s at the default pace, each with its own seeded phase), never in lockstep. Every firefly pulses independently: brightness rises and falls on a squared-sine curve every 2.5–5 s, lingering dim and flaring briefly, and halos add together where they overlap; halo size varies per particle to fake depth. Tapping startles the swarm: fireflies within ~120 pt flare to full brightness within ~50 ms and scatter outward up to ≈ 37 pt (peaking ≈ 160 ms after the tap), then drift back over about 1.5 s as the glow decays. Quiet, magical and nocturnal — a summer evening you could fall asleep to.",
+            "暮色森林绿渐变背景，底部更深。数十只萤火虫——暖青柠色与蜂蜜金色的光点，各自包裹一圈柔和的径向光晕——沿缓慢而有机的路径游走：每个轴由两层正弦漂移叠加（默认速度下周期约 5–25 秒，相位由种子决定），从不同步。每只独立呼吸闪烁：亮度按正弦平方曲线每 2.5–5 秒起落一次，多数时间微暗、偶尔骤亮；光晕大小因粒子而异，营造景深。点击会惊动光群：120pt 内的萤火虫 50ms 内亮到最强，向外散开最多约 37pt（约 160ms 达峰），再于约 1.5 秒内随光芒衰减漂回。安静奇幻，满是仲夏夜气息。"
         ),
         implementation: L(
             "Canvas inside TimelineView(.animation): each firefly's position and pulse are pure functions of its index and time, drawn as radial-gradient discs with .plusLighter blending. A tap stores an origin and timestamp; a distance falloff times an out-and-back impulse envelope offsets and brightens nearby fireflies.",
@@ -33,7 +33,8 @@ extension Effect {
 private struct FirefliesDemo: View {
     let ctx: DemoContext
     @State private var clock = BackgroundClock()
-    @State private var burst: FireflyBurst?
+    /// Recent startles; a new tap adds to the ones still playing, so scattered fireflies never snap home.
+    @State private var bursts: [FireflyBurst] = []
 
     var body: some View {
         ZStack {
@@ -48,7 +49,7 @@ private struct FirefliesDemo: View {
                     t: t,
                     count: ctx.int("count"),
                     glow: ctx.cg("glow"),
-                    burst: burst,
+                    bursts: bursts,
                     now: timeline.date.timeIntervalSinceReferenceDate
                 )
             }
@@ -61,7 +62,8 @@ private struct FirefliesDemo: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { location in
-            burst = FireflyBurst(origin: location, time: Date().timeIntervalSinceReferenceDate)
+            let now = Date().timeIntervalSinceReferenceDate
+            bursts = Array(bursts.filter { now - $0.time < 2.5 }.suffix(3)) + [FireflyBurst(origin: location, time: now)]
             Haptics.tap(.soft)
         }
         .backgroundsHint(L("Tap to startle the fireflies", "点击惊动萤火虫"), ctx)
@@ -83,7 +85,9 @@ private struct FireflyBurst {
         let falloff = exp(-pow(Double(distance) / 120, 2))
         // Out fast, back slowly: rises in ~0.15 s, decays over ~1.5 s.
         let push = 60 * falloff * (1 - exp(-age * 12)) * exp(-age * 2)
-        let flare = falloff * exp(-age * 2.2)
+        // The flare gets a short attack too (~50 ms), so the swarm lights up rather than cutting to full in one frame.
+        // Scaled so it still peaks at full brightness (≈ 115 ms), then decays as before.
+        let flare = min(1.43 * falloff * (1 - exp(-age * 20)) * exp(-age * 2.2), falloff)
         let offset = CGVector(dx: dx / distance * CGFloat(push), dy: dy / distance * CGFloat(push))
         return (offset, flare)
     }
@@ -93,14 +97,14 @@ private struct FireflyField: View {
     let t: Double
     let count: Int
     let glow: CGFloat
-    let burst: FireflyBurst?
+    let bursts: [FireflyBurst]
     let now: Double
 
     var body: some View {
         Canvas { context, size in
             context.blendMode = .plusLighter
             for index in 0..<max(count, 0) {
-                FireflyField.draw(&context, index: index, size: size, t: t, glow: glow, burst: burst, now: now)
+                FireflyField.draw(&context, index: index, size: size, t: t, glow: glow, bursts: bursts, now: now)
             }
         }
     }
@@ -114,7 +118,7 @@ private struct FireflyField: View {
         size: CGSize,
         t: Double,
         glow: CGFloat,
-        burst: FireflyBurst?,
+        bursts: [FireflyBurst],
         now: Double
     ) {
         let r = { (salt: Int) -> Double in BackgroundMath.rand(i, salt) }
@@ -124,7 +128,13 @@ private struct FireflyField: View {
             x: BackgroundMath.unit(i, 1) * size.width + CGFloat(driftX),
             y: (0.12 + BackgroundMath.unit(i, 2) * 0.84) * size.height + CGFloat(driftY)
         )
-        let startle = burst?.effect(on: rest, now: now) ?? (offset: CGVector(dx: 0, dy: 0), flare: 0)
+        var startle = (offset: CGVector(dx: 0, dy: 0), flare: 0.0)
+        for burst in bursts {
+            let hit = burst.effect(on: rest, now: now)
+            startle.offset.dx += hit.offset.dx
+            startle.offset.dy += hit.offset.dy
+            startle.flare = max(startle.flare, hit.flare)
+        }
         let x = rest.x + startle.offset.dx
         let y = rest.y + startle.offset.dy
 

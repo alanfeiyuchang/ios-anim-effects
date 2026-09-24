@@ -11,8 +11,8 @@ extension Effect {
             "半透明正弦波层层叠叠，以柔和视差缓缓起伏。"
         ),
         prompt: L(
-            "A calm horizon: a pastel peach-to-lilac-to-periwinkle sky (deep navy-indigo in dark mode) with a soft blurred sun glow, over five translucent wave bands filling the lower half. Each band is a filled curve of a primary sine plus a finer counter-moving harmonic; bands further back are lighter, flatter and slower, bands in front deeper indigo-violet, taller and faster (roughly 6–14 s cycles), so they slide against one another in gentle parallax, each with a vertical gradient that darkens toward the bottom. A tap sends a swell through the water: a crest races outward both ways from the finger at ~220 pt/s, reaching the front bands 60 ms per layer later, while every band’s amplitude swells and decays as e^(−2t). Continuous and unhurried — meditative, like breathing or a slow tide.",
-            "宁静的地平线：天空为桃色 → 淡紫 → 长春花蓝的柔和渐变（深色模式下为深海军蓝与靛蓝），带一团柔和模糊的太阳光晕；下半部由五层半透明波带堆叠。每层由一条主正弦波叠加一条反向运动的细小谐波填充而成；越靠后越浅、越平、越慢，越靠前越深（靛紫）、越高、越快（周期约 6–14 秒），彼此滑动形成柔和视差，每层自带向下加深的纵向渐变。点击会掀起一道涌浪：浪峰以约 220pt/秒从指尖向左右奔去，每往前一层晚到 60ms，同时各层振幅先涨后按 e^(−2t) 衰减。运动连续而从容，如呼吸或缓慢潮汐般宁静。"
+            "A calm horizon: a pastel peach-to-lilac-to-periwinkle sky (deep navy-indigo in dark mode) with a soft blurred sun glow, over five translucent wave bands filling the lower half. Each band is a filled curve of a primary sine plus a finer counter-moving harmonic; bands further back are lighter, flatter and slower, bands in front deeper indigo-violet, taller and faster (roughly 6–14 s cycles), so they slide against one another in gentle parallax, each with a vertical gradient that darkens toward the bottom. A tap sends a swell through the water: a crest races outward both ways from the finger at ~220 pt/s, reaching the front bands 60 ms per layer later, while every band’s amplitude swells over ~100 ms and then decays as e^(−2t). Continuous and unhurried — meditative, like breathing or a slow tide.",
+            "宁静的地平线：天空为桃色 → 淡紫 → 长春花蓝的柔和渐变（深色模式为海军蓝与靛蓝），带一团柔和模糊的太阳光晕；下半部由五层半透明波带堆叠。每层由一条主正弦波叠加一条反向运动的细小谐波填充而成；越靠后越浅、越平、越慢，越靠前越深（靛紫）、越高、越快（周期约 6–14 秒），彼此滑动形成柔和视差，每层自带向下加深的纵向渐变。点击会掀起一道涌浪：浪峰以约 220pt/秒从指尖向左右奔去，每往前一层晚到 60ms，各层振幅 100ms 内涨起，再按 e^(−2t) 衰减。连续从容，如呼吸或缓慢潮汐般宁静。"
         ),
         implementation: L(
             "A Canvas driven by TimelineView fills one closed wave Path per layer (sampled every 6 pt) with a vertical linear gradient; the sky adapts to the color scheme. A tap stores its x and time; each layer adds a Gaussian crest travelling outward and scales its amplitude by an e^(−2t) envelope.",
@@ -33,7 +33,8 @@ extension Effect {
 private struct SineWavesDemo: View {
     let ctx: DemoContext
     @State private var clock = BackgroundClock()
-    @State private var swell: WaveSwell?
+    /// Recent swells; a new tap adds to the ones still running, so nothing already on screen is cut off.
+    @State private var swells: [WaveSwell] = []
     @Environment(\.colorScheme) private var scheme
 
     private var sky: [Color] {
@@ -52,7 +53,7 @@ private struct SineWavesDemo: View {
                     layers: ctx.int("layers"),
                     amplitude: ctx.cg("amplitude"),
                     dark: scheme == .dark,
-                    swell: swell,
+                    swells: swells,
                     now: timeline.date.timeIntervalSinceReferenceDate
                 )
             }
@@ -67,14 +68,16 @@ private struct SineWavesDemo: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { location in
-            swell = WaveSwell(x: location.x, time: Date().timeIntervalSinceReferenceDate)
+            let now = Date().timeIntervalSinceReferenceDate
+            swells = Array(swells.filter { now - $0.time < 3.5 }.suffix(3)) + [WaveSwell(x: location.x, time: now)]
             Haptics.tap(.soft)
         }
         .backgroundsHint(L("Tap to send a swell", "点击掀起涌浪"), ctx)
     }
 }
 
-/// A tap-spawned swell: a crest running outward from `x` plus an amplitude boost decaying as e^(−2t).
+/// A tap-spawned swell: a crest running outward from `x` plus an amplitude boost that rises over ~100 ms
+/// (attack 1 − e^(−10t)) and then decays as e^(−2t), so the water swells instead of snapping.
 private struct WaveSwell {
     let x: CGFloat
     let time: Double
@@ -83,7 +86,7 @@ private struct WaveSwell {
     func shape(at px: CGFloat, index: Int, now: Double) -> (lift: CGFloat, gain: CGFloat) {
         let age = now - time - Double(index) * 0.06
         guard age > 0, age < 3 else { return (lift: 0, gain: 0) }
-        let envelope = exp(-2 * age)
+        let envelope = (1 - exp(-age * 10)) * exp(-2 * age)
         let front = (Double(abs(px - x)) - age * 220) / 54
         return (lift: CGFloat(1.4 * envelope * exp(-front * front)), gain: CGFloat(0.9 * envelope))
     }
@@ -94,7 +97,7 @@ private struct WaveCanvas: View {
     let layers: Int
     let amplitude: CGFloat
     let dark: Bool
-    let swell: WaveSwell?
+    let swells: [WaveSwell]
     let now: Double
 
     private static let colors: [UInt32] = [0xB9D3FF, 0x9CB8FF, 0x7F9BFF, 0x6E7BFF, 0x7B61FF, 0x5B45D6, 0x3E2FA8]
@@ -112,7 +115,7 @@ private struct WaveCanvas: View {
                     amplitude: amplitude * (0.55 + 0.6 * depth),
                     t: t,
                     index: i,
-                    swell: swell,
+                    swells: swells,
                     now: now
                 )
                 let colorIndex = (WaveCanvas.colors.count - count) + i
@@ -145,7 +148,7 @@ private struct WaveCanvas: View {
         amplitude: CGFloat,
         t: Double,
         index i: Int,
-        swell: WaveSwell?,
+        swells: [WaveSwell],
         now: Double
     ) -> Path {
         let di = Double(i)
@@ -159,8 +162,16 @@ private struct WaveCanvas: View {
         while x <= size.width + 6 {
             let u = Double(x / max(size.width, 1)) * BackgroundMath.tau
             let s = sin(u * k1 + t * s1 + di * 1.3) * 0.72 + sin(u * k2 - t * s2 + di) * 0.28
-            let push = swell?.shape(at: x, index: i, now: now) ?? (lift: 0, gain: 0)
-            path.addLine(to: CGPoint(x: x, y: baseline + amplitude * ((1 + push.gain) * CGFloat(s) - push.lift)))
+            var lift: CGFloat = 0
+            var gain: CGFloat = 0
+            for swell in swells {
+                let push = swell.shape(at: x, index: i, now: now)
+                lift += push.lift
+                gain += push.gain
+            }
+            gain = min(gain, 1.2)
+            lift = min(lift, 1.8)
+            path.addLine(to: CGPoint(x: x, y: baseline + amplitude * ((1 + gain) * CGFloat(s) - lift)))
             x += 6
         }
         path.addLine(to: CGPoint(x: size.width + 6, y: size.height))

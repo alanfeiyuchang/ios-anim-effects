@@ -42,8 +42,8 @@ extension Effect {
             "穿行于无尽的霓虹隧道，拖动操控消失点，按住即可进入曲速。"
         ),
         prompt: L(
-            "An endless neon tunnel rushes toward the viewer. The wall is a polar-coordinate grid: depth is 0.28 / r plus time, so rings stream outward from the vanishing point and speed up as they approach, while 12 longitudinal lanes twist gently with depth. Line color cycles through a cosine rainbow along the tunnel, the far end fades into a soft white-violet core, and the near wall carries a faint tint. Pressing and holding goes to warp: while the finger is down the travel speed eases up to 3.2× (≈ 400 ms time constant) with a medium haptic thump, and a sideways drag steers, easing the vanishing point toward the finger (exponential follow, ≈ 200 ms) and drifting back to center on release — a warp readout at the top shows the multiplier. Immersive, fast and arcade-bright.",
-            "一条无尽的霓虹隧道迎面冲来。隧道壁是极坐标网格：深度为 0.28 / r 加上时间，于是光环从消失点不断向外涌出、越靠近越快，12 条纵向轨道随深度轻轻扭转。线条颜色沿隧道按余弦彩虹循环，远端融入柔和的白紫色光核，近处墙面带一层淡淡的色调。按住即进入曲速：手指按住期间伴随一次中等触感，行进速度缓升至 3.2 倍（时间常数约 400 毫秒）；横向拖动可转向，消失点以指数跟随（约 200 毫秒）缓向手指，松手后漂回中心；顶部的曲速读数实时显示倍率。沉浸、迅疾、街机般明亮。"
+            "An endless neon tunnel rushes toward the viewer. The wall is a polar-coordinate grid: depth is 0.28 / r plus time, so rings stream outward from the vanishing point and speed up as they approach, while 12 longitudinal lanes twist gently with depth. Line color cycles through a cosine rainbow along the tunnel, the far end fades into a soft white-violet core, and the near wall carries a faint tint. Holding still for 150 ms goes to warp (so page scrolls never trigger it): while the finger stays down the travel speed eases up to 3.2× (≈ 400 ms time constant) with a medium haptic thump, and a sideways drag steers, easing the vanishing point toward the finger (exponential follow, ≈ 200 ms) and drifting back to center on release — a warp readout at the top shows the multiplier. Immersive, fast and arcade-bright.",
+            "一条无尽的霓虹隧道迎面冲来。隧道壁是极坐标网格：深度为 0.28 / r 加上时间，于是光环从消失点不断向外涌出、越靠近越快，12 条纵向轨道随深度轻轻扭转。线条颜色沿隧道按余弦彩虹循环，远端融入柔和的白紫色光核，近处墙面带一层淡淡的色调。静按 150 毫秒即进入曲速（滚动页面不会误触）：按住期间伴随一次中等触感，行进速度缓升至 3.2 倍（时间常数约 400 毫秒）；横向拖动可转向，消失点以指数跟随（约 200 毫秒）缓向手指，松手后漂回中心；顶部的曲速读数实时显示倍率。沉浸、迅疾、街机般明亮。"
         ),
         implementation: L(
             "A [[stitchable]] color shader maps each pixel to (angle, 0.28 / r + time), draws anti-aliased lane and ring lines with fract() and colors them with a cosine palette; a small model accumulates warp-scaled time and smooths the vanishing point toward the touch every TimelineView frame, while a never-completing long press reports the hold that drives warp.",
@@ -146,6 +146,8 @@ private final class TunnelModel {
 private struct TunnelDemo: View {
     let ctx: DemoContext
     @State private var model = TunnelModel()
+    /// Bumped on every press change, so a pending warp engage only fires if the finger is still down and still.
+    @State private var pressToken = 0
     @State private var size = CGSize(width: 340, height: 340)
 
     var body: some View {
@@ -166,9 +168,21 @@ private struct TunnelDemo: View {
         // A long press that never completes reports pressing while the finger stays down and fails as soon as
         // it moves 10 pt, so the page can still scroll (same pattern as Starfield Warp and Synthwave).
         // Sideways drags keep steering through backgroundsTouch, which also holds warp while engaged.
+        // pressing turns true at touch-down, so warp and the haptic wait for a 150 ms still hold: a page scroll
+        // that starts on the stage moves 10 pt (failing the press) before it engages.
         .onLongPressGesture(minimumDuration: 60, maximumDistance: 10, perform: {}, onPressingChanged: { pressing in
-            if pressing && !model.pressing { Haptics.tap(.medium) }
-            model.pressing = pressing
+            pressToken += 1
+            guard pressing else {
+                model.pressing = false
+                return
+            }
+            let token = pressToken
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.15))
+                guard token == pressToken, !model.pressing else { return }
+                model.pressing = true
+                Haptics.tap(.medium)
+            }
         })
         .backgroundsTouch { location in model.touch = location } onEnded: { model.touch = nil }
         .backgroundsHint(L("Hold to warp · drag sideways to steer", "按住进入曲速 · 横向拖动转向"), ctx)

@@ -87,8 +87,8 @@ extension Effect {
         name: L("Twirl", "漩涡扭转"),
         summary: L("Drag to twist the content into a vortex that springs back.", "拖动将内容拧成漩涡，松手后弹回。"),
         prompt: L(
-            "Pressing for a beat (120 ms) and then dragging twists the content into a vortex whose center rides under the finger, so the swirl can be stirred around the card. Rotation is strongest at the core and falls off quadratically to zero at a ≈ 110 pt radius, so the pattern spirals smoothly without tearing. Drag distance maps to twist angle (up to ±2.5 rad), with the sign taken from the horizontal direction. Releasing lets the vortex unwind in place with an underdamped spring (response 0.6 s, damping 0.5), overshooting slightly the other way before settling. A quick swipe without the press still scrolls the page. Playful, liquid and tactile.",
-            "先按住片刻（120 毫秒）再拖动，内容就会被拧成漩涡，漩涡中心始终跟随手指，可以在卡片上四处“搅动”。旋转在中心最强，并以二次方衰减至约 110pt 半径处归零，图案因此平滑盘旋而不撕裂。拖动距离映射为扭转角度（最大 ±2.5 弧度），方向取决于水平拖动方向。松手后漩涡在原地以欠阻尼弹簧（响应 0.6 秒、阻尼 0.5）解旋，轻微反向过冲后稳定。不按住直接快速滑动时，页面照常滚动。俏皮、流体、富有触感。"
+            "Pressing for a beat (250 ms) and then dragging twists the content into a vortex whose center rides under the finger, so the swirl can be stirred around the card. Rotation is strongest at the core and falls off quadratically to zero at a ≈ 110 pt radius, so the pattern spirals smoothly without tearing. Drag distance maps to twist angle (up to ±2.5 rad); the finger's accumulated turning sets the direction, so the content twists the way you stir and glides through zero on reversal. Releasing lets the vortex unwind in place with an underdamped spring (response 0.6 s, damping 0.5), overshooting slightly the other way before settling. A quick swipe without the press still scrolls the page. Playful, liquid and tactile.",
+            "先按住片刻（250 毫秒）再拖动，内容就会被拧成漩涡，漩涡中心始终跟随手指，可以在卡片上四处“搅动”。旋转在中心最强，并以二次方衰减至约 110pt 半径处归零，图案因此平滑盘旋而不撕裂。拖动距离映射为扭转角度（最大 ±2.5 弧度），方向由手指累计的转动方向决定：顺着搅动方向扭转，反向时平滑穿过零点。松手后漩涡在原地以欠阻尼弹簧（响应 0.6 秒、阻尼 0.5）解旋，轻微反向过冲后稳定。不按住直接快速滑动时，页面照常滚动。俏皮、流体、富有触感。"
         ),
         implementation: L(
             "A Metal distortion shader rotates sample coordinates by an angle that decays with distance. The angle and center live in an Animatable ViewModifier; the center tracks the drag location and a spring animates the angle back to zero.",
@@ -394,6 +394,12 @@ private struct SwirlDemo: View {
     @GestureState private var stirring = false
     /// Bumped when the user arms a stir, so a pending intro/autoplay unwind never springs the twist back mid-gesture.
     @State private var generation = 0
+    /// Stir tracking: the last sampled finger point and heading, the finger's accumulated turning (radians,
+    /// + = clockwise on screen, clamped to ±1 so a reversal needs ~1 rad of opposite stirring) and the twist direction.
+    @State private var lastPoint: CGPoint?
+    @State private var lastHeading: CGVector?
+    @State private var swept: Double = 0
+    @State private var direction: Double = 1
 
     var body: some View {
         VStack(spacing: 14) {
@@ -409,29 +415,59 @@ private struct SwirlDemo: View {
         .autoplay(ctx.isPreview, every: 1.8, delay: 0.2) { stir() }
     }
 
-    /// A short press arms the stir, so a quick vertical swipe on the card still scrolls the page.
+    /// A deliberate press (250 ms) arms the stir, so a swipe on the card, even one that starts slowly, still scrolls the page.
     private var stirGesture: some Gesture {
-        LongPressGesture(minimumDuration: 0.12)
+        LongPressGesture(minimumDuration: 0.25)
             .sequenced(before: DragGesture(minimumDistance: 0))
             .updating($stirring) { _, state, _ in state = true }
             .onChanged { value in
                 guard case .second(true, let drag) = value else { return }
                 guard let drag else {
                     generation += 1
+                    resetStir()
                     Haptics.tap(.soft)
                     return
                 }
-                // The vortex rides under the finger; distance sets the twist, horizontal direction its sign.
+                // The vortex rides under the finger; distance sets the twist, the stirring direction its sign.
                 center = drag.location
+                track(drag.location)
                 let maxAngle = ctx["maxAngle"]
                 let distance = Double(hypot(drag.translation.width, drag.translation.height))
-                let sign: Double = drag.translation.width < 0 ? -1 : 1
-                angle = (sign * distance / 60).clamped(to: -maxAngle...maxAngle)
+                // Clockwise stirring drags the content clockwise (a negative shader angle in y-down space).
+                let target = (-direction * distance / 60).clamped(to: -maxAngle...maxAngle)
+                // A spring (not a cut) so a direction change glides through zero instead of popping.
+                withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.85)) { angle = target }
             }
             .onEnded { _ in unwind() }
     }
 
+    /// Accumulates how far the finger's heading has turned, sampled every ≥ 4 pt of travel so jitter doesn't count.
+    /// The twist direction only flips once the accumulated turning passes ±0.35 rad (hysteresis).
+    private func track(_ point: CGPoint) {
+        guard let previous = lastPoint else {
+            lastPoint = point
+            return
+        }
+        let step = CGVector(dx: point.x - previous.x, dy: point.y - previous.y)
+        guard hypot(step.dx, step.dy) >= 4 else { return }
+        lastPoint = point
+        if let heading = lastHeading {
+            let cross = Double(heading.dx * step.dy - heading.dy * step.dx)
+            let dot = Double(heading.dx * step.dx + heading.dy * step.dy)
+            swept = (swept + atan2(cross, dot)).clamped(to: -1...1)
+            if swept > 0.35 { direction = 1 } else if swept < -0.35 { direction = -1 }
+        }
+        lastHeading = step
+    }
+
+    private func resetStir() {
+        lastPoint = nil
+        lastHeading = nil
+        swept = 0
+    }
+
     private func unwind() {
+        resetStir()
         guard angle != 0 else { return }
         withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) { angle = 0 }
     }

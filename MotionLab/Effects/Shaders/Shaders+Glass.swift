@@ -8,8 +8,8 @@ extension Effect {
         name: L("Frosted Glass Material", "磨砂玻璃材质"),
         summary: L("A SwiftUI material card over drifting color, with a tilt-reactive sheen — no Metal needed.", "漂浮色块上的 SwiftUI 材质卡片，倾斜时高光随之流动——无需 Metal。"),
         prompt: L(
-            "A frosted-glass card floats on a deep, saturated indigo-to-magenta plate where heavily blurred color orbs (pink, sky, amber) orbit on 7–12 s loops, so the glass always has vivid color to diffuse — even on a light page. The card is a system material (background blur plus vibrancy), not a custom shader, with a 1 pt white hairline rim fading diagonally from 60% to 10% opacity and a soft drop shadow. A brief press (120 ms) arms it, then dragging tilts it up to ±12° in 3D; a diagonal specular sheen slides across the glass opposite the tilt and the orbs parallax behind it, then everything springs back (response 0.5 s, damping 0.7). Calm, luminous and physical.",
-            "一张磨砂玻璃卡片悬浮在一块深靛蓝到洋红的高饱和底板上，高度模糊的彩色光球（粉、天蓝、琥珀）以 7～12 秒周期环绕，玻璃背后始终有鲜艳色彩可供柔化，浅色页面上也不发灰。卡片使用系统材质（背景模糊 + 鲜明度）而非自定义着色器，边缘为 1pt 白色细描边、不透明度沿对角由 60% 渐变到 10%，并带柔和投影。按住约 120ms 后拖动，卡片在 3D 空间中倾斜最多 ±12°，一道斜向高光沿与倾斜相反的方向滑过玻璃，背后的光球产生视差；松手后一切以弹簧（响应 0.5 秒、阻尼 0.7）回正。宁静而通透。"
+            "A frosted-glass card floats on a deep, saturated indigo-to-magenta plate where heavily blurred color orbs (pink, sky, amber) orbit on 7–12 s loops, so the glass always has vivid color to diffuse — even on a light page. The card is a system material (background blur plus vibrancy), not a custom shader, with a 1 pt white hairline rim fading diagonally from 60% to 10% opacity and a soft drop shadow. A deliberate press (250 ms) arms it, then dragging tilts it up to ±12° in 3D; a diagonal specular sheen slides across the glass opposite the tilt and the orbs parallax behind it, then everything springs back (response 0.5 s, damping 0.7). Calm, luminous and physical.",
+            "一张磨砂玻璃卡片悬浮在一块深靛蓝到洋红的高饱和底板上，高度模糊的彩色光球（粉、天蓝、琥珀）以 7～12 秒周期环绕，玻璃背后始终有鲜艳色彩可供柔化，浅色页面上也不发灰。卡片使用系统材质（背景模糊 + 鲜明度）而非自定义着色器，边缘为 1pt 白色细描边、不透明度沿对角由 60% 渐变到 10%，并带柔和投影。按住约 250ms 后拖动，卡片在 3D 空间中倾斜最多 ±12°，一道斜向高光沿与倾斜相反的方向滑过玻璃，背后的光球产生视差；松手后一切以弹簧（响应 0.5 秒、阻尼 0.7）回正。宁静而通透。"
         ),
         implementation: L(
             "Pure SwiftUI materials, no Metal: blurred circles animated by TimelineView sit on a saturated gradient plate beneath a RoundedRectangle filled with .ultraThinMaterial; a press-armed DragGesture (LongPressGesture sequenced before it) drives rotation3DEffect and the offset of a gradient sheen overlay.",
@@ -108,7 +108,7 @@ private struct GlassmorphismDemo: View {
     }
 
     private var tiltGesture: some Gesture {
-        LongPressGesture(minimumDuration: 0.12)
+        LongPressGesture(minimumDuration: 0.25)
             .sequenced(before: DragGesture(minimumDistance: 0))
             .updating($tilting) { _, state, _ in state = true }
             .onChanged { value in

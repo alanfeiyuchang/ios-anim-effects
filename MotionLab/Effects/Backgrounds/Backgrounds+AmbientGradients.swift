@@ -71,8 +71,8 @@ extension Effect {
             "斜切的网格渐变色带中有一道行进波流过，点击后像果冻一样抖动。"
         ),
         prompt: L(
-            "A landing-page hero: the top of the stage is a 4×3 mesh gradient of violet, pink, orange, amber, cyan and teal, clipped into a band whose lower edge slants down from right to left; below it sits the plain system background with a headline in primary text. Instead of wandering, the mesh's middle row carries a traveling wave — each column's vertex rises and falls on the same sine, 1.4 rad behind its left neighbor (≈ 4.8 s period at 1×) — so color crests roll across the band, while interior vertices sway ±7% sideways. Tapping hits the band: the wave amplitude jumps by 130% and rings out as a damped oscillation (decay 2.4/s, 9 rad/s), dipping to about half its resting height once before settling, like jelly. Confident, colorful and modern.",
-            "一个落地页首屏：舞台上方是由紫、粉、橙、琥珀、青与蓝绿组成的 4×3 网格渐变，被裁成一条下边缘从右向左斜向下的色带，下方是系统背景与一行主色标题。网格不四处游走，而是在中间一行承载行进波：每列顶点沿同一正弦上下起伏，比左侧相邻列滞后 1.4 弧度（1× 时周期约 4.8 秒），色彩波峰从色带上滚过，内部顶点同时左右摇摆 ±7%。点击色带会“敲”它一下：波幅瞬间增加 130%，再以阻尼振荡（衰减 2.4/s、9 rad/s）回落，途中一度跌到常态的一半左右，像果冻般稳定下来。自信、鲜艳、现代。"
+            "A landing-page hero: the top of the stage is a 4×3 mesh gradient of violet, pink, orange, amber, cyan and teal, clipped into a band whose lower edge slants down from right to left; below it sits the plain system background with a headline in primary text. Instead of wandering, the mesh's middle row carries a traveling wave — each column's vertex rises and falls on the same sine, 1.4 rad behind its left neighbor (≈ 4.8 s period at 1×) — so color crests roll across the band, while interior vertices sway ±7% sideways. Tapping hits the band: the wave amplitude kicks up by ~130% within ~0.15 s and rings out as a damped oscillation (decay 2.4/s, 9 rad/s), dipping to about half its resting height once before settling, like jelly. Confident, colorful and modern.",
+            "一个落地页首屏：舞台上方是由紫、粉、橙、琥珀、青与蓝绿组成的 4×3 网格渐变，被裁成一条下边缘从右向左斜向下的色带，下方是系统背景与一行主色标题。网格不四处游走，而是在中间一行承载行进波：每列顶点沿同一正弦上下起伏，比左侧相邻列滞后 1.4 弧度（1× 时周期约 4.8 秒），色彩波峰从色带上滚过，内部顶点同时左右摇摆 ±7%。点击色带会“敲”它一下：波幅 0.15 秒内冲高约 130%，再以阻尼振荡（衰减 2.4/s、9 rad/s）回落，途中一度跌到常态一半，像果冻般稳定下来。自信、鲜艳、现代。"
         ),
         implementation: L(
             "MeshGradient(width: 4, height: 3) gets its 12 points from a traveling-wave function of accumulated time; the amplitude is multiplied by 1 + 1.3·e^(−2.4t)·cos(9t) after a tap, and a custom slanted Shape clips the band.",
@@ -103,6 +103,9 @@ private final class HaloModel {
     private var angle: Double = 0
     private var counter: Double = 0
     private var boost: Double = 0
+    /// Energy as drawn: eases toward the momentum-derived target (rate 14/s, ≈ 70 ms), so a kick swells the
+    /// halo's scale and ring instead of popping them in one frame.
+    private var shownEnergy: Double = 0
 
     func step(now: Double, speed: Double, friction: Double) -> HaloState {
         clock.advance(to: now, speed: 1)
@@ -112,7 +115,8 @@ private final class HaloModel {
         angle += (base + boost) * dt
         counter -= (base * 0.6 + boost * 0.45) * dt
         let energy = min(boost / 9, 1)
-        return HaloState(angle: angle, counter: counter, energy: energy)
+        shownEnergy += (energy - shownEnergy) * clock.follow(rate: 14)
+        return HaloState(angle: angle, counter: counter, energy: shownEnergy)
     }
 
     func kick() {
@@ -335,15 +339,32 @@ private enum BandMesh {
 
 private final class BandModel {
     let clock = BackgroundClock()
-    var hitStart: Double = -100
+    /// Extra amplitude (0 at rest) and its velocity: a damped oscillator with decay 2.4/s and 9 rad/s.
+    private var ring: Double = 0
+    private var ringVelocity: Double = 0
 
     /// Returns accumulated time and the amplitude multiplier (1 at rest).
     func step(now: Double, speed: Double) -> (t: Double, gain: Double) {
         let t = clock.advance(to: now, speed: speed)
-        let e = now - hitStart
-        guard e >= 0, e < 4 else { return (t, 1) }
-        let ring = 1.3 * exp(-2.4 * e) * cos(9 * e)
-        return (t, 1 + ring)
+        // x'' = −(9² + 2.4²)·x − 2·2.4·x′, i.e. x = A·e^(−2.4t)·sin(9t) after an impulse; fixed substeps keep it stable.
+        var remaining = clock.delta
+        while remaining > 0 {
+            let dt = min(remaining, 1.0 / 240.0)
+            ringVelocity += (-(81 + 5.76) * ring - 4.8 * ringVelocity) * dt
+            ring += ringVelocity * dt
+            remaining -= dt
+        }
+        if abs(ring) < 0.0005 && abs(ringVelocity) < 0.005 {
+            ring = 0
+            ringVelocity = 0
+        }
+        return (t, max(1 + ring, 0))
+    }
+
+    /// A hit is an impulse, not a jump: the amplitude kicks up to about +130% within ~0.15 s (A·0.68 with A = 1.91),
+    /// dips to about half its resting height once, then settles. A second hit adds to whatever is still ringing.
+    func hit() {
+        ringVelocity += 1.91 * 9
     }
 }
 
@@ -377,7 +398,8 @@ private struct WaveBandDemo: View {
                 MeshGradient(
                     width: 4,
                     height: 3,
-                    points: BandMesh.points(t: state.t, amplitude: amplitude * state.gain),
+                    // Capped so the middle row can never cross rows 0 and 2 and fold the mesh.
+                    points: BandMesh.points(t: state.t, amplitude: min(amplitude * state.gain, 0.4)),
                     colors: BandMesh.colors
                 )
             }
@@ -407,6 +429,6 @@ private struct WaveBandDemo: View {
     }
 
     private func hit() {
-        model.hitStart = Date().timeIntervalSinceReferenceDate
+        model.hit()
     }
 }

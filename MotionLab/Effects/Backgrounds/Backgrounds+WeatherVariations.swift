@@ -43,8 +43,8 @@ extension Effect {
             "层层雾带在山脊之间以视差缓缓流动，点击让月光破雾而出。"
         ),
         prompt: L(
-            "A moonlit valley: a dusky indigo-to-mauve sky, a soft moon with a blurred glow, and three mountain ridges that darken toward the viewer. Between the ridges drift three fog banks, each made of six large blurred puffs (150–230 pt wide) sliding sideways at 8, 18 and 28 pt/s — far banks slower, near banks faster and denser — while gently rising and falling, so depth comes purely from parallax. Tapping parts the fog: density eases down by 70% over 1.2 s, holds for a second while the moon glow brightens, then the fog rolls back in over 3 s. Hushed, atmospheric and patient.",
-            "月光下的山谷：天空从暮色靛蓝过渡到淡紫，一轮带模糊光晕的柔和月亮，以及三道越靠近观者越暗的山脊。山脊之间飘着三层雾带，每层由六团大面积模糊雾团（宽 150–230pt）组成，分别以每秒 8、18、28pt 横向滑动——远处更慢、近处更快更浓——同时轻轻起伏，纵深感完全来自视差。点击会拨开雾气：浓度在 1.2 秒内缓降 70%，停留约 1 秒，月晕同时变亮，随后雾气在 3 秒内重新漫回。静谧、氛围浓厚、从容不迫。"
+            "A moonlit valley: a dusky indigo-to-mauve sky, a soft moon with a blurred glow, and three mountain ridges that darken toward the viewer. Between the ridges drift three fog banks, each made of six large blurred puffs (150–230 pt wide) sliding sideways at 8, 18 and 28 pt/s — far banks slower, near banks faster and denser — while gently rising and falling, so depth comes purely from parallax. Tapping parts the fog: density eases down by 70% over 1.2 s, holds for a second while the moon glow brightens, then the fog rolls back in over 3 s; tapping again resumes from the density on screen. Hushed, atmospheric and patient.",
+            "月光下的山谷：天空从暮色靛蓝过渡到淡紫，一轮带模糊光晕的柔和月亮，以及三道越靠近观者越暗的山脊。山脊之间飘着三层雾带，每层由六团大面积模糊雾团（宽 150–230pt）组成，分别以每秒 8、18、28pt 横向滑动——远处更慢、近处更快更浓——同时轻轻起伏，纵深感完全来自视差。点击会拨开雾气：浓度在 1.2 秒内缓降 70%，停留约 1 秒，月晕同时变亮，随后雾气在 3 秒内重新漫回；再次点击会从当前浓度接着拨开。静谧、氛围浓厚、从容不迫。"
         ),
         implementation: L(
             "A Canvas interleaves ridge Paths with blurred drawLayer fog banks whose puff x positions wrap with accumulated time; the tap envelope (ease down, hold, ease back) scales every fog layer's opacity.",
@@ -261,9 +261,28 @@ private final class FogModel {
         return 0
     }
 
+    /// Starts (or continues) a parting from the fog that is on screen now, so a repeated tap never snaps back to full density:
+    /// while easing down it keeps going, while held it re-arms the hold, and while rolling back it eases down again from the current value.
+    func part(at now: Double) {
+        let e = now - partStart
+        if e >= 0 && e < 1.2 { return }
+        if e >= 1.2 && e < 2.2 {
+            partStart = now - 1.2
+            return
+        }
+        let current = parted(at: now)
+        partStart = now - 1.2 * inverseSmooth(current)
+    }
+
     private func smooth(_ x: Double) -> Double {
         let c = x.clamped(to: 0...1)
         return c * c * (3 - 2 * c)
+    }
+
+    /// Inverse of smoothstep on 0...1.
+    private func inverseSmooth(_ y: Double) -> Double {
+        let c = y.clamped(to: 0...1)
+        return 0.5 - sin(asin(1 - 2 * c) / 3)
     }
 }
 
@@ -326,7 +345,7 @@ private struct RollingFogDemo: View {
     }
 
     private func part() {
-        model.partStart = Date().timeIntervalSinceReferenceDate
+        model.part(at: Date().timeIntervalSinceReferenceDate)
     }
 }
 

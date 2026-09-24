@@ -8,8 +8,8 @@ extension Effect {
         name: L("Heatmap Ripple Reveal", "热力图涟漪揭示"),
         summary: L("A contribution grid that pops in as a ripple radiating from the cell you tap.", "贡献热力图以你点击的格子为圆心，涟漪般逐格弹出。"),
         prompt: L(
-            "A 14 × 7 contribution heatmap of 16 pt rounded cells (4 pt corners, 4 pt gaps) in five intensity levels — 7% primary for empty, then mint at 30/55/80/100% — under a header with the yearly total. On appear the grid reveals from the top-left corner; tapping any cell makes the current cells shrink away in 180 ms, loads new data and then reveals it as a circular ripple centered on the tapped cell: each cell’s delay is its Euclidean distance × 35 ms, and it springs from 30% scale and 0 opacity to full size (response 0.45 s, damping 0.6, slight overshoot). The origin cell keeps a soft mint glow and the total rolls with a numeric transition. The wave makes a static grid feel alive and spatially connected to your touch.",
-            "一张 14 × 7 的贡献热力图，格子为 16pt 圆角方块（圆角 4pt、间距 4pt），分五档强度：空值为 7% 主色，其余为 30/55/80/100% 的薄荷绿，上方标题显示年度总数。出现时从左上角开始揭示；点击任意格子，现有格子先在 180ms 内缩小消失，载入新数据后以被点格子为圆心呈圆形涟漪逐格出现：每格延迟 = 与圆心的距离 × 35ms，从 30% 缩放、0 透明度以弹簧（响应 0.45 秒、阻尼 0.6，轻微过冲）弹到完整尺寸。圆心格保留柔和辉光，总数以数字转场滚动。网格因此与指尖建立空间关联。"
+            "A 14 × 7 contribution heatmap of 16 pt rounded cells (4 pt corners, 4 pt gaps) in five intensity levels — 7% primary for empty, then mint at 30/55/80/100% — under a header with the yearly total. On appear the grid reveals from the top-left corner; tapping anywhere on the grid (gaps included) picks the nearest cell and makes the current cells shrink away in 180 ms, loads new data and then reveals it as a circular ripple centered on the tapped cell: each cell’s delay is its Euclidean distance × 35 ms, and it springs from 30% scale and 0 opacity to full size (response 0.45 s, damping 0.6, slight overshoot). The origin cell keeps a soft mint glow and the total rolls with a numeric transition. The wave makes a static grid feel alive and spatially connected to your touch.",
+            "一张 14 × 7 的贡献热力图，格子为 16pt 圆角方块（圆角 4pt、间距 4pt），分五档强度：空值为 7% 主色，其余为 30/55/80/100% 的薄荷绿，上方标题显示年度总数。出现时从左上角开始揭示；点击网格任一处（含间隙），现有格子先在 180ms 内缩小消失，载入新数据后以最近格子为圆心呈圆形涟漪逐格出现：每格延迟 = 与圆心的距离 × 35ms，从 30% 缩放、0 透明度以弹簧（响应 0.45 秒、阻尼 0.6，轻微过冲）弹到完整尺寸。圆心格保留柔和辉光，总数以数字转场滚动。网格与指尖建立空间关联。"
         ),
         implementation: L(
             "Every cell applies .animation(revealed ? spring.delay(distance × stagger) : easeOut, value: revealed); a tap stores the origin, hides the grid, swaps the data after a short Task sleep and flips revealed back on.",
@@ -69,6 +69,14 @@ private struct HeatmapDemo: View {
                         }
                     }
                 }
+            }
+            // One tap target for the whole grid (gaps included, extended 8 pt into the card's padding), mapped to the
+            // nearest cell on the 20 pt pitch, instead of 16 pt per-cell targets with dead 4 pt gaps.
+            .contentShape(Rectangle().inset(by: -8))
+            .onTapGesture(coordinateSpace: .local) { location in
+                let column = Int(((location.x + 2) / 20).rounded(.down)).clamped(to: 0...(heatColumns - 1))
+                let row = Int(((location.y + 2) / 20).rounded(.down)).clamped(to: 0...(heatRows - 1))
+                ripple(column: column, row: row, refresh: true)
             }
         }
         .padding(16)
@@ -131,7 +139,6 @@ private struct HeatmapDemo: View {
             .scaleEffect(revealed ? 1 : 0.3)
             .opacity(revealed ? 1 : 0)
             .animation(animation, value: revealed)
-            .onTapGesture { ripple(column: column, row: row, refresh: true) }
     }
 
     private func ripple(column: Int, row: Int, refresh: Bool) {

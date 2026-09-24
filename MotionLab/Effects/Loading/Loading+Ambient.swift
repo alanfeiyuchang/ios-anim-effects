@@ -38,7 +38,7 @@ extension Effect {
         params: [
             .slider("speed", L("Sweep speed", "扫光速度"), 0.4...2.5, default: 1.0),
             .slider("band", L("Band width", "光带宽度"), 0.15...0.6, default: 0.3),
-            .slider("angle", L("Tilt", "倾斜"), 0...0.6, default: 0.25),
+            .slider("angle", L("Tilt", "倾斜"), 0...60, default: 35, decimals: 0, unit: "°"),
         ]
     ) { ctx in
         SkeletonDemo(ctx: ctx)
@@ -54,7 +54,7 @@ private struct SkeletonDemo: View {
             ZStack {
                 SkeletonLayout(tint: Color.primary.opacity(0.08))
                     .overlay {
-                        ShimmerBand(speed: ctx["speed"], band: ctx["band"], tilt: ctx["angle"], preview: ctx.isPreview)
+                        ShimmerBand(speed: ctx["speed"], band: ctx["band"], tilt: ShimmerBand.offset(band: ctx["band"], degrees: ctx["angle"]), preview: ctx.isPreview)
                             .mask { SkeletonLayout(tint: .black) }
                     }
                     .opacity(loaded ? 0 : 1)
@@ -134,10 +134,17 @@ private struct SkeletonLoadedCard: View {
 private struct ShimmerBand: View {
     let speed: Double
     let band: Double
+    /// Vertical half-offset of the gradient axis (unit space), from the band's tilt off vertical.
     let tilt: Double
     let preview: Bool
     @Environment(\.colorScheme) private var scheme
     @State private var clock = AmbientPhaseClock()
+
+    /// A band tilted `degrees` off vertical: the gradient axis rises `band · tan(θ)` over its half-width `band`.
+    static func offset(band: Double, degrees: Double) -> Double {
+        let radians: Double = min(max(degrees, 0), 80) * .pi / 180
+        return band * tan(radians)
+    }
 
     var body: some View {
         let peak = Color.white.opacity(scheme == .dark ? 0.14 : 0.7)

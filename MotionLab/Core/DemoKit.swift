@@ -169,6 +169,66 @@ extension EnvironmentValues {
         get { self[DemoSyncEpochKey.self] }
         set { self[DemoSyncEpochKey.self] = newValue }
     }
+
+    /// `true` while the demo is rasterised into a still thumbnail with `ImageRenderer` (set by the
+    /// app's snapshot renderer, next to `DemoContext.isStill`). Unlike `ctx.isStill` it reaches every
+    /// subview without being passed down. `ImageRenderer` cannot draw materials, `.bar` or Liquid
+    /// Glass (they come out as solid black), so surfaces use `DemoMaterial` / `.demoGlass(_:)`, which
+    /// read this flag and swap in a translucent fill.
+    var demoIsStill: Bool {
+        get { self[DemoIsStillKey.self] }
+        set { self[DemoIsStillKey.self] = newValue }
+    }
+}
+
+private struct DemoIsStillKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+// MARK: - Still-safe materials
+
+/// A material surface that survives still rendering: the real `material` when live, and a
+/// translucent fill tinted for the colour scheme (plus a hairline) inside a still thumbnail, where
+/// `ImageRenderer` would otherwise paint the material solid black.
+///
+///     .background(DemoMaterial(Capsule(), material: .ultraThinMaterial))
+///
+/// `fallback` overrides the still fill (e.g. a tinted glass: `Palette.sky.opacity(0.25)`).
+struct DemoMaterial<S: Shape>: View {
+    let shape: S
+    let material: Material
+    let fallback: Color?
+    @Environment(\.demoIsStill) private var isStill
+    @Environment(\.colorScheme) private var colorScheme
+
+    init(_ shape: S, material: Material = .ultraThinMaterial, fallback: Color? = nil) {
+        self.shape = shape
+        self.material = material
+        self.fallback = fallback
+    }
+
+    var body: some View {
+        if isStill {
+            let dark = colorScheme == .dark
+            let fill: Color = fallback ?? (dark ? Color(white: 0.2, opacity: 0.72) : Color(white: 1, opacity: 0.72))
+            let hairline: Color = dark ? Color.white.opacity(0.14) : Color.black.opacity(0.08)
+            shape
+                .fill(fill)
+                .overlay(shape.stroke(hairline, lineWidth: 0.5))
+        } else {
+            shape.fill(material)
+        }
+    }
+}
+
+extension View {
+    /// Puts a still-safe material behind the view, clipped to `shape` (see `DemoMaterial`):
+    /// `.demoGlass(Capsule())`, `.demoGlass(RoundedRectangle(cornerRadius: 18), material: .regularMaterial)`,
+    /// `.demoGlass(Circle(), material: .bar, fallback: .white.opacity(0.5))`.
+    /// Use it instead of `.background(.ultraThinMaterial, in: shape)` in every demo.
+    func demoGlass<S: Shape>(_ shape: S, material: Material = .ultraThinMaterial, fallback: Color? = nil) -> some View {
+        background(DemoMaterial(shape, material: material, fallback: fallback))
+    }
 }
 
 private struct AutoplayModifier: ViewModifier {

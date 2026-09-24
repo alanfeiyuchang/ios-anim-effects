@@ -120,7 +120,9 @@ private struct ButtonJellyPressDemo: View {
                 .onEnded { _ in release() }
         )
         .onChange(of: touching) { _, isTouching in
-            if !isTouching { release() }
+            // Only a system-cancelled touch gets here still pressed (onEnded already released a lifted one):
+            // settle back quietly, without the release wobble or its haptic.
+            if !isTouching { cancelPress() }
         }
         .accessibilityAddTraits(.isButton)
     }
@@ -129,6 +131,11 @@ private struct ButtonJellyPressDemo: View {
         guard !pressed else { return }
         pressed = true
         Haptics.tap(.soft)
+    }
+
+    private func cancelPress() {
+        guard pressed else { return }
+        pressed = false
     }
 
     private func release() {

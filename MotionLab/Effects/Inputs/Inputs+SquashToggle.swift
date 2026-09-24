@@ -133,7 +133,11 @@ private struct InputSquashToggleDemo: View {
             DragGesture(minimumDistance: 0)
                 .updating($touching) { _, state, _ in state = true }
                 .onChanged { _ in press() }
-                .onEnded { _ in release() }
+                .onEnded { value in
+                    // Like a system switch: lifting well off the control (30 pt slop) cancels instead of toggling.
+                    let slop: CGRect = CGRect(origin: .zero, size: trackSize).insetBy(dx: -30, dy: -30)
+                    if slop.contains(value.location) { release() } else { cancelPress() }
+                }
         )
         .onChange(of: touching) { _, isTouching in
             if !isTouching { cancelPress() }

@@ -4,25 +4,26 @@ extension Effect {
     static let backgroundsHalftoneFlow = Effect(
         id: "backgrounds.halftone-flow",
         category: .backgrounds,
-        interaction: .loop,
+        interaction: .gesture,
         name: L("Halftone Flow", "半调点阵流"),
         summary: L(
-            "A dot matrix swells and shrinks with flowing interference waves — tap to flash the exposure.",
-            "点阵随流动的干涉波起伏缩放，点击闪一次曝光。"
+            "A dot matrix swells with flowing interference waves; drag across it like an ink roller and the trail bleeds back.",
+            "点阵随流动的干涉波起伏；像墨辊一样横向拖过，留下的墨痕会慢慢渗回。"
         ),
         prompt: L(
-            "A dark graphite canvas covered edge to edge by a regular halftone dot matrix. Each dot’s radius is driven by a smooth interference field — two diagonal traveling sine waves, one horizontal drift and one ripple radiating from the center, each at its own speed (4–10 s periods) — so bands of large dots glide, cross and dissolve like light under water while quiet areas shrink to pinpoints. The whole matrix is tinted by one diagonal gradient (indigo → violet → pink → amber), so color stays still while form moves. A tap fires a flash-bulb exposure: within 80 ms every dot swells toward full coverage, strongest within ~180 pt of the finger, then the print relaxes through a damped swing (decay 2.6/s, 5.5 rad/s), briefly under-exposing before it settles in about 2 s. Crisp, calm and quietly premium.",
-            "深石墨色画布被规则的半调点阵完整铺满。每个点的半径由平滑的干涉场驱动：两道斜向行进的正弦波、一道水平漂移的波与一道从中心扩散的涟漪，各自速度不同（周期 4–10 秒）。大点光带如水下光影般滑动、交错又消散，平静处缩成针尖。点阵由对角渐变（靛蓝 → 紫 → 粉 → 琥珀）统一着色，色彩静止、形态流动。点击如闪光灯“曝光”：80ms 内所有点膨大到接近铺满（指尖约 180pt 内最强），再以阻尼摆动（衰减 2.6/s、5.5 rad/s）回落，途中短暂欠曝、点径略小于常态，约 2 秒内平息。沉静而高级。"
+            "A dark graphite canvas covered edge to edge by a regular halftone dot matrix. Each dot’s radius follows a smooth interference field — two diagonal traveling sine waves, a horizontal drift and a ripple from the center (4–10 s periods) — so bands of large dots glide and dissolve like light under water while quiet areas shrink to pinpoints, all tinted by one still diagonal gradient (indigo → violet → pink → amber). Dragging sideways works like an ink roller: every dot inside a ~40 pt band along the finger’s path jumps to full coverage at once, with a soft 6 pt edge, and the inked trail bleeds back into the moving field over about 1.5 s on a smoothstep, with no bounce or oscillation. A tap leaves a single round blot. On arrival a flash-bulb exposure swells the whole print once. Crisp, tactile, quietly premium.",
+            "深石墨色画布被规则的半调点阵铺满。每个点的半径由平滑干涉场驱动：两道斜向行进的正弦波、一道水平漂移波与一道中心涟漪（周期 4–10 秒），大点光带如水下光影般滑动消散，平静处缩成针尖，整体由静止的对角渐变（靛蓝 → 紫 → 粉 → 琥珀）着色。横向拖动如同滚过墨辊：手指路径两侧约 40pt 宽的带内，点立刻涨满，边缘柔和过渡 6pt；墨痕随后按 smoothstep 在约 1.5 秒内渗回流动的点阵，没有回弹或振荡。轻点只留下一枚圆形墨斑。进入页面时会有一次闪光灯式曝光。利落、可触、低调高级。"
         ),
         implementation: L(
-            "Per frame, every dot's radius is sampled from a sum of sines, raised to a tap-driven exposure gamma (a damped swing, weighted toward the finger) and appended to a single Path, which is filled once with a linear gradient — one draw call for the whole field.",
-            "每帧根据正弦叠加场计算每个点的半径，再按点击触发的曝光 gamma（阻尼摆动，靠近指尖更强）调整，追加到同一条 Path，最后以线性渐变一次性填充——整片点阵只需一次绘制调用。"
+            "Per frame, every dot's coverage is sampled from a sum of sines, then lifted toward full by the ink trail: finger samples spaced 4 pt apart, each weighted by a distance falloff and a 1.5 s smoothstep age fade. All dots go into a single Path filled once with a linear gradient.",
+            "每帧根据正弦叠加场计算每个点的覆盖率，再由墨迹抬向涨满：手指采样点间隔 4pt，各自按距离衰减与 1.5 秒 smoothstep 时长淡出加权。所有点追加到同一条 Path，以线性渐变一次填充。"
         ),
-        apis: ["Canvas", "TimelineView(.animation)", "Path.addEllipse(in:)", "GraphicsContext.Shading.linearGradient"],
-        tags: ["halftone", "dots", "pattern", "texture", "半调", "点阵", "纹理", "图案"],
+        apis: ["Canvas", "TimelineView(.animation)", "DragGesture", "Path.addEllipse(in:)", "GraphicsContext.Shading.linearGradient"],
+        tags: ["halftone", "dots", "ink roller", "texture", "半调", "点阵", "墨辊", "纹理"],
         params: [
             .slider("spacing", L("Dot spacing", "点间距"), 9...24, default: 13, decimals: 0, unit: "pt"),
             .slider("speed", L("Flow speed", "流动速度"), 0.2...2.5, default: 1.0, unit: "×"),
+            .slider("fade", L("Ink bleed time", "墨迹渗回时间"), 0.5...3.0, default: 1.5, unit: "s"),
             .choice("palette", L("Palette", "配色"), [L("Spectrum", "光谱"), L("Mint", "薄荷"), L("Mono", "单色")]),
         ]
     ) { ctx in
@@ -33,9 +34,11 @@ extension Effect {
 private struct HalftoneFlowDemo: View {
     let ctx: DemoContext
     @State private var clock = BackgroundClock()
-    /// Reference time of the last tap (the "flash-bulb" exposure).
+    @State private var ink = HalftoneInk()
+    /// Reference time of the arrival flash-bulb exposure (detail intro only).
     @State private var exposedAt: Double = -100
     @State private var origin = CGPoint(x: 170, y: 170)
+    @State private var size = CGSize(width: 340, height: 340)
 
     var body: some View {
         ZStack {
@@ -43,11 +46,14 @@ private struct HalftoneFlowDemo: View {
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let now = timeline.date.timeIntervalSinceReferenceDate
                 let t = clock.advance(to: now, speed: ctx["speed"])
+                let fade: Double = max(ctx["fade"], 0.1)
+                let _ = ink.prepare(now: now, fade: fade, simulated: simulatedRoller(now: now))
                 HalftoneCanvas(
                     t: t,
                     spacing: max(ctx.cg("spacing"), 6),
                     colors: HalftoneCanvas.paletteColors(ctx.int("palette")),
-                    exposure: HalftoneExposure(origin: origin, amount: HalftoneExposure.envelope(age: now - exposedAt))
+                    exposure: HalftoneExposure(origin: origin, amount: HalftoneExposure.envelope(age: now - exposedAt)),
+                    ink: ink.snapshot(now: now, fade: fade)
                 )
             }
             BackgroundSampleTitle(
@@ -56,26 +62,134 @@ private struct HalftoneFlowDemo: View {
                 language: ctx.language
             )
         }
-        .contentShape(Rectangle())
-        .onTapGesture { location in
-            Haptics.tap(.soft)
-            expose(at: location)
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { newSize in
+            size = newSize
+            origin = CGPoint(x: newSize.width / 2, y: newSize.height / 2)
         }
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
-            origin = CGPoint(x: size.width / 2, y: size.height / 2)
-        }
-        .autoplay(ctx.isPreview, every: 3.4, delay: 1.2) { expose(at: origin) }
-        .backgroundsHint(L("Tap to flash the exposure", "点击闪一次曝光"), ctx)
+        // Horizontal-first and simultaneous (vertical swipes still scroll the page); a tap pokes a single blot.
+        .backgroundsTouch(onChanged: { point in
+            if !ink.rolling && !ctx.isPreview { Haptics.tap(.soft) }
+            ink.roll(to: point, at: Date().timeIntervalSinceReferenceDate)
+        }, onEnded: {
+            ink.lift()
+        })
+        // The flash bulb survives only as the detail page's arrival play; previews demo the roller instead.
+        .autoplay(false, every: 3.4) { expose(at: origin) }
+        .backgroundsHint(L("Drag sideways to roll ink", "横向拖动滚上墨迹"), ctx)
+        .onDisappear { ink.lift() }
     }
 
     private func expose(at location: CGPoint) {
         origin = location
         exposedAt = Date().timeIntervalSinceReferenceDate
     }
+
+    /// Previews can't be touched: every 3.4 s a "roller" sweeps across the print on a gentle S.
+    private func simulatedRoller(now: Double) -> CGPoint? {
+        guard ctx.isPreview else { return nil }
+        let cycle: Double = now.truncatingRemainder(dividingBy: 3.4)
+        guard cycle < 1.4 else { return nil }
+        let f: Double = cycle / 1.4
+        let lane: Double = (now / 3.4).rounded(.down).truncatingRemainder(dividingBy: 3)
+        let x: CGFloat = size.width * CGFloat(0.08 + 0.84 * f)
+        let y: CGFloat = size.height * CGFloat(0.3 + 0.2 * lane) + 26 * CGFloat(sin(f * .pi * 2))
+        return CGPoint(x: x, y: y)
+    }
 }
 
-/// A tap "over-exposes" the print: every dot's coverage is pushed toward full (strongest near the finger),
-/// then relaxes through a brief under-exposure, like a flash bulb on photographic paper.
+/// One inked point of the roller's trail.
+private struct HalftoneInkSample {
+    let point: CGPoint
+    let time: Double
+}
+
+/// The ink roller's trail: finger samples 4 pt apart, dropped once fully bled back.
+private final class HalftoneInk {
+    private var samples: [HalftoneInkSample] = []
+    private var last: CGPoint?
+    private var simulating = false
+    private(set) var rolling = false
+
+    func roll(to point: CGPoint, at time: Double) {
+        rolling = true
+        guard let from = last else {
+            append(point, time)
+            last = point
+            return
+        }
+        let distance: CGFloat = hypot(point.x - from.x, point.y - from.y)
+        guard distance >= 4 else { return }
+        let steps: Int = min(Int(distance / 4), 40)
+        for k in 1...max(steps, 1) {
+            let f: CGFloat = CGFloat(k) / CGFloat(max(steps, 1))
+            append(CGPoint(x: from.x + (point.x - from.x) * f, y: from.y + (point.y - from.y) * f), time)
+        }
+        last = point
+    }
+
+    func lift() {
+        rolling = false
+        last = nil
+    }
+
+    private func append(_ point: CGPoint, _ time: Double) {
+        samples.append(HalftoneInkSample(point: point, time: time))
+        if samples.count > 400 { samples.removeFirst(samples.count - 400) }
+    }
+
+    /// Prunes bled-out samples and feeds the preview's simulated roller. Returns the live sample count.
+    @discardableResult
+    func prepare(now: Double, fade: Double, simulated: CGPoint?) -> Int {
+        if let simulated {
+            simulating = true
+            roll(to: simulated, at: now)
+        } else if simulating {
+            simulating = false
+            lift()
+        }
+        samples.removeAll { now - $0.time > fade }
+        return samples.count
+    }
+
+    func snapshot(now: Double, fade: Double) -> HalftoneInkField {
+        HalftoneInkField(samples: samples, now: now, fade: fade)
+    }
+}
+
+/// Coverage boost from the ink trail at a dot: full inside a ~40 pt band, a 6 pt soft edge, and a
+/// smoothstep bleed back over `fade` seconds (no oscillation).
+private struct HalftoneInkField {
+    let samples: [HalftoneInkSample]
+    let now: Double
+    let fade: Double
+
+    private static let core: Double = 17
+    private static let edge: Double = 23
+
+    private static func smoothstep(_ x: Double) -> Double {
+        let t = min(max(x, 0), 1)
+        return t * t * (3 - 2 * t)
+    }
+
+    func weight(x: Double, y: Double) -> Double {
+        var best = 0.0
+        for sample in samples {
+            let dx: Double = x - Double(sample.point.x)
+            guard abs(dx) < Self.edge else { continue }
+            let dy: Double = y - Double(sample.point.y)
+            guard abs(dy) < Self.edge else { continue }
+            let d: Double = (dx * dx + dy * dy).squareRoot()
+            let spatial: Double = 1 - Self.smoothstep((d - Self.core) / (Self.edge - Self.core))
+            let fresh: Double = 1 - Self.smoothstep((now - sample.time) / fade)
+            best = max(best, spatial * fresh)
+            if best >= 0.999 { break }
+        }
+        return best
+    }
+}
+
+/// The arrival flash bulb "over-exposes" the print: every dot's coverage is pushed toward full, then relaxes
+/// through a brief under-exposure, like a flash bulb on photographic paper.
 private struct HalftoneExposure {
     let origin: CGPoint
     /// Signed exposure: > 0 swells dots, < 0 shrinks them, 0 at rest.
@@ -103,6 +217,7 @@ private struct HalftoneCanvas: View {
     let spacing: CGFloat
     let colors: [Color]
     let exposure: HalftoneExposure
+    let ink: HalftoneInkField
 
     static func paletteColors(_ index: Int) -> [Color] {
         switch index {
@@ -117,7 +232,7 @@ private struct HalftoneCanvas: View {
 
     var body: some View {
         Canvas { context, size in
-            let path = HalftoneCanvas.dots(size: size, t: t, spacing: spacing, exposure: exposure)
+            let path = HalftoneCanvas.dots(size: size, t: t, spacing: spacing, exposure: exposure, ink: ink)
             context.fill(
                 path,
                 with: .linearGradient(Gradient(colors: colors), startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height))
@@ -125,7 +240,7 @@ private struct HalftoneCanvas: View {
         }
     }
 
-    private static func dots(size: CGSize, t: Double, spacing: CGFloat, exposure: HalftoneExposure) -> Path {
+    private static func dots(size: CGSize, t: Double, spacing: CGFloat, exposure: HalftoneExposure, ink: HalftoneInkField) -> Path {
         var path = Path()
         let cx = Double(size.width / 2)
         let cy = Double(size.height / 2)
@@ -142,7 +257,10 @@ private struct HalftoneCanvas: View {
                 field += sin(dx * 0.012 + t * 0.6)
                 field += sin(distance * 0.035 - t * 1.5)
                 let base = ((field / 3 + 1) / 2).clamped(to: 0...1)
-                let n = pow(base, exposure.gamma(x: dx, y: dy))
+                let exposed: Double = pow(base, exposure.gamma(x: dx, y: dy))
+                // The roller's ink lifts the dot toward full coverage, then bleeds back into the field.
+                let inked: Double = ink.samples.isEmpty ? 0 : ink.weight(x: dx, y: dy)
+                let n: Double = exposed + (1 - exposed) * inked
                 let radius = maxRadius * CGFloat(0.1 + 0.9 * n * n)
                 if radius > 0.3 {
                     path.addEllipse(in: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2))

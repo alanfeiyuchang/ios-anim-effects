@@ -106,6 +106,9 @@ private struct ElasticDrawerDemo: View {
             .padding(.leading, 22)
             .opacity(Double(openness))
             .offset(x: (openness - 1) * 40)
+            // Full-frame, then clipped to the membrane: labels never draw past a half-open drawer's edge.
+            .frame(width: frameSize.width, height: frameSize.height, alignment: .topLeading)
+            .clipShape(BulgeDrawerShape(width: width, bulge: bulge, bulgeY: bulgeY))
         }
         .frame(width: frameSize.width, height: frameSize.height, alignment: .topLeading)
         .allowsHitTesting(false)
@@ -119,7 +122,12 @@ private struct ElasticDrawerDemo: View {
         let lead: CGFloat = value.location.x - clamped
         let limit: CGFloat = ctx.cg("bulge")
         width = clamped
-        bulge = min(max(lead * 0.5, -limit * 0.6), limit)
+        if value.translation.width < 0 {
+            // Pushing it closed dents the membrane inward (concave), wherever the finger sits.
+            bulge = -min(abs(lead) * 0.5, limit * 0.6)
+        } else {
+            bulge = min(max(lead * 0.5, -limit * 0.6), limit)
+        }
         bulgeY = min(max(value.location.y, 40), frameSize.height - 40)
     }
 

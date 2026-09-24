@@ -29,6 +29,7 @@ struct PreviewStage: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.urgentSnapshots) private var urgent
     /// Starts off: lazy grids build cells slightly outside the viewport, and those must not mount
     /// their live demo. `onScrollVisibilityChange` reports `true` on first layout for visible cells.
     @State private var isOnScreen = false
@@ -58,11 +59,13 @@ struct PreviewStage: View {
                         .interpolation(.high)
                         .frame(width: proxy.size.width, height: proxy.size.height)
                 } else if isOnScreen && proxy.size.width > 0 {
-                    // A quiet category glyph (never an empty tile) until the still is ready.
-                    StillPlaceholder(effect: effect).task(id: key) {
+                    // A soft shimmer skeleton (reads as "loading", never as an empty tile) until
+                    // the still is ready.
+                    StillPlaceholder().task(id: key, priority: urgent ? .userInitiated : .medium) {
                         // Let the grid's first frame land, then wait for a free render slot so a
-                        // screenful of new cards never rasterises in one scroll frame.
-                        await SnapshotGate.waitForTurn()
+                        // screenful of new cards never rasterises in one scroll frame. Urgent tiles
+                        // (the first cards of a page, the detail page's Variations row) go first.
+                        await SnapshotGate.waitForTurn(urgent: urgent)
                         guard !Task.isCancelled else { return }
                         let started = ContinuousClock.now
                         renderSnapshot(key: key, pixelsPerPoint: scale * displayScale)
@@ -118,6 +121,8 @@ struct PreviewStage: View {
         let content = effect.makeDemo(still)
             .frame(width: side, height: side)
             .environment(\.demoAutoplayEnabled, false)
+            // Materials and glass cannot be rasterised: `DemoMaterial` swaps in a translucent fill.
+            .environment(\.demoIsStill, true)
             .environment(\.appLanguage, language)
             .environment(\.locale, language.locale)
             .environment(\.colorScheme, colorScheme)
@@ -138,23 +143,36 @@ struct PreviewStage: View {
     }
 }
 
-/// Shown in a thumbnail while its still frame waits for a render slot: the category's glyph, faint.
+/// Shown in a thumbnail while its still frame waits for a render slot: a soft light sweep over the
+/// stage (the thumbnail's own `StageBackground` shows through), so a slow tile reads as "loading".
+/// Static (just the empty stage) with Reduce Motion.
 private struct StillPlaceholder: View {
-    let effect: Effect
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        GeometryReader { proxy in
-            let side: CGFloat = min(proxy.size.width, proxy.size.height)
-            let glyph: CGFloat = max(side * 0.24, 10)
-            Image(systemName: effect.category.symbol)
-                .font(.system(size: glyph, weight: .semibold))
-                .foregroundStyle(
-                    LinearGradient(colors: effect.category.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-                .opacity(0.3)
-                .frame(width: proxy.size.width, height: proxy.size.height)
+        ZStack {
+            Color.clear
+            if !reduceMotion {
+                ShimmerSweep()
+                    .opacity(colorScheme == .dark ? 0.22 : 0.7)
+            }
         }
         .accessibilityHidden(true)
+    }
+}
+
+private struct UrgentSnapshotsKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Thumbnails inside mark their still frames as urgent: they render ahead of every other queued
+    /// still (see `SnapshotGate.waitForTurn(urgent:)`). Set on the first cards of a page and on the
+    /// detail page's Variations row, which are above the fold.
+    var urgentSnapshots: Bool {
+        get { self[UrgentSnapshotsKey.self] }
+        set { self[UrgentSnapshotsKey.self] = newValue }
     }
 }
 
@@ -203,6 +221,10 @@ final class PreviewSnapshotCache: @unchecked Sendable {
             && !DemoIsolation.needsHost(effect)
     }
 
+    /// "<id>|<language>|<scheme>" of every still rendered this session, at any pixel scale.
+    private var rendered: Set<String> = []
+    private let lock = NSLock()
+
     func image(for key: String) -> UIImage? {
         cache.object(forKey: key as NSString)
     }
@@ -210,6 +232,25 @@ final class PreviewSnapshotCache: @unchecked Sendable {
     func insert(_ image: UIImage, for key: String) {
         let pixels = image.size.width * image.scale * image.size.height * image.scale
         cache.setObject(image, forKey: key as NSString, cost: Int(pixels * 4))
+        let prefix = Self.prefix(of: key)
+        lock.lock()
+        rendered.insert(prefix)
+        lock.unlock()
+    }
+
+    /// Whether a still of `effectID` in this language and colour scheme has been rendered (at any
+    /// scale). A preview strip uses it to decide whether a live layer has a still underneath it.
+    func hasStill(effectID: String, language: AppLanguage, dark: Bool) -> Bool {
+        let prefix = "\(effectID)|\(language.rawValue)|\(dark ? "dark" : "light")"
+        lock.lock()
+        defer { lock.unlock() }
+        return rendered.contains(prefix)
+    }
+
+    /// Snapshot keys are "<id>|<language>|<scheme>|<scale>"; drops the scale.
+    private static func prefix(of key: String) -> String {
+        guard let bar = key.lastIndex(of: "|") else { return key }
+        return String(key[..<bar])
     }
 }
 
@@ -220,27 +261,44 @@ final class PreviewSnapshotCache: @unchecked Sendable {
 ///   so thumbnails in the Variations row never compete with the stage and the page's own motion;
 /// - no render starts while any scroll view is moving (`pausesSnapshotsWhileScrolling()` reports
 ///   scroll phases here), and the first one after a scroll waits for the deceleration to settle.
+///   A scroll token that never reports `.idle` again (an interrupted programmatic scroll, a view torn
+///   down without `onDisappear`) stops blocking after `staleScroll`, so stills can never stall forever;
+/// - urgent renders (above-the-fold thumbnails) take every free slot before normal ones.
 @MainActor
 enum SnapshotGate {
     private static var nextSlot = ContinuousClock.now
-    /// Scroll views currently tracking, decelerating or animating.
-    private static var activeScrolls: Set<UUID> = []
+    /// Scroll views currently tracking, decelerating or animating, with the time they started.
+    private static var activeScrolls: [UUID: ContinuousClock.Instant] = [:]
+    /// Urgent renders currently waiting for a slot; normal renders yield to them.
+    private static var urgentWaiting = 0
+    /// A scroll that has not reported `.idle` for this long is treated as stuck.
+    private static let staleScroll: Duration = .seconds(2.5)
 
     static func beginScroll(_ id: UUID) {
-        activeScrolls.insert(id)
+        activeScrolls[id] = ContinuousClock.now
     }
 
     static func endScroll(_ id: UUID) {
-        guard activeScrolls.remove(id) != nil else { return }
+        guard activeScrolls.removeValue(forKey: id) != nil else { return }
         if activeScrolls.isEmpty { hold(for: .milliseconds(150)) }
     }
 
-    static func waitForTurn() async {
+    /// Whether a live (not stale) scroll is in progress; stale tokens are dropped.
+    private static var isScrolling: Bool {
+        guard !activeScrolls.isEmpty else { return false }
+        let cutoff = ContinuousClock.now - staleScroll
+        activeScrolls = activeScrolls.filter { $0.value > cutoff }
+        return !activeScrolls.isEmpty
+    }
+
+    static func waitForTurn(urgent: Bool = false) async {
+        if urgent { urgentWaiting += 1 }
+        defer { if urgent { urgentWaiting -= 1 } }
         await Task.yield()
         let clock = ContinuousClock()
         while !Task.isCancelled {
-            if !activeScrolls.isEmpty {
-                try? await Task.sleep(for: .milliseconds(80))
+            if isScrolling || (!urgent && urgentWaiting > 0) {
+                try? await Task.sleep(for: .milliseconds(urgent ? 40 : 80))
                 continue
             }
             let now = clock.now

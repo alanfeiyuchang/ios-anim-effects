@@ -272,6 +272,7 @@ private struct UndoSnackbarDemo: View {
         .frame(width: 300)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .demoCard(cornerRadius: 20)
+        .geometryGroup()
     }
 
     private func delete() {
@@ -388,6 +389,9 @@ private struct UndoSnackbar: View {
         .padding(.trailing, 10)
         .frame(width: 300, height: 52)
         .background(Color.primary.opacity(0.92), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        // Animate as one piece: without it the Undo label can take its own path while the bar rises
+        // and the list above reflows on the same spring, briefly drawing outside the bar.
+        .geometryGroup()
         .shadow(color: .black.opacity(0.2), radius: 16, y: 8)
     }
 }

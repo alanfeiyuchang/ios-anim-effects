@@ -51,17 +51,26 @@ xcrun simctl install "$UDID" build/Build/Products/Release-iphonesimulator/Motion
 LAUNCH_ARGS=(-ML_trailer YES -ML_noIntro YES -app.language zh -app.appearance 2)
 
 # Warm-up run: first launch compiles shaders and fills caches; let first-boot banners expire meanwhile.
-limit 30 xcrun simctl launch "$UDID" "$BUNDLE_ID" "${LAUNCH_ARGS[@]}" >/dev/null || true
+# The first launch after install can be slow, so it gets a generous limit.
+limit 180 xcrun simctl launch "$UDID" "$BUNDLE_ID" "${LAUNCH_ARGS[@]}" >/dev/null || true
 sleep 20
-limit 20 xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
-sleep 10
+# Make sure the warm-up instance is really gone: a surviving instance would simply be brought to the
+# front by the next launch and the recording would start mid-trailer (or on the end card).
+for i in 1 2 3 4 5; do
+  limit 30 xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+  sleep 2
+  if ! xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "UIKitApplication:$BUNDLE_ID"; then break; fi
+  echo "warm-up instance still running, retrying terminate ($i)"
+done
+sleep 8
 
 # Record: start the recorder, launch, let slate + trailer play, stop.
 RECORD_SECONDS=$(python3 -c "print(int($LEAD_IN + $DURATION + 7))")
 xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$RAW" >/dev/null 2>&1 &
 REC=$!
 sleep 2
-limit 30 xcrun simctl launch "$UDID" "$BUNDLE_ID" "${LAUNCH_ARGS[@]}" >/dev/null
+# --terminate-running-process guarantees a fresh process, so the trailer clock starts at this launch.
+limit 120 xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE_ID" "${LAUNCH_ARGS[@]}" >/dev/null
 sleep "$RECORD_SECONDS"
 kill -INT "$REC" 2>/dev/null || true
 WAITED=0
@@ -92,9 +101,11 @@ import re,sys
 ends=[float(m.group(1)) for m in re.finditer(r'black_end:([0-9.]+)', sys.stdin.read())]
 print(ends[0] if ends else '')")
 if [ -z "$START" ]; then
-  # Fallback: recorder lead (2 s) + typical launch (~1 s) + slate.
-  START=$(python3 -c "print(2 + 1 + $LEAD_IN)")
-  echo "warning: slate not found, assuming the trailer starts at ${START}s"
+  # Without the slate the take didn't start at this launch (e.g. a stale instance); a guessed cut would
+  # silently publish a wrong video, so fail instead.
+  echo "error: white slate not found in the recording; the trailer did not start with this launch"
+  limit 60 ffmpeg -hide_banner -loglevel error -y -ss 5 -i "$RAW" -frames:v 1 -vf "crop=$CROP" "$OUT/debug-first-frame.png" || true
+  exit 1
 else
   echo "Trailer starts at ${START}s in the raw recording"
 fi

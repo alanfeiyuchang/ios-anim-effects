@@ -1,0 +1,57 @@
+name: Trailer
+
+# Records the 60 s promotional trailer (MotionLab/Trailer, `-ML_trailer YES`) on an iPhone Pro simulator and
+# renders it for Xiaohongshu (3:4, 1080×1440, 60 fps) with scripts/record-trailer.sh.
+# Trigger: "[trailer]" in a commit message, or run manually from the Actions tab.
+# The result is uploaded as the "trailer" artifact and committed to docs/trailer/ on the same branch.
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  trailer:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[trailer]')
+    runs-on: macos-26
+    timeout-minutes: 60
+    concurrency:
+      group: trailer-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Select Xcode
+        run: |
+          PICK=$(ls -d /Applications/Xcode_26*.app | grep -v -i beta | sort -V | tail -n 1)
+          sudo xcode-select -s "$PICK"
+          xcodebuild -version
+
+      - name: Install ffmpeg
+        run: brew install ffmpeg >/dev/null
+
+      - name: Record trailer
+        timeout-minutes: 45
+        run: scripts/record-trailer.sh out
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trailer
+          path: out/
+          retention-days: 14
+
+      - name: Commit trailer to docs/trailer
+        run: |
+          rm -rf docs/trailer
+          mkdir -p docs/trailer/frames
+          cp out/trailer.mp4 out/trailer-preview.mp4 docs/trailer/
+          cp out/frames/*.png docs/trailer/frames/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/trailer
+          git commit -m "Update trailer [skip ci]" || exit 0
+          for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break; sleep 5; done

@@ -14,6 +14,10 @@ struct MotionLabApp: App {
         if CatalogTools.shouldExport {
             CatalogTools.exportCatalog()
         }
+        if CatalogTools.isTrailer {
+            // The trailer only simulates touches: never fire a haptic.
+            Haptics.isMuted = true
+        }
     }
 
     var body: some Scene {
@@ -36,9 +40,11 @@ struct MotionLabApp: App {
         }
     }
 
-    /// CI video capture renders a single effect; everything else gets the full app.
+    /// CI video capture renders a single effect (or the promo trailer); everything else gets the full app.
     @ViewBuilder private var rootContent: some View {
-        if let stageID = CatalogTools.stageEffectID {
+        if CatalogTools.isTrailer {
+            TrailerView()
+        } else if let stageID = CatalogTools.stageEffectID {
             StageOnlyView(effectID: stageID)
         } else {
             RootView()

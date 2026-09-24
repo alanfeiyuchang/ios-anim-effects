@@ -78,11 +78,19 @@ private struct RadarPingDemo: View {
         .contentShape(Rectangle())
         .onTapGesture { ping() }
         .onChange(of: ctx["sweep"]) { old, new in
-            beamShift += Self.clock(Date()) * (1 / max(old, 0.2) - 1 / max(new, 0.2))
+            beamShift += Self.phaseCarry(from: old, to: new)
         }
         .onChange(of: ctx["rings"]) { old, new in
-            ringShift += Self.clock(Date()) * (1 / max(old, 0.2) - 1 / max(new, 0.2))
+            ringShift += Self.phaseCarry(from: old, to: new)
         }
+    }
+
+    /// Cycles to add when a period changes from `old` to `new`, so the phase stays where it is.
+    private static func phaseCarry(from old: Double, to new: Double) -> Double {
+        let now: Double = clock(Date())
+        let before: Double = 1 / max(old, 0.2)
+        let after: Double = 1 / max(new, 0.2)
+        return now * (before - after)
     }
 
     private static func clock(_ date: Date) -> Double {

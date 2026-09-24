@@ -44,6 +44,12 @@ private struct DetentSheetDemo: View {
     @State private var detent: SheetDetent = .peek
     @State private var translation: CGFloat = 0
     @State private var autoStep = 0
+    /// True while a real finger drags the sheet.
+    @State private var held = false
+    /// The scripted flick, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the sheet between detents.
+    @GestureState private var pressing = false
 
     private let size = CGSize(width: 230, height: 320)
 
@@ -71,6 +77,10 @@ private struct DetentSheetDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.5) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var displayedTop: CGFloat {
@@ -109,11 +119,28 @@ private struct DetentSheetDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 2)
-            .onChanged { value in translation = value.translation.height }
+            .updating($pressing) { _, state, _ in state = true }
+            .onChanged { value in
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
+                translation = value.translation.height
+            }
             .onEnded { value in
+                guard held else { return }
+                held = false
                 let projected = displayedTop + value.velocity.height * ctx.cg("projection")
                 settle(at: nearestDetent(to: projected), haptic: true)
             }
+    }
+
+    /// System cancellation (no `onEnded`): zero the translation by settling on the closest detent.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        settle(at: nearestDetent(to: displayedTop), haptic: false)
     }
 
     private func nearestDetent(to y: CGFloat) -> SheetDetent {
@@ -140,13 +167,16 @@ private struct DetentSheetDemo: View {
 
     /// Cycles peek → full → half → peek: a quick pre-pull toward the target, then the settle spring.
     private func simulate() {
+        guard !held else { return }
         let order: [SheetDetent] = [.full, .half, .peek]
         let target = order[autoStep % order.count]
         autoStep += 1
         let pull: CGFloat = target.top(in: size.height) - detent.top(in: size.height)
         withAnimation(.easeOut(duration: 0.22)) { translation = pull * 0.55 }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.24))
+            guard !Task.isCancelled else { return }
             settle(at: target, haptic: false)
         }
     }

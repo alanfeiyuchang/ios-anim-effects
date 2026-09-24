@@ -131,6 +131,8 @@ private struct GravityTossDemo: View {
     @State private var awake = true
     @State private var userTouched = false
     @State private var sleepWatcher: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the ball frozen in the hand.
+    @GestureState private var pressing = false
 
     private let arena = CGSize(width: 300, height: 300)
     private let radius: CGFloat = 28
@@ -163,6 +165,9 @@ private struct GravityTossDemo: View {
         .autoplay(ctx.isPreview, every: 3.0, delay: 0.4) { randomToss() }
         .onAppear { wake() }
         .onDisappear { sleepWatcher?.cancel() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold(velocity: .zero) }
+        }
     }
 
     private func contactShadow(_ frame: TossFrame) -> some View {
@@ -177,6 +182,7 @@ private struct GravityTossDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if grabStart == nil {
                     grabStart = model.position
@@ -196,15 +202,20 @@ private struct GravityTossDemo: View {
                 )
             }
             .onEnded { value in
-                guard grabStart != nil else { return }
-                grabStart = nil
-                model.release(velocity: CGVector(
+                endHold(velocity: CGVector(
                     dx: value.velocity.width.clamped(to: -3200...3200),
                     dy: value.velocity.height.clamped(to: -3200...3200)
                 ))
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { held = false }
-                wake()
             }
+    }
+
+    /// Release (with the throw velocity) or system cancellation (dropped in place): clear the grab anchor.
+    private func endHold(velocity: CGVector) {
+        guard grabStart != nil else { return }
+        grabStart = nil
+        model.release(velocity: velocity)
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { held = false }
+        wake()
     }
 
     private func wake() {

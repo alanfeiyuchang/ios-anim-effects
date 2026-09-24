@@ -32,6 +32,12 @@ private struct StretchSlideDemo: View {
     @State private var tail: CGFloat = 0
     @State private var sent = false
     @State private var planeGone = false
+    /// True while a real finger holds the knob.
+    @State private var held = false
+    /// The scripted slide, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves head and tail mid-track.
+    @GestureState private var pressing = false
 
     private let trackWidth: CGFloat = 290
     private let knob: CGFloat = 56
@@ -69,6 +75,10 @@ private struct StretchSlideDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 3.4, delay: 0.8) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     /// The pill is the intersection of a long capsule starting at `tail` (animated) and a long capsule
@@ -107,8 +117,14 @@ private struct StretchSlideDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 guard !sent else { return }
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 let raw = value.translation.width
                 if raw < 0 {
                     head = rubberBand(raw, limit: 16)
@@ -125,15 +141,29 @@ private struct StretchSlideDemo: View {
                 }
             }
             .onEnded { _ in
+                guard held else { return }
+                held = false
                 guard !sent else { return }
                 if head > maxX * ctx.cg("threshold") {
                     commit(haptic: true)
                 } else {
-                    // The tail snaps home first and the head follows, a gooey recoil.
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { tail = 0 }
-                    withAnimation(.spring(response: 0.45 + ctx["lag"], dampingFraction: 0.72)) { head = 0 }
+                    recoil()
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): recoil home without sending.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        guard !sent else { return }
+        recoil()
+    }
+
+    /// The tail snaps home first and the head follows, a gooey recoil.
+    private func recoil() {
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { tail = 0 }
+        withAnimation(.spring(response: 0.45 + ctx["lag"], dampingFraction: 0.72)) { head = 0 }
     }
 
     private func commit(haptic: Bool) {
@@ -156,11 +186,13 @@ private struct StretchSlideDemo: View {
     }
 
     private func simulate() {
-        guard !sent else { return }
+        guard !sent, !held else { return }
         withAnimation(.easeInOut(duration: 0.8)) { head = maxX * 0.95 }
         withAnimation(.spring(response: 0.8 + ctx["lag"], dampingFraction: 0.8)) { tail = maxX * 0.95 }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.85))
+            guard !Task.isCancelled else { return }
             commit(haptic: false)
         }
     }

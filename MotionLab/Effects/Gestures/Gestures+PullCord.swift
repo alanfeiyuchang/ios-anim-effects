@@ -68,6 +68,12 @@ private struct PullCordDemo: View {
     @State private var sway: Double = 0
     /// True while autoplay (or the detail intro) pulls the cord, so the scripted arm click stays silent.
     @State private var scripted = false
+    /// True while a real finger holds the bead.
+    @State private var held = false
+    /// The scripted pull, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the cord pulled and armed.
+    @GestureState private var pressing = false
 
     var body: some View {
         let armed = pull.height >= ctx.cg("threshold")
@@ -87,6 +93,10 @@ private struct PullCordDemo: View {
                 .padding(.bottom, 4)
         }
         .autoplay(ctx.isPreview, every: 2.2) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold(completed: false) }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     /// Everything that hangs from the hook, so the cord stays attached while the shade sways.
@@ -157,8 +167,12 @@ private struct PullCordDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if !dragging {
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
                     dragging = true
                     scripted = false
                 }
@@ -167,11 +181,18 @@ private struct PullCordDemo: View {
                     height: value.translation.height > 0 ? rubberBand(value.translation.height, limit: 120, coefficient: 0.9) : rubberBand(value.translation.height, limit: 12)
                 )
             }
-            .onEnded { _ in release() }
+            .onEnded { _ in endHold(completed: true) }
     }
 
-    private func release() {
-        let armed = pull.height >= ctx.cg("threshold")
+    /// Release, or system cancellation (the page scrolled): a cancelled pull springs back without clicking the lamp.
+    private func endHold(completed: Bool) {
+        guard held else { return }
+        held = false
+        release(canToggle: completed)
+    }
+
+    private func release(canToggle: Bool = true) {
+        let armed = canToggle && pull.height >= ctx.cg("threshold")
         dragging = false
         withAnimation(.spring(response: 0.35, dampingFraction: ctx["damping"])) { pull = .zero }
         guard armed else { return }
@@ -184,13 +205,16 @@ private struct PullCordDemo: View {
     }
 
     private func simulate() {
+        guard !held else { return }
         scripted = true
         withAnimation(.easeIn(duration: 0.4)) {
             pull = CGSize(width: CGFloat.random(in: -8...8), height: ctx.cg("threshold") + 30)
             dragging = true
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             release()
         }
     }

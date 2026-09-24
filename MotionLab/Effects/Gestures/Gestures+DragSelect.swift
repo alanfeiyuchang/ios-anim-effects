@@ -37,6 +37,12 @@ private struct DragSelectDemo: View {
     @State private var start: Int?
     @State private var current: Int?
     @State private var mode = true
+    /// True while a real finger sweeps the column.
+    @State private var held = false
+    /// The scripted sweep, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the band or a stale baseline behind.
+    @GestureState private var pressing = false
 
     private let names: [LocalizedText] = [
         L("Mia · Weekend plan", "米娅 · 周末计划"),
@@ -59,6 +65,10 @@ private struct DragSelectDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 3.2, delay: 0.5) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var counter: some View {
@@ -123,17 +133,30 @@ private struct DragSelectDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 let row = index(at: value.location.y)
-                if start == nil {
+                if !held {
+                    // Every real sweep starts fresh, even over a scripted one still running.
+                    held = true
+                    script?.cancel()
+                    script = nil
                     baseline = selected
                     mode = !selected.contains(row)
+                    current = nil
                     withAnimation(.easeOut(duration: 0.15)) { start = row }
                 }
                 guard row != current else { return }
                 apply(to: row, haptic: true)
             }
-            .onEnded { _ in endSweep() }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: close the sweep so the next one starts from a clean baseline.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        endSweep()
     }
 
     private func apply(to row: Int, haptic: Bool) {
@@ -155,9 +178,11 @@ private struct DragSelectDemo: View {
             start = nil
             current = nil
         }
+        baseline = selected
     }
 
     private func simulate() {
+        guard !held else { return }
         if !selected.isEmpty {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selected = [] }
             return
@@ -167,12 +192,15 @@ private struct DragSelectDemo: View {
         let from = Int.random(in: 0...1)
         let to = Int.random(in: 3...4)
         withAnimation(.easeOut(duration: 0.15)) { start = from }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             for row in from...to {
+                guard !Task.isCancelled else { return }
                 apply(to: row, haptic: false)
                 try? await Task.sleep(for: .seconds(0.16))
             }
             try? await Task.sleep(for: .seconds(0.2))
+            guard !Task.isCancelled else { return }
             endSweep()
         }
     }

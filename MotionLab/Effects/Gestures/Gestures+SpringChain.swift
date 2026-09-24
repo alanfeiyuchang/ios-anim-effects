@@ -77,6 +77,10 @@ private struct GestureSpringChainDemo: View {
     @State private var touched = false
     @State private var awake = true
     @State private var sleepToken = 0
+    /// True while a real finger leads the chain.
+    @State private var held = false
+    /// Resets on system cancellation too, so a stolen touch still lets the timeline go to sleep.
+    @GestureState private var pressing = false
 
     var body: some View {
         let count = max(ctx.int("count"), 2)
@@ -91,12 +95,14 @@ private struct GestureSpringChainDemo: View {
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($pressing) { _, state, _ in state = true }
                 .onChanged { value in
+                    held = true
                     touched = true
                     wake()
                     target = value.location
                 }
-                .onEnded { _ in scheduleSleep() }
+                .onEnded { _ in endHold() }
         )
         .overlay(alignment: .bottom) {
             DemoHint(text: L("Drag anywhere", "在任意位置拖动"), ctx: ctx)
@@ -104,6 +110,16 @@ private struct GestureSpringChainDemo: View {
                 .allowsHitTesting(false)
         }
         .autoplay(ctx.isPreview || !touched, every: 0.42, delay: 0.2) { wander(center: center) }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+    }
+
+    /// Release or system cancellation: the chain coils up where the finger left it, then the timeline sleeps.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        scheduleSleep()
     }
 
     /// Idle attractor: a figure-eight that fills most of the stage.

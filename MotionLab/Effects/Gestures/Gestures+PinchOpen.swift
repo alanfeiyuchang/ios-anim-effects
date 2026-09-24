@@ -34,6 +34,12 @@ private struct PinchOpenDemo: View {
     @State private var tilt: Double = 0
     /// True while autoplay (or the detail intro) drives the pinch, so the scripted arm tick stays silent.
     @State private var scripted = false
+    /// True while a real pinch is in progress.
+    @State private var held = false
+    /// The scripted pinch, cancelled on the first real one.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen pinch never leaves the card scaled and tilted.
+    @GestureState private var pinching = false
 
     var body: some View {
         let armed = expanded ? live < 0.8 : live > ctx.cg("threshold")
@@ -58,6 +64,10 @@ private struct PinchOpenDemo: View {
             .padding(.bottom, 12)
         }
         .autoplay(ctx.isPreview, every: 2.4, delay: 0.6) { simulate() }
+        .onChange(of: pinching) { _, isPinching in
+            if !isPinching { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private func card(armed: Bool) -> some View {
@@ -100,7 +110,13 @@ private struct PinchOpenDemo: View {
 
     private var magnify: some Gesture {
         MagnifyGesture()
+            .updating($pinching) { _, state, _ in state = true }
             .onChanged { value in
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 scripted = false
                 let m = value.magnification
                 if expanded {
@@ -111,6 +127,8 @@ private struct PinchOpenDemo: View {
                 tilt = expanded ? 0 : Double(value.startAnchor.x - 0.5) * 4 * Double(min(max(m - 1, 0), 1))
             }
             .onEnded { _ in
+                guard held else { return }
+                held = false
                 let armed = expanded ? live < 0.8 : live > ctx.cg("threshold")
                 if armed {
                     toggle(haptic: true)
@@ -123,6 +141,16 @@ private struct PinchOpenDemo: View {
             }
     }
 
+    /// System cancellation (no `onEnded`): the card springs back without opening or closing.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+            live = 1
+            tilt = 0
+        }
+    }
+
     private func toggle(haptic: Bool) {
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             expanded.toggle()
@@ -133,14 +161,17 @@ private struct PinchOpenDemo: View {
     }
 
     private func simulate() {
+        guard !held else { return }
         scripted = true
         let target: CGFloat = expanded ? 0.74 : ctx.cg("threshold") + 0.12
         withAnimation(.easeInOut(duration: 0.45)) {
             live = target
             tilt = expanded ? 0 : 2
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             toggle(haptic: false)
         }
     }

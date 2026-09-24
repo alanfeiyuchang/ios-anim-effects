@@ -66,6 +66,12 @@ private struct CoilSpringDemo: View {
     let ctx: DemoContext
     @State private var stretch: CGFloat = 0
     @State private var dragging = false
+    /// True while a real finger holds the weight.
+    @State private var held = false
+    /// The scripted pull, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the spring stretched.
+    @GestureState private var pressing = false
 
     var body: some View {
         let length = coilRestLength + stretch
@@ -94,6 +100,10 @@ private struct CoilSpringDemo: View {
                 .padding(.bottom, 4)
         }
         .autoplay(ctx.isPreview, every: 3.6, delay: 0.4) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var weight: some View {
@@ -135,14 +145,25 @@ private struct CoilSpringDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if !dragging {
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = true }
                 }
                 let dy = value.translation.height
                 stretch = dy >= 0 ? rubberBand(dy, limit: 150, coefficient: 0.8) : rubberBand(dy, limit: 90, coefficient: 0.8)
             }
-            .onEnded { _ in release(haptic: true) }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: the weight springs back to rest.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        release(haptic: true)
     }
 
     private func release(haptic: Bool) {
@@ -157,12 +178,15 @@ private struct CoilSpringDemo: View {
     }
 
     private func simulate() {
+        guard !held else { return }
         withAnimation(.easeInOut(duration: 0.55)) {
             stretch = CGFloat.random(in: 70...100)
             dragging = true
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { return }
             release(haptic: false)
         }
     }

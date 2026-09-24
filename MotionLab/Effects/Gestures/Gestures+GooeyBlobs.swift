@@ -83,6 +83,12 @@ private struct GooeyDemo: View {
     @State private var model = GooModel(home: CGPoint(x: 62, y: 0))
     @State private var awake = true
     @State private var sleepWatcher: Task<Void, Never>?
+    /// True while a real finger pulls the droplet.
+    @State private var held = false
+    /// The scripted pull, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the droplet pulled out.
+    @GestureState private var pressing = false
 
     private let area: CGFloat = 300
 
@@ -114,7 +120,13 @@ private struct GooeyDemo: View {
         }
         .autoplay(ctx.isPreview, every: 2.2, delay: 0.3) { simulatePull() }
         .onAppear { wake() }
-        .onDisappear { sleepWatcher?.cancel() }
+        .onDisappear {
+            sleepWatcher?.cancel()
+            script?.cancel()
+        }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     private var blobs: [(CGPoint, CGFloat)] {
@@ -147,7 +159,13 @@ private struct GooeyDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 // While awake the watcher is alive, and a pulled droplet never counts as settled.
                 if !awake { wake() }
                 let dx = value.location.x - area / 2
@@ -158,18 +176,30 @@ private struct GooeyDemo: View {
                 model.target = CGPoint(x: dx * scale, y: dy * scale)
             }
             .onEnded { _ in
-                model.target = model.home
+                guard held else { return }
+                endHold()
                 if !ctx.isPreview { Haptics.tap(.soft) }
             }
     }
 
+    /// Release or system cancellation: the droplet springs back home.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        model.target = model.home
+        wake()
+    }
+
     /// Simulated pull (previews and the arrival intro): tug the droplet out until the bridge snaps, then let go.
     private func simulatePull() {
+        guard !held else { return }
         wake()
         let angle = Double.random(in: -0.8...0.8)
         model.target = CGPoint(x: CGFloat(cos(angle) * 100), y: CGFloat(sin(angle) * 100))
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.75))
+            guard !Task.isCancelled else { return }
             model.target = model.home
         }
     }

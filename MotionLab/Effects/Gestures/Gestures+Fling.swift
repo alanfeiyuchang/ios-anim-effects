@@ -122,6 +122,8 @@ private struct FlingDemo: View {
     /// Wall haptics start only once the user has handled the puck (never for the intro toss).
     @State private var userTouched = false
     @State private var sleepWatcher: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the puck held or `grabOffset` stale.
+    @GestureState private var pressing = false
 
     private let arena: CGFloat = 290
 
@@ -151,6 +153,16 @@ private struct FlingDemo: View {
         .autoplay(ctx.isPreview, every: 2.6, delay: 0.3) { randomFling(speed: Double.random(in: 1500...2600)) }
         .onAppear { wake() }
         .onDisappear { sleepWatcher?.cancel() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+    }
+
+    /// System cancellation (no `onEnded`): drop the puck where it is, at rest.
+    private func endHold() {
+        guard grabOffset != nil else { return }
+        grabOffset = nil
+        release(velocity: .zero)
     }
 
     private func wake() {
@@ -169,6 +181,7 @@ private struct FlingDemo: View {
 
     private func dragGesture(puck: CGFloat, bounds: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if grabOffset == nil {
                     // Hit-test against the live, on-screen position so a moving puck can be caught.

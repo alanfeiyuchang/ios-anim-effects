@@ -7,19 +7,19 @@ extension Effect {
         interaction: .tap,
         name: L("Gallery Zoom", "相册缩放转场"),
         summary: L(
-            "A thumbnail zooms into a full-bleed photo; fling it away in any direction and it tilts and bounces home.",
-            "缩略图放大为全屏照片；向任意方向甩动，它会倾斜并弹跳着回到原位。"
+            "A thumbnail zooms into a full-bleed paging viewer: swipe sideways between photos, fling one down to send it home.",
+            "缩略图放大为全屏分页查看器：左右滑动翻看照片，向下甩动即把当前照片送回原位。"
         ),
         prompt: L(
-            "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer: the frame interpolates from the thumbnail rect to the whole stage on a smooth spring (response ≈0.45 s, damping 0.86) while a black backdrop fades in. Dismissal is physical, like Photos: the photo follows the finger 1:1 in both axes without shrinking, tilts up to ±6° in proportion to the sideways drag as if held by one corner, and the backdrop fades with distance to reveal the grid. Releasing past ~90 pt (or with a flick) flies it back into its cell on an under-damped spring (damping ≈0.7) that lands with a small bounce; otherwise it springs back upright. Tactile and free-handed.",
-            "一个 3 × 3 的圆角缩略图网格（圆角 14pt）。点击任意一张，它会从所在格子中放大为全屏查看器：外框以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从缩略图位置插值到整个舞台，背后黑色背景淡入。关闭像“照片”App 一样有物理感：照片在横纵两个方向 1:1 跟手、不做缩小，并随横向拖动按比例倾斜最多 ±6°，仿佛被捏住一角；黑色背景随拖动距离渐隐，露出网格。松手时若超过约 90pt（或快速甩出），照片以欠阻尼弹簧（阻尼约 0.7）飞回原格子，落位时轻轻一弹；否则回正并弹回全屏。真实、随手。"
+            "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer on a smooth spring (response ≈0.45 s, damping 0.86) while a black backdrop fades in. The viewer pages like Photos: a sideways swipe drags the whole strip 1:1 with the next photo peeking 16 pt behind a gap, rubber-bands at either end, and past 30% of the width (or a flick) snaps to the neighbour on a critically damped spring with a selection tick. A vertical pull locks to dismissal instead: the photo follows the finger, tilts up to ±6° with the sideways drift and the backdrop fades; past ~90 pt or a flick it flies into its own cell on an under-damped spring (≈0.7) that lands with a small bounce.",
+            "3 × 3 圆角缩略图网格（圆角 14pt）。点击一张，它以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从格子放大为全屏查看器，黑色背景淡入。查看器像“照片”一样分页：横向滑动时整条胶片 1:1 跟手，下一张隔着 16pt 间隙探出，两端带橡皮筋阻尼；拖过宽度的 30% 或快速轻扫，即以临界阻尼弹簧吸附到相邻照片，并伴随一次选择触感。若先竖向拖动则锁定为关闭手势：照片跟手移动，随横向偏移倾斜最多 ±6°，背景渐隐；超过约 90pt 或快速甩出，它以欠阻尼弹簧（约 0.7）飞回自己的格子，落位时轻轻一弹。"
         ),
         implementation: L(
-            "Grid tiles and the viewer share a matchedGeometryEffect id per photo; a two-axis DragGesture drives the offset, a drag-proportional rotationEffect and the backdrop opacity, and the return flight resets them inside an under-damped spring together with the geometry match.",
-            "网格缩略图与查看器按照片共享 matchedGeometryEffect ID；双轴 DragGesture 驱动位移、与横向拖动成比例的 rotationEffect 以及背景透明度，归位时在欠阻尼弹簧中与几何匹配一起复位。"
+            "Grid tiles and the current page share a matchedGeometryEffect id; one DragGesture locks its axis on the first movement: horizontal drives a paging offset whose settle spring swaps the page index in its completion, vertical drives the dismiss offset, tilt and backdrop.",
+            "网格缩略图与当前页共享 matchedGeometryEffect ID；同一个 DragGesture 在首次移动时锁定方向：横向驱动分页位移，吸附弹簧在 completion 中切换页码；竖向驱动关闭位移、倾斜与背景透明度。"
         ),
-        apis: ["matchedGeometryEffect", "DragGesture", "predictedEndTranslation", "rotationEffect", "spring(response:dampingFraction:)"],
-        tags: ["photos", "gallery", "zoom", "drag to dismiss", "相册", "图片放大", "甩动关闭", "转场"],
+        apis: ["matchedGeometryEffect", "DragGesture", "predictedEndTranslation", "withAnimation(_:completionCriteria:_:completion:)", "rotationEffect"],
+        tags: ["photos", "gallery", "paging", "drag to dismiss", "相册", "分页", "翻页", "甩动关闭"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...1.0, default: 0.45, unit: "s"),
             .slider("damping", L("Return damping", "归位阻尼"), 0.4...1.0, default: 0.7),
@@ -49,20 +49,39 @@ private let galleryPhotos: [GalleryPhoto] = {
     }
 }()
 
+private enum GalleryDragAxis {
+    case paging
+    case dismiss
+}
+
 private struct GalleryZoomDemo: View {
     let ctx: DemoContext
     @Namespace private var ns
+    /// Index (= id) of the photo open in the viewer.
     @State private var selected: Int?
+    /// Dismissal pull (vertical-locked drags).
     @State private var drag: CGSize = .zero
+    /// Horizontal paging offset of the viewer strip.
+    @State private var pageDrag: CGFloat = 0
+    /// The neighbour the strip is springing to; committed as `selected` when the spring lands.
+    @State private var pendingPage: Int?
+    @State private var pageToken = 0
+    @State private var axis: GalleryDragAxis?
+    @State private var stageWidth: CGFloat = 0
     @State private var autoIndex = 4
+    @State private var autoStage = 0
     @State private var flingTask: Task<Void, Never>?
-    /// Resets on system cancellation too, so a cancelled pull never leaves the photo offset and tilted.
+    /// Resets on system cancellation too, so a cancelled pull never leaves the photo offset, tilted or between pages.
     @GestureState private var dragging = false
     @Environment(\.colorScheme) private var colorScheme
 
-    /// Opening is smooth and critically damped; only the flight home bounces.
+    private static let pageGap: CGFloat = 16
+
+    /// Opening and paging are smooth and critically damped; only the flight home bounces.
     private var openSpring: Animation { .spring(response: ctx["response"], dampingFraction: 0.86) }
+    private var pageSpring: Animation { .spring(response: ctx["response"] * 0.8, dampingFraction: 1) }
     private var returnSpring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
+    private var pageStride: CGFloat { stageWidth + Self.pageGap }
 
     /// 0…1 by how far the photo has been pulled away, in any direction.
     private var dragProgress: CGFloat {
@@ -82,33 +101,36 @@ private struct GalleryZoomDemo: View {
     var body: some View {
         ZStack {
             grid
-            if let id = selected, let photo = galleryPhotos.first(where: { $0.id == id }) {
+            if let index = selected {
                 Color.black
                     .opacity(0.9 * (1 - Double(dragProgress)))
                     .transition(.opacity)
                     .zIndex(1)
-                viewer(photo)
+                viewer(index)
                     .zIndex(2)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: .bottom) { hint }
-        .autoplay(ctx.isPreview, every: 1.7) {
-            if selected == nil {
-                open(galleryPhotos[autoIndex % galleryPhotos.count].id)
-                autoIndex += 2
-            } else {
-                fling()
-            }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            stageWidth = width
         }
-        .onDisappear { flingTask?.cancel() }
+        .overlay(alignment: .bottom) { hint }
+        .autoplay(ctx.isPreview, every: 1.7) { autoStep() }
+        .onDisappear {
+            flingTask?.cancel()
+            flingTask = nil
+            commitPendingPage()
+            axis = nil
+        }
     }
 
     private var hint: some View {
         DemoHint(
             text: selected == nil
                 ? L("Tap a photo", "点击一张照片")
-                : L("Fling the photo away to close", "把照片甩开即可关闭"),
+                : L("Swipe to browse, pull down to close", "左右滑动翻看，下拉关闭"),
             ctx: ctx
         )
         .environment(\.colorScheme, selected == nil ? colorScheme : .dark)
@@ -134,43 +156,137 @@ private struct GalleryZoomDemo: View {
         }
     }
 
-    private func viewer(_ photo: GalleryPhoto) -> some View {
-        GalleryArt(photo: photo, symbolSize: 84)
-            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-            .matchedGeometryEffect(id: photo.id, in: ns)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .rotationEffect(tiltAngle)
-            .offset(drag)
-            .gesture(dismissDrag)
-            .onTapGesture { close() }
-            .onChange(of: dragging) { _, active in
-                if !active && drag != .zero {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = .zero }
-                }
-            }
+    private func neighbours(of index: Int) -> [Int] {
+        [index - 1, index + 1].filter { galleryPhotos.indices.contains($0) }
     }
 
-    private var dismissDrag: some Gesture {
-        DragGesture()
+    private func viewer(_ index: Int) -> some View {
+        ZStack {
+            // Neighbours ride the same strip one page (stage width + gap) away; only the current page is matched.
+            ForEach(neighbours(of: index), id: \.self) { other in
+                GalleryArt(photo: galleryPhotos[other], symbolSize: 84)
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .offset(x: CGFloat(other - index) * pageStride + pageDrag)
+                    .opacity(1 - Double(dragProgress))
+                    .transition(.opacity)
+            }
+            GalleryArt(photo: galleryPhotos[index], symbolSize: 84)
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .matchedGeometryEffect(id: galleryPhotos[index].id, in: ns)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .rotationEffect(tiltAngle)
+                .offset(x: drag.width + pageDrag, y: drag.height)
+        }
+        .contentShape(Rectangle())
+        .gesture(viewerDrag)
+        .onTapGesture { close() }
+        .onChange(of: dragging) { _, active in
+            if !active { finishDrag(nil) }
+        }
+    }
+
+    private var viewerDrag: some Gesture {
+        DragGesture(minimumDistance: 8)
             .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 flingTask?.cancel()
-                drag = value.translation
-            }
-            .onEnded { value in
-                let threshold: CGFloat = ctx.cg("threshold")
-                let moved: CGFloat = GalleryZoomDemo.length(value.translation)
-                let projected: CGFloat = GalleryZoomDemo.length(value.predictedEndTranslation)
-                if moved > threshold || projected > threshold * 3 {
-                    close()
+                flingTask = nil
+                if axis == nil {
+                    // A new touch lands a page that is still settling, then locks to the dominant direction.
+                    commitPendingPage()
+                    axis = abs(value.translation.width) > abs(value.translation.height) ? .paging : .dismiss
+                }
+                if axis == .paging {
+                    pageDrag = rubberedPage(value.translation.width)
                 } else {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = .zero }
+                    drag = value.translation
                 }
             }
+            .onEnded { value in finishDrag(value) }
     }
 
-    /// Autoplay stand-in for a finger: pull the photo down and to the side, then let go.
+    /// 1:1 between photos, rubber-banded past the first and last.
+    private func rubberedPage(_ x: CGFloat) -> CGFloat {
+        guard let index = selected else { return 0 }
+        let atStart: Bool = index == 0 && x > 0
+        let atEnd: Bool = index == galleryPhotos.count - 1 && x < 0
+        return atStart || atEnd ? rubberBand(x, limit: 60) : x
+    }
+
+    /// Normal release (with the flick's projection) or system cancellation (`nil`: settle, never commit a close).
+    private func finishDrag(_ value: DragGesture.Value?) {
+        guard let locked = axis else { return }
+        axis = nil
+        switch locked {
+        case .paging:
+            guard let index = selected else { return }
+            let moved: CGFloat = pageDrag
+            let predicted: CGFloat = value?.predictedEndTranslation.width ?? moved
+            let half: CGFloat = pageStride * 0.3
+            var step = 0
+            if (moved < -half || predicted < -pageStride * 0.6) && index + 1 < galleryPhotos.count { step = 1 }
+            if (moved > half || predicted > pageStride * 0.6) && index > 0 { step = -1 }
+            settlePage(step, silent: false)
+        case .dismiss:
+            let threshold: CGFloat = ctx.cg("threshold")
+            if let value,
+               GalleryZoomDemo.length(value.translation) > threshold
+                || GalleryZoomDemo.length(value.predictedEndTranslation) > threshold * 3 {
+                close()
+            } else {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = .zero }
+            }
+        }
+    }
+
+    /// Springs the strip to the neighbour (`step` ±1) or back (0); the index swaps invisibly once it lands.
+    private func settlePage(_ step: Int, silent: Bool) {
+        guard step != 0, let index = selected else {
+            withAnimation(pageSpring) { pageDrag = 0 }
+            return
+        }
+        if !silent && !ctx.isPreview { Haptics.selection() }
+        pageToken += 1
+        let token = pageToken
+        pendingPage = index + step
+        withAnimation(pageSpring, completionCriteria: .logicallyComplete) {
+            pageDrag = -CGFloat(step) * pageStride
+        } completion: {
+            guard token == pageToken else { return }
+            commitPendingPage()
+        }
+    }
+
+    /// The neighbour now sits exactly where the current page was: swap them without animation.
+    private func commitPendingPage() {
+        guard let next = pendingPage else { return }
+        pendingPage = nil
+        pageToken += 1
+        var swap = Transaction()
+        swap.disablesAnimations = true
+        withTransaction(swap) {
+            selected = next
+            pageDrag = 0
+        }
+    }
+
+    /// Autoplay stand-in for a finger: open a photo, page once, then fling it home.
+    private func autoStep() {
+        if selected == nil {
+            open(galleryPhotos[autoIndex % galleryPhotos.count].id)
+            autoIndex += 2
+            autoStage = 0
+        } else if autoStage == 0, let index = selected {
+            autoStage = 1
+            settlePage(index + 1 < galleryPhotos.count ? 1 : -1, silent: true)
+        } else {
+            fling()
+        }
+    }
+
     private func fling() {
+        commitPendingPage()
         withAnimation(.easeOut(duration: 0.28)) { drag = CGSize(width: 46, height: 120) }
         flingTask?.cancel()
         flingTask = Task { @MainActor in
@@ -184,14 +300,17 @@ private struct GalleryZoomDemo: View {
         if !ctx.isPreview { Haptics.tap() }
         withAnimation(openSpring) {
             drag = .zero
+            pageDrag = 0
             selected = id
         }
     }
 
     private func close() {
+        commitPendingPage()
         withAnimation(returnSpring) {
             selected = nil
             drag = .zero
+            pageDrag = 0
         }
     }
 }

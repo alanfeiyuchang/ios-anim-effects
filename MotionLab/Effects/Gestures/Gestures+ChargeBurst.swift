@@ -87,6 +87,11 @@ private struct ChargeBurstDemo: View {
                     script = nil
                     isPressing = false
                     isFull = false
+                    if simulated {
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) { charge = 0 }
+                    }
                     simulated = false
                     beginPress()
                 }

@@ -60,6 +60,12 @@ private struct PiPSnapDemo: View {
     @State private var drag: CGSize = .zero
     @State private var isDragging = false
     @State private var target = 3
+    /// True while a real finger holds the window.
+    @State private var held = false
+    /// The scripted throw, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the window off-corner.
+    @GestureState private var pressing = false
 
     var body: some View {
         let origin = PiPMetrics.origin(corner)
@@ -77,6 +83,10 @@ private struct PiPSnapDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.6) { autoThrow() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var slots: some View {
@@ -96,8 +106,12 @@ private struct PiPSnapDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if !isDragging {
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { isDragging = true }
                 }
                 drag = value.translation
@@ -107,8 +121,18 @@ private struct PiPSnapDemo: View {
                 }
             }
             .onEnded { value in
+                guard held else { return }
+                held = false
                 snap(to: PiPMetrics.nearest(to: projected(value)))
             }
+    }
+
+    /// System cancellation (no `onEnded`): snap to the corner closest to where the window is now.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        let origin = PiPMetrics.origin(corner)
+        snap(to: PiPMetrics.nearest(to: CGPoint(x: origin.x + drag.width, y: origin.y + drag.height)))
     }
 
     private func projected(_ value: DragGesture.Value) -> CGPoint {
@@ -132,14 +156,17 @@ private struct PiPSnapDemo: View {
     }
 
     private func autoThrow() {
+        guard !held else { return }
         let options = (0..<4).filter { $0 != corner }
         let next = options.randomElement() ?? 0
         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
             isDragging = true
             target = next
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.35))
+            guard !Task.isCancelled else { return }
             snap(to: next, haptic: false)
         }
     }

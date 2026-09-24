@@ -67,6 +67,7 @@ private struct SwipeActionsDemo: View {
                         offsets[item.id] = value
                     },
                     onEnd: { current, predicted in end(item.id, current: current, predicted: predicted) },
+                    onCancel: { cancelSwipe(item.id) },
                     onPin: { togglePin(item.id) },
                     onDelete: {
                         Haptics.tap(.medium)
@@ -148,6 +149,13 @@ private struct SwipeActionsDemo: View {
         withAnimation(spring) { offsets = next }
     }
 
+    /// A system-cancelled swipe (the page scrolled) never deletes: the row settles open or closed.
+    private func cancelSwipe(_ id: Int) {
+        let current = offsets[id] ?? 0
+        let target: CGFloat = current < -reveal * 0.5 ? -reveal : 0
+        withAnimation(spring) { offsets[id] = target }
+    }
+
     /// The full-swipe haptic already fired when the threshold was crossed, so deleting stays silent here.
     private func delete(_ id: Int) {
         withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
@@ -206,10 +214,13 @@ private struct SwipeRow: View {
     let pinned: Bool
     let onDrag: (CGFloat) -> Void
     let onEnd: (CGFloat, CGFloat) -> Void
+    let onCancel: () -> Void
     let onPin: () -> Void
     let onDelete: () -> Void
     let onTapContent: () -> Void
     @State private var start: CGFloat?
+    /// Resets on system cancellation too, so a stolen touch never leaves the row at a partial offset.
+    @GestureState private var pressing = false
 
     var body: some View {
         let isFull = offset < -fullSwipe
@@ -225,6 +236,16 @@ private struct SwipeRow: View {
         .onChange(of: isFull) { _, newValue in
             if newValue && !ctx.isPreview { Haptics.tap(.medium) }
         }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+    }
+
+    /// System cancellation (no `onEnded`): drop the anchor and let the list settle the row.
+    private func endHold() {
+        guard start != nil else { return }
+        start = nil
+        onCancel()
     }
 
     private func actions(progress: CGFloat, isFull: Bool) -> some View {
@@ -281,6 +302,7 @@ private struct SwipeRow: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 12)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if start == nil {
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }

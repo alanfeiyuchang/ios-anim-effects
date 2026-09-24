@@ -32,6 +32,12 @@ private struct RubberBandDemo: View {
     let ctx: DemoContext
     @State private var drag: CGSize = .zero
     @State private var isDragging = false
+    /// True while a real finger holds the tile.
+    @State private var held = false
+    /// The scripted stretch, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the tile stretched.
+    @GestureState private var pressing = false
 
     var body: some View {
         let limit = ctx.cg("limit")
@@ -61,6 +67,10 @@ private struct RubberBandDemo: View {
                 .padding(.bottom, 14)
         }
         .autoplay(ctx.isPreview, every: 1.5) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var tile: some View {
@@ -77,13 +87,24 @@ private struct RubberBandDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if !isDragging {
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
                     withAnimation(.easeOut(duration: 0.2)) { isDragging = true }
                 }
                 drag = value.translation
             }
-            .onEnded { _ in release() }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: the tile springs back to centre.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        release()
     }
 
     /// Simulated drags release from a Task (outside the muted autoplay call), so they pass `haptic: false`.
@@ -96,13 +117,16 @@ private struct RubberBandDemo: View {
     }
 
     private func simulate() {
+        guard !held else { return }
         let angle = Double.random(in: 0..<(2 * Double.pi))
         withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
             drag = CGSize(width: cos(angle) * 260, height: sin(angle) * 260)
             isDragging = true
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { return }
             release(haptic: false)
         }
     }

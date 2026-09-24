@@ -32,6 +32,12 @@ private struct DragDismissDemo: View {
     @State private var dismissed = false
     /// Scale anchor: the grabbed point in card space, so it stays under the finger.
     @State private var anchor: UnitPoint = .center
+    /// True while a real finger holds the card; each new hold re-captures `anchor`.
+    @State private var held = false
+    /// The scripted pull, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the card half-shrunk.
+    @GestureState private var pressing = false
 
     private static let cardSize = CGSize(width: 220, height: 260)
 
@@ -59,13 +65,21 @@ private struct DragDismissDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.8, delay: 0.5) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 4)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 guard !dismissed else { return }
-                if drag == .zero {
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
                     anchor = UnitPoint(
                         x: (value.startLocation.x / Self.cardSize.width).clamped(to: 0...1),
                         y: (value.startLocation.y / Self.cardSize.height).clamped(to: 0...1)
@@ -74,6 +88,8 @@ private struct DragDismissDemo: View {
                 drag = value.translation
             }
             .onEnded { value in
+                guard held else { return }
+                held = false
                 guard !dismissed else { return }
                 if value.translation.height > ctx.cg("threshold") || value.predictedEndTranslation.height > 320 {
                     dismiss()
@@ -81,6 +97,14 @@ private struct DragDismissDemo: View {
                     withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { drag = .zero }
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): the card springs back to full size.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        guard !dismissed else { return }
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { drag = .zero }
     }
 
     /// Simulated pulls dismiss from a Task (outside the muted autoplay call), so they pass `haptic: false`.
@@ -97,10 +121,13 @@ private struct DragDismissDemo: View {
     }
 
     private func simulate() {
+        guard !held, !dismissed else { return }
         anchor = UnitPoint(x: 0.5, y: 0.3)
         withAnimation(.easeInOut(duration: 0.6)) { drag = CGSize(width: 14, height: 170) }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.65))
+            guard !Task.isCancelled else { return }
             dismiss(haptic: false)
         }
     }

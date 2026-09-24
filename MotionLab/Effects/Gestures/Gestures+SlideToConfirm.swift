@@ -31,6 +31,12 @@ private struct SlideToConfirmDemo: View {
     @State private var x: CGFloat = 0
     @State private var confirmed = false
     @State private var pressed = false
+    /// True while a real finger holds the knob.
+    @State private var held = false
+    /// The scripted slide, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the knob mid-track and pressed.
+    @GestureState private var pressing = false
 
     private let trackWidth: CGFloat = 290
     private let knob: CGFloat = 56
@@ -59,6 +65,10 @@ private struct SlideToConfirmDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 3.4, delay: 0.8) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     @ViewBuilder
@@ -99,9 +109,15 @@ private struct SlideToConfirmDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 guard !confirmed else { return }
-                if !pressed { pressed = true }
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                    pressed = true
+                }
                 let raw = value.translation.width
                 if raw < 0 {
                     x = rubberBand(raw, limit: 20)
@@ -112,6 +128,8 @@ private struct SlideToConfirmDemo: View {
                 }
             }
             .onEnded { value in
+                guard held else { return }
+                held = false
                 pressed = false
                 guard !confirmed else { return }
                 let flicked = value.predictedEndTranslation.width > maxX * 1.2 && x > maxX * 0.5
@@ -121,6 +139,15 @@ private struct SlideToConfirmDemo: View {
                     withAnimation(.spring(response: 0.45, dampingFraction: ctx["damping"])) { x = 0 }
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): the knob springs back to the start, unconfirmed.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        pressed = false
+        guard !confirmed else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: ctx["damping"])) { x = 0 }
     }
 
     /// Simulated slides confirm from a Task (outside the muted autoplay call), so they pass `haptic: false`.
@@ -140,10 +167,12 @@ private struct SlideToConfirmDemo: View {
     }
 
     private func simulate() {
-        guard !confirmed else { return }
+        guard !confirmed, !held else { return }
         withAnimation(.easeInOut(duration: 0.8)) { x = maxX * 0.92 }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.85))
+            guard !Task.isCancelled else { return }
             confirm(haptic: false)
         }
     }

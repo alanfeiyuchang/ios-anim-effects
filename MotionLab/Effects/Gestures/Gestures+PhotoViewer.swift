@@ -43,6 +43,11 @@ private struct PhotoViewerDemo: View {
     /// Translation already folded into `offset` when a pinch ends mid-pan.
     @State private var panOrigin: CGSize = .zero
     @State private var panning = false
+    /// The scripted tour, cancelled on the first real pinch or pan.
+    @State private var script: Task<Void, Never>?
+    /// Reset on system cancellation too, so a stolen touch never leaves a rubber-banded zoom or pan behind.
+    @GestureState private var pinchDown = false
+    @GestureState private var panDown = false
 
     var body: some View {
         let display = displayTransform()
@@ -60,6 +65,13 @@ private struct PhotoViewerDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 3.4, delay: 0.4) { tour() }
+        .onChange(of: pinchDown) { _, isDown in
+            if !isDown { endPinch() }
+        }
+        .onChange(of: panDown) { _, isDown in
+            if !isDown { endPan() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private func zoomChip(_ value: CGFloat) -> some View {
@@ -132,8 +144,10 @@ private struct PhotoViewerDemo: View {
 
     private var magnifyGesture: some Gesture {
         MagnifyGesture(minimumScaleDelta: 0.01)
+            .updating($pinchDown) { _, state, _ in state = true }
             .onChanged { value in
                 if pinch == 1 {
+                    stopScript()
                     focal = CGSize(
                         width: value.startLocation.x - PhotoMetrics.viewport.width / 2,
                         height: value.startLocation.y - PhotoMetrics.viewport.height / 2
@@ -141,16 +155,47 @@ private struct PhotoViewerDemo: View {
                 }
                 pinch = value.magnification
             }
-            .onEnded { _ in commit() }
+            .onEnded { _ in endPinch() }
+    }
+
+    /// Release or system cancellation of the pinch: bake it in (no-op once already committed).
+    private func endPinch() {
+        guard pinch != 1 else { return }
+        commit()
+    }
+
+    /// System cancellation of the pan (no `onEnded`): fold the live pan in and spring back inside the edges.
+    private func endPan() {
+        guard panning else { return }
+        panning = false
+        panOrigin = .zero
+        if pinch != 1 {
+            let ratio = displayTransform().scale / max(scale, 0.01)
+            offset = CGSize(width: offset.width + pan.width / ratio, height: offset.height + pan.height / ratio)
+            pan = .zero
+            return
+        }
+        offset = displayTransform().offset
+        pan = .zero
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+            offset = clampedOffset(offset, scale: scale)
+        }
+    }
+
+    private func stopScript() {
+        script?.cancel()
+        script = nil
     }
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 10)
+            .updating($panDown) { _, state, _ in state = true }
             .onChanged { value in
                 if !panning {
                     // At fit size only horizontal-first drags are claimed, so the page can still scroll.
                     if scale <= 1.01 && pinch == 1 && abs(value.translation.height) > abs(value.translation.width) { return }
                     panning = true
+                    stopScript()
                 }
                 pan = CGSize(width: value.translation.width - panOrigin.width, height: value.translation.height - panOrigin.height)
             }
@@ -219,13 +264,17 @@ private struct PhotoViewerDemo: View {
 
     /// Simulated session for previews and the arrival intro: double-tap the cabin, pan across, zoom back out.
     private func tour() {
+        guard !panning, pinch == 1 else { return }
         doubleTap(at: CGPoint(x: 210, y: 210), haptic: false)
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.0))
+            guard !Task.isCancelled else { return }
             withAnimation(.timingCurve(0.15, 0.75, 0.3, 1, duration: 0.8)) {
                 offset = clampedOffset(CGSize(width: offset.width + 150, height: offset.height + 60), scale: scale)
             }
             try? await Task.sleep(for: .seconds(1.1))
+            guard !Task.isCancelled else { return }
             if scale > 1.05 { doubleTap(at: CGPoint(x: 150, y: 170), haptic: false) }
         }
     }

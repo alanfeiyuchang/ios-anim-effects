@@ -34,6 +34,12 @@ private struct PendulumSwingDemo: View {
     @State private var dragging = false
     /// The one pending relax; each drag change cancels and replaces it.
     @State private var relaxTask: Task<Void, Never>?
+    /// True while a real finger holds the badge.
+    @State private var held = false
+    /// The scripted swing, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the badge offset.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -56,7 +62,13 @@ private struct PendulumSwingDemo: View {
                 .padding(.bottom, 8)
         }
         .autoplay(ctx.isPreview, every: 2.4) { simulate() }
-        .onDisappear { relaxTask?.cancel() }
+        .onDisappear {
+            relaxTask?.cancel()
+            script?.cancel()
+        }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     private var swing: Animation {
@@ -71,15 +83,26 @@ private struct PendulumSwingDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if !dragging {
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = true }
                 }
                 drag = value.translation
                 withAnimation(swing) { angle = lagAngle(forVelocity: value.velocity.width) }
                 relaxWhenStill()
             }
-            .onEnded { _ in release(haptic: true) }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: the badge swings home.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        release(haptic: true)
     }
 
     private func relaxWhenStill() {
@@ -108,16 +131,20 @@ private struct PendulumSwingDemo: View {
     }
 
     private func simulate() {
+        guard !held else { return }
         let side: CGFloat = Bool.random() ? 1 : -1
         withAnimation(.easeInOut(duration: 0.5)) { drag = CGSize(width: side * 90, height: 14) }
         withAnimation(swing) {
             dragging = true
             angle = lagAngle(forVelocity: side * 900)
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.55))
+            guard !Task.isCancelled else { return }
             withAnimation(swing) { angle = 0 }
             try? await Task.sleep(for: .seconds(0.45))
+            guard !Task.isCancelled else { return }
             release(haptic: false)
         }
     }

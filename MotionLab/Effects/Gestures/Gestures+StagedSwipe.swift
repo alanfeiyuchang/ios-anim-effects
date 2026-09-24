@@ -103,7 +103,8 @@ private struct StagedSwipeDemo: View {
                         scripted = false
                         offsets[item.id] = $0
                     },
-                    onEnd: { if committed[item.id] == nil { release(item.id) } }
+                    onEnd: { if committed[item.id] == nil { release(item.id) } },
+                    onCancel: { cancelSwipe(item.id) }
                 )
                 .transition(.asymmetric(insertion: .scale(scale: 0.92).combined(with: .opacity), removal: .opacity))
             }
@@ -139,6 +140,12 @@ private struct StagedSwipeDemo: View {
         guard distance >= first else { return .none }
         let steps = Int(((distance - first) / max(ctx.cg("step"), 1)).rounded(.down))
         return SwipeStage(rawValue: min(steps + 1, 3)) ?? .delete
+    }
+
+    /// A system-cancelled swipe (the page scrolled) commits nothing: the row slides back closed.
+    private func cancelSwipe(_ id: Int) {
+        guard committed[id] == nil else { return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { offsets[id] = 0 }
     }
 
     private func release(_ id: Int, haptic: Bool = true) {
@@ -196,7 +203,10 @@ private struct StagedRow: View {
     let scripted: Bool
     let onDrag: (CGFloat) -> Void
     let onEnd: () -> Void
+    let onCancel: () -> Void
     @State private var tracking = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the row half-revealed.
+    @GestureState private var pressing = false
 
     private var stage: SwipeStage {
         let distance = -offset
@@ -235,6 +245,16 @@ private struct StagedRow: View {
         .onChange(of: current) {
             if !ctx.isPreview && !scripted && lockedStage == nil { Haptics.selection() }
         }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+    }
+
+    /// System cancellation (no `onEnded`): stop tracking and close the row.
+    private func endHold() {
+        guard tracking else { return }
+        tracking = false
+        onCancel()
     }
 
     private var content: some View {
@@ -266,6 +286,7 @@ private struct StagedRow: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 12)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if !tracking {
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }

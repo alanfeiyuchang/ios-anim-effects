@@ -34,6 +34,12 @@ private struct PinchRotateDemo: View {
     @State private var baseScale: CGFloat = 1
     @State private var baseDegrees: Double = 0
     @State private var isActive = false
+    /// True while a real two-finger gesture is in progress.
+    @State private var held = false
+    /// The scripted twist, cancelled on the first real one.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen pinch never leaves the card scaled and rotated.
+    @GestureState private var pinching = false
 
     private let minScale: CGFloat = 0.6
     private let maxScale: CGFloat = 2.5
@@ -52,6 +58,10 @@ private struct PinchRotateDemo: View {
         .padding(.vertical, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.7) { autoStep() }
+        .onChange(of: pinching) { _, isPinching in
+            if !isPinching { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var readout: some View {
@@ -71,7 +81,13 @@ private struct PinchRotateDemo: View {
     private var pinchGesture: some Gesture {
         MagnifyGesture()
             .simultaneously(with: RotateGesture())
+            .updating($pinching) { _, state, _ in state = true }
             .onChanged { value in
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 if !isActive {
                     withAnimation(.easeOut(duration: 0.2)) { isActive = true }
                 }
@@ -80,7 +96,14 @@ private struct PinchRotateDemo: View {
                 scale = baseScale * magnification
                 degrees = baseDegrees + rotation
             }
-            .onEnded { _ in settle() }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: settle and re-base, so the next pinch starts from the landed transform.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        settle()
     }
 
     private func displayScale(_ raw: CGFloat) -> CGFloat {
@@ -114,7 +137,7 @@ private struct PinchRotateDemo: View {
 
     /// A complete simulated gesture: twist in with the grid showing, hold, then spring back to rest.
     private func autoStep() {
-        guard !isActive else { return }
+        guard !isActive, !held else { return }
         withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
             scale = 1.35
             degrees = 18
@@ -122,10 +145,11 @@ private struct PinchRotateDemo: View {
         }
         baseScale = 1.35
         baseDegrees = 18
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))
             // Leave it alone if a real pinch took over in the meantime.
-            guard scale == 1.35, degrees == 18 else { return }
+            guard !Task.isCancelled, scale == 1.35, degrees == 18 else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.62)) {
                 scale = 1
                 degrees = 0

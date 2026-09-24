@@ -33,6 +33,12 @@ private struct MagneticSnapDemo: View {
     @State private var drag: CGSize = .zero
     @State private var dragging = false
     @State private var hover: Int?
+    /// True while a real finger holds the tile.
+    @State private var held = false
+    /// The scripted hop, cancelled (and landed at once) on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the tile between anchors.
+    @GestureState private var pressing = false
 
     private let spacing: CGFloat = 92
     private let tileSize: CGFloat = 62
@@ -58,6 +64,10 @@ private struct MagneticSnapDemo: View {
                 .padding(.bottom, 6)
         }
         .autoplay(ctx.isPreview, every: 1.6) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var tile: some View {
@@ -115,8 +125,11 @@ private struct MagneticSnapDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if !dragging {
+                if !held {
+                    held = true
+                    takeOver()
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = true }
                 }
                 drag = value.translation
@@ -129,7 +142,28 @@ private struct MagneticSnapDemo: View {
                     if newHover != nil && !ctx.isPreview { Haptics.selection() }
                 }
             }
-            .onEnded { _ in release() }
+            .onEnded { _ in endHold() }
+    }
+
+    /// A real touch over a scripted hop: stop it and land the tile on its target so the drag starts from an anchor.
+    private func takeOver() {
+        guard script != nil else { return }
+        script?.cancel()
+        script = nil
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            home = nearest(to: rawPoint)
+            drag = .zero
+            hover = nil
+        }
+    }
+
+    /// Release or system cancellation: the tile snaps to the closest anchor.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        release()
     }
 
     private func release() {
@@ -144,6 +178,7 @@ private struct MagneticSnapDemo: View {
     }
 
     private func simulate() {
+        guard !held else { return }
         var target = Int.random(in: 0..<9)
         if target == home { target = (home + 4) % 9 }
         let from = anchor(home)
@@ -155,8 +190,11 @@ private struct MagneticSnapDemo: View {
             dragging = true
             hover = target
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { return }
+            script = nil
             withAnimation(.spring(response: 0.38, dampingFraction: ctx["damping"])) {
                 home = target
                 drag = .zero

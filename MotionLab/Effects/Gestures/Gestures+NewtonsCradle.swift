@@ -183,6 +183,8 @@ private struct NewtonsCradleDemo: View {
     /// Click haptics start only once the user has handled a ball (never for the intro swing).
     @State private var userTouched = false
     @State private var sleepWatcher: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves a ball hanging mid-air.
+    @GestureState private var pressing = false
 
     var body: some View {
         let count = ctx.int("balls").clamped(to: 3...7)
@@ -211,6 +213,17 @@ private struct NewtonsCradleDemo: View {
         .onAppear { wake() }
         .onDisappear { sleepWatcher?.cancel() }
         .onChange(of: count) { wake() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+    }
+
+    /// System cancellation (no `onEnded`): let the held ball go from rest.
+    private func endHold() {
+        guard grabbed != nil else { return }
+        grabbed = nil
+        model.release(tangentialSpeed: 0, length: ctx["length"])
+        wake()
     }
 
     /// Runs the timeline while anything swings; a watcher pauses it once the row hangs still.
@@ -230,6 +243,7 @@ private struct NewtonsCradleDemo: View {
 
     private func dragGesture(count: Int, length: Double) -> some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if grabbed == nil {
                     guard let index = ballIndex(at: value.startLocation, count: count, length: length) else { return }

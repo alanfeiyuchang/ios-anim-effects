@@ -93,6 +93,8 @@ private struct MagnifierDemo: View {
     @State private var point = CGPoint(x: 150, y: 110)
     @State private var isActive: Bool
     @State private var touching = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the loupe out.
+    @GestureState private var pressing = false
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -123,10 +125,14 @@ private struct MagnifierDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { if ctx.isPreview { isActive = true } }
         .autoplay(ctx.isPreview, every: 1.0, delay: 0.3) { wander() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 touching = true
                 point = CGPoint(
@@ -138,10 +144,14 @@ private struct MagnifierDemo: View {
                     if !ctx.isPreview { Haptics.tap(.light) }
                 }
             }
-            .onEnded { _ in
-                touching = false
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isActive = false }
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: tuck the loupe away.
+    private func endHold() {
+        guard touching else { return }
+        touching = false
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isActive = false }
     }
 
     private func wander() {

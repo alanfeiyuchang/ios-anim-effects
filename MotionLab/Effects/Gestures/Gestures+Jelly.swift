@@ -62,6 +62,12 @@ private struct JellyDemo: View {
     @State private var isDragging = false
     /// The one pending relax; each drag change cancels and replaces it.
     @State private var relaxTask: Task<Void, Never>?
+    /// True while a real finger holds the jelly.
+    @State private var held = false
+    /// The scripted flick, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the blob offset.
+    @GestureState private var pressing = false
 
     var body: some View {
         ZStack {
@@ -83,7 +89,13 @@ private struct JellyDemo: View {
                 .padding(.bottom, 14)
         }
         .autoplay(ctx.isPreview, every: 1.9) { simulate() }
-        .onDisappear { relaxTask?.cancel() }
+        .onDisappear {
+            relaxTask?.cancel()
+            script?.cancel()
+        }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     private var blob: some View {
@@ -104,8 +116,12 @@ private struct JellyDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if !isDragging {
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isDragging = true }
                 }
                 offset = value.translation
@@ -114,10 +130,15 @@ private struct JellyDemo: View {
                 }
                 relaxWhenStill()
             }
-            .onEnded { _ in
-                relaxTask?.cancel()
-                release()
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: the blob wobbles home.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        relaxTask?.cancel()
+        release()
     }
 
     /// DragGesture stops reporting when the finger holds still, so the last velocity would freeze the stretch.
@@ -147,6 +168,7 @@ private struct JellyDemo: View {
     }
 
     private func simulate() {
+        guard !held else { return }
         let angle = Double.random(in: 0..<(2 * Double.pi))
         let target = CGSize(width: cos(angle) * 90, height: sin(angle) * 70)
         let velocity = CGSize(width: cos(angle) * 1600, height: sin(angle) * 1600)
@@ -155,8 +177,10 @@ private struct JellyDemo: View {
             strain = strainFor(velocity: velocity)
             isDragging = true
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.45))
+            guard !Task.isCancelled else { return }
             // Flip the strain on release so the wobble reads clearly in the thumbnail.
             withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
                 offset = .zero
@@ -164,6 +188,7 @@ private struct JellyDemo: View {
                 isDragging = false
             }
             try? await Task.sleep(for: .seconds(0.12))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
                 strain = .zero
             }

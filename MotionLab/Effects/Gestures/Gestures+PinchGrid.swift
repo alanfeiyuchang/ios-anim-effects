@@ -35,6 +35,12 @@ private struct PinchGridDemo: View {
     @State private var live: CGFloat = 1
     @State private var anchor: UnitPoint = .center
     @State private var zoomingIn = true
+    /// True while a real pinch is in progress.
+    @State private var held = false
+    /// The scripted pinch, cancelled on the first real one.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen pinch never leaves the grid scaled.
+    @GestureState private var pinching = false
 
     /// Pill + 12 pt + grid stays inside the 340 pt preview canvas.
     private let side: CGFloat = 288
@@ -55,6 +61,10 @@ private struct PinchGridDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.0, delay: 0.6) { simulate() }
+        .onChange(of: pinching) { _, isPinching in
+            if !isPinching { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var pill: some View {
@@ -91,12 +101,20 @@ private struct PinchGridDemo: View {
 
     private var magnify: some Gesture {
         MagnifyGesture()
+            .updating($pinching) { _, state, _ in state = true }
             .onChanged { value in
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 anchor = value.startAnchor
                 let delta = value.magnification - 1
                 live = 1 + rubberBand(delta, limit: 0.25, coefficient: 1)
             }
             .onEnded { value in
+                guard held else { return }
+                held = false
                 if value.magnification > 1.15 {
                     commit(columns - 1)
                 } else if value.magnification < 0.87 {
@@ -105,6 +123,13 @@ private struct PinchGridDemo: View {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { live = 1 }
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): the grid springs back without changing columns.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { live = 1 }
     }
 
     private func commit(_ target: Int, haptic: Bool = true) {
@@ -122,12 +147,15 @@ private struct PinchGridDemo: View {
     }
 
     private func simulate() {
+        guard !held else { return }
         if columns == 2 { zoomingIn = false }
         if columns == 4 { zoomingIn = true }
         anchor = UnitPoint(x: CGFloat.random(in: 0.3...0.7), y: CGFloat.random(in: 0.3...0.7))
         withAnimation(.easeInOut(duration: 0.35)) { live = zoomingIn ? 1.16 : 0.86 }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.4))
+            guard !Task.isCancelled else { return }
             // Scripted (preview or detail intro): the column step stays silent.
             commit(zoomingIn ? columns - 1 : columns + 1, haptic: false)
         }

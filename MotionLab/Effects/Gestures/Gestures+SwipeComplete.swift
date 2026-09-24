@@ -61,7 +61,8 @@ private struct SwipeCompleteDemo: View {
                         scripted = false
                         offsets[item.id] = $0
                     },
-                    onEnd: { finish(item.id) }
+                    onEnd: { finish(item.id) },
+                    onCancel: { cancelSwipe(item.id) }
                 )
             }
             DemoHint(text: L("Swipe a task to the right", "把任务向右滑"), ctx: ctx)
@@ -87,6 +88,11 @@ private struct SwipeCompleteDemo: View {
             try? await Task.sleep(for: .seconds(delay))
             withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) { resort(id) }
         }
+    }
+
+    /// A system-cancelled swipe (the page scrolled) completes nothing: the row slides back.
+    private func cancelSwipe(_ id: Int) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { offsets[id] = 0 }
     }
 
     /// Finished tasks sink to the bottom; restored ones float back to the top.
@@ -122,7 +128,10 @@ private struct CompleteRow: View {
     let scripted: Bool
     let onDrag: (CGFloat) -> Void
     let onEnd: () -> Void
+    let onCancel: () -> Void
     @State private var tracking = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the row mid-reveal.
+    @GestureState private var pressing = false
 
     var body: some View {
         let progress = min(max(offset / max(threshold, 1), 0), 1)
@@ -137,6 +146,16 @@ private struct CompleteRow: View {
         .onChange(of: armed) { _, newValue in
             if newValue && !ctx.isPreview && !scripted { Haptics.tap(.medium) }
         }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+    }
+
+    /// System cancellation (no `onEnded`): stop tracking and slide the row back.
+    private func endHold() {
+        guard tracking else { return }
+        tracking = false
+        onCancel()
     }
 
     private func well(progress: CGFloat, armed: Bool) -> some View {
@@ -189,6 +208,7 @@ private struct CompleteRow: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 12)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if !tracking {
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }

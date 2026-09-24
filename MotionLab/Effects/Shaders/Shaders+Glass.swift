@@ -173,9 +173,8 @@ private struct GlassmorphismDemo: View {
                 startPoint: sheenStart,
                 endPoint: sheenEnd
             )
+            // Plain blending: a blend-mode layer can escape its clip once the card tilts in 3D.
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .compositingGroup()
-            .blendMode(.plusLighter)
             .allowsHitTesting(false)
         }
         .overlay(

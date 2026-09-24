@@ -126,9 +126,13 @@ private struct BoardFlipper: View, Animatable {
             } else {
                 BoardTop()
             }
+            BoardSheen(shift: CGFloat(tiltX * 3 + sin(angle * .pi / 180) * 90))
         }
         .frame(width: 228, height: 60)
-        .overlay { BoardSheen(shift: CGFloat(tiltX * 3 + sin(angle * .pi / 180) * 90)) }
+        // The sheen blends inside this one flattened, capsule-clipped layer, so after the 3D
+        // rotation it can never spill past the board's edge.
+        .clipShape(Capsule())
+        .compositingGroup()
         // 3D first, in the board's own frame, so the flip turns around its long axis;
         // the −10° lie is applied afterwards. A gentle perspective keeps the near edge from ballooning.
         .rotation3DEffect(.degrees(angle + tiltY), axis: (x: 1, y: 0, z: 0), perspective: 0.28)
@@ -224,9 +228,6 @@ private struct BoardSheen: View {
             .offset(x: shift)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Clip before blending: a blended layer ignores a clip applied after it.
-        .clipShape(Capsule())
-        .compositingGroup()
         .blendMode(.plusLighter)
         .allowsHitTesting(false)
     }

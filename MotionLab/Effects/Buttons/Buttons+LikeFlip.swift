@@ -190,10 +190,8 @@ private struct ButtonCoinGlint: View {
             .rotationEffect(.degrees(20))
             .offset(x: position * 70)
             .frame(width: 92, height: 92)
-            // Clip before blending: a blended layer ignores a clip applied after it.
+            // Plain blending: a blend-mode layer can escape its clip once the coin turns in 3D.
             .clipShape(Circle())
-            .compositingGroup()
-            .blendMode(.plusLighter)
             .allowsHitTesting(false)
     }
 }

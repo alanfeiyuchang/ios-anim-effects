@@ -12,8 +12,8 @@ extension Effect {
             "一叠190×240 pt的卡片。左右拖动时，顶部卡片不是平移，而是绕竖直轴以透视转动——在110 pt阈值处最多转60°——同时只移动手指距离的55%，并在接近侧立时逐渐变暗，就像推动一扇旋转门。越过阈值松手（或快速甩动）时，卡片以硬朗的弹簧（响应0.42秒、阻尼0.88）继续转到90°侧立后消失，并伴随中等触感；下一张卡片从反方向转过25°、缩放92%的状态，以更柔和的弹簧（响应0.55秒、阻尼0.7）转正面向观者。距离不足则转回平面。顺滑又带点戏剧性。"
         ),
         implementation: L(
-            "The drag translation maps to a y-axis rotation3DEffect plus a reduced offset on the top card; a throw animates the angle to ±90°, then the deck is reordered and a separate 'incoming' angle state springs the new top card from −25° to 0°.",
-            "拖动位移映射为顶部卡片绕 y 轴的 rotation3DEffect 与缩减后的偏移；甩出时把角度动画到 ±90°，随后重排卡组，并由独立的“转入”角度状态让新的顶部卡片从 −25° 弹簧过渡到 0°。"
+            "A horizontal-intent drag (vertical swipes still scroll the page) maps its translation to a y-axis rotation3DEffect plus a reduced offset on the top card; a throw animates the angle to ±90°, then the deck is reordered and a separate 'incoming' angle state springs the new top card from −25° to 0°.",
+            "只认横向意图的拖动（竖向滑动仍滚动页面）把位移映射为顶部卡片绕 y 轴的 rotation3DEffect 与缩减后的偏移；甩出时把角度动画到 ±90°，随后重排卡组，并由独立的“转入”角度状态让新的顶部卡片从 −25° 弹簧过渡到 0°。"
         ),
         apis: ["rotation3DEffect", "DragGesture", "predictedEndTranslation", "withTransaction", "spring(response:dampingFraction:)"],
         tags: ["swipe", "3D", "revolving", "turn", "滑卡", "三维", "旋转门", "翻转"],
@@ -40,8 +40,6 @@ private struct CardsTurnSwipeDemo: View {
     @State private var held = false
     /// The scripted swipe, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
-    /// Resets on system cancellation too, so a stolen touch never leaves the card turned.
-    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -55,9 +53,6 @@ private struct CardsTurnSwipeDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.7) { autoSwipe() }
-        .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
-        }
         .onDisappear { script?.cancel() }
     }
 
@@ -86,39 +81,34 @@ private struct CardsTurnSwipeDemo: View {
             .shadow(color: .black.opacity(0.16), radius: 14, y: 8)
             .zIndex(Double(order.count - depth))
             .allowsHitTesting(isTop)
-            .gesture(dragGesture)
+            // Horizontal intent only: a vertical swipe on the card scrolls the detail page.
+            .pageSafeHorizontalDrag(onChanged: dragChanged, onEnded: dragEnded)
     }
 
-    private var dragGesture: some Gesture {
-        DragGesture()
-            .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                guard thrown == nil else { return }
-                if !held {
-                    held = true
-                    script?.cancel()
-                    script = nil
-                }
-                drag = value.translation.width
-            }
-            .onEnded { value in
-                guard held, thrown == nil else { return }
-                held = false
-                let threshold = ctx.cg("threshold")
-                let predicted = value.predictedEndTranslation.width
-                if abs(value.translation.width) > threshold || abs(predicted) > threshold * 2 {
-                    throwCard(direction: predicted >= 0 ? 1 : -1)
-                } else {
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { drag = 0 }
-                }
-            }
+    private func dragChanged(_ value: DragGesture.Value) {
+        guard thrown == nil else { return }
+        if !held {
+            held = true
+            script?.cancel()
+            script = nil
+        }
+        drag = value.translation.width
     }
 
-    /// System cancellation (no `onEnded`): the card turns back to face the viewer.
-    private func endHold() {
+    /// Normal release (with the flick's projection) or system cancellation (`nil`: the card turns back to face the
+    /// viewer, never thrown, no haptic).
+    private func dragEnded(_ value: DragGesture.Value?) {
         guard held else { return }
         held = false
         guard thrown == nil else { return }
+        let threshold = ctx.cg("threshold")
+        if let value {
+            let predicted = value.predictedEndTranslation.width
+            if abs(value.translation.width) > threshold || abs(predicted) > threshold * 2 {
+                throwCard(direction: predicted >= 0 ? 1 : -1)
+                return
+            }
+        }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { drag = 0 }
     }
 

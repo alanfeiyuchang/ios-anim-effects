@@ -89,6 +89,8 @@ private struct StagedSwipeDemo: View {
     /// The scripted swipe's release timer and its row, cancelled on the first real touch and on disappear.
     @State private var script: Task<Void, Never>?
     @State private var scriptRow: Int?
+    /// Each released row's remove-and-restore sequence, by row id; cancelled on disappear.
+    @State private var releases: [Int: Task<Void, Never>] = [:]
 
     var body: some View {
         VStack(spacing: 10) {
@@ -119,7 +121,17 @@ private struct StagedSwipeDemo: View {
         .frame(width: 300)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.4, delay: 0.5) { autoStep() }
-        .onDisappear { stopScript() }
+        .onDisappear {
+            stopScript()
+            // Cancelled sequences would leave rows removed or flung off screen: restore the list at once.
+            guard !releases.isEmpty else { return }
+            releases.values.forEach { $0.cancel() }
+            releases = [:]
+            items = stagedSeed
+            offsets = [:]
+            committed = [:]
+            chip = nil
+        }
     }
 
     @ViewBuilder
@@ -162,8 +174,10 @@ private struct StagedSwipeDemo: View {
         committed[id] = current
         withAnimation(.easeIn(duration: 0.25)) { offsets[id] = -420 }
         if haptic && !ctx.isPreview { Haptics.tap(current == .delete ? .rigid : .medium) }
-        Task { @MainActor in
+        releases[id]?.cancel()
+        releases[id] = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.25))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                 items.removeAll { $0.id == id }
                 offsets[id] = nil
@@ -171,6 +185,8 @@ private struct StagedSwipeDemo: View {
                 chip = current
             }
             try? await Task.sleep(for: .seconds(1.3))
+            guard !Task.isCancelled else { return }
+            releases[id] = nil
             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                 chip = nil
                 if let original = stagedSeed.first(where: { $0.id == id }), !items.contains(original) {

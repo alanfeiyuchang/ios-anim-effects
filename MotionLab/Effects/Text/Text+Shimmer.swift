@@ -90,6 +90,9 @@ private struct ShimmerText: View {
 
     /// Duration of a tap-fired sweep.
     private let sweepDuration: Double = 0.65
+    /// Sweep cycles carried over from earlier speeds, so moving the Speed slider changes the pace, not the band's
+    /// position.
+    @State private var cycleShift: Double = 0
 
     var body: some View {
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
@@ -103,6 +106,14 @@ private struct ShimmerText: View {
                         .opacity(sweepOpacity(at: timeline.date))
                 }
         }
+        .onChange(of: ctx["speed"]) { old, new in
+            cycleShift += Date().timeIntervalSinceReferenceDate * (Self.rate(old) - Self.rate(new))
+        }
+    }
+
+    /// Sweep cycles per second: one pass every 2.2 s at speed 1.
+    private static func rate(_ speed: Double) -> Double {
+        max(speed, 0.05) / 2.2
     }
 
     /// 0…1 progress of the tap-fired sweep, or nil when none is running.
@@ -131,8 +142,8 @@ private struct ShimmerText: View {
 
     private func gradient(at date: Date) -> LinearGradient {
         let band = ctx["band"]
-        let period = 2.2 / max(ctx["speed"], 0.05)
-        let t = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: period) / period
+        let cycles = date.timeIntervalSinceReferenceDate * Self.rate(ctx["speed"]) + cycleShift
+        let t = cycles - cycles.rounded(.down)
         let center = -band + t * (1 + band * 2)
         return LinearGradient(
             colors: colors,

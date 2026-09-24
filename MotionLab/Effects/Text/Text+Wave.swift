@@ -35,22 +35,24 @@ private struct WaveDemo: View {
     @State private var swellFrom: Double = 0
     @State private var swellTarget: Double = 0
     @State private var swellChanged = Date.distantPast
+    /// Wave phase carried over from earlier speeds, so moving the Speed slider changes the pace, not the shape.
+    @State private var phaseShift: Double = 0
 
     var body: some View {
         VStack(spacing: 18) {
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-                let time = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
+                let phase = Self.clock(timeline.date) * ctx["speed"] + phaseShift
                 let gain = 1 + 0.9 * swell(at: timeline.date)
                 // Leave room for both lines' vertical travel so they never collide, even fully swollen.
                 VStack(spacing: 6 + ctx.cg("amplitude") * 1.4 * 1.9) {
                     Text(L("Good Vibes", "律动文字"), ctx.language)
                         .font(.system(size: 50, weight: .heavy, design: .rounded))
                         .foregroundStyle(Palette.sunset)
-                        .textRenderer(renderer(time: time, scale: gain))
+                        .textRenderer(renderer(phase: phase, scale: gain))
                     Text(L("every glyph is alive", "每个字形都在呼吸"), ctx.language)
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(.secondary)
-                        .textRenderer(renderer(time: time - 0.4, scale: 0.4 * gain))
+                        .textRenderer(renderer(phase: phase - 0.4 * ctx["speed"], scale: 0.4 * gain))
                 }
             }
             DemoHint(text: L("Touch and hold to swell the wave", "按住让波浪涌起"), ctx: ctx)
@@ -62,6 +64,13 @@ private struct WaveDemo: View {
         .onLongPressGesture(minimumDuration: 30, maximumDistance: 24) {} onPressingChanged: { pressing in
             setSwell(pressing)
         }
+        .onChange(of: ctx["speed"]) { old, new in
+            phaseShift += Self.clock(Date()) * (old - new)
+        }
+    }
+
+    private static func clock(_ date: Date) -> Double {
+        date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
     }
 
     private func swell(at date: Date) -> Double {
@@ -78,9 +87,9 @@ private struct WaveDemo: View {
         if pressing { Haptics.tap(.soft) }
     }
 
-    private func renderer(time: Double, scale: Double) -> WaveRenderer {
+    private func renderer(phase: Double, scale: Double) -> WaveRenderer {
         WaveRenderer(
-            time: time * ctx["speed"],
+            time: phase,
             amplitude: ctx["amplitude"] * scale,
             spread: ctx["spread"],
             hueDrift: ctx.bool("hue")

@@ -61,18 +61,32 @@ private struct RadarPingDemo: View {
     private let size: CGFloat = 250
     /// Reference-date seconds of the last tap-fired ping.
     @State private var pingTime: Double = -.infinity
+    /// Beam and ring cycles carried over from earlier periods, so moving either period slider changes the pace
+    /// without the beam or the rings jumping.
+    @State private var beamShift: Double = 0
+    @State private var ringShift: Double = 0
 
     var body: some View {
         VStack(spacing: 18) {
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let now: Double = timeline.date.timeIntervalSinceReferenceDate
-                radar(time: now.truncatingRemainder(dividingBy: 3_600), pulse: pulse(at: now))
+                radar(time: Self.clock(timeline.date), pulse: pulse(at: now))
             }
             DemoHint(text: L("Tap to send a ping", "点击发出一次探测"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { ping() }
+        .onChange(of: ctx["sweep"]) { old, new in
+            beamShift += Self.clock(Date()) * (1 / max(old, 0.2) - 1 / max(new, 0.2))
+        }
+        .onChange(of: ctx["rings"]) { old, new in
+            ringShift += Self.clock(Date()) * (1 / max(old, 0.2) - 1 / max(new, 0.2))
+        }
+    }
+
+    private static func clock(_ date: Date) -> Double {
+        date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3_600)
     }
 
     private func ping() {
@@ -89,14 +103,15 @@ private struct RadarPingDemo: View {
     }
 
     private func beamAngle(time: Double) -> Double {
-        (time / max(ctx["sweep"], 0.2)).truncatingRemainder(dividingBy: 1) * 360
+        let cycles: Double = time / max(ctx["sweep"], 0.2) + beamShift
+        return (cycles - cycles.rounded(.down)) * 360
     }
 
     private func radar(time: Double, pulse: RadarPulse?) -> some View {
         let sweepPeriod: Double = max(ctx["sweep"], 0.2)
         let beam: Double = beamAngle(time: time)
         let ringPeriod: Double = max(ctx["rings"], 0.2)
-        let breath: Double = sin((time / ringPeriod) * 2 * Double.pi * 3)
+        let breath: Double = sin((time / ringPeriod + ringShift) * 2 * Double.pi * 3)
         let kick: Double = pulse.map { $0.elapsed < 0.4 ? sin(Double.pi * $0.elapsed / 0.4) : 0 } ?? 0
         let pingPhase: Double = pulse.map { $0.elapsed / RadarPulse.ringDuration } ?? 1
         let sweepOpacity: Double = pulse?.sweep.map { 1 - $0 * $0 } ?? 0
@@ -129,7 +144,7 @@ private struct RadarPingDemo: View {
     }
 
     private func ringPhase(time: Double, index: Int, period: Double) -> Double {
-        let shifted: Double = time / period + Double(index) / 3
+        let shifted: Double = time / period + ringShift + Double(index) / 3
         return shifted - shifted.rounded(.down)
     }
 

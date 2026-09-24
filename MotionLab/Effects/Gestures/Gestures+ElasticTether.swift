@@ -5,7 +5,7 @@ extension Effect {
         id: "gestures.elastic-tether",
         category: .gestures,
         interaction: .gesture,
-        name: L("Slingshot Tether", "弹弓牵绳"),
+        name: L("Elastic Band Launcher", "弹力皮筋发射"),
         summary: L("A stone in a pouch between two fork posts: bands sag when slack, thin when drawn, and fire the stone.", "弹弓叉架两柱间的皮兜夹着石子：皮筋松时下垂、拉紧变细，松手把石子射出。"),
         prompt: L(
             "A Y-shaped slingshot fork has two posts 156 pt apart; pink-to-coral elastic bands run from the post tips to a leather pouch cradling a 40 pt glossy stone, straight across at rest. Dragging the pouch draws it back with rubber-band resistance (limit 140 pt per axis). Each band reacts to its own length: shorter than its 78 pt rest it sags by 70% of the slack; stretched, it pulls straight and thins from 6 pt to 2 pt. On release the stone fires opposite the pull, flying 2.5× the draw while shrinking to 40% and fading over 0.5 s, and the empty pouch snaps through the post line on an under-damped spring (response 0.55 s, damping 0.32), oscillating two or three times. A new stone pops in 0.65 s later; a rigid haptic scales with the draw. Taut and twangy.",
@@ -16,7 +16,7 @@ extension Effect {
             "可动画的 Shape 以二次曲线从两根柱尖画到皮兜位置，每条皮筋按自身长度计算线宽并通过 path.strokedPath 描边，因此下垂与变细会在弹簧的每一帧更新；石子松手前跟随皮兜，松手后飞向独立的目标位置，并由保存的重新装填 Task 复位。"
         ),
         apis: ["Shape", "animatableData", "Path.strokedPath", "DragGesture", "rubberBand", "spring(response:dampingFraction:)"],
-        tags: ["slingshot", "catapult", "elastic", "bungee", "弹弓", "皮筋", "弹射", "回弹"],
+        tags: ["launcher", "catapult", "elastic", "bungee", "拉弓", "皮筋", "弹射", "回弹"],
         params: [
             .slider("damping", L("Damping", "阻尼"), 0.15...0.9, default: 0.32),
             .slider("response", L("Spring response", "弹簧响应"), 0.3...1.0, default: 0.55, unit: "s"),

@@ -55,13 +55,13 @@ private struct PinchOpenDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            DemoHint(
-                text: expanded
-                    ? L("Pinch in or double-tap to close", "双指捏合或双击收起")
-                    : L("Spread two fingers on the card, or double-tap", "在卡片上双指张开，或双击"),
-                ctx: ctx
-            )
-            .padding(.bottom, 12)
+            // The open 300×320 page leaves only ~10 pt on a 340 pt stage, so the hint shows only while closed
+            // (it already names the double-tap that closes the page again).
+            if !expanded {
+                DemoHint(text: L("Spread two fingers on the card, or double-tap", "在卡片上双指张开，或双击"), ctx: ctx)
+                    .padding(.bottom, 12)
+                    .transition(.opacity)
+            }
         }
         .autoplay(ctx.isPreview, every: 2.4, delay: 0.6) { simulate() }
         .onChange(of: pinching) { _, isPinching in

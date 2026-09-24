@@ -32,6 +32,9 @@ private struct WeatherDemo: View {
     let ctx: DemoContext
     /// Condition picked on the stage; `nil` follows the Starting condition parameter.
     @State private var picked: Int?
+    /// Scene time carried over from earlier speeds, so moving the Speed slider changes the pace without the sun,
+    /// clouds and rain jumping.
+    @State private var timeShift: Double = 0
 
     private var mode: Int { (picked ?? ctx.int("mode")).clamped(to: 0...3) }
 
@@ -48,7 +51,7 @@ private struct WeatherDemo: View {
         VStack(spacing: 16) {
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 WeatherScene(
-                    time: timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3_600) * ctx["speed"],
+                    time: Self.clock(timeline.date) * ctx["speed"] + timeShift,
                     mode: mode
                 )
             }
@@ -66,7 +69,14 @@ private struct WeatherDemo: View {
         .onTapGesture { select((mode + 1) % 4) }
         // Changing the parameter restarts from that condition.
         .onChange(of: ctx.int("mode")) { _, _ in picked = nil }
+        .onChange(of: ctx["speed"]) { old, new in
+            timeShift += Self.clock(Date()) * (old - new)
+        }
         .autoplay(ctx.isPreview, every: 2.8) { select((mode + 1) % 4) }
+    }
+
+    private static func clock(_ date: Date) -> Double {
+        date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3_600)
     }
 
     /// Shows which condition is live; tap a glyph to jump straight to it.

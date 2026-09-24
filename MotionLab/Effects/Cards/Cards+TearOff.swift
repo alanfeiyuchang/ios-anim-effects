@@ -12,10 +12,10 @@ extension Effect {
             "200×220 pt的日历撕页本，顶部是深色装订条和打孔，印着大号日期。向下拖动最上面的纸页时，它带阻尼地跟随手指下移（满拉约40 pt）、拉长最多10%，并以装订处为轴在透视中向前弯折——拉动180 pt时最多55°——同时从左上角扭转最多6°，下半部分逐渐加深阴影，就像纸张正在被撕开。拉过90 pt松手即撕下，伴随触感：纸页以缓入曲线在0.55秒内下落420 pt，旋转25°并淡出，下面已是第二天的日期。拉动不足时则以弹簧（响应0.4秒、阻尼0.6）贴回装订处。怀旧又解压。"
         ),
         implementation: L(
-            "The pull distance drives a rubber-banded follow offset, a top-anchored y-stretch, rotation3DEffect around the x-axis anchored at the top, plus a small rotationEffect anchored at the top-leading corner; a torn sheet animates a separate fall state with easeIn before the day index advances.",
-            "拉动距离驱动带橡皮筋阻尼的跟随位移、以顶部为锚点的纵向拉伸、绕 x 轴的 rotation3DEffect，以及以左上角为锚点的轻微 rotationEffect；撕下的纸页使用独立的下落状态做缓入动画，之后日期序号前进。"
+            "A down-only UIKit pan (UIGestureRecognizerRepresentable; other swipes scroll the page) reports the pull distance, which drives a rubber-banded follow offset, a top-anchored y-stretch, rotation3DEffect around the x-axis anchored at the top, plus a small rotationEffect anchored at the top-leading corner; a torn sheet animates a separate fall state with easeIn before the day index advances.",
+            "只接受向下拖动的 UIKit 平移手势（UIGestureRecognizerRepresentable，其他方向的滑动照常滚动页面）给出拉动距离，驱动带橡皮筋阻尼的跟随位移、以顶部为锚点的纵向拉伸、绕 x 轴的 rotation3DEffect，以及以左上角为锚点的轻微 rotationEffect；撕下的纸页使用独立的下落状态做缓入动画，之后日期序号前进。"
         ),
-        apis: ["rotation3DEffect(_:axis:anchor:perspective:)", "rotationEffect(_:anchor:)", "DragGesture", "withTransaction"],
+        apis: ["rotation3DEffect(_:axis:anchor:perspective:)", "rotationEffect(_:anchor:)", "UIGestureRecognizerRepresentable", "withTransaction"],
         tags: ["calendar", "tear", "peel", "page", "日历", "撕页", "翻页", "纸张"],
         params: [
             .slider("bend", L("Max bend", "最大弯折"), 20...80, default: 55, step: 1, decimals: 0, unit: "°"),
@@ -35,8 +35,6 @@ private struct CardsTearOffDemo: View {
     @State private var held = false
     /// The scripted pull-and-tear, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
-    /// Resets on system cancellation too, so a stolen touch never leaves the sheet bent.
-    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 22) {
@@ -45,9 +43,6 @@ private struct CardsTearOffDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) { autoTear() }
-        .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
-        }
         .onDisappear { script?.cancel() }
     }
 
@@ -69,41 +64,33 @@ private struct CardsTearOffDemo: View {
                 .rotationEffect(.degrees(falling ? 25 : twist), anchor: .topLeading)
                 .offset(y: fall)
                 .opacity(falling ? 0 : 1)
-                .gesture(drag)
+                // Down only: an upward or sideways swipe fails the pan at once and scrolls the detail page.
+                .gesture(PageSafePan(directions: .down, isEnabled: !falling, onChanged: dragChanged, onEnded: dragEnded))
             CardsCalendarBinding()
         }
         .frame(width: 200, height: 232, alignment: .top)
     }
 
-    private var drag: some Gesture {
-        DragGesture()
-            .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                guard !falling else { return }
-                if !held {
-                    held = true
-                    script?.cancel()
-                    script = nil
-                }
-                pull = max(value.translation.height, 0)
-            }
-            .onEnded { _ in
-                guard held, !falling else { return }
-                held = false
-                if pull > ctx.cg("threshold") {
-                    tear()
-                } else {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { pull = 0 }
-                }
-            }
+    private func dragChanged(_ translation: CGSize) {
+        guard !falling else { return }
+        if !held {
+            held = true
+            script?.cancel()
+            script = nil
+        }
+        pull = max(translation.height, 0)
     }
 
-    /// System cancellation (no `onEnded`): the sheet springs back up unless it is already falling.
-    private func endHold() {
+    /// Normal release or system cancellation (`nil`: the sheet springs back, never tears, no haptic).
+    private func dragEnded(_ end: PageSafePanEnd?) {
         guard held else { return }
         held = false
         guard !falling else { return }
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { pull = 0 }
+        if end != nil && pull > ctx.cg("threshold") {
+            tear()
+        } else {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { pull = 0 }
+        }
     }
 
     private func tear(haptic: Bool = true) {

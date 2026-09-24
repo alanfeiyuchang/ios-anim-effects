@@ -11,7 +11,7 @@ enum TextFamilies {
             id: "text.number",
             category: .text,
             name: L("Number Counter", "数字滚动"),
-            summary: L("Digits that roll, spin like slot reels, drop with gravity, count up or glow as LED segments.", "数字滚动、老虎机飞转、重力坠落、逐个累加或以数码管点亮。"),
+            summary: L("Digits that roll, tumble on 3D prisms, flip on split-flap boards, drop with gravity, count up or glow as LED segments.", "数字滚动、3D 棱柱翻滚、翻页牌翻动、重力坠落、逐个累加或以数码管点亮。"),
             symbol: "number"
         ),
         EffectFamily(

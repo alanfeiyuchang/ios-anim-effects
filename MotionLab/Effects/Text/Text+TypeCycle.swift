@@ -70,6 +70,48 @@ private struct TypeCycleDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { skip() }
+        .onChange(of: ctx["typeSpeed"]) { old, new in
+            rebase(perChar: (old, new), hold: (ctx["hold"], ctx["hold"]))
+        }
+        .onChange(of: ctx["hold"]) { old, new in
+            rebase(perChar: (ctx["typeSpeed"], ctx["typeSpeed"]), hold: (old, new))
+        }
+    }
+
+    /// A new typing speed or hold keeps the same word at the same point of its slot (same glyphs typed, same stage
+    /// of the hold or exit) instead of re-deriving the schedule from the whole elapsed time.
+    private func rebase(perChar: (old: Double, new: Double), hold: (old: Double, new: Double)) {
+        guard !ctx.isStill else { return }
+        let now: Double = Date().timeIntervalSinceReferenceDate
+        let list = words.map { word in word.map { String($0) } }
+        let oldPerChar: Double = max(perChar.old, 0.01)
+        let newPerChar: Double = max(perChar.new, 0.01)
+        let oldDurations = slotDurations(list, perChar: oldPerChar, hold: hold.old)
+        let newDurations = slotDurations(list, perChar: newPerChar, hold: hold.new)
+        var t: Double = (now + shift).truncatingRemainder(dividingBy: max(oldDurations.reduce(0, +), 0.1))
+        var before: Double = 0
+        for (index, chars) in list.enumerated() {
+            guard t >= oldDurations[index] else {
+                let typing: Double = Double(chars.count) * oldPerChar
+                let newTyping: Double = Double(chars.count) * newPerChar
+                let mapped: Double
+                if t < typing {
+                    mapped = t / oldPerChar * newPerChar
+                } else if t < typing + hold.old {
+                    mapped = newTyping + min(t - typing, hold.new)
+                } else {
+                    mapped = newTyping + hold.new + (t - typing - hold.old)
+                }
+                // Choose the shift that puts `now` at `before + mapped` on the new schedule.
+                let newTotal: Double = max(newDurations.reduce(0, +), 0.1)
+                let target: Double = before + mapped
+                let current: Double = now.truncatingRemainder(dividingBy: newTotal)
+                shift = target - current
+                return
+            }
+            t -= oldDurations[index]
+            before += newDurations[index]
+        }
     }
 
     private func skip() {

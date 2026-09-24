@@ -52,6 +52,30 @@ private struct WordDrumDemo: View {
         .onTapGesture {
             advance()
         }
+        .onChange(of: ctx["hold"]) { old, new in
+            rebase(from: old, to: new)
+        }
+    }
+
+    /// A new hold keeps the drum where it is: the same word, and the same point of a turn in progress, instead of
+    /// re-deriving the position from the whole elapsed time.
+    private func rebase(from old: Double, to new: Double) {
+        let now = Date()
+        let oldHold: Double = max(old, 0.6)
+        let oldTurn: Double = min(0.55, oldHold * 0.8)
+        let newHold: Double = max(new, 0.6)
+        let newTurn: Double = min(0.55, newHold * 0.8)
+        let elapsed: Double = now.timeIntervalSince(start)
+        let steps: Double = (elapsed / oldHold).rounded(.down)
+        let inStep: Double = elapsed - steps * oldHold
+        let newInStep: Double
+        if inStep > oldHold - oldTurn {
+            let x: Double = (inStep - (oldHold - oldTurn)) / oldTurn
+            newInStep = newHold - newTurn + x * newTurn
+        } else {
+            newInStep = min(inStep, newHold - newTurn)
+        }
+        start = now.addingTimeInterval(-(steps * newHold + newInStep))
     }
 
     /// Jumps the clock to the start of the next turn so the drum rolls forward right away.

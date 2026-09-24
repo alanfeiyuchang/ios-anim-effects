@@ -84,11 +84,14 @@ struct PageSafePanEnd {
 /// - `onEnded` runs exactly once per begun pan: with the final values on release, or `nil` when the system
 ///   cancelled it (settle from the current state then, without a flick).
 /// `isEnabled == false` disables the recognizer, so it never delays the page's scroll.
+/// `onBegan`, when set, gets the touch-down point in the modified view's local space just before the first
+/// `onChanged` (e.g. to anchor a scale at the grabbed point).
 struct PageSafePan: UIGestureRecognizerRepresentable {
     var directions: PageSafePanDirections
     var isEnabled: Bool = true
     let onChanged: (CGSize) -> Void
     let onEnded: (PageSafePanEnd?) -> Void
+    var onBegan: ((CGPoint) -> Void)? = nil
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> PageSafePanCoordinator {
         PageSafePanCoordinator(directions: directions)
@@ -111,6 +114,12 @@ struct PageSafePan: UIGestureRecognizerRepresentable {
         let coordinator = context.coordinator
         switch recognizer.state {
         case .began:
+            if let onBegan {
+                // The pan begins after a few points of travel; step back to where the finger first touched.
+                let location: CGPoint = context.converter.location(in: .local)
+                let travel: CGPoint = recognizer.translation(in: recognizer.view)
+                onBegan(CGPoint(x: location.x - travel.x, y: location.y - travel.y))
+            }
             recognizer.setTranslation(.zero, in: recognizer.view)
             coordinator.engaged = true
             onChanged(.zero)

@@ -8,14 +8,14 @@ extension Effect {
         name: L("Velocity Detent Sheet", "速度感知分段面板"),
         summary: L("A Maps-style sheet that projects your flick forward and lands on the right detent.", "地图式底部面板：根据甩动速度预测落点，停在合适的档位。"),
         prompt: L(
-            "Inside a 230×320 pt phone frame with 34 pt continuous corners, a map-like background sits under a bottom sheet with three detents: peek (74 pt visible), half (52%) and full (26 pt from the top). The sheet tracks the finger 1:1 and rubber-bands 40 pt past the outer detents. On release it does not pick the detent nearest where the finger stopped; it projects the position forward by velocity × 0.2 s and springs (response 0.42 s, damping 0.82) to the detent closest to that projection, so a short, fast flick skips straight from peek to full. As the sheet rises the background dims up to 30% and recedes to 94% scale, and a selection haptic ticks when the detent changes. Fluid, predictive and native.",
-            "230×320 pt的手机框（34 pt连续圆角）里，地图式背景上叠着一个底部面板，共三个档位：收起（露出74 pt）、半屏（52%）和全屏（距顶26 pt）。面板1:1跟手，越过两端档位后带40 pt橡皮筋阻尼。松手时并不停到离手指最近的档位，而是按速度× 0.2秒预测落点，再以弹簧（响应0.42秒、阻尼0.82）停到离预测点最近的一档，所以短促一甩就能从收起直达全屏。面板升起时背景最多压暗30%、后退到94%，换档时有一下选择触感。流畅可预判。"
+            "Inside a 230×320 pt phone frame with 34 pt continuous corners, a map-like background sits under a bottom sheet with three detents: peek (74 pt visible), half (52%) and full (26 pt from the top). It only takes drags it can follow (up at peek, down at full; other swipes scroll the page), tracks the finger 1:1 and rubber-bands 40 pt past the outer detents. On release it does not pick the detent nearest where the finger stopped; it projects the position forward by velocity × 0.2 s and springs (response 0.42 s, damping 0.82) to the detent closest to that projection, so a short, fast flick skips straight from peek to full. As the sheet rises the background dims up to 30% and recedes to 94% scale, and a selection haptic ticks when the detent changes. Fluid, predictive and native.",
+            "230×320 pt的手机框（34 pt连续圆角）里，地图式背景上叠着一个底部面板，共三个档位：收起（露出74 pt）、半屏（52%）和全屏（距顶26 pt）。收起时只响应上拉、全屏时只响应下拉（其余交给页面滚动），1:1跟手，越过两端档位后带40 pt橡皮筋阻尼。松手时不停到离手指最近的档位，而按速度×0.2秒预测落点，再以弹簧（响应0.42秒、阻尼0.82）停到离预测点最近的一档，短促一甩即可从收起直达全屏。面板升起时背景最多压暗30%、后退到94%，换档时有选择触感。流畅可预判。"
         ),
         implementation: L(
-            "A DragGesture on the sheet only adds a rubber-banded translation to the current detent's top; onEnded projects top + velocity × projection and springs to the nearest detent, and the backdrop reads the same fraction for dimming and scale.",
-            "仅挂在面板上的 DragGesture 在当前档位的顶部位置上叠加带橡皮筋的位移；onEnded 计算 顶部 + 速度 × 预测时长，并以弹簧吸附到最近档位；背景用同一比例计算压暗与缩放。"
+            "A UIKit pan on the sheet (UIGestureRecognizerRepresentable) begins only in a direction the current detent can move, and adds a rubber-banded translation to that detent's top; the release projects top + velocity × projection and springs to the nearest detent, and the backdrop reads the same fraction for dimming and scale.",
+            "挂在面板上的 UIKit 平移手势（UIGestureRecognizerRepresentable）只在当前档位能移动的方向开始，并在该档位顶部位置上叠加带橡皮筋的位移；松手时计算 顶部 + 速度 × 预测时长，并以弹簧吸附到最近档位；背景用同一比例计算压暗与缩放。"
         ),
-        apis: ["DragGesture.Value.velocity", "rubberBand", "offset(y:)", "spring(response:dampingFraction:)", "Haptics.selection"],
+        apis: ["UIGestureRecognizerRepresentable", "UIPanGestureRecognizer.velocity(in:)", "rubberBand", "offset(y:)", "spring(response:dampingFraction:)", "Haptics.selection"],
         tags: ["bottom sheet", "detent", "fling", "velocity", "底部面板", "档位", "甩动", "速度预测"],
         params: [
             .slider("projection", L("Velocity projection", "速度预测时长"), 0.0...0.4, default: 0.2, unit: "s"),
@@ -48,8 +48,6 @@ private struct DetentSheetDemo: View {
     @State private var held = false
     /// The scripted flick, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
-    /// Resets on system cancellation too, so a stolen touch never leaves the sheet between detents.
-    @GestureState private var pressing = false
 
     private let size = CGSize(width: 230, height: 320)
 
@@ -66,7 +64,7 @@ private struct DetentSheetDemo: View {
                     .overlay(Color.black.opacity(0.3 * Double(fraction)))
                 sheet
                     .offset(y: top)
-                    .gesture(dragGesture)
+                    .gesture(PageSafePan(directions: panDirections, onChanged: dragChanged, onEnded: dragEnded))
             }
             .frame(width: size.width, height: size.height)
             .background(Color.black)
@@ -77,9 +75,6 @@ private struct DetentSheetDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.5) { simulate() }
-        .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
-        }
         .onDisappear { script?.cancel() }
     }
 
@@ -117,30 +112,36 @@ private struct DetentSheetDemo: View {
         .shadow(color: .black.opacity(0.18), radius: 12, y: -2)
     }
 
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 2)
-            .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                if !held {
-                    held = true
-                    script?.cancel()
-                    script = nil
-                }
-                translation = value.translation.height
-            }
-            .onEnded { value in
-                guard held else { return }
-                held = false
-                let projected = displayedTop + value.velocity.height * ctx.cg("projection")
-                settle(at: nearestDetent(to: projected), haptic: true)
-            }
+    /// Only the directions the sheet can move from its detent: up at peek, down at full, both at half. The other
+    /// swipes fail the pan at once and scroll the detail page; once the pan begins it still rubber-bands past the ends.
+    private var panDirections: PageSafePanDirections {
+        switch detent {
+        case .peek: return .up
+        case .half: return [.up, .down]
+        case .full: return .down
+        }
     }
 
-    /// System cancellation (no `onEnded`): zero the translation by settling on the closest detent.
-    private func endHold() {
+    private func dragChanged(_ t: CGSize) {
+        if !held {
+            held = true
+            script?.cancel()
+            script = nil
+        }
+        translation = t.height
+    }
+
+    /// Normal release (projected by velocity) or system cancellation (`nil`: settle back on the detent the drag
+    /// started from, silently).
+    private func dragEnded(_ end: PageSafePanEnd?) {
         guard held else { return }
         held = false
-        settle(at: nearestDetent(to: displayedTop), haptic: false)
+        guard let end else {
+            settle(at: detent, haptic: false)
+            return
+        }
+        let projected = displayedTop + end.velocity.height * ctx.cg("projection")
+        settle(at: nearestDetent(to: projected), haptic: true)
     }
 
     private func nearestDetent(to y: CGFloat) -> SheetDetent {

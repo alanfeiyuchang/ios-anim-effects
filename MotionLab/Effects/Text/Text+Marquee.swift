@@ -87,6 +87,8 @@ private struct MarqueeRow<Content: View>: View {
     /// Release velocity (pt/s) of the last fling, decaying exponentially from `flingStart`.
     @State private var flingVelocity: CGFloat = 0
     @State private var flingStart = Date.distantPast
+    /// Belt travel carried over from earlier speeds, so moving the Speed slider changes the pace, not the position.
+    @State private var ownShift: Double = 0
 
     /// Momentum time constant: a fling coasts for ~1 s.
     private let coast: Double = 0.35
@@ -124,6 +126,14 @@ private struct MarqueeRow<Content: View>: View {
             // Page-safe scrub: attached simultaneously and engaged only by a mostly horizontal drag, so a vertical
             // swipe that starts on a belt still scrolls the detail page; a system cancel ends it as a still release.
             .pageSafeHorizontalDrag(minimumDistance: 8, onChanged: scrubChanged, onEnded: scrubEnded)
+            .onChange(of: speed) { old, new in
+                ownShift += beltClock(at: Date()) * (old - new)
+            }
+    }
+
+    /// The belt's own clock: it stands still while held and skips the held time afterwards.
+    private func beltClock(at date: Date) -> Double {
+        (heldAt ?? date).timeIntervalSinceReferenceDate - pausedTime
     }
 
     /// Horizontal scrub; a release with speed flings the belt, which coasts and then carries on.
@@ -171,9 +181,7 @@ private struct MarqueeRow<Content: View>: View {
 
     private func offset(at date: Date) -> CGFloat {
         let width = Double(max(stripWidth, 1))
-        // The belt's own clock stands still while held and skips the held time afterwards.
-        let clock = (heldAt ?? date).timeIntervalSinceReferenceDate - pausedTime
-        let own = (clock * speed).truncatingRemainder(dividingBy: width)
+        let own = (beltClock(at: date) * speed + ownShift).truncatingRemainder(dividingBy: width)
         let hand = Double(manual + liveX + flingOffset(at: date)).truncatingRemainder(dividingBy: width)
         let raw = (reversed ? own : -own) + hand
         // Wrap into −width…0 so the three copies always cover the row.

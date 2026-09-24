@@ -32,7 +32,7 @@ private struct PendulumSwingDemo: View {
     @State private var drag: CGSize = .zero
     @State private var angle: Double = 0
     @State private var dragging = false
-    /// The one pending relax; each drag change cancels and replaces it.
+    /// The one pending relax (or the release's counter-swing); each drag change cancels and replaces it.
     @State private var relaxTask: Task<Void, Never>?
     /// True while a real finger holds the badge.
     @State private var held = false
@@ -123,8 +123,10 @@ private struct PendulumSwingDemo: View {
             dragging = false
         }
         withAnimation(swing) { angle = kick }
-        Task { @MainActor in
+        // The counter-swing shares the relax slot, so a new grab (or leaving the demo) cancels it.
+        relaxTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.18))
+            guard !Task.isCancelled else { return }
             withAnimation(swing) { angle = 0 }
         }
         if haptic && !ctx.isPreview { Haptics.tap(.soft) }

@@ -34,9 +34,13 @@ private struct TypewriterDemo: View {
     @State private var phraseIndex = 0
     /// Bumped by a tap: restarts the typing task on the next phrase.
     @State private var skips = 0
+    /// Characters per second, mirrored from the Speed parameter so the running task picks up a slider change on
+    /// the next keystroke instead of being restarted (which would erase the line).
+    @State private var cps: Double
 
     init(ctx: DemoContext) {
         self.ctx = ctx
+        _cps = State(initialValue: max(ctx["speed"], 1))
         // Still snapshots never run the typing task: show the first phrase fully typed.
         let first = ctx.language == .zh ? "好的设计，会在指尖轻轻呼吸。" : "Hello, world."
         _typed = State(initialValue: ctx.isStill ? first : "")
@@ -73,7 +77,8 @@ private struct TypewriterDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { skip() }
-        .task(id: "\(ctx.language.rawValue)-\(ctx["speed"])-\(skips)") { await run() }
+        .task(id: "\(ctx.language.rawValue)-\(skips)") { await run() }
+        .onChange(of: ctx["speed"]) { _, new in cps = max(new, 1) }
     }
 
     private func skip() {
@@ -96,7 +101,6 @@ private struct TypewriterDemo: View {
     }
 
     private func run() async {
-        let cps = max(ctx["speed"], 1)
         let list = phrases
         var index = phraseIndex
         // After a tap, backspace whatever is on the line in a quick burst before typing the next phrase.

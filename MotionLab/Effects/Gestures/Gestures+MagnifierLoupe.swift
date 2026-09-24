@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 extension Effect {
     static let gesturesMagnifierLoupe = Effect(
@@ -8,14 +9,14 @@ extension Effect {
         name: L("Magnifier Loupe", "放大镜取色"),
         summary: L("A floating loupe that follows your finger and renders the swatches beneath at 3×.", "跟随手指的悬浮放大镜，以 3 倍清晰呈现下方色块。"),
         prompt: L(
-            "A 12×9 grid of tiny colour swatches (hue across, brightness down, each labelled with an unreadable 3 pt hex code) fills a 300×225 pt panel. Touching it pops a 100 pt circular loupe 78 pt above the finger, springing from 40% to 100% from its bottom edge (response 0.3 s, damping 0.7); it flips below the finger near the top edge and slides inward near the sides, so the lens never crosses the panel's top or side edges. Inside, the content is re-rendered rather than upscaled at 3× around the touch point, so the labels turn crisp, with a crosshair on the sampled swatch, a 3 pt white rim, a soft shadow and a capsule beneath showing the colour and hex value. The loupe tracks the finger with zero latency and shrinks away on lift.",
-            "一块300×225 pt的面板铺满12×9的迷你色块（横向变色相、纵向变明度，每块标着3 pt、肉眼难辨的色值）。按下时，100 pt的圆形放大镜在手指上方78 pt处以底边为锚点从40%弹到100%（响应0.3秒、阻尼0.7）；靠近顶部就翻到指下，靠近两侧就向内平移，镜片从不越出面板顶边和两侧。镜内以触点为中心按3倍重新绘制而非位图放大，色值变得清晰可读；十字准星标出取样点，白边与投影让镜片浮起，下方胶囊显示色块与色值。零延迟跟手，抬指即缩小消失。精准又带点魔法感。"
+            "A 12×9 grid of tiny colour swatches (hue across, brightness down, each labelled with an unreadable 3 pt hex code) fills a 300×225 pt panel. Pressing it briefly (0.2 s, finger still) pops a 100 pt circular loupe 78 pt above the finger, springing from 40% to 100% from its bottom edge (response 0.3 s, damping 0.7); it flips below the finger near the top edge and slides inward near the sides, so the lens never crosses the panel's top or side edges. Inside, the content is re-rendered rather than upscaled at 3× around the touch point, so the labels turn crisp, with a crosshair on the sampled swatch, a 3 pt white rim, a soft shadow and a capsule beneath showing the colour and hex value. The loupe tracks the finger with zero latency and shrinks away on lift.",
+            "一块300×225 pt的面板铺满12×9的迷你色块（横向变色相、纵向变明度，每块标着3 pt、肉眼难辨的色值）。按住约0.2秒后，100 pt的圆形放大镜在手指上方78 pt处以底边为锚点从40%弹到100%（响应0.3秒、阻尼0.7）；靠近顶部就翻到指下，靠近两侧就向内平移，镜片从不越出面板顶边和两侧。镜内以触点为中心按3倍重新绘制而非位图放大，色值变得清晰可读；十字准星标出取样点，白边与投影让镜片浮起，下方胶囊显示色块与色值。零延迟跟手，抬指即缩小消失。精准又带点魔法感。"
         ),
         implementation: L(
-            "The swatch scene is a GraphicsContext drawing function; the loupe is a second Canvas that translates and scales its context around the touch point before drawing the same scene, clipped to a circle. The loupe view is Animatable so programmatic moves stay in sync.",
-            "色块场景封装为 GraphicsContext 绘制函数；放大镜是第二个 Canvas，先围绕触点平移并缩放上下文再绘制同一场景，最后裁剪为圆形。放大镜视图遵循 Animatable，程序驱动移动时内容与位置保持同步。"
+            "A UIKit long press (0.2 s, UIGestureRecognizerRepresentable) activates and tracks the loupe, so quick swipes still scroll the page. The swatch scene is a GraphicsContext drawing function; the loupe is a second Canvas that translates and scales its context around the touch point before drawing the same scene, clipped to a circle. The loupe view is Animatable so programmatic moves stay in sync.",
+            "UIKit 长按手势（0.2 秒，经 UIGestureRecognizerRepresentable 桥接）激活并驱动放大镜，快速滑动仍会滚动页面。色块场景封装为 GraphicsContext 绘制函数；放大镜是第二个 Canvas，先围绕触点平移并缩放上下文再绘制同一场景，最后裁剪为圆形。放大镜视图遵循 Animatable，程序驱动移动时内容与位置保持同步。"
         ),
-        apis: ["Canvas", "GraphicsContext.scaleBy", "DragGesture", "Animatable", "clipShape"],
+        apis: ["Canvas", "GraphicsContext.scaleBy", "UILongPressGestureRecognizer", "Animatable", "clipShape"],
         tags: ["magnifier", "loupe", "zoom", "color picker", "eyedropper", "放大镜", "取色器", "放大", "吸管"],
         params: [
             .slider("zoom", L("Zoom", "放大倍率"), 1.5...5, default: 3, unit: "×"),
@@ -93,8 +94,8 @@ private struct MagnifierDemo: View {
     @State private var point = CGPoint(x: 150, y: 110)
     @State private var isActive: Bool
     @State private var touching = false
-    /// Resets on system cancellation too, so a stolen touch never leaves the loupe out.
-    @GestureState private var pressing = false
+    /// The arrival intro's tuck-away, cancelled when a finger takes over or the demo leaves.
+    @State private var tuck: Task<Void, Never>?
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -105,8 +106,9 @@ private struct MagnifierDemo: View {
     var body: some View {
         VStack(spacing: 16) {
             ZStack(alignment: .topLeading) {
+                // Like the text loupe, it waits for a short, still press: a quick swipe fails it and scrolls the page.
                 SwatchCanvas()
-                    .gesture(dragGesture)
+                    .gesture(LoupePress(onChanged: pressChanged, onEnded: endHold))
 
                 LoupeView(
                     x: point.x,
@@ -120,31 +122,29 @@ private struct MagnifierDemo: View {
             .frame(width: SwatchScene.size.width, height: SwatchScene.size.height)
             .padding(10)
             .demoCard(cornerRadius: 24)
-            DemoHint(text: L("Touch and drag over the swatches", "在色块上按住并拖动"), ctx: ctx)
+            DemoHint(text: L("Touch and hold, then drag", "按住后拖动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { if ctx.isPreview { isActive = true } }
         .autoplay(ctx.isPreview, every: 1.0, delay: 0.3) { wander() }
-        .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
-        }
+        .onDisappear { tuck?.cancel() }
     }
 
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                touching = true
-                point = CGPoint(
-                    x: value.location.x.clamped(to: 0...SwatchScene.size.width),
-                    y: value.location.y.clamped(to: 0...SwatchScene.size.height)
-                )
-                if !isActive {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isActive = true }
-                    if !ctx.isPreview { Haptics.tap(.light) }
-                }
-            }
-            .onEnded { _ in endHold() }
+    /// The held finger moved (or the hold just began): follow it, popping the loupe on the first call.
+    private func pressChanged(_ location: CGPoint) {
+        if !touching {
+            touching = true
+            tuck?.cancel()
+            tuck = nil
+        }
+        point = CGPoint(
+            x: location.x.clamped(to: 0...SwatchScene.size.width),
+            y: location.y.clamped(to: 0...SwatchScene.size.height)
+        )
+        if !isActive {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isActive = true }
+            if !ctx.isPreview { Haptics.tap(.light) }
+        }
     }
 
     /// Release or system cancellation: tuck the loupe away.
@@ -166,9 +166,10 @@ private struct MagnifierDemo: View {
         withAnimation(.spring(response: 0.7, dampingFraction: 0.82)) { point = target }
         guard !ctx.isPreview else { return }
         // Arrival intro in the detail stage: show the loupe gliding once, then tuck it away.
-        Task { @MainActor in
+        tuck?.cancel()
+        tuck = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.2))
-            guard !touching else { return }
+            guard !Task.isCancelled, !touching else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isActive = false }
         }
     }
@@ -239,6 +240,33 @@ private struct LoupeView: View, Animatable {
         }
         .overlay(Circle().strokeBorder(.white, lineWidth: 3))
         .shadow(color: .black.opacity(0.28), radius: 14, y: 8)
+    }
+}
+
+/// A UIKit long press bridged with `UIGestureRecognizerRepresentable`, like the iOS text loupe: it begins after a
+/// 0.2 s press with the finger still (within 10 pt), so a quick swipe fails it and scrolls the detail page; once it
+/// begins it reports the finger in the view's local space on every move. `onEnded` runs on lift and on system
+/// cancellation alike (the demo's `endHold` is idempotent).
+private struct LoupePress: UIGestureRecognizerRepresentable {
+    let onChanged: (CGPoint) -> Void
+    let onEnded: () -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+        let press = UILongPressGestureRecognizer()
+        press.minimumPressDuration = 0.2
+        press.allowableMovement = 10
+        return press
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UILongPressGestureRecognizer, context: Context) {
+        switch recognizer.state {
+        case .began, .changed:
+            onChanged(context.converter.location(in: .local))
+        case .ended, .cancelled, .failed:
+            onEnded()
+        default:
+            break
+        }
     }
 }
 

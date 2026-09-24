@@ -8,14 +8,14 @@ extension Effect {
         name: L("Detent Pull-Down Card", "档位下拉卡片"),
         summary: L("Pull a card down to grow it through three snapping heights, with rubber-band edges and ticks.", "向下拖动卡片，让它在三个吸附高度间伸缩，边缘带橡皮筋阻尼与触感。"),
         prompt: L(
-            "A 280 pt-wide order card shows a compact summary above a small grab handle. Dragging anywhere on the card stretches the card 1:1 between three detents — 112, 196 and 280 pt tall — and past the smallest or largest it resists with a rubber-band curve (≈55% coefficient over 60 pt). Rows of detail appear progressively: each fades and slides in as the card grows past its line. On release, the predicted end height picks the nearest detent and the card springs there (response 0.42 s, damping 0.78) with a rigid haptic when it lands on a new detent; the handle widens from 36 to 48 pt while grabbed. Precise, physical and controllable, like an iOS sheet in miniature.",
-            "一张280 pt宽的订单卡片，上为精简摘要，下为小拖动把手。在卡片上任意位置拖动，卡片在三个档位——112、196、280 pt高——之间1:1伸缩，拉过最小或最大档位时会以橡皮筋曲线产生阻力（系数约55%，作用范围60 pt）。详情行逐步出现：卡片长到哪一行，哪一行就淡入滑出。松手时根据预测的结束高度选择最近的档位，卡片以弹簧（响应0.42秒、阻尼0.78）吸附过去，落到新档位时伴随清脆触感；拖动时把手从36 pt变宽到48 pt。像迷你版iOS面板。"
+            "A 280 pt-wide order card shows a compact summary above a small grab handle. Dragging anywhere on the card stretches it 1:1 between three detents — 112, 196 and 280 pt tall — taking only the direction the current detent can move (other swipes scroll the page), and past the smallest or largest it resists with a rubber-band curve (≈55% coefficient over 60 pt). Rows of detail appear progressively: each fades and slides in as the card grows past its line. On release, the predicted end height picks the nearest detent and the card springs there (response 0.42 s, damping 0.78) with a rigid haptic when it lands on a new detent; the handle widens from 36 to 48 pt while grabbed. Precise, physical and controllable, like an iOS sheet in miniature.",
+            "一张280 pt宽的订单卡片，上为精简摘要，下为小拖动把手。在卡片上任意位置拖动，卡片在三个档位——112、196、280 pt高——之间1:1伸缩（只响应当前档位能伸缩的方向，其余交给页面滚动），拉过最小或最大档位时会以橡皮筋曲线产生阻力（系数约55%，作用范围60 pt）。详情行随卡片长高逐行淡入滑出。松手时根据预测的结束高度选择最近的档位，卡片以弹簧（响应0.42秒、阻尼0.78）吸附过去，落到新档位时伴随清脆触感；拖动时把手从36 pt变宽到48 pt。像迷你版iOS面板。"
         ),
         implementation: L(
-            "A DragGesture adds the translation to the height at gesture start, applying rubberBand beyond the outer detents; onEnded uses predictedEndTranslation to choose a detent. Each detail row's opacity and offset are derived from the live height.",
-            "DragGesture 把位移叠加到手势开始时的高度上，超出最外侧档位时应用 rubberBand；onEnded 使用 predictedEndTranslation 选择档位。每一行详情的透明度与偏移都由实时高度推导。"
+            "A UIKit pan (UIGestureRecognizerRepresentable) that begins only in a direction the current detent can move adds its translation to the height at pan start, applying rubberBand beyond the outer detents; the release projects the flick velocity to choose a detent. Each detail row's opacity and offset are derived from the live height.",
+            "只在当前档位能移动的方向开始的 UIKit 平移手势（UIGestureRecognizerRepresentable）把位移叠加到开始时的高度上，超出最外侧档位时应用 rubberBand；松手时按甩动速度投影选择档位。每一行详情的透明度与偏移都由实时高度推导。"
         ),
-        apis: ["DragGesture", "predictedEndTranslation", "rubberBand", "frame(height:)", "spring(response:dampingFraction:)"],
+        apis: ["UIGestureRecognizerRepresentable", "UIPanGestureRecognizer", "rubberBand", "frame(height:)", "spring(response:dampingFraction:)"],
         tags: ["detent", "expand", "sheet", "drag", "档位", "展开", "面板", "拖动"],
         params: [
             .slider("response", L("Snap response", "吸附响应"), 0.2...0.9, default: 0.42, unit: "s"),
@@ -39,8 +39,6 @@ private struct CardsDetentDemo: View {
     @State private var scripted = false
     /// The scripted overshoot-and-snap, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
-    /// Resets on system cancellation too, so a stolen touch never leaves the card between detents.
-    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 14) {
@@ -54,9 +52,6 @@ private struct CardsDetentDemo: View {
             if !ctx.isPreview && !scripted { Haptics.tap(.rigid) }
         }
         .autoplay(ctx.isPreview, every: 1.4) { autoStep() }
-        .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
-        }
         .onDisappear { script?.cancel() }
     }
 
@@ -81,7 +76,7 @@ private struct CardsDetentDemo: View {
         .background(Palette.elevated, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.12), radius: 18, y: 10)
-        .gesture(drag)
+        .gesture(PageSafePan(directions: panDirections, onChanged: dragChanged, onEnded: dragEnded))
     }
 
     private var handle: some View {
@@ -93,32 +88,36 @@ private struct CardsDetentDemo: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: startHeight == nil)
     }
 
-    private var drag: some Gesture {
-        DragGesture()
-            .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                if startHeight == nil {
-                    startHeight = height
-                    script?.cancel()
-                    script = nil
-                }
-                let start = startHeight ?? height
-                scripted = false
-                height = resisted(start + value.translation.height)
-            }
-            .onEnded { value in
-                guard let start = startHeight else { return }
-                startHeight = nil
-                let projected = start + value.predictedEndTranslation.height
-                snap(to: nearestDetent(projected))
-            }
+    /// Only the directions the card can move from its detent: down (grow) at the smallest, up (shrink) at the
+    /// largest, both in between. The other swipes fail the pan at once and scroll the detail page; once the pan
+    /// begins it still rubber-bands past the ends.
+    private var panDirections: PageSafePanDirections {
+        if detent <= 0 { return .down }
+        if detent >= cardsDetents.count - 1 { return .up }
+        return [.up, .down]
     }
 
-    /// System cancellation (no `onEnded`): clear the anchor and snap to the closest detent.
-    private func endHold() {
-        guard startHeight != nil else { return }
+    private func dragChanged(_ translation: CGSize) {
+        if startHeight == nil {
+            startHeight = height
+            script?.cancel()
+            script = nil
+        }
+        let start = startHeight ?? height
+        scripted = false
+        height = resisted(start + translation.height)
+    }
+
+    /// Normal release (the flick's projection picks the detent) or system cancellation (`nil`: settle back on the
+    /// current detent, which changes nothing and so stays silent).
+    private func dragEnded(_ end: PageSafePanEnd?) {
+        guard let start = startHeight else { return }
         startHeight = nil
-        snap(to: nearestDetent(height))
+        guard let end else {
+            snap(to: detent)
+            return
+        }
+        snap(to: nearestDetent(start + end.predictedEndTranslation.height))
     }
 
     private func resisted(_ raw: CGFloat) -> CGFloat {

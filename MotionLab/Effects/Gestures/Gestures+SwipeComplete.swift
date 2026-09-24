@@ -49,6 +49,8 @@ private struct SwipeCompleteDemo: View {
     /// The scripted swipe's release timer and its row, cancelled on the first real touch and on disappear.
     @State private var script: Task<Void, Never>?
     @State private var scriptRow: Int?
+    /// Each completed row's pending sink (or float back), by row id; a new toggle of the row replaces it.
+    @State private var sinks: [Int: Task<Void, Never>] = [:]
 
     var body: some View {
         let threshold = ctx.cg("threshold")
@@ -75,7 +77,15 @@ private struct SwipeCompleteDemo: View {
         .frame(width: 300)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) { autoStep() }
-        .onDisappear { stopScript() }
+        .onDisappear {
+            stopScript()
+            // Land any pending sink at once instead of leaving the list half-sorted.
+            for (id, task) in sinks {
+                task.cancel()
+                resort(id)
+            }
+            sinks = [:]
+        }
     }
 
     private func finish(_ id: Int, haptic: Bool = true) {
@@ -89,8 +99,11 @@ private struct SwipeCompleteDemo: View {
         guard armed else { return }
         if haptic && !ctx.isPreview { Haptics.success() }
         let delay = ctx["sinkDelay"]
-        Task { @MainActor in
+        sinks[id]?.cancel()
+        sinks[id] = Task { @MainActor in
             try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            sinks[id] = nil
             withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) { resort(id) }
         }
     }

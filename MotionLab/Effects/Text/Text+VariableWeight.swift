@@ -9,8 +9,8 @@ extension Effect {
         name: L("Variable Weight Wave", "可变字重波浪"),
         summary: L("A wave of font weight rolls through a word; drag to pull the boldness under your finger.", "字重如波浪般在单词中流动；拖动手指，粗细随指尖聚拢。"),
         prompt: L(
-            "A large display word in the system variable font breathes along its weight axis: a sine wave travels left to right, each letter easing continuously between Thin (100) and Black (900) with a 0.55 rad phase lag per letter and one full cycle every 1.25 s. Because weights interpolate rather than step, the word swells and slims like one elastic body with its width rippling, and heavier glyphs warm from indigo to coral. Dragging across the word takes over: the weight peaks under the finger with a Gaussian falloff about two letters wide, blending in over 250 ms and handing back to the wave over 400 ms on release. A monospaced “wght” readout beneath tracks the average weight; typographic and quietly hypnotic.",
-            "一个大号展示单词用系统可变字体沿字重轴“呼吸”：正弦波从左向右穿过字母，每个字在Thin（100）与Black（900）之间连续过渡，相邻字母相位差0.55弧度，1.25秒一个周期。字重是连续插值而非跳档，整个单词像弹性整体般膨胀收细，宽度随之起伏；字越粗，颜色越从靛蓝暖向珊瑚色。在单词上拖动时手指接管：字重在指尖处最高，按约两个字母宽的高斯曲线向两侧衰减，250毫秒内接入，松手后400毫秒交还给波浪。下方等宽“wght”读数显示平均字重，令人着迷。"
+            "A large display word in the system variable font breathes along its weight axis: a sine wave travels left to right, each letter easing continuously between Thin (100) and Black (900) with a 0.55 rad phase lag per letter and one full cycle every 1.25 s. Because weights interpolate rather than step, the word swells and slims like one elastic body with its width rippling, and heavier glyphs warm from indigo to coral. Dragging sideways across the word takes over (vertical swipes still scroll the page): the weight peaks under the finger with a Gaussian falloff about two letters wide, blending in over 250 ms and handing back to the wave over 400 ms on release. A monospaced “wght” readout beneath tracks the average weight; typographic and quietly hypnotic.",
+            "一个大号展示单词用系统可变字体沿字重轴“呼吸”：正弦波从左向右穿过字母，每个字在Thin（100）与Black（900）之间连续过渡，相邻字母相位差0.55弧度，1.25秒一个周期。字重是连续插值而非跳档，整个单词像弹性整体般膨胀收细，宽度随之起伏；字越粗，颜色越从靛蓝暖向珊瑚色。在单词上横向拖动时手指接管（竖滑照常滚动页面）：字重在指尖处最高，按约两个字母宽的高斯曲线向两侧衰减，250毫秒内接入，松手后400毫秒交还给波浪。下方等宽“wght”读数显示平均字重，令人着迷。"
         ),
         implementation: L(
             "A TimelineView(.animation) computes a 0…1 weight per letter (sine wave, or a Gaussian around the drag location, cross-faded by time); each letter is its own Text whose Font wraps UIFont.systemFont(ofSize:weight:) with a UIFont.Weight raw value quantised to 64 cached steps, tinted with Color.mix(with:by:).",
@@ -76,8 +76,8 @@ private struct TextVariableWeightDemo: View {
     @State private var lastX: CGFloat = 0.5
     /// When the finger last went down or up; drives the wave ↔ finger cross-fade.
     @State private var touchChanged = Date.distantPast
-    /// Resets on system cancellation too, so a stolen touch never freezes the wave under a ghost finger.
-    @GestureState private var pressing = false
+    /// Wave cycles carried over from earlier speeds, so moving the Speed slider changes the pace, not the shape.
+    @State private var cycleShift: Double = 0
 
     private let word = Array("MOTION")
     private let fontSize: CGFloat = 60
@@ -94,12 +94,14 @@ private struct TextVariableWeightDemo: View {
             }
             .frame(width: touchWidth, height: 130)
             .contentShape(Rectangle())
-            .gesture(drag)
+            // Only the x position matters, so only a mostly horizontal drag engages; a vertical swipe on the word
+            // scrolls the detail page. A system cancel reports `nil` and hands back to the wave.
+            .pageSafeHorizontalDrag(minimumDistance: 6, onChanged: dragChanged, onEnded: { _ in endHold() })
             DemoHint(text: L("Drag across the word", "在单词上拖动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
+        .onChange(of: ctx["speed"]) { old, new in
+            cycleShift += Self.clock(Date()) * (old - new)
         }
     }
 
@@ -147,13 +149,13 @@ private struct TextVariableWeightDemo: View {
 
     /// Per-letter weight in 0…1: the travelling wave, cross-faded with a Gaussian around the finger.
     private func weights(at date: Date) -> [Double] {
-        let t = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
+        let cycles = Self.clock(date) * ctx["speed"] + cycleShift
         let since = date.timeIntervalSince(touchChanged)
         let hold: Double = touchX == nil ? max(1 - since / 0.4, 0) : min(since / 0.25, 1)
         let focus = Double(touchX ?? lastX)
         let count = Double(word.count)
         return word.indices.map { i in
-            let wave = 0.5 + 0.5 * sin(t * ctx["speed"] * 2 * .pi - Double(i) * ctx["spread"])
+            let wave = 0.5 + 0.5 * sin(cycles * 2 * .pi - Double(i) * ctx["spread"])
             let center = (Double(i) + 0.5) / count
             let distance = (center - focus) * count
             let finger = exp(-(distance * distance) / 2.2)
@@ -161,19 +163,18 @@ private struct TextVariableWeightDemo: View {
         }
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                let x = (value.location.x / touchWidth).clamped(to: 0...1)
-                if touchX == nil {
-                    touchChanged = Date()
-                    Haptics.tap(.soft)
-                }
-                touchX = x
-                lastX = x
-            }
-            .onEnded { _ in endHold() }
+    private static func clock(_ date: Date) -> Double {
+        date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 10_000)
+    }
+
+    private func dragChanged(_ value: DragGesture.Value) {
+        let x = (value.location.x / touchWidth).clamped(to: 0...1)
+        if touchX == nil {
+            touchChanged = Date()
+            Haptics.tap(.soft)
+        }
+        touchX = x
+        lastX = x
     }
 
     /// Release or system cancellation: hand the letters back to the travelling wave.

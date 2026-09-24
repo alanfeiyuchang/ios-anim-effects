@@ -72,6 +72,8 @@ private struct PullCordDemo: View {
     @State private var held = false
     /// The scripted pull, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
+    /// The click's sway settle, cancelled by the next click or when the demo leaves.
+    @State private var swayTask: Task<Void, Never>?
     /// Resets on system cancellation too, so a stolen touch never leaves the cord pulled and armed.
     @GestureState private var pressing = false
 
@@ -96,7 +98,11 @@ private struct PullCordDemo: View {
         .onChange(of: pressing) { _, isPressing in
             if !isPressing { endHold(completed: false) }
         }
-        .onDisappear { script?.cancel() }
+        .onDisappear {
+            script?.cancel()
+            swayTask?.cancel()
+            sway = 0
+        }
     }
 
     /// Everything that hangs from the hook, so the cord stays attached while the shade sways.
@@ -198,8 +204,10 @@ private struct PullCordDemo: View {
         guard armed else { return }
         withAnimation(.easeInOut(duration: 0.35)) { isOn.toggle() }
         withAnimation(.spring(response: 0.18, dampingFraction: 0.9)) { sway = 4 }
-        Task { @MainActor in
+        swayTask?.cancel()
+        swayTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.12))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.6, dampingFraction: 0.25)) { sway = 0 }
         }
     }

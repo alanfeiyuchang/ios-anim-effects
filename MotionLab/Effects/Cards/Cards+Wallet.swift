@@ -18,7 +18,7 @@ extension Effect {
         apis: ["ZStack", "offset", "animation(_:value:)", "spring(response:dampingFraction:)", "delay"],
         tags: ["wallet", "stack", "apple pay", "cards", "钱包", "卡片堆", "层叠", "展开"],
         params: [
-            .slider("peek", L("Header peek", "露出高度"), 28...70, default: 46, step: 1, decimals: 0, unit: "pt"),
+            .slider("peek", L("Header peek", "露出高度"), 28...60, default: 46, step: 1, decimals: 0, unit: "pt"),
             .slider("response", L("Spring response", "弹簧响应"), 0.25...1.0, default: 0.5, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.5...1.0, default: 0.8),
         ]
@@ -42,7 +42,8 @@ private struct CardsWalletDemo: View {
                     card(index)
                 }
             }
-            // Tall enough for the tucked pile (168 + 2 × 10 + 158 × 0.96 ≈ 340), so it never spills onto the hint.
+            // Tall enough for the tucked pile (168 + 2 × 10 + 158 × 0.96 ≈ 340) and the fanned stack at the largest
+            // peek (3 × 60 + 158 = 338), so neither spills onto the hint.
             .frame(width: 250, height: 340, alignment: .top)
             DemoHint(text: L("Tap a card", "点击一张卡片"), ctx: ctx)
         }

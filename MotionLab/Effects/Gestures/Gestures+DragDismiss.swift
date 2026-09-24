@@ -8,14 +8,14 @@ extension Effect {
         name: L("Drag to Dismiss", "下拉关闭卡片"),
         summary: L("Pull a detail card down: it shrinks, rounds its corners and lets go past a threshold.", "下拉详情卡片，它会缩小、圆角变大，越过阈值即关闭。"),
         prompt: L(
-            "A 220×260 pt detail card (hero gradient image, title and text lines, 14 pt corners, deep shadow) floats above a dimmed grid of thumbnails. Dragging down makes it follow the finger while it scales interactively from 100% toward 70% around the grabbed point, so that spot stays under the finger, its corner radius grows from 14 to 44 pt, sideways travel is damped to 60% and the backdrop brightens as the dim fades, so the card visibly turns back into a thumbnail; upward drags rubber-band. On release, a pull past 140 pt or a predicted end beyond 320 pt shrinks the card to 35% and drops it away as it fades (spring response 0.45 s, damping 0.85); anything less springs back to full size. Direct, reversible and forgiving, like closing a photo in iOS.",
-            "一张220×260 pt的详情卡片（渐变主图、标题与文字行、14 pt圆角）悬浮在变暗的缩略图网格上。向下拖动时卡片跟手，并以按住的点为锚点从100%交互式缩向70%，让那一点始终留在指下；圆角由14 pt增到44 pt，横向位移衰减为60%，背景遮罩逐渐褪去，仿佛“变回”缩略图；上拖带橡皮筋阻尼。松手时若下拉超过140 pt或预测终点超过320 pt，卡片缩到35%并下坠淡出（弹簧响应0.45秒、阻尼0.85），否则弹回全尺寸。就像iOS下拉关闭照片。"
+            "A 220×260 pt detail card (hero gradient image, title and text lines, 14 pt corners, deep shadow) floats above a dimmed grid of thumbnails. Dragging down makes it follow the finger while it scales interactively from 100% toward 70% around the grabbed point, so that spot stays under the finger, its corner radius grows from 14 to 44 pt, sideways travel is damped to 60% and the backdrop brightens as the dim fades, so the card visibly turns back into a thumbnail; a swipe that starts upward scrolls the page instead, and pushing back above the start rubber-bands. On release, a pull past 140 pt or a predicted end beyond 320 pt shrinks the card to 35% and drops it away as it fades (spring response 0.45 s, damping 0.85); anything less springs back to full size. Direct, reversible and forgiving, like closing a photo in iOS.",
+            "一张220×260 pt的详情卡片（渐变主图、标题与文字行、14 pt圆角）悬浮在变暗的缩略图网格上。向下拖动时卡片跟手，并以按住的点为锚点从100%交互式缩向70%，让那一点始终留在指下；圆角由14 pt增到44 pt，横向位移衰减为60%，背景遮罩逐渐褪去，仿佛“变回”缩略图；起手上滑交给页面滚动，拖回起点上方带橡皮筋阻尼。松手时若下拉超过140 pt或预测终点超过320 pt，卡片缩到35%并下坠淡出（弹簧响应0.45秒、阻尼0.85），否则弹回全尺寸。就像iOS下拉关闭照片。"
         ),
         implementation: L(
-            "A DragGesture maps vertical translation to a 0–1 progress that drives scaleEffect (anchored at the touch's UnitPoint), corner radius and backdrop opacity; onEnded checks distance and predictedEndTranslation to dismiss or spring back.",
-            "DragGesture 把竖直位移映射为 0–1 进度，驱动 scaleEffect（以触点换算的 UnitPoint 为锚点）、圆角与背景遮罩透明度；onEnded 根据位移和 predictedEndTranslation 决定关闭或回弹。"
+            "A UIKit pan bridged with UIGestureRecognizerRepresentable, which only begins on downward or sideways drags, maps vertical translation to a 0–1 progress that drives scaleEffect (anchored at the touch's UnitPoint), corner radius and backdrop opacity; the release checks distance and the velocity-projected end to dismiss or spring back.",
+            "通过 UIGestureRecognizerRepresentable 桥接、只在向下或横向拖动时开始的 UIKit 平移手势，把竖直位移映射为 0–1 进度，驱动 scaleEffect（以触点换算的 UnitPoint 为锚点）、圆角与背景遮罩透明度；松手时根据位移和按速度投影的终点决定关闭或回弹。"
         ),
-        apis: ["DragGesture", "predictedEndTranslation", "scaleEffect", "clipShape", "spring(response:dampingFraction:)"],
+        apis: ["UIGestureRecognizerRepresentable", "UIPanGestureRecognizer", "scaleEffect", "clipShape", "spring(response:dampingFraction:)"],
         tags: ["dismiss", "pull down", "sheet", "interactive", "close", "下拉关闭", "交互式", "卡片", "关闭"],
         params: [
             .slider("threshold", L("Dismiss distance", "关闭距离"), 80...220, default: 140, step: 1, decimals: 0, unit: "pt"),
@@ -36,8 +36,8 @@ private struct DragDismissDemo: View {
     @State private var held = false
     /// The scripted pull, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
-    /// Resets on system cancellation too, so a stolen touch never leaves the card half-shrunk.
-    @GestureState private var pressing = false
+    /// Brings the card back after a dismissal.
+    @State private var reset: Task<Void, Never>?
 
     private static let cardSize = CGSize(width: 220, height: 260)
 
@@ -58,53 +58,56 @@ private struct DragDismissDemo: View {
                     .scaleEffect(scale, anchor: anchor)
                     .offset(x: dismissed ? 0 : drag.width * 0.6, y: dismissed ? 150 : y)
                     .opacity(dismissed ? 0 : 1)
-                    .gesture(dragGesture)
+                    // Only a drag that starts downward or sideways takes the card (the page scroll waits for it);
+                    // an upward swipe scrolls the detail page. A cancelled pan reports `nil` and springs back.
+                    .gesture(PageSafePan(
+                        directions: [.down, .left, .right],
+                        isEnabled: !dismissed,
+                        onChanged: dragChanged,
+                        onEnded: dragEnded,
+                        onBegan: grab
+                    ))
             }
             .frame(width: 290, height: 300)
             DemoHint(text: L("Pull the card down", "向下拖动卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.8, delay: 0.5) { simulate() }
-        .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
+        .onDisappear {
+            script?.cancel()
+            reset?.cancel()
+            dismissed = false
+            drag = .zero
         }
-        .onDisappear { script?.cancel() }
     }
 
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 4)
-            .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                guard !dismissed else { return }
-                if !held {
-                    held = true
-                    script?.cancel()
-                    script = nil
-                    anchor = UnitPoint(
-                        x: (value.startLocation.x / Self.cardSize.width).clamped(to: 0...1),
-                        y: (value.startLocation.y / Self.cardSize.height).clamped(to: 0...1)
-                    )
-                }
-                drag = value.translation
-            }
-            .onEnded { value in
-                guard held else { return }
-                held = false
-                guard !dismissed else { return }
-                if value.translation.height > ctx.cg("threshold") || value.predictedEndTranslation.height > 320 {
-                    dismiss()
-                } else {
-                    withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { drag = .zero }
-                }
-            }
+    /// Touch-down point of a pan that has just begun: the finger takes over from the script and anchors the scale.
+    private func grab(_ start: CGPoint) {
+        guard !dismissed else { return }
+        held = true
+        script?.cancel()
+        script = nil
+        anchor = UnitPoint(
+            x: (start.x / Self.cardSize.width).clamped(to: 0...1),
+            y: (start.y / Self.cardSize.height).clamped(to: 0...1)
+        )
     }
 
-    /// System cancellation (no `onEnded`): the card springs back to full size.
-    private func endHold() {
+    private func dragChanged(_ translation: CGSize) {
+        guard held, !dismissed else { return }
+        drag = translation
+    }
+
+    /// Normal release (with the flick's projection) or system cancellation (`nil`: spring back, never dismiss).
+    private func dragEnded(_ end: PageSafePanEnd?) {
         guard held else { return }
         held = false
         guard !dismissed else { return }
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { drag = .zero }
+        if let end, end.translation.height > ctx.cg("threshold") || end.predictedEndTranslation.height > 320 {
+            dismiss()
+        } else {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { drag = .zero }
+        }
     }
 
     /// Simulated pulls dismiss from a Task (outside the muted autoplay call), so they pass `haptic: false`.
@@ -114,8 +117,10 @@ private struct DragDismissDemo: View {
             dismissed = true
             drag = .zero
         }
-        Task { @MainActor in
+        reset?.cancel()
+        reset = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.1))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) { dismissed = false }
         }
     }

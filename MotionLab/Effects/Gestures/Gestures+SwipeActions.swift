@@ -47,8 +47,8 @@ private struct SwipeActionsDemo: View {
     @State private var offsets: [Int: CGFloat] = [:]
     @State private var pinned: Set<Int> = []
     @State private var step = 0
-    /// Set by a real drag, so the intro's scheduled close never snaps shut a row the user opened.
-    @State private var userTouched = false
+    /// The intro's scheduled close; a real drag cancels it, so it never snaps shut a row the user opened.
+    @State private var introClose: Task<Void, Never>?
 
     private let reveal: CGFloat = 132
 
@@ -63,7 +63,8 @@ private struct SwipeActionsDemo: View {
                     fullSwipe: ctx.cg("full"),
                     pinned: pinned.contains(item.id),
                     onDrag: { value in
-                        userTouched = true
+                        introClose?.cancel()
+                        introClose = nil
                         offsets[item.id] = value
                     },
                     onEnd: { current, predicted in end(item.id, current: current, predicted: predicted) },
@@ -107,6 +108,7 @@ private struct SwipeActionsDemo: View {
         .contentShape(Rectangle())
         .onTapGesture { closeAll() }
         .autoplay(ctx.isPreview, every: 1.2) { autoStep() }
+        .onDisappear { introClose?.cancel() }
     }
 
     private var hasOpenRow: Bool {
@@ -173,10 +175,11 @@ private struct SwipeActionsDemo: View {
     }
 
     private func closeAfterIntro(_ id: Int) {
-        userTouched = false
-        Task { @MainActor in
+        introClose?.cancel()
+        introClose = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.2))
-            guard !userTouched, offsets[id] == -reveal else { return }
+            guard !Task.isCancelled, offsets[id] == -reveal else { return }
+            introClose = nil
             withAnimation(spring) { offsets[id] = 0 }
         }
     }

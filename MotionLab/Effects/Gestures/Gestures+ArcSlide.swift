@@ -60,6 +60,8 @@ private struct ArcSlideDemo: View {
     @State private var relockPending = false
     /// The scripted slide, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
+    /// The pending auto-relock after an unlock, cancelled when the demo leaves.
+    @State private var relockTask: Task<Void, Never>?
     /// Resets on system cancellation too, so a stolen touch never leaves the knob mid-arc.
     @GestureState private var pressing = false
 
@@ -98,7 +100,12 @@ private struct ArcSlideDemo: View {
         .onChange(of: pressing) { _, isPressing in
             if !isPressing { endHold() }
         }
-        .onDisappear { script?.cancel() }
+        .onDisappear {
+            script?.cancel()
+            relockTask?.cancel()
+            // A cancelled relock must not leave the demo unlocked for its next appearance.
+            if unlocked { relock() }
+        }
     }
 
     private var fillStyle: AnyShapeStyle {
@@ -190,8 +197,10 @@ private struct ArcSlideDemo: View {
         pulse = false
         withAnimation(.easeOut(duration: 0.7)) { pulse = true }
         if haptic && !ctx.isPreview { Haptics.success() }
-        Task { @MainActor in
+        relockTask?.cancel()
+        relockTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.6))
+            guard !Task.isCancelled else { return }
             // Still holding the knob at the end: wait for the lift (endHold) instead.
             if dragStart != nil {
                 relockPending = true

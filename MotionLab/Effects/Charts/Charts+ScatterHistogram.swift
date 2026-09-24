@@ -86,7 +86,9 @@ private struct ScatterHistogramDemo: View {
             }
             .frame(width: scatterPlot.width)
             ZStack(alignment: .topLeading) {
+                gridLines
                 separators
+                trendLine
                 ForEach(scatterDots) { dot in
                     DotView(
                         dot: dot,
@@ -113,6 +115,29 @@ private struct ScatterHistogramDemo: View {
                 .padding(.bottom, 8)
         }
         .autoplay(ctx.isPreview, every: 2.8, delay: 1.0) { toggle(haptic: false) }
+    }
+
+    /// Faint value grid, so the plot reads as a chart even with the dots scattered.
+    private var gridLines: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<4, id: \.self) { _ in
+                Rectangle()
+                    .fill(Color.primary.opacity(0.08))
+                    .frame(height: 1)
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+        }
+    }
+
+    /// The rating-vs-price trend the scatter hints at; it fades out when the dots are binned.
+    private var trendLine: some View {
+        Path { path in
+            path.move(to: CGPoint(x: 0, y: scatterPlot.height * (1 - 0.25)))
+            path.addLine(to: CGPoint(x: scatterPlot.width, y: scatterPlot.height * (1 - 0.70)))
+        }
+        .stroke(Palette.indigo.opacity(0.45), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [5, 5]))
+        .opacity(binned ? 0 : 1)
+        .animation(.easeInOut(duration: 0.3), value: binned)
     }
 
     private var separators: some View {

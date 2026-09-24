@@ -18,7 +18,7 @@ extension Effect {
         apis: ["zIndex", "offset", "rotationEffect", "spring(response:dampingFraction:)", "DispatchQueue.asyncAfter"],
         tags: ["shuffle", "deck", "stack", "reorder", "洗牌", "卡堆", "切换", "层叠"],
         params: [
-            .slider("distance", L("Slide distance", "滑出距离"), 170...195, default: 175, step: 5, decimals: 0, unit: "pt"),
+            .slider("tilt", L("Pull tilt", "抽出倾斜"), 4...14, default: 8, step: 1, decimals: 0, unit: "°"),
             .slider("response", L("Spring response", "弹簧响应"), 0.3...1.0, default: 0.55, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.5...1.0, default: 0.75),
         ]
@@ -35,21 +35,23 @@ private struct CardsShuffleDemo: View {
     private let themes = [0, 3, 2, 4]
 
     // Geometry for the z-swap: it must happen over empty space, so the pulled card (scaled 1.02 and
-    // tilted 8°) and the deck's front card (depth 1, 94%) part by at least their half-widths combined.
+    // tilted 4–14°) and the deck's front card (depth 1, 94%) part by at least their half-widths combined.
     private static let cardWidth: CGFloat = 160
     private static let pullScale: CGFloat = 1.02
-    private static let pullTilt: Double = 8
-    /// Half the pulled card's bounding width.
-    private static var pulledHalf: CGFloat {
-        let w = cardWidth * pullScale
+    /// The card and the deck part to 175 pt between centres, or wider when a steep tilt needs it.
+    private static let separation: CGFloat = 175
+    private var pullTilt: Double { ctx["tilt"] }
+    /// Half the pulled card's bounding width at the current tilt.
+    private var pulledHalf: CGFloat {
+        let w = Self.cardWidth * Self.pullScale
         let h = w * 158 / 250
         let a = pullTilt * .pi / 180
         return (w * CGFloat(cos(a)) + h * CGFloat(sin(a))) / 2
     }
     /// Half the width of the deck's front card while the pulled card is out.
     private static var deckHalf: CGFloat { cardWidth * 0.94 / 2 }
-    /// Smallest centre separation with a clear gap (~169 pt).
-    private static var clearance: CGFloat { pulledHalf + deckHalf + 6 }
+    /// Smallest centre separation with a clear gap (~169 pt at 8°, ~173 pt at 14°).
+    private var clearance: CGFloat { pulledHalf + Self.deckHalf + 6 }
     private let numbers = ["4821", "0937", "5510", "7264"]
 
     var body: some View {
@@ -76,17 +78,17 @@ private struct CardsShuffleDemo: View {
         return CardsCreditCard(theme: themes[id], width: Self.cardWidth, last4: numbers[id])
             .shadow(color: .black.opacity(isPulled ? 0.22 : 0.16), radius: isPulled ? 16 : 12, y: isPulled ? 12 : 8)
             .scaleEffect(isPulled ? Self.pullScale : 1 - CGFloat(depth) * 0.06)
-            .rotationEffect(.degrees(isPulled ? Self.pullTilt : 0))
+            .rotationEffect(.degrees(isPulled ? pullTilt : 0))
             .offset(x: x, y: isPulled ? -24 : CGFloat(depth) * -16)
             .zIndex(Double(order.count - depth))
     }
 
-    /// Parts the pulled card (right) and the deck (left) by the slide distance, never less than the
-    /// clearance, with the pair's outer edges centred so both stay on stage.
+    /// Parts the pulled card (right) and the deck (left) by 175 pt, never less than the clearance, with the
+    /// pair's outer edges centred so both stay on stage.
     private func offsetX(isPulled: Bool) -> CGFloat {
         guard pulled != nil else { return 0 }
-        let separation = max(ctx.cg("distance"), Self.clearance)
-        let cardX = (separation + Self.deckHalf - Self.pulledHalf) / 2
+        let separation = max(Self.separation, clearance)
+        let cardX = (separation + Self.deckHalf - pulledHalf) / 2
         return isPulled ? cardX : cardX - separation
     }
 

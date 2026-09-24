@@ -36,6 +36,8 @@ private struct StretchSlideDemo: View {
     @State private var held = false
     /// The scripted slide, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
+    /// The post-send reset, cancelled on disappear.
+    @State private var resetTask: Task<Void, Never>?
     /// Resets on system cancellation too, so a stolen touch never leaves head and tail mid-track.
     @GestureState private var pressing = false
 
@@ -78,7 +80,18 @@ private struct StretchSlideDemo: View {
         .onChange(of: pressing) { _, isPressing in
             if !isPressing { endHold() }
         }
-        .onDisappear { script?.cancel() }
+        .onDisappear {
+            script?.cancel()
+            resetTask?.cancel()
+            resetTask = nil
+            // A reset cut short would leave the track sent: settle it at rest instead.
+            if sent {
+                sent = false
+                head = 0
+                tail = 0
+                planeGone = false
+            }
+        }
     }
 
     /// The pill is the intersection of a long capsule starting at `tail` (animated) and a long capsule
@@ -174,14 +187,17 @@ private struct StretchSlideDemo: View {
         }
         withAnimation(.easeIn(duration: 0.35).delay(0.1)) { planeGone = true }
         if haptic && !ctx.isPreview { Haptics.success() }
-        Task { @MainActor in
+        resetTask?.cancel()
+        resetTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.8))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) {
                 sent = false
                 head = 0
                 tail = 0
             }
-            planeGone = false
+            // The plane fades back in once the head is nearly home, rather than popping in at once.
+            withAnimation(.easeOut(duration: 0.2).delay(0.3)) { planeGone = false }
         }
     }
 

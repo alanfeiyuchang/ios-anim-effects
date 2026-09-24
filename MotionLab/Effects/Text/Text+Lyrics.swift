@@ -53,6 +53,16 @@ private struct TextLyricsDemo: View {
             DemoHint(text: L("Tap a line to jump to it", "点击歌词跳转到该行"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: ctx["duration"]) { old, new in
+            rebaseClock(from: old, to: new)
+        }
+    }
+
+    /// A new line duration keeps the song where it is (same line, same fill) instead of re-deriving the position.
+    private func rebaseClock(from old: Double, to new: Double) {
+        let now = Date()
+        let beat = now.timeIntervalSince(start) / max(old, 0.5)
+        start = now.addingTimeInterval(-beat * max(new, 0.5))
     }
 
     /// Seeks so `line` becomes the active line from its first beat. The column glides there on a spring from

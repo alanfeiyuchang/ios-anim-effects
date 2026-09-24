@@ -35,6 +35,8 @@ private struct SlideToConfirmDemo: View {
     @State private var held = false
     /// The scripted slide, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
+    /// The post-confirm reset, cancelled on disappear.
+    @State private var resetTask: Task<Void, Never>?
     /// Resets on system cancellation too, so a stolen touch never leaves the knob mid-track and pressed.
     @GestureState private var pressing = false
 
@@ -68,7 +70,16 @@ private struct SlideToConfirmDemo: View {
         .onChange(of: pressing) { _, isPressing in
             if !isPressing { endHold() }
         }
-        .onDisappear { script?.cancel() }
+        .onDisappear {
+            script?.cancel()
+            resetTask?.cancel()
+            resetTask = nil
+            // A reset cut short would leave the slider confirmed: settle it at rest instead.
+            if confirmed {
+                confirmed = false
+                x = 0
+            }
+        }
     }
 
     @ViewBuilder
@@ -157,8 +168,10 @@ private struct SlideToConfirmDemo: View {
             confirmed = true
         }
         if haptic && !ctx.isPreview { Haptics.success() }
-        Task { @MainActor in
+        resetTask?.cancel()
+        resetTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.8))
+            guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) {
                 confirmed = false
                 x = 0

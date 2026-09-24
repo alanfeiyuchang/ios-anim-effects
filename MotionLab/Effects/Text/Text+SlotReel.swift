@@ -5,122 +5,144 @@ extension Effect {
         id: "text.slot-reel",
         category: .text,
         interaction: .tap,
-        name: L("Slot-Machine Digits", "老虎机数字"),
-        summary: L("Four reels whip downward with speed blur and stop one by one with a kickback.", "四个滚轮带着速度模糊向下飞转，逐个停下并轻轻回弹。"),
+        name: L("Tumbling Prism Digits", "翻滚棱柱数字"),
+        summary: L("Each score digit is a 3D prism that tumbles forward face by face, slows down and rocks into place.", "每位分数都是一根 3D 棱柱，一面接一面向前翻滚，减速后轻轻摇摆着落定。"),
         prompt: L(
-            "Four ivory digit reels sit in a dark cabinet behind a thin amber payline, each window showing the current digit plus slivers of its neighbours on a curved, shaded drum. Tapping Spin sends every reel rolling downward through at least two full cycles: while fast the digits blur (up to 5 pt) and stretch 12% vertically, and they sharpen as the reel slows. The reels stop left to right, each 0.22 s after the previous one, on a spring with ~20% bounce, so every digit overshoots the payline by about half a digit and kicks back into place. A rigid haptic tick marks each stop. It feels like a real one-armed bandit: suspense, then four decisive clunks.",
-            "深色机箱里并排四个象牙白数字滚轮，中间横着一条细细的琥珀色中奖线；每个窗口显示当前数字，并在带明暗的弧面上露出上下相邻数字的一角。点击「转一下」，所有滚轮向下飞转至少两整圈：高速时数字模糊（最高5 pt）并纵向拉伸12%，减速时逐渐清晰。滚轮从左到右依次停下，每个比前一个晚0.22秒，停止使用约20%回弹的弹簧——数字先冲过中奖线约半格再回落到位，每次停轮伴随一次清脆的触感。像真正的老虎机：先吊足胃口，再「咔、咔、咔、咔」四声落定。"
+            "A five-digit arcade score (04825) sits in a floating card, each digit printed on the face of an indigo-to-violet prism 52×68 pt. Tapping the card adds points: every digit that changes tumbles forward about its horizontal axis, the old face tipping up and away while the next rises from below, foreshortened to cos θ, narrowing slightly with depth, lit on the upward face and shaded on the downward one. The tens and units prisms add one and two extra full cycles, so the right side whirls longest. Each prism decelerates on a spring whose damping is tuned to its travel, so every digit overshoots by the same ~0.3 face and rocks back; they land left to right, 0.12 s apart, each with a selection tick, while a +points pill rolls its figure. Chunky, tactile, arcade-bright.",
+            "悬浮卡片里是一组五位街机分数（04825），每位数字印在一根52×68 pt、靛蓝到紫色渐变的棱柱面上。点击卡片加分：发生变化的数位绕水平轴向前翻滚，旧面向上翻走，新面从下方翻起，高度按cos θ透视压缩、随纵深略微收窄，朝上的面受光、朝下的面变暗。十位和个位额外多转一圈和两圈，右侧转得最久。每根棱柱以按行程调节阻尼的弹簧减速，因此每位都恰好冲过约0.3个面再摇回；从左到右每隔0.12秒依次落定，各伴随一次选择触感，同时“+分数”胶囊滚动更新。厚实、有手感、街机般明亮。"
         ),
         implementation: L(
-            "Each reel is an Animatable view whose animatableData is an unbounded step count; it draws four digits around the window and derives blur and stretch from the distance still to travel, driven by .spring(duration:bounce:) delayed per column.",
-            "每个滚轮是一个 Animatable 视图，animatableData 为无上限的累计步数；它只绘制窗口附近的四个数字，并根据剩余滚动距离推算模糊与拉伸，动画使用按列延迟的 .spring(duration:bounce:)。"
+            "Each digit is an Animatable view whose animatableData is an unbounded quarter-turn count; it draws only the leaving and arriving faces, placing each at y = h/2·sin θ with scaleEffect(y: cos θ) and a depth tint. A .spring(duration:bounce:) per column, with the bounce solved from the travel for a constant overshoot, is applied through animation(_:value:).",
+            "每位数字是一个 Animatable 视图，animatableData 为无上限的四分之一圈计数；它只绘制离开与到来的两个面，分别放在 y = h/2·sin θ 处，并以 scaleEffect(y: cos θ) 和纵深明暗表现翻转。每列使用 .spring(duration:bounce:)，其回弹量由行程反推以保持相同的过冲，通过 animation(_:value:) 施加。"
         ),
-        apis: ["Animatable", "spring(duration:bounce:)", "blur(radius:)", "clipped()", "animation(_:value:)"],
-        tags: ["slot machine", "reel", "jackpot", "counter", "老虎机", "滚轮", "抽奖", "数字滚动"],
+        apis: ["Animatable", "scaleEffect(x:y:anchor:)", "spring(duration:bounce:)", "animation(_:value:)", "contentTransition(.numericText())"],
+        tags: ["tumble", "prism", "score", "counter", "翻滚", "棱柱", "计分", "数字滚动"],
         params: [
-            .slider("duration", L("Spin duration", "旋转时长"), 0.6...2.0, default: 1.1, unit: "s"),
-            .slider("stagger", L("Reel stagger", "停轮间隔"), 0.05...0.4, default: 0.22, unit: "s"),
-            .slider("bounce", L("Stop kickback", "停止回弹"), 0...0.4, default: 0.2),
+            .slider("duration", L("Tumble duration", "翻滚时长"), 0.6...2.0, default: 1.1, unit: "s"),
+            .slider("stagger", L("Landing stagger", "落定间隔"), 0.05...0.3, default: 0.12, unit: "s"),
+            .slider("settle", L("Settle overshoot", "落定过冲"), 0...0.5, default: 0.3),
         ]
     ) { ctx in
-        SlotReelDemo(ctx: ctx)
+        TumblingPrismDemo(ctx: ctx)
     }
 }
 
-private struct SlotReelDemo: View {
+private struct TumblingPrismDemo: View {
     let ctx: DemoContext
-    /// Unbounded step counts; a reel's visible digit is `roll % 10`.
-    @State private var rolls: [Int] = [3, 1, 4, 7]
+    /// Unbounded quarter-turn counts, left to right; a prism shows `roll % 10` on its front face.
+    @State private var rolls: [Int] = [0, 4, 8, 2, 5]
+    @State private var gain = 0
+    /// Quarter turns each column travels on the latest tap; the spring's damping is solved from it.
+    @State private var travel: [Int] = [1, 1, 1, 1, 1]
 
-    private let cell: CGFloat = 60
+    private let face = CGSize(width: 52, height: 68)
+    /// Extra full cycles for the tens and units prisms, so the right side whirls longest.
+    private let extraTurns: [Int] = [0, 0, 0, 10, 20]
 
     var body: some View {
         VStack(spacing: 18) {
-            Text(L("Lucky number", "今日幸运号"), ctx.language)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-            cabinet
-            spinButton
-            DemoHint(text: L("Tap Spin", "点击「转一下」"), ctx: ctx)
+            Button { addPoints() } label: { scoreCard }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(verbatim: score))
+            DemoHint(text: L("Tap the score", "点击分数"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 2.8) { spin() }
+        .autoplay(ctx.isPreview, every: 2.8) { addPoints() }
     }
 
-    private var cabinet: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<4, id: \.self) { column in
-                SlotReelColumn(roll: Double(rolls[column]), target: Double(rolls[column]), cell: cell)
-                    .animation(reelAnimation(column), value: rolls[column])
+    private var score: String {
+        rolls.map { String((($0 % 10) + 10) % 10) }.joined()
+    }
+
+    private var scoreCard: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Text(L("High score", "最高分"), ctx.language)
+                    .font(.caption.weight(.bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                gainPill
+            }
+            HStack(spacing: 6) {
+                ForEach(0..<rolls.count, id: \.self) { column in
+                    TumblingPrismDigit(roll: Double(rolls[column]), face: face)
+                        .animation(tumble(column), value: rolls[column])
+                }
             }
         }
-        .padding(12)
-        .overlay(payline)
-        .background(Color(white: 0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.amber.opacity(0.35), lineWidth: 1.5))
-        .shadow(color: .black.opacity(0.28), radius: 18, y: 10)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .frame(width: 330)
+        .demoCard(cornerRadius: 24)
+        .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
-    private var payline: some View {
-        HStack(spacing: 0) {
-            Image(systemName: "arrowtriangle.right.fill")
-            Rectangle().frame(height: 2).opacity(0.7)
-            Image(systemName: "arrowtriangle.left.fill")
-        }
-        .font(.system(size: 9))
-        .foregroundStyle(Palette.amber)
-        .padding(.horizontal, 2)
-        .allowsHitTesting(false)
+    private var gainPill: some View {
+        Text(verbatim: "+\(gain)")
+            .font(.caption.weight(.bold).monospacedDigit())
+            .contentTransition(.numericText(value: Double(gain)))
+            .foregroundStyle(Palette.violetText)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(Palette.violet.opacity(0.14), in: Capsule())
+            .opacity(gain > 0 ? 1 : 0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: gain)
     }
 
-    private var spinButton: some View {
-        Button { spin() } label: {
-            Label {
-                Text(L("Spin", "转一下"), ctx.language)
-            } icon: {
-                Image(systemName: "arrow.triangle.2.circlepath")
-            }
-            .font(.headline)
-            .foregroundStyle(.white)
-            .padding(.horizontal, 26)
-            .frame(height: 46)
-            .background(Palette.sunset, in: Capsule())
-            .shadow(color: Palette.coral.opacity(0.35), radius: 10, y: 5)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func reelAnimation(_ column: Int) -> Animation {
+    /// A spring whose damping is solved from the travel, so every prism overshoots by the same `settle` faces:
+    /// overshoot fraction p = e^(−πζ/√(1−ζ²)) ⇒ ζ = L/√(1+L²) with L = −ln p / π; SwiftUI's bounce is 1 − ζ.
+    private func tumble(_ column: Int) -> Animation {
         let duration: Double = ctx["duration"] + Double(column) * ctx["stagger"]
-        return .spring(duration: duration, bounce: ctx["bounce"])
+        let settle: Double = ctx["settle"]
+        let distance = Double(max(travel[column], 1))
+        guard settle > 0.001 else { return .spring(duration: duration, bounce: 0) }
+        let fraction = min(settle / distance, 0.3)
+        let l = -log(fraction) / Double.pi
+        let zeta = l / (1 + l * l).squareRoot()
+        return .spring(duration: duration, bounce: (1 - zeta).clamped(to: 0...0.6))
     }
 
-    private func spin() {
-        var next = rolls
-        for column in next.indices {
-            let current = next[column]
-            let digit = Int.random(in: 0...9)
-            let delta = (digit - current % 10 + 10) % 10
-            next[column] = current + 20 + column * 6 + delta
+    private func addPoints() {
+        let current = Int(score) ?? 0
+        let points = Int.random(in: 12...96) * 25
+        let target = (current + points) % 100_000
+        let count = rolls.count
+        let digits: [Int] = (0..<count).map { column in
+            var place = 1
+            for _ in 0..<(count - 1 - column) { place *= 10 }
+            return (target / place) % 10
         }
+        var next = rolls
+        var distances = travel
+        var landing: [Int] = []
+        for column in next.indices {
+            let delta = (digits[column] - ((next[column] % 10) + 10) % 10 + 10) % 10
+            let extra = extraTurns[column]
+            guard delta > 0 || extra > 0 else { continue }
+            next[column] += delta + extra
+            distances[column] = delta + extra
+            landing.append(column)
+        }
+        gain = points
+        travel = distances
         rolls = next
         guard !ctx.isPreview, !Haptics.isMuted else { return }
-        Haptics.tap(.medium)
-        for column in 0..<4 {
+        Haptics.tap(.light)
+        for column in landing {
             let stop: Double = ctx["duration"] * 0.6 + Double(column) * ctx["stagger"]
             DispatchQueue.main.asyncAfter(deadline: .now() + stop) {
-                Haptics.tap(.rigid)
+                Haptics.selection()
             }
         }
     }
 }
 
-/// One reel. `roll` animates; `target` is the settled value, so `target - roll`
-/// says how far the reel still has to travel and drives the speed blur.
-private struct SlotReelColumn: View, Animatable {
+/// One prism. `roll` animates through quarter turns: face k sits at θ = (k − roll) × 90°, so the current face tips
+/// up and away while the next one rises from below. Only those two faces are ever visible.
+private struct TumblingPrismDigit: View, Animatable {
     var roll: Double
-    let target: Double
-    let cell: CGFloat
+    let face: CGSize
 
     var animatableData: Double {
         get { roll }
@@ -129,49 +151,54 @@ private struct SlotReelColumn: View, Animatable {
 
     var body: some View {
         let base: Double = roll.rounded(.down)
-        let fraction = CGFloat(roll - base)
-        let digit: Int = ((Int(base) % 10) + 10) % 10
-        let remaining: Double = min(abs(target - roll), 10)
-        let speed = CGFloat(remaining / 10)
-        // Top to bottom: digit+2, digit+1, digit, digit-1. Rolling forward moves the strip down.
-        VStack(spacing: 0) {
-            ForEach(0..<4, id: \.self) { index in
-                face((digit + 2 - index + 10) % 10)
-            }
+        let fraction: Double = roll - base
+        let index = Int(base)
+        ZStack {
+            prismFace(index: index, degrees: -fraction * 90)
+            prismFace(index: index + 1, degrees: (1 - fraction) * 90)
         }
-        .blur(radius: speed * 5)
-        .scaleEffect(x: 1, y: 1 + speed * 0.12)
-        .offset(y: -cell * 0.5 + fraction * cell)
-        .frame(width: 56, height: cell * 1.5)
-        .clipped()
-        .background(reelFill)
-        .overlay(shading)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        // A turning square prism reaches √2 × its face height at 45°.
+        .frame(width: face.width, height: face.height * 1.42)
     }
 
-    private func face(_ n: Int) -> some View {
-        Text(verbatim: "\(n)")
-            .font(.system(size: 40, weight: .heavy, design: .rounded))
+    private func prismFace(index: Int, degrees: Double) -> some View {
+        let radians = degrees * Double.pi / 180
+        let c = CGFloat(cos(radians))
+        let s = CGFloat(sin(radians))
+        let digit = ((index % 10) + 10) % 10
+        // Upward-tilted faces (s < 0) catch the top light; downward ones fall into shade.
+        let shade: Double = s > 0 ? 0.65 * Double(s) : 0.2 * Double(1 - c)
+        let glint: Double = s < 0 ? 0.18 * Double(-s) : 0
+        return TumblingPrismFace(digit: digit, size: face, shade: shade, glint: glint)
+            .scaleEffect(x: 1 - 0.1 * (1 - c), y: max(c, 0.001), anchor: .center)
+            .offset(y: s * face.height / 2)
+            .opacity(c > 0.02 ? 1 : 0)
+    }
+}
+
+private struct TumblingPrismFace: View {
+    let digit: Int
+    let size: CGSize
+    let shade: Double
+    let glint: Double
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 10, style: .continuous) }
+
+    var body: some View {
+        Text(verbatim: "\(digit)")
+            .font(.system(size: 42, weight: .heavy, design: .rounded))
             .monospacedDigit()
-            .foregroundStyle(Color(white: 0.12))
-            .frame(width: 56, height: cell)
-    }
-
-    private var reelFill: some View {
-        LinearGradient(colors: [Color(hex: 0xFFF8EC), Color(hex: 0xF1E6D2)], startPoint: .top, endPoint: .bottom)
-    }
-
-    private var shading: some View {
-        LinearGradient(
-            stops: [
-                .init(color: .black.opacity(0.75), location: 0),
-                .init(color: .clear, location: 0.32),
-                .init(color: .clear, location: 0.68),
-                .init(color: .black.opacity(0.75), location: 1),
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .allowsHitTesting(false)
+            .foregroundStyle(.white)
+            .frame(width: size.width, height: size.height)
+            .background(Palette.primaryStrong, in: shape)
+            .overlay {
+                shape.fill(Color.black.opacity(shade))
+            }
+            .overlay {
+                shape.fill(Color.white.opacity(glint))
+            }
+            .overlay {
+                shape.strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+            }
     }
 }

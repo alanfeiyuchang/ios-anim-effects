@@ -12,8 +12,8 @@ extension Effect {
             "一个110 pt的光泽果冻球（紫到粉渐变，左上角白色高光，地面接触阴影不参与形变）跟着手指走。形变由速度而非位置驱动：速度映射为最高45%的应变，沿运动方向拉长、横向变细，并经150毫秒的快速弹簧平滑，绝不抖动；手指停住80毫秒，应变就以弹簧（响应0.3秒）松弛回圆形。松手后它以欠阻尼弹簧（响应0.5秒、阻尼0.4）飞回中心，由于应变以带符号的张量存储，过冲会自然变成挤压，于是“拉长、压扁、再拉长”地晃几下才停住。俏皮、软糯、充满生命力。"
         ),
         implementation: L(
-            "Velocity is converted to a traceless strain tensor (s·cos2θ, s·sin2θ) animated through a custom GeometryEffect that builds an affine stretch around the view center; negative strain naturally becomes a squash.",
-            "将速度转换为无迹应变张量 (s·cos2θ, s·sin2θ)，通过自定义 GeometryEffect 以视图中心为原点构建仿射拉伸；负应变自然表现为挤压。"
+            "Velocity is converted to a signed strain tensor (s·cos2θ, s·sin2θ) animated through a custom GeometryEffect that builds an area-preserving affine stretch (1 + s along, 1/(1 + s) across) around the view center; negative strain naturally becomes a squash.",
+            "将速度转换为带符号的应变张量 (s·cos2θ, s·sin2θ)，通过自定义 GeometryEffect 以视图中心为原点构建保持面积的仿射拉伸（沿向 1 + s、横向 1/(1 + s)）；负应变自然表现为挤压。"
         ),
         apis: ["GeometryEffect", "ProjectionTransform", "DragGesture.Value.velocity", "interactiveSpring"],
         tags: ["jelly", "squash", "stretch", "wobble", "velocity", "果冻", "拉伸", "挤压", "形变"],
@@ -27,7 +27,9 @@ extension Effect {
     }
 }
 
-/// Symmetric, traceless stretch: (e1, e2) = s·(cos 2θ, sin 2θ).
+/// Area-preserving stretch along θ, with the strain stored as (e1, e2) = s·(cos 2θ, sin 2θ): the blob grows by
+/// 1 + s along θ and shrinks by 1 / (1 + s) across it, so its area never changes. (−e1, −e2) points 90° away,
+/// which reads as a squash along θ.
 private struct JellyStrain: GeometryEffect {
     var e1: CGFloat
     var e2: CGFloat
@@ -41,11 +43,18 @@ private struct JellyStrain: GeometryEffect {
     }
 
     func effectValue(size: CGSize) -> ProjectionTransform {
+        let s = (e1 * e1 + e2 * e2).squareRoot()
+        guard s > 0.0001 else { return ProjectionTransform(CGAffineTransform.identity) }
+        let along = 1 + s
+        let across = 1 / along
+        let mean = (along + across) / 2
+        let half = (along - across) / 2
+        // R(θ)·diag(along, across)·R(−θ), written with cos 2θ = e1 / s and sin 2θ = e2 / s.
+        let a = mean + half * e1 / s
+        let d = mean - half * e1 / s
+        let b = half * e2 / s
         let cx = size.width / 2
         let cy = size.height / 2
-        let a = 1 + e1
-        let d = 1 - e1
-        let b = e2
         let transform = CGAffineTransform(
             a: a, b: b, c: b, d: d,
             tx: cx - (a * cx + b * cy),
@@ -160,6 +169,27 @@ private struct JellyDemo: View {
     }
 
     private func release() {
+        let distance = (offset.width * offset.width + offset.height * offset.height).squareRoot()
+        let current = (strain.width * strain.width + strain.height * strain.height).squareRoot()
+        // A finger that rested before lifting has already relaxed the strain: give the fly-home a short stretch
+        // along its path (toward the centre) so it still jiggles.
+        if current < 0.05 && distance > 24 {
+            let s = min(distance / 90 * 0.16 * ctx.cg("intensity"), 0.24)
+            let theta = atan2(-offset.height, -offset.width)
+            withAnimation(.easeOut(duration: 0.07)) {
+                strain = CGSize(width: s * cos(2 * theta), height: s * sin(2 * theta))
+            }
+            relaxTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.07))
+                guard !Task.isCancelled else { return }
+                withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { strain = .zero }
+            }
+            withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+                offset = .zero
+                isDragging = false
+            }
+            return
+        }
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             offset = .zero
             strain = .zero

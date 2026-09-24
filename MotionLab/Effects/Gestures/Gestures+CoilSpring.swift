@@ -8,8 +8,8 @@ extension Effect {
         name: L("Hooke's Coil Spring", "胡克弹簧振子"),
         summary: L("Pull a weight hanging from a coil spring and watch it bob with real mass, stiffness and damping.", "拉下挂在弹簧上的砝码，看它按真实的质量、劲度与阻尼上下振荡。"),
         prompt: L(
-            "A 64×56 pt weight (continuous 16 pt corners, indigo-to-violet gradient, “1 kg” label) hangs from a ceiling bar on a steel-grey coil spring of nine turns, 130 pt long at rest. The weight drags vertically only, rubber-banded toward 150 pt of stretch and 90 pt of compression, and the coil redraws every frame, its turns spreading as it lengthens and its diameter narrowing up to 25% to conserve volume, while a pointer on a tick ruler tracks the weight. On release a physical spring with mass 1, stiffness 90 and damping 3.5 (ζ ≈ 0.18) takes over, so the weight bobs through the rest line five or six times at about 1.5 Hz before settling, with a light or rigid haptic scaled to the pull. Tactile lab physics.",
-            "一个64×56 pt的砝码（16 pt圆角，靛紫渐变，标着“1 kg”）由一根9圈钢灰色螺旋弹簧挂在横梁上，弹簧自然长130 pt。砝码只能竖直拖动，拉伸和压缩都带橡皮筋阻尼，分别趋近150 pt和90 pt；弹簧每帧重绘，拉长时圈距拉开、直径最多收窄25%以保持体积，右侧刻度指针同步示位。松手后由质量1、劲度90、阻尼3.5（阻尼比约0.18）的物理弹簧接管，砝码以约1.5 Hz穿过平衡位置五六次才停稳，并按幅度给出轻或硬的触感。如指尖上的物理实验。"
+            "A 64×56 pt weight (continuous 16 pt corners, indigo-to-violet gradient, “1 kg” label) hangs from a ceiling bar on a steel-grey coil spring of nine turns, 130 pt long at rest. The weight drags vertically only, rubber-banded toward 110 pt of stretch and 90 pt of compression, and the coil redraws every frame, its turns spreading as it lengthens and its diameter narrowing up to 25% to conserve volume, while a pointer on a tick ruler tracks the weight. On release a physical spring with mass 1, stiffness 90 and damping 3.5 (ζ ≈ 0.18) takes over, so the weight bobs through the rest line five or six times at about 1.5 Hz before settling, with a light or rigid haptic scaled to the pull. Tactile lab physics.",
+            "一个64×56 pt的砝码（16 pt圆角，靛紫渐变，标着“1 kg”）由一根9圈钢灰色螺旋弹簧挂在横梁上，弹簧自然长130 pt。砝码只能竖直拖动，拉伸和压缩都带橡皮筋阻尼，分别趋近110 pt和90 pt；弹簧每帧重绘，拉长时圈距拉开、直径最多收窄25%以保持体积，右侧刻度指针同步示位。松手后由质量1、劲度90、阻尼3.5（阻尼比约0.18）的物理弹簧接管，砝码以约1.5 Hz穿过平衡位置五六次才停稳，并按幅度给出轻或硬的触感。如指尖上的物理实验。"
         ),
         implementation: L(
             "An Animatable coil Shape redraws its zigzag from the current length; release uses Animation.interpolatingSpring(mass:stiffness:damping:), so the three physical constants are exposed directly as parameters.",
@@ -154,7 +154,8 @@ private struct CoilSpringDemo: View {
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = true }
                 }
                 let dy = value.translation.height
-                stretch = dy >= 0 ? rubberBand(dy, limit: 150, coefficient: 0.8) : rubberBand(dy, limit: 90, coefficient: 0.8)
+                // 110 pt keeps the weight's bottom edge (46 pt + stretch below centre) inside the 320 pt frame.
+                stretch = dy >= 0 ? rubberBand(dy, limit: 110, coefficient: 0.8) : rubberBand(dy, limit: 90, coefficient: 0.8)
             }
             .onEnded { _ in endHold(completed: true) }
     }

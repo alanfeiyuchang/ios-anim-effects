@@ -44,8 +44,9 @@ private struct CardsDetentDemo: View {
 
     var body: some View {
         VStack(spacing: 14) {
+            // 280 pt top detent + room for the rubber band above it (≤ 60 pt, ~30–40 pt in practice).
             card
-                .frame(height: 300, alignment: .top)
+                .frame(height: 330, alignment: .top)
             DemoHint(text: L("Drag the card down", "向下拖动卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

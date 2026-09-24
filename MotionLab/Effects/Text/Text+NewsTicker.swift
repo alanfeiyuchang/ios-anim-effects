@@ -71,6 +71,12 @@ private struct NewsTickerDemo: View {
             skipped += ticks + 1
             start = now
         }
+        .onChange(of: ctx["interval"]) { old, new in
+            // Keep the current headline and the hairline's fraction instead of jumping to a re-derived tick.
+            let now = Date()
+            let beat = now.timeIntervalSince(start) / max(old, 0.5)
+            start = now.addingTimeInterval(-beat * max(new, 0.5))
+        }
     }
 
     /// Ease-in-out cubic on 0...1.

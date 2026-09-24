@@ -57,6 +57,9 @@ private struct AISparkleDemo: View {
     @State private var clockBase: Double = 0
     @State private var clockStart: Double = Date().timeIntervalSinceReferenceDate
     @State private var flippedAt: Double = -.infinity
+    /// The spark's own orbit clock, rebased the same way when Speed changes.
+    @State private var sparkBase: Double = 0
+    @State private var sparkStart: Double = Date().timeIntervalSinceReferenceDate
 
     private let colors: [Color] = [Palette.violet, Palette.pink, Palette.amber, Palette.sky, Palette.violet]
 
@@ -67,7 +70,7 @@ private struct AISparkleDemo: View {
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
                 let now: Double = timeline.date.timeIntervalSinceReferenceDate
                 // The spark keeps its own 1.2 s orbit (Speed only), not the 2.5× Thinking clock.
-                let sparkTime: Double = now.truncatingRemainder(dividingBy: 3_600) * ctx["speed"]
+                let sparkTime: Double = sparkBase + (now - sparkStart) * ctx["speed"]
                 scene(time: clock(at: now), sparkTime: sparkTime, thinking: thinking, sparkOpacity: sparkOpacity(at: now))
             }
             DemoHint(text: L("Tap to toggle Thinking", "点击切换「思考中」"), ctx: ctx)
@@ -75,6 +78,21 @@ private struct AISparkleDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { toggle() }
+        .onChange(of: ctx["speed"]) { old, _ in
+            // Slider moves continue from the current phase instead of re-deriving it at the new rate.
+            let now = Date().timeIntervalSinceReferenceDate
+            clockBase += (now - clockStart) * old * (thinking ? 2.5 : 1)
+            clockStart = now
+            sparkBase += (now - sparkStart) * old
+            sparkStart = now
+        }
+        .onChange(of: ctx.int("mode")) { old, _ in
+            let now = Date().timeIntervalSinceReferenceDate
+            let wasThinking = (old == 1) != flipped
+            clockBase += (now - clockStart) * ctx["speed"] * (wasThinking ? 2.5 : 1)
+            clockStart = now
+            flippedAt = now
+        }
     }
 
     private var rate: Double { ctx["speed"] * (thinking ? 2.5 : 1) }

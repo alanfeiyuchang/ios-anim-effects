@@ -44,6 +44,9 @@ private let segmentMasks: [[Bool]] = [
 private struct SevenSegmentDemo: View {
     let ctx: DemoContext
     @State private var start = Date()
+    /// Countdown clock (scaled seconds) at `countStart`, rebased whenever the time scale changes so it never jumps.
+    @State private var countBase: Double = 0
+    @State private var countStart = Date()
 
     private var tint: Color {
         switch ctx.int("tint") {
@@ -57,7 +60,7 @@ private struct SevenSegmentDemo: View {
         VStack(spacing: 16) {
             TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
                 let real: Double = timeline.date.timeIntervalSince(start)
-                let elapsed: Double = real * ctx["speed"]
+                let elapsed: Double = countBase + timeline.date.timeIntervalSince(countStart) * ctx["speed"]
                 panel(elapsed: elapsed, real: real)
             }
             DemoHint(text: L("Tap to reset", "点击重置"), ctx: ctx)
@@ -66,7 +69,15 @@ private struct SevenSegmentDemo: View {
         .contentShape(Rectangle())
         .onTapGesture {
             Haptics.tap(.light)
-            start = Date()
+            let now = Date()
+            start = now
+            countBase = 0
+            countStart = now
+        }
+        .onChange(of: ctx["speed"]) { old, _ in
+            let now = Date()
+            countBase += now.timeIntervalSince(countStart) * old
+            countStart = now
         }
     }
 

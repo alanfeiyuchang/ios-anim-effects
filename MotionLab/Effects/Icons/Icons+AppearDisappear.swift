@@ -74,11 +74,11 @@ private struct AppearDisappearDemo: View {
                 .padding(.horizontal, 18)
                 .frame(height: 34)
                 .background {
-                    // A still can't rasterise the material, so it takes `DemoMaterial`'s translucent fill.
-                    if ctx.isStill && !mode {
-                        DemoMaterial(Capsule(), material: .thinMaterial)
+                    // Still-safe material (a translucent fill in stills) in Select mode, the brand fill in Done mode.
+                    if mode {
+                        Capsule().fill(Palette.primary)
                     } else {
-                        Capsule().fill(mode ? AnyShapeStyle(Palette.primary) : AnyShapeStyle(.thinMaterial))
+                        DemoMaterial(Capsule(), material: .thinMaterial)
                     }
                 }
                 .overlay(Capsule().strokeBorder(Palette.stroke))

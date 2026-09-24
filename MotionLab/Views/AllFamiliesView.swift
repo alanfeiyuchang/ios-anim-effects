@@ -8,11 +8,12 @@ private struct FamilySection: Identifiable {
     var id: String { category.rawValue }
 }
 
-/// Every family in the catalog, grouped by category under pinned headers, so "all sliders", "all
-/// spinners" or "all toggles" can be browsed across the whole catalog. Each family card plays one
-/// variation live at a time (see `FamilyPreviewStrip`). A sticky chip row jumps to a category and
-/// follows the scroll (its pill always marks the category on screen), and the always-visible search
-/// field filters families by name in either language.
+/// Every family in the catalog, grouped by category, so "all sliders", "all spinners" or "all
+/// toggles" can be browsed across the whole catalog. Each family card plays one variation live at a
+/// time (see `FamilyPreviewStrip`). The page header scrolls away first; then a floating chip strip
+/// pins under the search field, jumps to a category and follows the scroll (its pill always marks the
+/// category on screen). Each category opens with a compact capsule header linking to its page, and
+/// the always-visible search field filters families by name in either language.
 ///
 /// Reached from the "85 families" counter and "Browse by Family · See All" on Browse, the Search
 /// suggestions, or `-ML_route families`; it zooms out of the link that opened it.
@@ -28,39 +29,56 @@ struct AllFamiliesView: View {
     @State private var visibleSections: Set<String> = []
     /// While a chip-initiated jump scrolls, the passing sections do not move the pill.
     @State private var isJumping = false
+    /// Height of the pinned chip strip; a jump lands each category just below it.
+    @State private var jumpRowHeight: CGFloat = 52
 
     var body: some View {
         let sections = Self.sections(matching: query)
+        let firstSectionID = sections.first?.id
+        let anchorLift = jumpRowHeight
         ScrollViewReader { reader in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 16, pinnedViews: [.sectionHeaders]) {
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                     header
-                    if sections.isEmpty {
-                        emptyState
-                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                    }
-                    ForEach(sections) { section in
-                        Section {
-                            grid(section.families)
-                                .onScrollVisibilityChange(threshold: 0.01) { visible in
-                                    setVisible(section.id, visible)
-                                }
-                                .onDisappear { setVisible(section.id, false) }
-                        } header: {
-                            FamilySectionHeader(category: section.category, families: section.families)
-                                .id(section.id)
+                        .padding(.bottom, 14)
+                    Section {
+                        if sections.isEmpty {
+                            emptyState
+                                .transition(.opacity.combined(with: .scale(scale: 0.96)))
                         }
+                        ForEach(sections) { section in
+                            VStack(alignment: .leading, spacing: 12) {
+                                FamilySectionHeader(category: section.category, families: section.families)
+                                    .background(alignment: .top) {
+                                        // Jump target: sits a strip's height above the capsule, so a
+                                        // jump lands the capsule just below the pinned chips.
+                                        Color.clear
+                                            .frame(height: anchorLift + 8)
+                                            .alignmentGuide(.top) { dimensions in dimensions[.bottom] }
+                                            .allowsHitTesting(false)
+                                            .id(section.id)
+                                    }
+                                grid(section.families, urgent: section.id == firstSectionID)
+                                    .onScrollVisibilityChange(threshold: 0.01) { visible in
+                                        setVisible(section.id, visible)
+                                    }
+                                    .onDisappear { setVisible(section.id, false) }
+                            }
+                            .padding(.top, 14)
+                        }
+                    } header: {
+                        jumpRow(sections, reader: reader)
+                            .onGeometryChange(for: CGFloat.self) { proxy in
+                                proxy.size.height
+                            } action: { height in
+                                if abs(height - jumpRowHeight) > 0.5 { jumpRowHeight = height }
+                            }
+                            .appearEntrance(index: 2, distance: 10, blur: 0)
                     }
                 }
                 .animation(reduceMotion ? Animation.easeInOut(duration: 0.2) : ShellMotion.reveal, value: sections.map(\.id))
             }
             .shellPageScroll()
-            // The jump chips stay pinned under the search field, above the pinned category headers.
-            .safeAreaInset(edge: .top, spacing: 0) {
-                jumpRow(sections, reader: reader)
-                    .background(.bar)
-                    .appearEntrance(index: 2, distance: 10, blur: 0)
-            }
         }
         .scrollDismissesKeyboard(.immediately)
         .background(Palette.pageBackground)
@@ -120,7 +138,7 @@ struct AllFamiliesView: View {
             .appearEntrance(index: 1, distance: 8)
         }
         .padding(.horizontal)
-        .padding(.top, 8)
+        .padding(.top, 12)
         .accessibilityElement(children: .combine)
     }
 
@@ -143,7 +161,22 @@ struct AllFamiliesView: View {
                     }
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding(.top, 8)
+                .padding(.bottom, 14)
+            }
+            // Floating over the cards: page colour behind the chips that dissolves downwards, so
+            // content slides under a soft edge instead of a flat grey band.
+            .background {
+                LinearGradient(
+                    stops: [
+                        Gradient.Stop(color: Palette.pageBackground, location: 0),
+                        Gradient.Stop(color: Palette.pageBackground, location: 0.62),
+                        Gradient.Stop(color: Palette.pageBackground.opacity(0), location: 1),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .allowsHitTesting(false)
             }
             // The active chip glides into view as the page scrolls through the categories.
             .onChange(of: jumpTarget) { _, target in
@@ -194,10 +227,12 @@ struct AllFamiliesView: View {
             : [GridItem(.adaptive(minimum: 300), spacing: 14)]
     }
 
-    private func grid(_ families: [EffectFamily]) -> some View {
+    /// `urgent`: the page's first block; its first two cards' stills render ahead of the rest.
+    private func grid(_ families: [EffectFamily], urgent: Bool) -> some View {
         LazyVGrid(columns: columns, spacing: 14) {
-            ForEach(families) { family in
+            ForEach(Array(families.enumerated()), id: \.element.id) { index, family in
                 FamilyGridItem(family: family)
+                    .environment(\.urgentSnapshots, urgent && index < 2)
             }
         }
         .padding(.horizontal)
@@ -236,7 +271,8 @@ private struct FamilyGridItem: View {
     }
 }
 
-/// Pinned category header: icon, title, "6 families · 17 effects", and a link to the category page.
+/// Category header opening each block: a compact glossy capsule with the icon, title,
+/// "6 families · 17 effects" and a chevron, linking to the category page.
 private struct FamilySectionHeader: View {
     let category: EffectCategory
     let families: [EffectFamily]
@@ -245,32 +281,36 @@ private struct FamilySectionHeader: View {
 
     var body: some View {
         let effectCount = families.reduce(0) { $0 + EffectFamilies.effects(in: $1).count }
+        let isLarge = dynamicTypeSize.isAccessibilitySize
+        let shape = RoundedRectangle(cornerRadius: isLarge ? CornerRadius.chip : 22, style: .continuous)
         RouteLink(route: Route.category(category)) {
             HStack(spacing: 10) {
-                CategoryIcon(category: category, size: 30)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(category.title, language)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
-                    Text(verbatim: Strings.familiesAndEffects(families: families.count, effects: effectCount, language))
-                        .font(.caption.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(Palette.accent)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 4)
+                CategoryIcon(category: category, size: 24)
+                Text(category.title, language)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(isLarge ? 3 : 1)
+                Text(verbatim: Strings.familiesAndEffects(families: families.count, effects: effectCount, language))
+                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(Palette.accent)
+                    .lineLimit(1)
+                    .layoutPriority(-1)
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundStyle(.tertiary)
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.bar)
-            .contentShape(Rectangle())
+            .padding(.leading, 6)
+            .padding(.trailing, 14)
+            .padding(.vertical, 6)
+            .background(Palette.chipOnPage, in: shape)
+            .overlay(shape.strokeBorder(Palette.edge))
+            .contentShape(shape)
         }
-        .buttonStyle(PressableCardStyle())
+        // A dim, not a scale: the header is a heading, not a card.
+        .buttonStyle(PressDimStyle())
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal)
         .accessibilityAddTraits(.isHeader)
         .accessibilityHint(Text(Strings.openCategory, language))
     }

@@ -130,7 +130,8 @@ for category in categories:
 for category in categories[:3]:
     ids = [e["id"] for e in effects if e["category"] == category]
     if ids:
-        shot(f"effect/{ids[0]}--prompt-en-dark", 3, f"{EN} -ML_route effect:{ids[0]} -ML_anchor prompt")
+        # The page jumps to the prompt card ~1.3 s after launch, then the card reveals itself.
+        shot(f"effect/{ids[0]}--prompt-en-dark", 5, f"{EN} -ML_route effect:{ids[0]} -ML_anchor prompt")
 PY
 if [[ -n "${SHOTS_FILTER:-}" ]]; then
   grep -E "^[^\t]*(${SHOTS_FILTER})" "$PLAN" > "$PLAN.filtered" || true

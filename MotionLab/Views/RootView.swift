@@ -45,6 +45,8 @@ enum Route: Hashable {
 /// The path of one tab's NavigationStack. Links that point back at a screen already on the stack
 /// (a detail page's category chip, a family page's category link, …) pop back to it instead of
 /// pushing another copy, so detail → family → detail → family never grows the stack.
+/// An effect opened from another effect's page (More in This Category) replaces that page, so
+/// exploring related effects keeps the stack at "list → one detail" and Back returns to the list.
 @Observable
 final class StackRouter {
     var path: [Route] = []
@@ -53,6 +55,9 @@ final class StackRouter {
         let key = route.destination
         if let index = path.lastIndex(where: { $0.destination == key }) {
             if index < path.count - 1 { path.removeSubrange((index + 1)...) }
+        } else if case .effect(let id, _) = route, let last = path.last, case .effect = last {
+            // The link lives on the page being replaced, so there is no zoom source to return to.
+            path[path.count - 1] = Route.effect(id)
         } else {
             path.append(route)
         }
@@ -230,6 +235,15 @@ enum LaunchOptions {
 
     static var detailAnchor: String? { UserDefaults.standard.string(forKey: "ML_anchor") }
 
+    nonisolated(unsafe) private static var anchorTaken = false
+
+    /// `detailAnchor` for the first detail page of the launch only (later pages open at the top).
+    static func takeDetailAnchor() -> String? {
+        guard !anchorTaken, let anchor = detailAnchor, !anchor.isEmpty else { return nil }
+        anchorTaken = true
+        return anchor
+    }
+
     /// Screenshot runs: start without persisted recents and never record new ones.
     static var freshState: Bool { UserDefaults.standard.bool(forKey: "ML_freshState") }
 }
@@ -326,12 +340,21 @@ struct EffectLink<Label: View>: View {
     @Environment(\.appLanguage) private var language
     @Environment(FavoritesStore.self) private var favorites
 
+    @Environment(StackRouter.self) private var router: StackRouter?
+
     var body: some View {
-        NavigationLink(value: Route.effect(effect.id, source: source)) {
-            if let namespace {
-                label().matchedTransitionSource(id: Route.zoomID(effect: effect.id, source: source), in: namespace)
+        let route = Route.effect(effect.id, source: source)
+        Group {
+            if let router {
+                // Through the router: an effect already on the stack pops back to it, and an effect
+                // opened from another effect's page replaces it (see `StackRouter.open`).
+                Button {
+                    router.open(route)
+                } label: {
+                    sourceLabel
+                }
             } else {
-                label()
+                NavigationLink(value: route) { sourceLabel }
             }
         }
         .buttonStyle(PressableCardStyle())
@@ -340,6 +363,15 @@ struct EffectLink<Label: View>: View {
         .accessibilityLabel(Text(verbatim: "\(effect.name(language)), \(effect.category.title(language))"))
         .accessibilityValue(Text(verbatim: favorites.contains(effect.id) ? Strings.favorited(language) : ""))
         .accessibilityHint(Text(effect.summary, language))
+    }
+
+    @ViewBuilder
+    private var sourceLabel: some View {
+        if let namespace {
+            label().matchedTransitionSource(id: Route.zoomID(effect: effect.id, source: source), in: namespace)
+        } else {
+            label()
+        }
     }
 }
 

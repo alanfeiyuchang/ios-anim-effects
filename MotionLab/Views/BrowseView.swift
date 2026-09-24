@@ -15,7 +15,8 @@ struct BrowseView: View {
     /// The inline nav-bar title only fades in once the hero title has scrolled away.
     @State private var showsNavTitle = false
     @State private var isAppeared = false
-    @State private var heroOnScreen = true
+    /// Scroll offset for the hero mesh, kept in its own observable so scrolling only re-renders the mesh.
+    @State private var heroScroll = HeroScrollState()
     @State private var focusedFeatured = 0
     /// Bumped on every appearance: the dice "re-rolls" with a bounce.
     @State private var diceRolls = 0
@@ -41,8 +42,23 @@ struct BrowseView: View {
             } action: { _, isPastTitle in
                 withAnimation(.easeInOut(duration: 0.2)) { showsNavTitle = isPastTitle }
             }
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                // Whole points are plenty for a parallax glow, and spare needless updates.
+                (geometry.contentOffset.y + geometry.contentInsets.top).rounded()
+            } action: { _, offset in
+                heroScroll.offset = offset
+            }
+        }
+        // The hero glow lives behind the scroll view, not in its content, so neither the scroll view
+        // nor the navigation bar can clip it: it runs from the top of the screen, under the bar,
+        // and fades into the page below the counters, drifting up (parallax) as the page scrolls.
+        .background(alignment: .top) {
+            HeroBackdrop(state: heroScroll, isAnimating: heroAnimating)
         }
         .background(Palette.pageBackground)
+        // No flat bar band over the glow while the page rests at the top.
+        .toolbarBackgroundVisibility(showsNavTitle ? .automatic : .hidden, for: .navigationBar)
+        .modifier(SoftTopScrollEdge())
         .navigationTitle(Strings.appTitle(language))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -101,9 +117,9 @@ struct BrowseView: View {
         revealed = true
     }
 
-    /// The mesh only ticks while it can actually be seen.
+    /// The mesh only ticks while its page is on screen (`HeroBackdrop` also stops it once scrolled away).
     private var heroAnimating: Bool {
-        isAppeared && heroOnScreen && scenePhase == .active && !reduceMotion && navigator.tab == .browse
+        isAppeared && scenePhase == .active && !reduceMotion && navigator.tab == .browse
     }
 
     // MARK: Header
@@ -134,26 +150,6 @@ struct BrowseView: View {
         .padding(.top, 6)
         .padding(.bottom, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            // Extends up behind the transparent navigation bar and fades out below the counters.
-            HeroMeshBackground(isAnimating: heroAnimating)
-                .padding(.top, -420)
-                .padding(.bottom, -72)
-                .mask {
-                    LinearGradient(
-                        stops: [
-                            Gradient.Stop(color: .black, location: 0),
-                            Gradient.Stop(color: .black, location: 0.72),
-                            Gradient.Stop(color: .clear, location: 1),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-        }
-        .onScrollVisibilityChange(threshold: 0.02) { visible in
-            if heroOnScreen != visible { heroOnScreen = visible }
-        }
     }
 
     @ViewBuilder
@@ -196,6 +192,7 @@ struct BrowseView: View {
                             FeaturedCard(effect: effect, isFocused: index == focused)
                         }
                         .modifier(CoverFlowEffect(enabled: motion))
+                        .environment(\.urgentSnapshots, index < 2)
                     }
                 }
                 .scrollTargetLayout()
@@ -240,7 +237,7 @@ struct BrowseView: View {
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 14) {
-                    ForEach(items) { family in
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, family in
                         let members = EffectFamilies.effects(in: family)
                         ZoomRouteLink(route: Route.family(family.id, source: "browseFamily")) {
                             FamilyCard(family: family, effects: members)
@@ -249,6 +246,7 @@ struct BrowseView: View {
                         .buttonStyle(PressableCardStyle())
                         .accessibilityLabel(Text(verbatim: "\(family.name(language)), \(Strings.variationCount(members.count, language))"))
                         .accessibilityHint(Text(family.summary, language))
+                        .environment(\.urgentSnapshots, index < 2)
                     }
                 }
                 .scrollTargetLayout()
@@ -325,6 +323,69 @@ struct BrowseView: View {
         dynamicTypeSize.isAccessibilitySize
             ? [GridItem(.flexible(), spacing: 14)]
             : [GridItem(.adaptive(minimum: 160), spacing: 14)]
+    }
+}
+
+// MARK: - Hero backdrop
+
+@Observable
+private final class HeroScrollState {
+    /// Distance the Browse page has scrolled from its resting top (negative while over-pulling).
+    var offset: CGFloat = 0
+}
+
+/// The Browse hero glow: a drifting mesh from the top of the screen (under the navigation bar)
+/// down past the header, faded into the page. It rises at half the scroll speed and fades out over
+/// the first 200 pt of scroll; its timeline pauses once it is invisible.
+private struct HeroBackdrop: View {
+    let state: HeroScrollState
+    let isAnimating: Bool
+
+    private static let height: CGFloat = 420
+    private static let fadeDistance: CGFloat = 200
+
+    var body: some View {
+        let offset: CGFloat = state.offset
+        let scrolled: CGFloat = max(offset, 0)
+        let visibility: Double = Double(1 - min(scrolled / Self.fadeDistance, 1))
+        // Over-pulling stretches the glow down with the content instead of uncovering a gap.
+        let stretch: CGFloat = max(-offset, 0)
+        HeroMeshBackground(isAnimating: isAnimating && visibility > 0)
+            .frame(height: Self.height + stretch)
+            .mask {
+                LinearGradient(
+                    stops: [
+                        Gradient.Stop(color: .black, location: 0),
+                        Gradient.Stop(color: .black, location: 0.6),
+                        Gradient.Stop(color: .clear, location: 1),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .offset(y: -scrolled * 0.5)
+            .opacity(visibility)
+            .frame(maxWidth: .infinity, alignment: .top)
+            .ignoresSafeArea(edges: .top)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// iOS 26: a soft scroll-edge effect under the navigation bar, so the bar never lays a flat band
+/// of page colour over the hero glow. Earlier systems are unchanged.
+private struct SoftTopScrollEdge: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            content.scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
     }
 }
 
@@ -428,6 +489,7 @@ struct CategoryIcon: View {
 
     var body: some View {
         Image(systemName: category.symbol)
+            .fixedSymbolLocale()
             .font(.system(size: size * 0.45, weight: .semibold))
             .foregroundStyle(.white)
             .symbolEffect(.bounce, value: bounce + pressBounces)
@@ -461,6 +523,7 @@ private struct FeaturedCard: View {
                     Text(effect.category.title, language)
                 } icon: {
                     Image(systemName: effect.category.symbol)
+                        .fixedSymbolLocale()
                         .foregroundStyle(LinearGradient(colors: effect.category.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
                 }
                 .font(.caption.weight(.semibold))
@@ -658,6 +721,8 @@ struct CategoryView: View {
                 .accessibilityHint(Text(family.summary, language))
                 .appearEntrance(index: index, delay: 0.12, distance: 22, scale: 0.96, blur: 0)
                 .scrollReveal(blur: 0)
+                // The first two cards' stills render ahead of the rest.
+                .environment(\.urgentSnapshots, index < 2)
             }
         }
         .padding(.horizontal)

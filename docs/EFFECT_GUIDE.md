@@ -135,6 +135,21 @@ the Compare mode on the family page plays all variations side by side.
    The detail page silences `Haptics.*` for 2.5 s after arrival, a variation switch and Reset (`Haptics.quiet(for:)`),
    so arrival plays never buzz; `.sensoryFeedback` bypasses this, so demos use `Haptics.*` instead.
    When `ctx.isStill` is true a still thumbnail is being rendered: show the finished state (chart drawn, text revealed).
+   **Materials in stills.** Stills are drawn with `ImageRenderer`, which cannot render `Material`
+   (`.ultraThinMaterial`, `.thinMaterial`, `.regularMaterial`, `.bar`, …) or Liquid Glass: they come out as
+   solid black slabs, very visible on the light-mode cards. Never put a material behind demo content directly;
+   use the still-safe helpers from `DemoKit`, which draw the real material live and a translucent fill tinted for
+   the colour scheme (white 72 % in light, dark grey 72 % in dark, plus a hairline) inside a still:
+   ```swift
+   // before: .background(.ultraThinMaterial, in: Capsule())
+   .demoGlass(Capsule())
+   .demoGlass(RoundedRectangle(cornerRadius: 18, style: .continuous), material: .regularMaterial)
+   .demoGlass(Circle(), material: .bar, fallback: Palette.sky.opacity(0.25))  // custom still fill
+   // as a view, e.g. inside a ZStack or `.background { }`:
+   DemoMaterial(Capsule(), material: .thinMaterial)
+   ```
+   Subviews that don't receive `ctx` can read `@Environment(\.demoIsStill)` (the snapshot renderer sets it
+   together with `ctx.isStill`), e.g. to skip `.glassEffect(...)` and use `.demoGlass(...)` in a still.
 3. **Interactive in detail.** In the detail page everything should respond to touch. Show a short hint via
    `DemoHint(text: L("Tap the button", "点击按钮"), ctx: ctx)` when the interaction isn't obvious (hidden in previews).
 4. **Parameters.** 1–4 meaningful parameters per effect (spring response/damping, duration, intensity, count, radius,
@@ -144,7 +159,7 @@ the Compare mode on the family page plays all variations side by side.
 5. **Premium feel.** Springs over linear curves, continuous-corner rounded rects, soft shadows, subtle gradients
    from `Palette`, `.monospacedDigit()` for numbers, haptics (`Haptics.tap()` / `.success()`), 60fps-friendly
    (prefer `drawingGroup()` for heavy Canvas / many layers). Light & dark mode must both look good — use
-   `.primary`, `.secondary`, `Palette.surface/elevated`, materials.
+   `.primary`, `.secondary`, `Palette.surface/elevated`, materials (through `.demoGlass`, see rule 2).
 6. **Prompts.** The `prompt` is the star of the app: a precise, professional motion-design description a designer
    or an AI code generator can reproduce the effect from. Write each language natively (don't translate word
    for word). Cover: the element & its resting look → trigger → the motion sequence (what moves, from/to values,

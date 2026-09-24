@@ -325,6 +325,7 @@ struct FamilyBadge: View {
     var body: some View {
         let colors = family.category.gradient
         Image(systemName: family.symbol)
+            .fixedSymbolLocale()
             .font(.system(size: size * 0.44, weight: .semibold))
             .foregroundStyle(.white)
             .symbolEffect(.bounce, value: bounce + pressBounces)
@@ -456,15 +457,21 @@ struct FamilyPreviewStrip: View {
 private struct StripSlot: View {
     let effect: Effect
     let isLit: Bool
+    @Environment(\.appLanguage) private var language
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let layered = PreviewSnapshotCache.canSnapshot(effect)
+        // With no still underneath yet, the live demo shows at once (over the loading shimmer)
+        // instead of waiting behind an empty tile.
+        let hasStill = layered
+            && PreviewSnapshotCache.shared.hasStill(effectID: effect.id, language: language, dark: colorScheme == .dark)
         ZStack {
             PreviewStage(effect: effect, cornerRadius: 14)
                 .environment(\.previewMotionEnabled, layered ? false : isLit)
             if layered && isLit {
                 PreviewStage(effect: effect, cornerRadius: 14)
-                    .modifier(LiveLayerFadeIn())
+                    .modifier(LiveLayerFadeIn(immediate: !hasStill))
                     .environment(\.previewMotionEnabled, true)
                     .transition(.asymmetric(
                         insertion: .identity,
@@ -478,13 +485,21 @@ private struct StripSlot: View {
 /// Keeps a freshly mounted live demo invisible (the still below shows) until it has drawn its first
 /// frames and its autoplay has begun, then fades it in, so a tile never shows a demo's empty
 /// initial state.
+///
+/// `immediate`: nothing is underneath yet (the still has not rendered), so the live layer shows at
+/// once; hiding it would only prolong the empty tile.
 private struct LiveLayerFadeIn: ViewModifier {
-    @State private var shown = false
+    @State private var shown: Bool
+
+    init(immediate: Bool = false) {
+        _shown = State(initialValue: immediate)
+    }
 
     func body(content: Content) -> some View {
         content
             .opacity(shown ? 1 : 0)
             .task {
+                guard !shown else { return }
                 try? await Task.sleep(for: .seconds(0.7))
                 guard !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.4)) { shown = true }
@@ -575,34 +590,20 @@ struct VariationStrip: View {
     var body: some View {
         let position = (variations.firstIndex(where: { $0.id == currentID }) ?? 0) + 1
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(Strings.variations, language)
-                    .font(.subheadline.weight(.semibold))
-                    .accessibilityAddTraits(.isHeader)
-                Text(verbatim: "\(position)/\(variations.count)")
-                    .font(.caption.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .contentTransition(.numericText(value: Double(position)))
-                    .accessibilityLabel(Text(verbatim: Strings.variationPosition(position, of: variations.count, language)))
-                if let onStep {
-                    StepChevron(symbol: "chevron.left", label: Strings.previousVariation) { onStep(-1) }
-                    StepChevron(symbol: "chevron.right", label: Strings.nextVariation) { onStep(1) }
+            // The family link (the way up from an effect) moves to its own line rather than truncate.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    counter(position: position)
+                    Spacer(minLength: 8)
+                    familyLink
                 }
-                Spacer(minLength: 8)
-                RouteLink(route: Route.family(family.id)) {
-                    HStack(spacing: 3) {
-                        Text(family.name, language)
-                        Image(systemName: "chevron.right")
-                            .font(.caption2.weight(.bold))
-                            .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        counter(position: position)
+                        Spacer(minLength: 0)
                     }
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Palette.accent)
-                    .lineLimit(1)
-                    .contentShape(Rectangle())
+                    familyLink
                 }
-                .buttonStyle(PressableCardStyle())
-                .accessibilityHint(Text(Strings.openFamily, language))
             }
             ScrollViewReader { reader in
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -632,6 +633,43 @@ struct VariationStrip: View {
         }
         // Tiny thumbnails stay still (the stage below is the live demo), which also keeps this row cheap.
         .environment(\.previewMotionEnabled, false)
+        // Above the fold on arrival: its stills render ahead of anything else queued.
+        .environment(\.urgentSnapshots, true)
+    }
+
+    /// "Variations 2/5 ‹ ›"
+    @ViewBuilder
+    private func counter(position: Int) -> some View {
+        Text(Strings.variations, language)
+            .font(.subheadline.weight(.semibold))
+            .accessibilityAddTraits(.isHeader)
+        Text(verbatim: "\(position)/\(variations.count)")
+            .font(.caption.weight(.semibold).monospacedDigit())
+            .foregroundStyle(.secondary)
+            .contentTransition(.numericText(value: Double(position)))
+            .accessibilityLabel(Text(verbatim: Strings.variationPosition(position, of: variations.count, language)))
+        if let onStep {
+            StepChevron(symbol: "chevron.left", label: Strings.previousVariation) { onStep(-1) }
+            StepChevron(symbol: "chevron.right", label: Strings.nextVariation) { onStep(1) }
+        }
+    }
+
+    private var familyLink: some View {
+        RouteLink(route: Route.family(family.id)) {
+            HStack(spacing: 3) {
+                Text(family.name, language)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .accessibilityHidden(true)
+            }
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Palette.accent)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableCardStyle())
+        .accessibilityHint(Text(Strings.openFamily, language))
     }
 }
 

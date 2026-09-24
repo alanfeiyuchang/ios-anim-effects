@@ -232,6 +232,15 @@ struct DemoContext {
 
 // MARK: - Effect
 
+extension String {
+    /// Whether the string contains any CJK ideograph (Unified Ideographs and Extension A).
+    var containsCJK: Bool {
+        unicodeScalars.contains { scalar in
+            (0x4E00...0x9FFF).contains(scalar.value) || (0x3400...0x4DBF).contains(scalar.value)
+        }
+    }
+}
+
 struct Effect: Identifiable {
     let id: String
     let category: EffectCategory
@@ -283,6 +292,14 @@ struct Effect: Identifiable {
     func makeDemo(_ context: DemoContext) -> AnyView { builder(context) }
 
     var defaultParams: ParamValues { ParamValues(params) }
+
+    /// The tags written in `language` (`tags` mixes both languages so search works in either).
+    /// Falls back to every tag when none is written in that language.
+    func displayTags(_ language: AppLanguage) -> [String] {
+        let wantsCJK = language == .zh
+        let matching = tags.filter { $0.containsCJK == wantsCJK }
+        return matching.isEmpty ? tags : matching
+    }
 
     /// The prompt plus a machine-precise line describing the current parameter values.
     func fullPrompt(_ language: AppLanguage, params values: ParamValues) -> String {

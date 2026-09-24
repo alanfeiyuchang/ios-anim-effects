@@ -121,9 +121,18 @@ struct EffectDetailView: View {
             } action: { _, isPastTitle in
                 withAnimation(.easeInOut(duration: 0.2)) { showsNavTitle = isPastTitle }
             }
-            .onAppear {
-                if let anchor = LaunchOptions.detailAnchor {
-                    reader.scrollTo(anchor, anchor: .top)
+            .task {
+                // `-ML_anchor <id>` (screenshots): scrolling in the push's own transaction is dropped
+                // because the content has not been laid out yet, so jump once the page has settled,
+                // and once more after the stage has fitted itself to the fold (which moves everything
+                // below it).
+                guard let anchor = LaunchOptions.takeDetailAnchor() else { return }
+                for delay in [350, 900] {
+                    try? await Task.sleep(for: .milliseconds(delay))
+                    guard !Task.isCancelled else { return }
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { reader.scrollTo(anchor, anchor: .top) }
                 }
             }
         }
@@ -159,7 +168,8 @@ struct EffectDetailView: View {
         }
         .onAppear {
             // Let the stage and the page entrance have the main thread before thumbnails rasterise.
-            SnapshotGate.hold(for: .milliseconds(900))
+            // Kept short: the Variations row's small stills sit above the fold and should not wait long.
+            SnapshotGate.hold(for: .milliseconds(450))
             Haptics.quiet(for: 2.5)
             recents.record(effect.id)
         }
@@ -180,6 +190,7 @@ struct EffectDetailView: View {
                             .foregroundStyle(.primary)
                     } icon: {
                         Image(systemName: effect.category.symbol)
+                            .fixedSymbolLocale()
                             .foregroundStyle(LinearGradient(colors: effect.category.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
                     }
                     .font(.caption.weight(.semibold))
@@ -400,7 +411,8 @@ struct EffectDetailView: View {
     private var tagsCard: some View {
         DetailSection(title: Strings.tags(language), symbol: "tag") {
             FlowLayout(spacing: 6) {
-                ForEach(effect.tags, id: \.self) { tag in
+                // Only the tags written in the reading language (all tags still feed search).
+                ForEach(effect.displayTags(language), id: \.self) { tag in
                     Button {
                         Haptics.selection()
                         navigator.search(tag)
@@ -559,6 +571,7 @@ private struct DetailSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 Image(systemName: symbol)
+                    .fixedSymbolLocale()
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Palette.accent)
                     .frame(width: 30, height: 30)

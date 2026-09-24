@@ -461,6 +461,8 @@ struct EffectGrid: View {
                 .entrance(entered, delay: ShellMotion.stagger(index, step: 0.05, cap: 8), distance: 22, scale: 0.95, blur: 0)
                 .scrollReveal(blur: 0)
                 .transition(swap)
+                // The first two rows' stills render ahead of the rest.
+                .environment(\.urgentSnapshots, index < 4)
             }
         }
         .onAppear {
@@ -526,6 +528,7 @@ struct Chip: View {
             HStack(spacing: 5) {
                 if let symbol {
                     Image(systemName: symbol)
+                        .fixedSymbolLocale()
                         .font(.caption.weight(.semibold))
                         .symbolEffect(.bounce, value: bounces)
                 }

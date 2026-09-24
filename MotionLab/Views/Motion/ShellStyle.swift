@@ -246,3 +246,26 @@ extension View {
             .pausesSnapshotsWhileScrolling()
     }
 }
+
+// MARK: - Symbols
+
+extension View {
+    /// Draws SF Symbols with their base (English) artwork. Some symbols localize (e.g. `textformat`
+    /// becomes "格式" under zh-Hans), which changes their meaning and repeats the label next to them.
+    /// Apply to an `Image(systemName:)` only; text must keep the app's locale.
+    func fixedSymbolLocale() -> some View {
+        environment(\.locale, Locale(identifier: "en"))
+    }
+}
+
+// MARK: - Dim press
+
+/// Press feedback for full-width rows and headers that must not change size (e.g. a section header
+/// pinned over scrolling content): a quick dim, no scale.
+struct PressDimStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.6 : 1)
+            .animation(configuration.isPressed ? ShellMotion.pressDown : ShellMotion.pressUp, value: configuration.isPressed)
+    }
+}

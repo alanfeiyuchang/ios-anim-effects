@@ -374,12 +374,14 @@ private struct TrailerBrowserWindow: View {
             Rectangle()
                 .fill(Color.white.opacity(0.08))
                 .frame(height: 0.5)
+            // The page is taller than the window: pin it under the toolbar and clip the bottom, so its
+            // height never pushes the toolbar (and the URL) out of the top of the window.
             TrailerWebPage(t: t)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: size.width, height: size.height - 38.5, alignment: .top)
                 .clipped()
         }
         .opacity(contentOpacity)
-        .frame(width: size.width, height: size.height)
+        .frame(width: size.width, height: size.height, alignment: .top)
         .background(TrailerGlass(shape: shape, glow: 0.2, shadowOpacity: 0.6))
         .clipShape(shape)
         .overlay(shape.strokeBorder(TrailerStyle.rim, lineWidth: 0.75))

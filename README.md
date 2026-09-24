@@ -1,4 +1,4 @@
-# Motion Lexicon · 动效词典
+# Motionary – 动效词典 · iOS Motion Dictionary
 
 A native SwiftUI iOS app that works like a **dictionary of premium iOS motion effects**.
 Every entry has a live preview, an interactive demo, tunable parameters, notes on how it's built,

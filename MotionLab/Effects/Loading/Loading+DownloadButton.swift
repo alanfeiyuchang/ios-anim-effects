@@ -50,7 +50,7 @@ private struct DownloadButtonDemo: View {
             HStack(spacing: 14) {
                 appIcon
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(ctx.language == .zh ? "动效词典" : "Motion Lexicon")
+                    Text(ctx.language == .zh ? "Motionary" : "Motionary")
                         .font(.headline)
                     Text(ctx.language == .zh ? "设计工具" : "Design Tools")
                         .font(.subheadline)

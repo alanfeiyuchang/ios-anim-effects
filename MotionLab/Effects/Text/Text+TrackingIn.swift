@@ -31,7 +31,7 @@ private struct TrackingInDemo: View {
     let ctx: DemoContext
     @State private var shown = true
 
-    private var word: [String] { (ctx.language == .zh ? "动效词典" : "LEXICON").map { String($0) } }
+    private var word: [String] { (ctx.language == .zh ? "动效词典" : "MOTIONARY").map { String($0) } }
     private var tagline: [String] { (ctx.language == .zh ? "让界面动起来" : "MOTION, DEFINED").map { String($0) } }
 
     var body: some View {

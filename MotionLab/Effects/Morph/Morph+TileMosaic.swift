@@ -127,7 +127,7 @@ private struct MosaicArtView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(art.title, language)
                     .font(.title2.weight(.heavy))
-                Text(L("Motion Lexicon · EP", "动效词典 · EP"), language)
+                Text(L("Motionary · EP", "Motionary · EP"), language)
                     .font(.caption.weight(.semibold))
                     .opacity(0.75)
             }

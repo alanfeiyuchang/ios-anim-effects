@@ -417,7 +417,7 @@ private struct CRTScreen: View {
         L("> BOOT MOTION.LEXICON", "> 启动 MOTION.LEXICON"),
         L("> LOADING SPRINGS…  OK", "> 载入弹簧……  完成"),
         L("> LOADING SHADERS… OK", "> 载入着色器…… 完成"),
-        L("> MOTION LEXICON READY_", "> 动效词典 就绪_"),
+        L("> MOTIONARY READY_", "> MOTIONARY 就绪_"),
     ]
 
     var body: some View {

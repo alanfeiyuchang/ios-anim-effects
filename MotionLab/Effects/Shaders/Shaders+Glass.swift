@@ -159,7 +159,7 @@ private struct GlassmorphismDemo: View {
             Spacer()
             Text(verbatim: "•••• 2046")
                 .font(.system(size: 22, weight: .semibold, design: .monospaced))
-            Text(ctx.language == .zh ? "动效词典 会员卡" : "Motion Lexicon Member")
+            Text(ctx.language == .zh ? "Motionary 会员卡" : "Motionary Member")
                 .font(.footnote.weight(.medium))
                 .opacity(0.8)
         }

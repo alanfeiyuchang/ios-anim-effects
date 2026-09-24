@@ -167,7 +167,7 @@ private struct HeroExpanded: View {
             HeroArtwork(story: story, language: language, expanded: true)
                 .frame(height: 160)
             VStack(alignment: .leading, spacing: 10) {
-                Text(language == .zh ? "阅读 3 分钟 · 动效词典编辑部" : "3 min read · Motion Lexicon Editors")
+                Text(language == .zh ? "阅读 3 分钟 · Motionary 编辑部" : "3 min read · Motionary Editors")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .modifier(HeroBodyReveal(visible: showBody, index: 0))

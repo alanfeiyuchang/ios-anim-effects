@@ -120,7 +120,7 @@ private struct InputExpandingSearchDemo: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 0) {
-                Text(L("Motion Lexicon", "动效词典"), ctx.language)
+                Text(L("Motionary", "Motionary"), ctx.language)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(L("Library", "资源库"), ctx.language)

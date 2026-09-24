@@ -1,6 +1,6 @@
 # Effect authoring guide
 
-Every entry in Motion Lexicon is one `Effect` value plus a private SwiftUI demo view.
+Every entry in Motionary is one `Effect` value plus a private SwiftUI demo view.
 Read `MotionLab/Core/Effect.swift`, `MotionLab/Core/DemoKit.swift` and `MotionLab/Core/Localization.swift` first.
 
 ## Toolchain constraints

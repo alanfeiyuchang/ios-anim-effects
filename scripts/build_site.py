@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds the Motion Lexicon documentation site.
+"""Builds the Motionary documentation site.
 
 Input:  a catalog JSON exported by the app (`-ML_exportCatalog YES`) and a folder of per-effect
         video loops (<effect-id>.mp4) + posters (<effect-id>.jpg) recorded in the simulator.
@@ -74,7 +74,7 @@ TEMPLATE = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>动效词典 · Motion Lexicon</title>
+<title>Motionary – 动效词典</title>
 <meta name="description" content="A living dictionary of premium iOS motion — every effect with a live loop, parameters and a bilingual prompt.">
 <style>
 :root{
@@ -183,15 +183,15 @@ footer{padding:40px 0 60px;color:var(--muted);font-size:13px;text-align:center}
 <script>
 const DATA = __DATA__;
 const I18N = {
-  zh:{title:"动效词典",subtitle:"高级 iOS 动效活字典：每个动效都附实时录制的动画循环、可调参数与中英专业提示词。",effects:"个动效",categories:"个分类",families:"个家族",
+  zh:{title:"Motionary",subtitle:"动效词典 · 可上手玩的 iOS 高级动效：每个动效都附实时录制的动画循环、可调参数与中英专业提示词。",effects:"个动效",categories:"个分类",families:"个家族",
       search:"搜索动效、API、关键词…",all:"全部",prompt:"提示词",copy:"复制提示词",copied:"已复制",impl:"实现方式",apis:"关键 API",tags:"标签",params:"参数",
       param:"参数",def:"默认值",range:"范围",variants:"同家族变体",none:"暂无录像",noResults:"没有匹配的动效",requires:"需要",close:"关闭",
-      foot:"由 Motion Lexicon App 自动生成 · 动画均为 iOS 模拟器实录",
+      foot:"由 Motionary App 自动生成 · 动画均为 iOS 模拟器实录",
       live:"▶ 在线交互试玩",liveApp:"▶ 在线试玩完整 App",video:"返回录像",liveNote:"真实 App 运行在云端 iOS 模拟器中（Appetize.io），可直接点击、拖动。启动约需数秒。"},
-  en:{title:"Motion Lexicon",subtitle:"A living dictionary of premium iOS motion — every effect with a real recorded loop, tunable parameters and a native bilingual prompt.",effects:"effects",categories:"categories",families:"families",
+  en:{title:"Motionary",subtitle:"iOS Motion Dictionary — every effect with a real recorded loop, tunable parameters and a native bilingual prompt.",effects:"effects",categories:"categories",families:"families",
       search:"Search effects, APIs, keywords…",all:"All",prompt:"Prompt",copy:"Copy prompt",copied:"Copied",impl:"Implementation",apis:"Key APIs",tags:"Tags",params:"Parameters",
       param:"Parameter",def:"Default",range:"Range",variants:"Variations in this family",none:"No recording yet",noResults:"No matching effects",requires:"Requires",close:"Close",
-      foot:"Generated from the Motion Lexicon app · every animation recorded in the iOS Simulator",
+      foot:"Generated from the Motionary app · every animation recorded in the iOS Simulator",
       live:"▶ Try it live",liveApp:"▶ Try the full app live",video:"Back to video",liveNote:"The real app running in a cloud iOS Simulator (Appetize.io) — tap and drag as on a phone. It takes a few seconds to boot."}
 };
 let lang = localStorage.getItem("ml.lang") || ((navigator.language||"").toLowerCase().startsWith("zh") ? "zh" : "en");
@@ -220,7 +220,7 @@ function liveHTML(link){
     language: lang === "zh" ? "zh-Hans" : "en", locale: lang === "zh" ? "zh_CN" : "en_US"});
   if (link) q.set("launchUrl", link);
   return `<div class="live"><iframe src="https://appetize.io/embed/${encodeURIComponent(DATA.appetize)}?${q}"
-    allow="clipboard-write" title="Motion Lexicon"></iframe></div><p style="color:var(--muted);font-size:12px">${t("liveNote")}</p>`;
+    allow="clipboard-write" title="Motionary"></iframe></div><p style="color:var(--muted);font-size:12px">${t("liveNote")}</p>`;
 }
 function openApp(){
   const d = $("#dlg");
@@ -236,7 +236,7 @@ function cardHTML(e){
 }
 function render(){
   document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
-  document.title = lang === "zh" ? "动效词典 · Motion Lexicon" : "Motion Lexicon · 动效词典";
+  document.title = lang === "zh" ? "Motionary – 动效词典" : "Motionary – iOS Motion Dictionary";
   document.querySelectorAll("[data-i18n]").forEach(n => n.textContent = t(n.dataset.i18n));
   $("#q").placeholder = t("search");
   $("#tryApp").hidden = !DATA.appetize; $("#tryApp").textContent = t("liveApp");

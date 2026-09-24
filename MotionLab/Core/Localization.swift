@@ -87,8 +87,8 @@ extension Text {
 
 /// UI chrome strings.
 enum Strings {
-    static let appTitle = L("Motion Lexicon", "动效词典")
-    static let appSubtitle = L("A living dictionary of premium iOS motion", "高级 iOS 动效活字典")
+    static let appTitle = L("Motionary", "Motionary")
+    static let appSubtitle = L("iOS Motion Dictionary · premium effects you can play with", "动效词典 · 可上手玩的 iOS 高级动效")
     static let browse = L("Browse", "浏览")
     static let search = L("Search", "搜索")
     static let favorites = L("Favorites", "收藏")

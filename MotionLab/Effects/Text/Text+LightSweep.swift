@@ -40,7 +40,7 @@ private struct LightSweepDemo: View {
                 glow: ctx.bool("glow"),
                 text: L("Designed\nto move you.", "为触动\n而设计。")(ctx.language)
             )
-            Text(L("Motion Lexicon · Autumn collection", "动效词典 · 秋季合集"), ctx.language)
+            Text(L("Motionary · Autumn collection", "Motionary · 秋季合集"), ctx.language)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
                 .opacity(captionShown ? 1 : 0)

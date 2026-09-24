@@ -506,7 +506,7 @@ private struct TrailerWebPage: View {
     }
 }
 
-// MARK: - 57–60 s · End card: app icon + 动效词典 · Motion Lexicon
+// MARK: - 57–60 s · End card: app icon + Motionary – 动效词典
 
 struct TrailerEndScene: View {
     let t: Double
@@ -532,19 +532,19 @@ struct TrailerEndScene: View {
                 .shadow(color: Palette.ember.opacity(0.45 * M.clamp(condense)), radius: 34, x: 0, y: 10)
                 .opacity(M.progress(condense, 0.25, 0.4))
                 .position(x: M.mix(TrailerWebScene.windowCenter.x, Self.iconCenter.x, condense), y: M.mix(TrailerWebScene.windowCenter.y, Self.iconCenter.y, condense) + float)
-            Text(verbatim: "动效词典")
-                .font(.system(size: 44, weight: .heavy))
+            Text(verbatim: "Motionary")
+                .font(.system(size: 44, weight: .heavy, design: .rounded))
                 .foregroundStyle(Color.white)
                 .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 57.75, 0.8)))
                 .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 4)
                 .position(x: 195, y: 300)
-            Text(verbatim: "Motion Lexicon")
-                .font(.system(size: 20, weight: .semibold))
-                .tracking(3)
+            Text(verbatim: "动效词典 · iOS Motion Dictionary")
+                .font(.system(size: 17, weight: .semibold))
+                .tracking(1)
                 .foregroundStyle(TrailerStyle.emberText)
                 .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 58.05, 0.8)))
                 .position(x: 195, y: 344)
-            Text(verbatim: "\(TrailerData.effectCount) 个 iOS 高级动效 · 即看即用")
+            Text(verbatim: "\(TrailerData.effectCount) 个可上手玩的 iOS 高级动效")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.55))
                 .opacity(M.easeOut(M.progress(t, 58.4, 0.7)))

@@ -98,7 +98,7 @@ private struct RoseBloomDemo: View {
                 .padding(.bottom, 2)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 values = Array(repeating: 0, count: 12)
                 turned = false
             }, then: {

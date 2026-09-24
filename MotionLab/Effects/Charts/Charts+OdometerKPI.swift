@@ -81,7 +81,7 @@ private struct OdometerKPIDemo: View {
                 .padding(.bottom, 8)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 drawn = 0
             }, then: {
                 refresh(haptic: false)

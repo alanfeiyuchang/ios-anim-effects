@@ -84,7 +84,7 @@ private struct LiquidBarsDemo: View {
                 .padding(.bottom, 6)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 levels = Array(repeating: 0, count: 7)
             }, then: {
                 refill(haptic: false)

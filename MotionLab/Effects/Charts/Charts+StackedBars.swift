@@ -181,7 +181,7 @@ private struct StackedBarsDemo: View {
     private func rise() {
         riseGeneration += 1
         let generation = riseGeneration
-        ChartEntrance.replay(reset: {
+        ChartEntrance.replay(isStill: ctx.isStill, reset: {
             grow = Array(repeating: 0, count: stackData.count)
         }, then: {
             guard generation == riseGeneration else { return }

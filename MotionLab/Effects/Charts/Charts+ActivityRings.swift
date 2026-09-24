@@ -72,7 +72,7 @@ private struct ActivityRingsDemo: View {
         .onTapGesture { play() }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 progress = [0, 0, 0]
             }, then: {
                 play(haptic: false)

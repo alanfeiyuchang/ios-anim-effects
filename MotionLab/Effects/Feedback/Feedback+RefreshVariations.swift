@@ -25,11 +25,37 @@ private struct RefreshUserDrivenKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+/// When the current (or last) refresh started and ended. Loading loops run on the time since the start, so
+/// they begin from their resting pose instead of jumping to wherever absolute time puts them.
+private struct RefreshClock: Equatable {
+    var start: Date = .distantPast
+    var end: Date = .distantPast
+}
+
+private struct RefreshClockKey: EnvironmentKey {
+    static let defaultValue = RefreshClock()
+}
+
 private extension EnvironmentValues {
     var refreshUserDriven: Bool {
         get { self[RefreshUserDrivenKey.self] }
         set { self[RefreshUserDrivenKey.self] = newValue }
     }
+
+    var refreshClock: RefreshClock {
+        get { self[RefreshClockKey.self] }
+        set { self[RefreshClockKey.self] = newValue }
+    }
+}
+
+/// Seconds since the refresh started, clamped at zero.
+private func refreshElapsed(_ date: Date, clock: RefreshClock) -> Double {
+    max(date.timeIntervalSince(clock.start), 0)
+}
+
+/// 0 → 1 over the first quarter second of a refresh, so loops fade their motion in.
+private func refreshRamp(_ elapsed: Double) -> Double {
+    min(elapsed / 0.25, 1)
 }
 
 /// A list that scrolls on its own, with a pull area on top: the pull is the list's native top overscroll (see
@@ -46,6 +72,7 @@ private struct RefreshVarHost<Indicator: View>: View {
     /// Extra shift of the rows: the scripted pull of previews and the hold height while refreshing.
     @State private var shift: CGFloat = 0
     @State private var refreshing = false
+    @State private var clock = RefreshClock()
     @State private var armed = false
     @State private var items: [Int] = [3, 2, 1, 0]
     @State private var nextItem = 4
@@ -72,6 +99,7 @@ private struct RefreshVarHost<Indicator: View>: View {
                     .frame(width: 300, height: max(pull, 1))
                     .clipped()
                     .environment(\.refreshUserDriven, userDriven && live)
+                    .environment(\.refreshClock, clock)
                 // The list scrolls on its own: its top overscroll is the pull, like a native refresh control.
                 FeedbackRefreshList(live: live, hold: shift, onPull: pullChanged, onRelease: release) {
                     list
@@ -128,6 +156,7 @@ private struct RefreshVarHost<Indicator: View>: View {
             armed = false
             return
         }
+        clock.start = Date()
         // The native bounce removes the overscroll while the shift grows to the hold height.
         withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
             refreshing = true
@@ -146,6 +175,7 @@ private struct RefreshVarHost<Indicator: View>: View {
                 if items.count > 4 { items.removeLast() }
                 shift = 0
                 refreshing = false
+                clock.end = Date()
             }
             armed = false
             nextItem += 1
@@ -336,7 +366,8 @@ extension Effect {
         ]
     ) { ctx in
         RefreshVarHost(ctx: ctx) { progress, pull, refreshing in
-            SunriseIndicator(progress: progress, pull: pull, refreshing: refreshing, rays: max(ctx.int("rays"), 3), preview: ctx.isPreview)
+            // The sun stays fully risen while the list holds, instead of sagging to the hold height's 0.875.
+            SunriseIndicator(progress: refreshing ? max(progress, 1) : progress, pull: pull, refreshing: refreshing, rays: max(ctx.int("rays"), 3), preview: ctx.isPreview)
         }
     }
 }
@@ -347,6 +378,7 @@ private struct SunriseIndicator: View {
     let refreshing: Bool
     let rays: Int
     let preview: Bool
+    @Environment(\.refreshClock) private var clock
 
     var body: some View {
         let p: CGFloat = min(max(progress, 0), 1)
@@ -354,10 +386,7 @@ private struct SunriseIndicator: View {
             LinearGradient(colors: [Palette.sky.opacity(0.55), Palette.amber.opacity(0.55)], startPoint: .top, endPoint: .bottom)
                 .opacity(Double(p))
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !refreshing)) { timeline in
-                let t: Double = timeline.date.timeIntervalSinceReferenceDate
-                let spin: Double = refreshing ? (t / 2).truncatingRemainder(dividingBy: 1) * 360 : 0
-                let pulse: CGFloat = refreshing ? 0.8 + 0.2 * CGFloat(sin(t * 5)) : 1
-                sun(p: p, spin: spin, pulse: pulse)
+                sun(p: p, spin: spin(at: timeline.date), pulse: pulse(at: timeline.date))
             }
             .offset(y: 30 - 40 * p)
             Rectangle()
@@ -370,8 +399,32 @@ private struct SunriseIndicator: View {
         }
     }
 
+    /// Angle between two rays: turning the ring by a multiple of it looks identical.
+    private var pitch: Double { 360 / Double(max(rays, 1)) }
+
+    /// Spin since the refresh started (one turn per 2 s, from 0, so it never jumps). Once the refresh ends the
+    /// ring rests on the next whole ray pitch ahead, which looks the same as no spin and is reached by turning
+    /// forward (see the scoped animation in `sun`).
+    private func spin(at date: Date) -> Double {
+        if refreshing {
+            return refreshElapsed(date, clock: clock) / 2 * 360
+        }
+        let ran: Double = max(clock.end.timeIntervalSince(clock.start), 0) / 2 * 360
+        return (ran / pitch).rounded(.up) * pitch
+    }
+
+    /// Ray-length pulse, ramped in over the first 0.25 s so the rays don't snap shorter as the refresh starts.
+    private func pulse(at date: Date) -> CGFloat {
+        guard refreshing else { return 1 }
+        let e: Double = refreshElapsed(date, clock: clock)
+        return CGFloat(1 - 0.2 * refreshRamp(e) * (0.5 - 0.5 * sin(e * 5)))
+    }
+
     private func sun(p: CGFloat, spin: Double, pulse: CGFloat) -> some View {
         let length: CGFloat = (2 + 8 * p) * pulse
+        // Starting a refresh resets the spin from a whole pitch to 0 (no visible change), so it must not animate;
+        // ending one turns the ring forward to the next pitch with the list's spring.
+        let spinAnimation: Animation? = refreshing ? nil : .spring(response: 0.5, dampingFraction: 0.84)
         return ZStack {
             ZStack {
                 ForEach(0..<rays, id: \.self) { index in
@@ -382,7 +435,10 @@ private struct SunriseIndicator: View {
                         .rotationEffect(.degrees(Double(index) / Double(rays) * 360))
                 }
             }
-            .rotationEffect(.degrees(Double(p) * 90 + spin))
+            .animation(spinAnimation) { content in
+                content.rotationEffect(.degrees(spin))
+            }
+            .rotationEffect(.degrees(Double(p) * 90))
             Circle()
                 .fill(LinearGradient(colors: [Palette.amber, Palette.coral], startPoint: .top, endPoint: .bottom))
                 .frame(width: 26, height: 26)
@@ -434,6 +490,7 @@ private struct LetterRiseIndicator: View {
     let refreshing: Bool
     let rise: CGFloat
     let preview: Bool
+    @Environment(\.refreshClock) private var clock
 
     var body: some View {
         let letters: [String] = text.map { String($0) }
@@ -442,10 +499,10 @@ private struct LetterRiseIndicator: View {
             ? AnyShapeStyle(LinearGradient(colors: [Palette.indigo, Palette.pink], startPoint: .leading, endPoint: .trailing))
             : AnyShapeStyle(Color.secondary)
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: preview), paused: !refreshing)) { timeline in
-            let t: Double = timeline.date.timeIntervalSinceReferenceDate
+            let e: Double = refreshElapsed(timeline.date, clock: clock)
             HStack(spacing: 0) {
                 ForEach(0..<letters.count, id: \.self) { index in
-                    letter(letters[index], index: index, count: letters.count, t: t)
+                    letter(letters[index], index: index, count: letters.count, e: e)
                 }
             }
             .foregroundStyle(style)
@@ -454,10 +511,11 @@ private struct LetterRiseIndicator: View {
         .animation(.easeInOut(duration: 0.2), value: armed)
     }
 
-    private func letter(_ character: String, index: Int, count: Int, t: Double) -> some View {
+    /// `e` is the time since the refresh started; the wave's amplitude ramps in over 0.25 s so no letter jumps.
+    private func letter(_ character: String, index: Int, count: Int, e: Double) -> some View {
         let start: CGFloat = CGFloat(index) / CGFloat(max(count, 1)) * 0.75
         let local: CGFloat = refreshing ? 1 : min(max((progress - start) / 0.25, 0), 1)
-        let wave: CGFloat = refreshing ? -4 * CGFloat(sin(t * 7 - Double(index) * 0.45)) : 0
+        let wave: CGFloat = refreshing ? -4 * CGFloat(sin(e * 7 - Double(index) * 0.45) * refreshRamp(e)) : 0
         return Text(character)
             .font(.system(size: 15, weight: .heavy, design: .rounded))
             .tracking(3)
@@ -503,13 +561,15 @@ private struct DotsRefreshIndicator: View {
     let hop: CGFloat
     let live: Bool
     @Environment(\.refreshUserDriven) private var userDriven
+    @Environment(\.refreshClock) private var clock
 
     private let colors: [Color] = [Palette.indigo, Palette.violet, Palette.pink]
 
     var body: some View {
         let lit: Int = refreshing ? 3 : min(Int(progress * 3 + 0.0001), 3)
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: !live), paused: !refreshing)) { timeline in
-            let t: Double = timeline.date.timeIntervalSinceReferenceDate / 0.6
+            // Cycles since the refresh started: dot 0 lifts off from sin(0) = 0, the others wait their turn.
+            let t: Double = refreshElapsed(timeline.date, clock: clock) / 0.6
             HStack(spacing: 8) {
                 ForEach(0..<3, id: \.self) { index in
                     dot(index, lit: index < lit, t: t)

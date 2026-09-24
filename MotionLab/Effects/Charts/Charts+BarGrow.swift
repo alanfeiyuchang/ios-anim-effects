@@ -63,7 +63,7 @@ private struct BarGrowDemo: View {
                 .padding(.bottom, 8)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 for index in bars.indices { bars[index].shown = false }
             }, then: {
                 play()

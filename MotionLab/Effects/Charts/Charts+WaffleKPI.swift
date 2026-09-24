@@ -77,7 +77,7 @@ private struct WaffleKPIDemo: View {
                 .padding(.bottom, 2)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 percent = 0
                 counting = false
                 generation += 1

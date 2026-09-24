@@ -130,7 +130,7 @@ private struct LineDrawDemo: View {
                 .padding(.bottom, 8)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 progress = 0
             }, then: {
                 draw()

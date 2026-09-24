@@ -48,7 +48,7 @@ private struct GaugeDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 value = 0
             }, then: {
                 set(0.74, haptic: false)

@@ -73,7 +73,7 @@ private struct DonutDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 grow = Array(repeating: 0, count: donutSlices.count)
                 intro = 0
             }, then: {

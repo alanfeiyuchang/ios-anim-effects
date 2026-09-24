@@ -34,12 +34,17 @@ enum ChartEffects {
     ]
 }
 
-/// Chart demos seed their `@State` with settled data, so a still snapshot (which never runs `onAppear`)
-/// shows a finished chart. On appear they snap back to empty without animation and replay their
-/// entrance a few frames later, so the reset and the animated fill never coalesce into one no-op update.
+/// Chart demos seed their `@State` with settled data so a still snapshot shows a finished chart. On
+/// appear they snap back to empty without animation and replay their entrance a few frames later, so
+/// the reset and the animated fill never coalesce into one no-op update.
+///
+/// The still renderer (`ImageRenderer` in `PreviewStill.render`) does run `onAppear` but never waits
+/// for the delayed replay, so pass `ctx.isStill`: when it is `true` this does nothing and the still
+/// keeps the settled seed instead of capturing empty axes.
 enum ChartEntrance {
     @MainActor
-    static func replay(reset: () -> Void, then play: @escaping @MainActor () -> Void) {
+    static func replay(isStill: Bool, reset: () -> Void, then play: @escaping @MainActor () -> Void) {
+        guard !isStill else { return }
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant, reset)

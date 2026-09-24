@@ -64,7 +64,7 @@ private struct SegmentedGaugeDemo: View {
                 .padding(.bottom, 8)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 value = 0
                 counting = false
                 generation += 1

@@ -78,7 +78,7 @@ private struct BulletKPIDemo: View {
                 .padding(.bottom, 10)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 measures = [0, 0, 0]
                 finals = [0, 0, 0]
             }, then: {

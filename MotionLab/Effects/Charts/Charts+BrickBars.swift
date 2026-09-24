@@ -83,7 +83,7 @@ private struct BrickBarsDemo: View {
                 .padding(.bottom, 6)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 shown = false
             }, then: {
                 play(haptic: false)

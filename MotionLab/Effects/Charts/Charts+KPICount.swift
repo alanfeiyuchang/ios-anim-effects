@@ -108,7 +108,7 @@ private struct KPICountDemo: View {
                 .padding(.bottom, 10)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 values = [0, 0, 0, 0]
                 shown = false
             }, then: {

@@ -87,7 +87,7 @@ private struct HeatmapDemo: View {
                 .padding(.bottom, 8)
         }
         .onAppear {
-            ChartEntrance.replay(reset: {
+            ChartEntrance.replay(isStill: ctx.isStill, reset: {
                 revealed = false
             }, then: {
                 ripple(column: 0, row: 0, refresh: false)

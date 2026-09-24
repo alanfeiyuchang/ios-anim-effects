@@ -186,6 +186,9 @@ private struct NewtonsCradleDemo: View {
     /// Resets on system cancellation too, so a stolen touch never leaves a ball hanging mid-air.
     @GestureState private var pressing = false
 
+    /// Stage coordinates for the drag (the model's own space).
+    private static let space = "cradleStage"
+
     var body: some View {
         let count = ctx.int("balls").clamped(to: 3...7)
         let length = ctx["length"]
@@ -194,11 +197,13 @@ private struct NewtonsCradleDemo: View {
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
             let _ = model.configure(count: count)
             let _ = model.step(to: timeline.date, length: length, restitution: restitution, haptics: haptics)
+            // Only discs around the live balls take touches, so swipes elsewhere still scroll the page.
             CradleCanvas(theta: model.theta, length: CGFloat(length))
+                .contentShape(CradleHitArea(centers: ballCenters(count: count, length: length), radius: CradleMetrics.diameter / 2 + 18))
+                .gesture(dragGesture(count: count, length: length))
         }
         .frame(width: CradleMetrics.stage.width, height: CradleMetrics.stage.height)
-        .contentShape(Rectangle())
-        .gesture(dragGesture(count: count, length: length))
+        .coordinateSpace(.named(NewtonsCradleDemo.space))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
             DemoHint(text: L("Pull an end ball aside and let go", "把一端的球拉开再松手"), ctx: ctx)
@@ -242,7 +247,7 @@ private struct NewtonsCradleDemo: View {
     }
 
     private func dragGesture(count: Int, length: Double) -> some Gesture {
-        DragGesture(minimumDistance: 0)
+        DragGesture(minimumDistance: 0, coordinateSpace: .named(NewtonsCradleDemo.space))
             .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if grabbed == nil {
@@ -267,20 +272,43 @@ private struct NewtonsCradleDemo: View {
             }
     }
 
+    /// Live ball centres in stage coordinates.
+    private func ballCenters(count: Int, length: Double) -> [CGPoint] {
+        (0..<min(count, model.theta.count)).map { index in
+            let angle = model.theta[index]
+            return CGPoint(
+                x: CradleMetrics.pivotX(index, count: count) + CGFloat(length * sin(angle)),
+                y: CradleMetrics.pivotY + CGFloat(length * cos(angle))
+            )
+        }
+    }
+
     private func ballIndex(at point: CGPoint, count: Int, length: Double) -> Int? {
         var best: Int?
         var bestDistance = CGFloat.greatestFiniteMagnitude
-        for index in 0..<min(count, model.theta.count) {
-            let angle = model.theta[index]
-            let cx = CradleMetrics.pivotX(index, count: count) + CGFloat(length * sin(angle))
-            let cy = CradleMetrics.pivotY + CGFloat(length * cos(angle))
-            let d = ((point.x - cx) * (point.x - cx) + (point.y - cy) * (point.y - cy)).squareRoot()
+        for (index, center) in ballCenters(count: count, length: length).enumerated() {
+            let d = ((point.x - center.x) * (point.x - center.x) + (point.y - center.y) * (point.y - center.y)).squareRoot()
             if d < bestDistance {
                 bestDistance = d
                 best = index
             }
         }
-        return bestDistance < CradleMetrics.diameter / 2 + 18 ? best : nil
+        // A little wider than the hit discs: a ball may have swung on since it was drawn.
+        return bestDistance < CradleMetrics.diameter / 2 + 30 ? best : nil
+    }
+}
+
+/// The touch target: one disc per ball (finger-sized margin included), unioned.
+private struct CradleHitArea: Shape {
+    let centers: [CGPoint]
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        for center in centers {
+            path.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+        }
+        return path
     }
 }
 

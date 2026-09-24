@@ -55,6 +55,9 @@ private struct ArcSlideDemo: View {
     @State private var dragging = false
     @State private var pulse = false
     @State private var dragStart: CGFloat?
+    /// The auto-relock came due while the finger was still down; it runs on release instead,
+    /// so the knob is never reset out from under a held drag.
+    @State private var relockPending = false
     /// The scripted slide, cancelled on the first real touch.
     @State private var script: Task<Void, Never>?
     /// Resets on system cancellation too, so a stolen touch never leaves the knob mid-arc.
@@ -164,6 +167,10 @@ private struct ArcSlideDemo: View {
         guard dragStart != nil else { return }
         dragStart = nil
         withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = false }
+        if relockPending {
+            relock()
+            return
+        }
         guard !unlocked else { return }
         withAnimation(.spring(response: 0.6, dampingFraction: ctx["damping"])) { progress = 0 }
     }
@@ -185,13 +192,23 @@ private struct ArcSlideDemo: View {
         if haptic && !ctx.isPreview { Haptics.success() }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.6))
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
-                unlocked = false
-                progress = 0
-                dragging = false
+            // Still holding the knob at the end: wait for the lift (endHold) instead.
+            if dragStart != nil {
+                relockPending = true
+                return
             }
-            pulse = false
+            relock()
         }
+    }
+
+    private func relock() {
+        relockPending = false
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
+            unlocked = false
+            progress = 0
+            dragging = false
+        }
+        pulse = false
     }
 
     private func simulate() {

@@ -11,8 +11,8 @@ extension Effect {
             "十二个应用图块依次离开网格，旋入一个圆环，并转向朝外。"
         ),
         prompt: L(
-            "Twelve 48 pt gradient app tiles sit in a 4 × 3 grid on 64 pt centres. A tap sends them into a 110 pt-radius ring, one after another in reading order, ≈30 ms apart, each on its own spring (response ≈0.55 s, damping 0.72) so the ring assembles like a clock being dealt. While travelling, every tile rotates to point away from the centre, and a count label (\"12 apps\") scales up from 60% in the middle once the last tile lands. Tapping again returns them to the grid in reverse order, un-rotating as they settle. The motion is choreographed, orbital and ceremonial rather than a simple reflow.",
-            "十二枚 48pt 的渐变应用图块以 64pt 间距排成 4 × 3 网格。点击后，它们按阅读顺序依次（间隔约 30 毫秒）飞入半径 110pt 的圆环，每枚各自使用弹簧（响应约 0.55 秒、阻尼 0.72），圆环像被一张张发牌般拼成一只表盘。飞行过程中每枚图块转向背离圆心的方向；最后一枚落位后，中央的计数标签（「12 个应用」）从 60% 放大出现。再次点击，图块按相反顺序回到网格，同时转回正向。编排感强、带有轨道感与仪式感，而不是简单的重排。"
+            "Twelve 48 pt gradient app tiles sit in a 4 × 3 grid on 64 pt centres. A tap sends them into a 110 pt-radius ring, one after another in reading order, ≈30 ms apart, each on its own spring (response ≈0.55 s, damping 0.72) so the ring assembles like a clock being dealt. While travelling, every tile rotates to point away from the centre, and a count label (\"12 apps\") scales up from 60% in the middle as the last tiles fly in. Tapping again returns them to the grid in reverse order, un-rotating as they settle. The motion is choreographed, orbital and ceremonial rather than a simple reflow.",
+            "十二枚 48pt 的渐变应用图块以 64pt 间距排成 4 × 3 网格。点击后，它们按阅读顺序依次（间隔约 30 毫秒）飞入半径 110pt 的圆环，每枚各自使用弹簧（响应约 0.55 秒、阻尼 0.72），圆环像被一张张发牌般拼成一只表盘。飞行过程中每枚图块转向背离圆心的方向；最后几枚飞入时，中央的计数标签（「12 个应用」）从 60% 放大出现。再次点击，图块按相反顺序回到网格，同时转回正向。编排感强、带有轨道感与仪式感，而不是简单的重排。"
         ),
         implementation: L(
             "Each tile's grid and ring positions are computed from its index; the tile is placed with offset and rotationEffect, and animation(_:value:) with a per-index delay (reversed on the way back) produces the cascade.",

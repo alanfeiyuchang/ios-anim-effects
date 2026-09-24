@@ -8,7 +8,7 @@ extension Effect {
         name: L("Download Button", "下载按钮"),
         summary: L("An App Store-style GET pill that becomes a progress ring, then OPEN.", "App Store 式“获取”胶囊变为进度环，再变成“打开”。"),
         prompt: L(
-            "An app row with a gradient icon, a title and a trailing 88 × 36 pt tinted pill reading GET in bold blue. On tap the label shrinks and blurs away while the pill springs into a 36 pt circle (response 0.45 s, damping 0.8); a short quarter arc spins around the hairline track while 'waiting', then a determinate blue arc with round caps fills clockwise from 12 o'clock in small linear steps, with a 11 pt rounded stop square popping in at the center. At 100% the circle springs back out into a pill that now reads OPEN, with a success haptic. Tapping during download cancels back to GET.",
+            "An app row with a gradient icon, a title and a trailing 88 × 36 pt tinted pill reading GET in bold blue. On tap the label shrinks and blurs away while the pill springs into a 36 pt circle (response 0.45 s, damping 0.8); a short quarter arc spins around the thin 3 pt track while 'waiting', then a determinate blue arc with round caps fills clockwise from 12 o'clock in small linear steps, with a 11 pt rounded stop square popping in at the center. At 100% the circle springs back out into a pill that now reads OPEN, with a success haptic. Tapping during download cancels back to GET.",
             "一行应用条目：左侧渐变图标与标题，右侧是一枚 88 × 36 pt 的浅蓝胶囊，蓝色粗体写着“获取”。点击后文字缩小、模糊消失，胶囊以弹簧（响应 0.45 秒、阻尼 0.8）收缩成 36 pt 圆形；“等待中”时一段四分之一圆弧沿细轨道旋转，随后蓝色圆头进度弧从 12 点方向顺时针以细小的线性步进填满，圆心弹出一个 11 pt 的圆角“停止”方块。到达 100% 时圆形弹性舒展回胶囊，文字变为“打开”，并伴随成功触感。下载途中再次点击则取消并回到“获取”。"
         ),
         implementation: L(

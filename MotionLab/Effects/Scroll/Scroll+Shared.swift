@@ -1,3 +1,4 @@
+import QuartzCore
 import SwiftUI
 
 /// Shared sample content for the Scroll & Lists category.
@@ -131,5 +132,40 @@ private struct ScrollKitArtDecor: View {
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
                 .offset(y: -12)
         }
+    }
+}
+
+/// Frame-rate-independent scroll velocity in pt/s. `onScrollGeometryChange` fires once per frame,
+/// so a raw offset delta is twice as small at 120 Hz as at 60 Hz; this divides each change by the
+/// real time since the previous sample and smooths the result with a fixed 25 ms time constant.
+struct ScrollVelocityTracker {
+    private(set) var velocity: CGFloat = 0
+    private var lastOffset: CGFloat?
+    private var lastTime: CFTimeInterval = 0
+
+    /// Feeds the latest offset and returns the smoothed velocity (pt/s), clamped to ±`limit`.
+    mutating func sample(_ offset: CGFloat, limit: CGFloat) -> CGFloat {
+        let now = CACurrentMediaTime()
+        guard let previous = lastOffset else {
+            lastOffset = offset
+            lastTime = now
+            return velocity
+        }
+        let dt = now - lastTime
+        // Several geometry updates in one frame: wait until time has actually passed.
+        guard dt >= 0.004 else { return velocity }
+        lastOffset = offset
+        lastTime = now
+        // After a pause the old estimate is stale.
+        if dt > 0.1 { velocity = 0 }
+        let raw = ((offset - previous) / CGFloat(dt)).clamped(to: -limit...limit)
+        let alpha = CGFloat(1 - exp(-dt / 0.025))
+        velocity += (raw - velocity) * alpha
+        return velocity
+    }
+
+    /// The scroll stopped: forget the speed (the next sample starts from the current offset).
+    mutating func reset() {
+        velocity = 0
     }
 }

@@ -8,12 +8,12 @@ extension Effect {
         name: L("Elastic Message List", "弹性消息列表"),
         summary: L("Chat bubbles trail the scroll on springs, stretching apart and bouncing back together like iMessage.", "聊天气泡通过弹簧跟随滚动，像 iMessage 一样被拉开再弹回聚拢。"),
         prompt: L(
-            "A chat thread of alternating capsule message bubbles on 44 pt rows (incoming on the left, outgoing blue gradient on the right) with 10 pt gaps. The bubbles are not glued to the scroll: each one follows through its own spring, and the further a bubble sits from the leading edge of the motion, the looser its spring (response 0.2 → 0.45 s, damping 0.62) and the more it lags — up to 1.2× the per-frame scroll delta, capped at 40 pt. Fast scrolling therefore stretches the gaps open like an accordion, and when the scroll comes to rest the bubbles bounce back together with a small overshoot. Nothing changes layout; only offsets move. Lively, physical and unmistakably iOS.",
-            "一段聊天记录，胶囊形消息气泡排在44 pt高的行中左右交替（收到的在左、发出的蓝色渐变在右），间距10 pt。气泡并没有和滚动牢牢粘在一起：每个气泡都通过自己的弹簧跟随，离运动前沿越远，弹簧越松（响应0.2→0.45秒、阻尼0.62），滞后也越多——最多为每帧滚动增量的1.2倍，上限40 pt。因此快速滚动时气泡间距像手风琴一样被拉开，滚动停下后，气泡带着轻微过冲弹回聚拢。布局本身不变，只有偏移在动。灵动、真实，一眼就是iOS的味道。"
+            "A chat thread of alternating capsule message bubbles on 44 pt rows (incoming on the left, outgoing blue gradient on the right) with 10 pt gaps. The bubbles are not glued to the scroll: each one follows through its own spring, and the further a bubble sits from the leading edge of the motion, the looser its spring (response 0.2 → 0.45 s, damping 0.62) and the more it lags — by the scroll velocity (measured in pt/s from timestamped offsets) × 24 ms, capped at 40 pt, so 60 Hz and 120 Hz screens look alike. Fast scrolling therefore stretches the gaps open like an accordion, and when the scroll comes to rest the bubbles bounce back together with a small overshoot. Nothing changes layout; only offsets move. Lively, physical and unmistakably iOS.",
+            "一段聊天记录，胶囊形消息气泡排在44 pt高的行中左右交替（收到的在左、发出的蓝色渐变在右），间距10 pt。气泡并没有和滚动牢牢粘在一起：每个气泡都通过自己的弹簧跟随，离运动前沿越远，弹簧越松（响应0.2→0.45秒、阻尼0.62），滞后也越多——滞后量为滚动速度（按时间戳换算为pt/s）×24毫秒，上限40 pt，60 Hz与120 Hz屏幕观感一致。因此快速滚动时气泡间距像手风琴一样被拉开，滚动停下后，气泡带着轻微过冲弹回聚拢。布局本身不变，只有偏移在动。灵动真实，一眼就是iOS。"
         ),
         implementation: L(
-            "onScrollGeometryChange tracks the offset and its per-frame delta; each row offsets by delta × its normalised screen position and carries its own .animation(.spring(response:…), value: delta), so rows chase each other. A 70 ms debounce Task and onScrollPhaseChange reset the delta to zero once the scroll stops moving.",
-            "onScrollGeometryChange 跟踪偏移及每帧增量；每一行按「增量 × 自身归一化屏幕位置」偏移，并各自带有 .animation(.spring(response:…), value: delta)，于是各行相互追赶。滚动停止移动时，由 70 毫秒防抖 Task 与 onScrollPhaseChange 把增量归零。"
+            "onScrollGeometryChange feeds each offset, timestamped with CACurrentMediaTime, into a smoothed pt/s velocity; each row offsets by velocity × 20 ms × elasticity × its normalised screen position and carries its own .animation(.spring(response:…), value: velocity), so rows chase each other. A 70 ms debounce Task and onScrollPhaseChange reset the velocity once the scroll stops moving.",
+            "onScrollGeometryChange 把每次偏移连同 CACurrentMediaTime 时间戳换算成平滑后的 pt/s 速度；每一行按「速度 × 20 毫秒 × 弹性 × 自身归一化屏幕位置」偏移，并各自带有 .animation(.spring(response:…), value: velocity)，于是各行相互追赶。滚动停止移动时，由 70 毫秒防抖 Task 与 onScrollPhaseChange 把速度归零。"
         ),
         apis: ["onScrollGeometryChange", "onScrollPhaseChange", "animation(_:value:)", "spring(response:dampingFraction:)", "ScrollPosition"],
         tags: ["elastic", "chat", "bubbles", "spring", "弹性", "聊天", "气泡", "弹簧"],
@@ -51,7 +51,9 @@ private struct ScrollElasticListDemo: View {
     let ctx: DemoContext
     @State private var position = ScrollPosition(edge: .top)
     @State private var offset: CGFloat = 0
-    @State private var delta: CGFloat = 0
+    /// Scroll velocity in pt/s (frame-rate independent).
+    @State private var velocity: CGFloat = 0
+    @State private var tracker = ScrollVelocityTracker()
     @State private var viewport: CGFloat = 340
     @State private var down = false
     @State private var settleTask: Task<Void, Never>?
@@ -74,15 +76,15 @@ private struct ScrollElasticListDemo: View {
         .scrollPosition($position)
         .onScrollGeometryChange(for: CGFloat.self, of: { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top
-        }, action: { oldValue, newValue in
+        }, action: { _, newValue in
             offset = newValue
-            delta = (newValue - oldValue).clamped(to: -40...40)
+            velocity = tracker.sample(newValue, limit: 2400)
             scheduleSettle()
         })
         .onScrollPhaseChange { _, newPhase in
             if newPhase == .idle {
                 settleTask?.cancel()
-                delta = 0
+                settle()
             }
         }
         .onDisappear { settleTask?.cancel() }
@@ -104,8 +106,13 @@ private struct ScrollElasticListDemo: View {
         settleTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(70))
             guard !Task.isCancelled else { return }
-            delta = 0
+            settle()
         }
+    }
+
+    private func settle() {
+        tracker.reset()
+        velocity = 0
     }
 
     private func row(_ i: Int) -> some View {
@@ -113,14 +120,15 @@ private struct ScrollElasticListDemo: View {
         let rowY: CGFloat = topPad + CGFloat(i) * (rowHeight + gap) - offset
         let screen: CGFloat = (rowY / viewport).clamped(to: 0...1)
         // Rows far from the leading edge of the motion lag the most.
-        let far: CGFloat = delta >= 0 ? screen : 1 - screen
-        let raw: CGFloat = delta * far * ctx.cg("elasticity")
+        let far: CGFloat = velocity >= 0 ? screen : 1 - screen
+        // velocity × 20 ms: the travel of one 60 Hz frame, whatever the display's refresh rate.
+        let raw: CGFloat = velocity * 0.02 * far * ctx.cg("elasticity")
         let lag: CGFloat = raw.clamped(to: -40...40)
         let response: Double = 0.2 + 0.25 * Double(far)
         return ScrollElasticBubble(text: scrollElasticMessages[i], outgoing: i % 2 == 1, language: ctx.language)
             .frame(height: rowHeight)
             .offset(y: lag)
-            .animation(.spring(response: response, dampingFraction: ctx["damping"]), value: delta)
+            .animation(.spring(response: response, dampingFraction: ctx["damping"]), value: velocity)
     }
 }
 

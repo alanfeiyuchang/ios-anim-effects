@@ -11,8 +11,8 @@ extension Effect {
             "选中态是一团液体：头部冲向新标签，尾部被拉长、变细，再啪地跟上。"
         ),
         prompt: L(
-            "A 300 × 64 pt floating tab bar with four icons; the selected icon sits in a 48 pt gradient blob. Choosing a tab splits the blob into a head and a tail that travel on separate springs: the head leaps to the new tab first (response ≈0.3 s, damping 0.72) while the tail follows ≈100 ms later on a softer spring. Both are drawn as metaballs — blurred ≈9 pt and alpha-thresholded — plus a bridge whose thickness shrinks with their distance, so the blob stretches into a droplet, necks thin and pulls itself back together at the destination. The chosen icon turns white and bounces. It feels viscous, alive and a little mischievous.",
-            "一个 300 × 64pt 的悬浮标签栏，含四个图标；选中图标坐在一团 48pt 的渐变液滴里。切换标签时，液滴分成头、尾两部分，由各自的弹簧驱动：头部先跃向新标签（响应约 0.3 秒、阻尼 0.72），尾部延迟约 100 毫秒以更柔的弹簧跟上。两者以融球方式绘制——约 9pt 模糊后再做透明度阈值——中间还有一段粗细随距离变细的连接桥，于是液滴被拉成水滴状、颈部变细，最终在目标处重新聚拢。被选中的图标变白并弹跳一下。黏稠、有生命力，还带点调皮。"
+            "A 300 × 64 pt floating tab bar with four icons; the selected icon sits in a 50 pt gradient blob. Choosing a tab splits the blob into a head and a tail that travel on separate springs: the head leaps to the new tab first (response ≈0.3 s, damping 0.72) while the tail follows ≈100 ms later on a softer spring. Both are drawn as metaballs — blurred ≈9 pt and alpha-thresholded — plus a bridge whose thickness shrinks with their distance, so the blob stretches into a droplet, necks thin and pulls itself back together at the destination. The chosen icon turns white and bounces. It feels viscous, alive and a little mischievous.",
+            "一个 300 × 64pt 的悬浮标签栏，含四个图标；选中图标坐在一团 50pt 的渐变液滴里。切换标签时，液滴分成头、尾两部分，由各自的弹簧驱动：头部先跃向新标签（响应约 0.3 秒、阻尼 0.72），尾部延迟约 100 毫秒以更柔的弹簧跟上。两者以融球方式绘制——约 9pt 模糊后再做透明度阈值——中间还有一段粗细随距离变细的连接桥，于是液滴被拉成水滴状、颈部变细，最终在目标处重新聚拢。被选中的图标变白并弹跳一下。黏稠、有生命力，还带点调皮。"
         ),
         implementation: L(
             "Two nested Animatable views each interpolate one coordinate (head and tail), so the two withAnimation springs stay independent; the inner view draws both circles and a bridge in a Canvas with blur and alphaThreshold filters, used as the mask of a gradient.",

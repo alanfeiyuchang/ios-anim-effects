@@ -248,11 +248,11 @@ extension Effect {
             "A Shape unions two circles and a quad-curve neck whose radii and separation are functions of the pull progress; a shared host reads the pull from a downward-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable) that the page's scroll waits for, and handles the release, threshold haptic and row insertion.",
             "Shape 将两个圆与一段二次曲线颈部合并，半径与间距都是下拉进度的函数；共享的宿主视图从只接受向下拖动的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable）读取下拉距离，页面滚动会等它失败，并负责松手判定、阈值触感与新条目插入。"
         ),
-        apis: ["Shape", "Path.addQuadCurve", "UIGestureRecognizerRepresentable", "UIPanGestureRecognizer", "spring(response:dampingFraction:)"],
+        apis: ["Shape", "Path.addQuadCurve", "Path.union", "UIGestureRecognizerRepresentable", "UIPanGestureRecognizer", "spring(response:dampingFraction:)"],
         tags: ["pull to refresh", "gooey", "stretch", "drop", "下拉刷新", "黏滴", "拉伸", "液滴"],
         params: [
             .slider("duration", L("Refresh time", "刷新时长"), 0.6...3.0, default: 1.4, decimals: 1, unit: "s"),
-            .slider("stretch", L("Tail stretch", "尾巴拉伸"), 20...70, default: 44, decimals: 0, unit: "pt"),
+            .slider("stretch", L("Tail stretch", "尾巴拉伸"), 20...46, default: 44, decimals: 0, unit: "pt"),
         ]
     ) { ctx in
         RefreshVarHost(ctx: ctx) { progress, _, refreshing in
@@ -307,22 +307,28 @@ private struct GumDropShape: Shape {
         set { progress = newValue }
     }
 
+    /// Longest tail reach that still ends inside the 80 pt gap at the threshold: the head sits 24 pt down the gap
+    /// (8 pt padding + 16 pt), the tail's radius is 5 pt there, and 4 pt stay free above the list.
+    static let maxReach: CGFloat = 46
+
     func path(in rect: CGRect) -> Path {
         let cx: CGFloat = rect.midX
         let r1: CGFloat = 16 - 5 * progress
         let r2: CGFloat = 16 - 11 * progress
         let y1: CGFloat = rect.minY + 16
-        let y2: CGFloat = y1 + stretch * progress
+        let y2: CGFloat = y1 + min(stretch, Self.maxReach) * progress
         let mid: CGFloat = (y1 + y2) / 2
-        var path = Path()
-        path.addEllipse(in: CGRect(x: cx - r1, y: y1 - r1, width: r1 * 2, height: r1 * 2))
-        path.addEllipse(in: CGRect(x: cx - r2, y: y2 - r2, width: r2 * 2, height: r2 * 2))
-        path.move(to: CGPoint(x: cx - r1, y: y1))
-        path.addQuadCurve(to: CGPoint(x: cx - r2, y: y2), control: CGPoint(x: cx - r2 * 0.5, y: mid))
-        path.addLine(to: CGPoint(x: cx + r2, y: y2))
-        path.addQuadCurve(to: CGPoint(x: cx + r1, y: y1), control: CGPoint(x: cx + r2 * 0.5, y: mid))
-        path.closeSubpath()
-        return path
+        let head = Path(ellipseIn: CGRect(x: cx - r1, y: y1 - r1, width: r1 * 2, height: r1 * 2))
+        let tail = Path(ellipseIn: CGRect(x: cx - r2, y: y2 - r2, width: r2 * 2, height: r2 * 2))
+        var neck = Path()
+        neck.move(to: CGPoint(x: cx - r1, y: y1))
+        neck.addQuadCurve(to: CGPoint(x: cx - r2, y: y2), control: CGPoint(x: cx - r2 * 0.5, y: mid))
+        neck.addLine(to: CGPoint(x: cx + r2, y: y2))
+        neck.addQuadCurve(to: CGPoint(x: cx + r1, y: y1), control: CGPoint(x: cx + r2 * 0.5, y: mid))
+        neck.closeSubpath()
+        // A boolean union (iOS 17+) merges the parts into one outline, so the overlaps can never cancel out
+        // under the fill rule, whichever way each subpath winds.
+        return head.union(tail).union(neck)
     }
 }
 

@@ -11,14 +11,14 @@ extension Effect {
             "缩略图放大为全屏分页查看器：左右滑动翻看照片，向下甩动即把当前照片送回原位。"
         ),
         prompt: L(
-            "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer on a smooth spring (response ≈0.45 s, damping 0.86) while a black backdrop fades in. The viewer pages like Photos: a sideways swipe drags the whole strip 1:1 with the next photo peeking 16 pt behind a gap, rubber-bands at either end, and past 30% of the width (or a flick) snaps to the neighbour on a critically damped spring with a selection tick. A vertical pull locks to dismissal instead: the photo follows the finger, tilts up to ±6° with the sideways drift and the backdrop fades; past ~90 pt or a flick it flies into its own cell on an under-damped spring (≈0.7) that lands with a small bounce.",
-            "3 × 3 圆角缩略图网格（圆角 14pt）。点击一张，它以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从格子放大为全屏查看器，黑色背景淡入。查看器像“照片”一样分页：横向滑动时整条胶片 1:1 跟手，下一张隔着 16pt 间隙探出，两端带橡皮筋阻尼；拖过宽度的 30% 或快速轻扫，即以临界阻尼弹簧吸附到相邻照片，并伴随一次选择触感。若先竖向拖动则锁定为关闭手势：照片跟手移动，随横向偏移倾斜最多 ±6°，背景渐隐；超过约 90pt 或快速甩出，它以欠阻尼弹簧（约 0.7）飞回自己的格子，落位时轻轻一弹。"
+            "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer on a smooth spring (response ≈0.45 s, damping 0.86) while a black backdrop fades in. The viewer pages like Photos: a sideways swipe drags the whole strip 1:1 with the next photo peeking 16 pt behind a gap, rubber-bands at either end, and past 30% of the width (or a flick) snaps to the neighbour on a critically damped spring with a selection tick. A downward pull locks to dismissal instead (an upward swipe scrolls the page): the photo follows the finger, tilts up to ±6° with the sideways drift and the backdrop fades; past ~90 pt or a flick it flies into its own cell on an under-damped spring (≈0.7) that lands with a small bounce.",
+            "3 × 3 圆角缩略图网格（圆角 14pt）。点击一张，它以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从格子放大为全屏查看器，黑色背景淡入。查看器像“照片”一样分页：横向滑动时整条胶片 1:1 跟手，下一张隔着 16pt 间隙探出，两端带橡皮筋阻尼；拖过宽度的 30% 或快速轻扫，即以临界阻尼弹簧吸附到相邻照片，并伴随一次选择触感。若先向下拖动则锁定为关闭手势（向上滑动交给页面滚动）：照片跟手移动，随横向偏移倾斜最多 ±6°，背景渐隐；超过约 90pt 或快速甩出，它以欠阻尼弹簧（约 0.7）飞回自己的格子，落位时轻轻一弹。"
         ),
         implementation: L(
-            "Grid tiles and the current page share a matchedGeometryEffect id; one DragGesture locks its axis on the first movement: horizontal drives a paging offset whose settle spring swaps the page index in its completion, vertical drives the dismiss offset, tilt and backdrop.",
-            "网格缩略图与当前页共享 matchedGeometryEffect ID；同一个 DragGesture 在首次移动时锁定方向：横向驱动分页位移，吸附弹簧在 completion 中切换页码；竖向驱动关闭位移、倾斜与背景透明度。"
+            "Grid tiles and the current page share a matchedGeometryEffect id; one down/left/right-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) locks its axis on the first movement: horizontal drives a paging offset whose settle spring swaps the page index in its completion, downward drives the dismiss offset, tilt and backdrop.",
+            "网格缩略图与当前页共享 matchedGeometryEffect ID；同一个只接受向下/左/右的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable，页面滚动会等它失败）在首次移动时锁定方向：横向驱动分页位移，吸附弹簧在 completion 中切换页码；向下驱动关闭位移、倾斜与背景透明度。"
         ),
-        apis: ["matchedGeometryEffect", "DragGesture", "predictedEndTranslation", "withAnimation(_:completionCriteria:_:completion:)", "rotationEffect"],
+        apis: ["matchedGeometryEffect", "UIGestureRecognizerRepresentable", "predictedEndTranslation", "withAnimation(_:completionCriteria:_:completion:)", "rotationEffect"],
         tags: ["photos", "gallery", "paging", "drag to dismiss", "相册", "分页", "翻页", "甩动关闭"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...1.0, default: 0.45, unit: "s"),
@@ -73,8 +73,6 @@ private struct GalleryZoomDemo: View {
     @State private var flingTask: Task<Void, Never>?
     /// Set by `fling()`, cleared by `close()` (or a finger taking over): a fling cut short must still close.
     @State private var flingPending = false
-    /// Resets on system cancellation too, so a cancelled pull never leaves the photo offset, tilted or between pages.
-    @GestureState private var dragging = false
     @Environment(\.colorScheme) private var colorScheme
 
     private static let pageGap: CGFloat = 16
@@ -190,32 +188,29 @@ private struct GalleryZoomDemo: View {
                 .offset(x: drag.width + pageDrag, y: drag.height)
         }
         .contentShape(Rectangle())
-        .gesture(viewerDrag)
+        // Only a mostly downward or sideways drag engages (the page scroll waits for it); an upward swipe scrolls
+        // the detail page. A cancelled pan reports `nil`, so the photo never stays offset, tilted or between pages.
+        .gesture(PageSafePan(directions: [.down, .left, .right], isEnabled: selected != nil, onChanged: viewerDragChanged, onEnded: finishDrag))
         .onTapGesture { close() }
-        .onChange(of: dragging) { _, active in
-            if !active { finishDrag(nil) }
-        }
     }
 
-    private var viewerDrag: some Gesture {
-        DragGesture(minimumDistance: 8)
-            .updating($dragging) { _, state, _ in state = true }
-            .onChanged { value in
-                flingTask?.cancel()
-                flingTask = nil
-                flingPending = false
-                if axis == nil {
-                    // A new touch lands a page that is still settling, then locks to the dominant direction.
-                    commitPendingPage()
-                    axis = abs(value.translation.width) > abs(value.translation.height) ? .paging : .dismiss
-                }
-                if axis == .paging {
-                    pageDrag = rubberedPage(value.translation.width)
-                } else {
-                    drag = value.translation
-                }
-            }
-            .onEnded { value in finishDrag(value) }
+    private func viewerDragChanged(_ t: CGSize) {
+        flingTask?.cancel()
+        flingTask = nil
+        flingPending = false
+        if axis == nil {
+            // Lock once the finger has travelled a couple of points in the direction the pan began with.
+            guard max(abs(t.width), abs(t.height)) >= 2 else { return }
+            // A new touch lands a page that is still settling, then locks to the dominant direction.
+            commitPendingPage()
+            axis = abs(t.width) > abs(t.height) ? .paging : .dismiss
+        }
+        if axis == .paging {
+            pageDrag = rubberedPage(t.width)
+        } else {
+            // Down follows the finger 1:1; pulling back up past the start only gives a few points.
+            drag = CGSize(width: t.width, height: t.height > 0 ? t.height : rubberBand(t.height, limit: 16))
+        }
     }
 
     /// 1:1 between photos, rubber-banded past the first and last.
@@ -227,7 +222,7 @@ private struct GalleryZoomDemo: View {
     }
 
     /// Normal release (with the flick's projection) or system cancellation (`nil`: settle, never commit a close).
-    private func finishDrag(_ value: DragGesture.Value?) {
+    private func finishDrag(_ value: PageSafePanEnd?) {
         guard let locked = axis else { return }
         axis = nil
         switch locked {
@@ -242,9 +237,10 @@ private struct GalleryZoomDemo: View {
             settlePage(step, silent: false)
         case .dismiss:
             let threshold: CGFloat = ctx.cg("threshold")
+            // Only a downward pull or flick closes; the sideways drift just tilts the photo.
             if let value,
-               GalleryZoomDemo.length(value.translation) > threshold
-                || GalleryZoomDemo.length(value.predictedEndTranslation) > threshold * 3 {
+               value.translation.height > threshold
+                || value.predictedEndTranslation.height > threshold * 3 {
                 close()
             } else {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = .zero }

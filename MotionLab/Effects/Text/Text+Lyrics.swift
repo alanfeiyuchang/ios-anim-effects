@@ -8,12 +8,12 @@ extension Effect {
         name: L("Synced Lyrics", "逐字歌词"),
         summary: L("Music-app lyrics: the active line fills word by word as the column glides up.", "音乐 App 式歌词：当前行逐字填色，歌词列平滑上移。"),
         prompt: L(
-            "Full-bleed lyrics on a deep violet player card. The active line is set in heavy 24 pt type at full size; a soft-edged fill sweeps across it from left to right in time with the vocal, turning each word from 35% to 100% white with a faint glow. When a line finishes, the whole column glides up one line on an ease-out-back curve (~450 ms, slight overshoot) so the next line lands in the focus slot; lines above and below sit at 92% scale, dim with distance and blur by ~1.2 pt per line, like a shallow depth of field, and the column dissolves through a soft gradient mask at its top and bottom edges. The song starts with its first line in focus and nothing above it; tapping any line seeks to it. Musical, immersive and calm.",
-            "深紫色播放器卡片上铺满歌词。当前行以24 pt粗体完整显示；一道边缘柔和的填色随演唱节奏从左向右扫过，让每个字从35%白逐渐变为100%白并带淡淡辉光。一行唱完后，整列歌词以带轻微过冲的缓出回弹曲线（约450毫秒）上移一行，下一行正好落入焦点位置；上下其余行缩小至92%，随距离变暗，并每行增加约1.2 pt模糊，如同浅景深；歌词列的上下边缘通过柔和的渐变遮罩淡出。歌曲从第一行开始，上方不会出现其他歌词；点按任意一行即跳转到该行。富有音乐性、沉浸而安静。"
+            "Full-bleed lyrics on a deep violet player card. The active line is set in heavy 24 pt type at full size; a soft-edged fill sweeps across it from left to right in time with the vocal, turning each word from 35% to 100% white with a faint glow. When a line finishes, the whole column glides up one line on an ease-out-back curve (~450 ms, slight overshoot) so the next line lands in the focus slot; lines above and below sit at 92% scale, dim with distance and blur by ~1.2 pt per line, like a shallow depth of field, and the column dissolves through a soft gradient mask at its top and bottom edges. The song starts with its first line in focus and nothing above it; tapping any line, even a distant or earlier one, springs the column to it. Musical, immersive and calm.",
+            "深紫色播放器卡片上铺满歌词。当前行以24 pt粗体完整显示；一道边缘柔和的填色随演唱节奏从左向右扫过，让每个字从35%白逐渐变为100%白并带淡淡辉光。一行唱完后，整列歌词以带轻微过冲的缓出回弹曲线（约450毫秒）上移一行，下一行正好落入焦点位置；上下其余行缩小至92%，随距离变暗，并每行增加约1.2 pt模糊，如同浅景深；歌词列的上下边缘通过柔和的渐变遮罩淡出。歌曲从第一行开始，上方不出现其他歌词；点按任意一行（即便较远或已唱过），歌词列会弹簧般滑去。富有音乐性、沉浸而安静。"
         ),
         implementation: L(
-            "A TimelineView(.animation) derives the current line, its fill progress and an eased scroll position from elapsed time; the active line overlays a white copy masked by a LinearGradient whose stops follow the progress.",
-            "TimelineView(.animation) 根据经过时间推算当前行、填色进度与缓动后的滚动位置；当前行叠加一层白色副本，用随进度移动色标的 LinearGradient 作为遮罩。"
+            "A TimelineView(.animation) derives the current line, its fill progress and an eased scroll position from elapsed time; the active line overlays a white copy masked by a LinearGradient whose stops follow the progress. A tap-to-seek keeps the on-screen column position and lets the gap decay along Spring.value(target:time:).",
+            "TimelineView(.animation) 根据经过时间推算当前行、填色进度与缓动后的滚动位置；当前行叠加一层白色副本，用随进度移动色标的 LinearGradient 作为遮罩。点按跳转时保留屏幕上的歌词列位置，差值沿 Spring.value(target:time:) 衰减。"
         ),
         apis: ["TimelineView(.animation)", "mask(alignment:_:)", "LinearGradient(stops:)", "blur"],
         tags: ["lyrics", "karaoke", "music", "fill", "sync", "歌词", "卡拉OK", "音乐", "逐字"],
@@ -30,6 +30,9 @@ extension Effect {
 private struct TextLyricsDemo: View {
     let ctx: DemoContext
     @State private var start: Date
+    /// Column position (in lines) the last seek glided away from, relative to the new clock's own scroll.
+    @State private var seekGap: Double = 0
+    @State private var seekAt = Date.distantPast
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -52,11 +55,25 @@ private struct TextLyricsDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Seeks so `line` becomes the active line from its first beat.
+    /// Seeks so `line` becomes the active line from its first beat. The column glides there on a spring from
+    /// wherever it is on screen (even several lines away, or back up the song) instead of jumping.
     private func seek(to line: Int) {
         guard !ctx.isPreview, !ctx.isStill else { return }
         Haptics.selection()
-        start = Date().addingTimeInterval(-Double(line) * max(ctx["duration"], 0.5))
+        let now = Date()
+        let duration = max(ctx["duration"], 0.5)
+        let shown = TextLyricsColumn.columnScroll(elapsed: now.timeIntervalSince(start), lineDuration: duration) + gap(at: now)
+        start = now.addingTimeInterval(-Double(line) * duration)
+        seekGap = shown - TextLyricsColumn.columnScroll(elapsed: now.timeIntervalSince(start), lineDuration: duration)
+        seekAt = now
+    }
+
+    /// What is left of the last seek's gap, shrinking to 0 along a gently bouncy spring.
+    private func gap(at date: Date) -> Double {
+        let t = date.timeIntervalSince(seekAt)
+        guard seekGap != 0, t < 2 else { return 0 }
+        let spring = Spring(duration: 0.7, bounce: 0.12)
+        return seekGap * (1 - spring.value(target: 1.0, time: max(t, 0)))
     }
 
     private var card: some View {
@@ -67,6 +84,7 @@ private struct TextLyricsDemo: View {
                     lines: lines,
                     elapsed: timeline.date.timeIntervalSince(start),
                     lineDuration: max(ctx["duration"], 0.5),
+                    seekOffset: gap(at: timeline.date),
                     blur: ctx["blur"],
                     glow: ctx.bool("glow"),
                     onSeek: seek(to:)
@@ -128,6 +146,8 @@ private struct TextLyricsColumn: View {
     let lines: [String]
     let elapsed: Double
     let lineDuration: Double
+    /// Extra column scroll (in lines) while a seek glides to its line; 0 otherwise.
+    let seekOffset: Double
     let blur: Double
     let glow: Bool
     let onSeek: (Int) -> Void
@@ -138,13 +158,14 @@ private struct TextLyricsColumn: View {
         let beat = max(elapsed, 0) / lineDuration
         let active = Int(beat.rounded(.down))
         let local = beat - Double(active)
-        // Glide into the new line during the first ~450 ms, with a small overshoot.
-        let glide = min(local * lineDuration / 0.45, 1)
-        let scroll = Double(active - 1) + easeOutBack(glide)
+        let scroll = Self.columnScroll(elapsed: elapsed, lineDuration: lineDuration) + seekOffset
         let fill = ((local * lineDuration - 0.35) / max(lineDuration - 0.7, 0.1)).clamped(to: 0...1)
+        // Cover every line the column passes during a seek glide, not just those around the active line.
+        let first = max(min(active, Int(scroll.rounded(.down))) - 2, 0)
+        let last = max(active, Int(scroll.rounded(.up))) + 3
         ZStack(alignment: .topLeading) {
             // Never draw lines before the first one: the song starts at the top, it doesn't wrap backwards.
-            ForEach(max(active - 2, 0)...(active + 3), id: \.self) { i in
+            ForEach(first...last, id: \.self) { i in
                 line(i, distance: Double(i) - scroll, fill: i == active ? fill : (i < active ? 1 : 0), isActive: i == active)
             }
         }
@@ -165,7 +186,16 @@ private struct TextLyricsColumn: View {
             .offset(y: CGFloat(distance) * lineHeight + lineHeight * 0.9)
     }
 
-    private func easeOutBack(_ x: Double) -> Double {
+    /// Column position in lines (the focus slot shows line `scroll + 1`): glides into each new line during its
+    /// first ~450 ms, with a small overshoot.
+    static func columnScroll(elapsed: Double, lineDuration: Double) -> Double {
+        let beat = max(elapsed, 0) / lineDuration
+        let active = beat.rounded(.down)
+        let glide = min((beat - active) * lineDuration / 0.45, 1)
+        return active - 1 + easeOutBack(glide)
+    }
+
+    private static func easeOutBack(_ x: Double) -> Double {
         let c1 = 1.2
         let c3 = c1 + 1
         let t = x - 1

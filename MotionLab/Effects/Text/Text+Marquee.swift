@@ -8,8 +8,8 @@ extension Effect {
         name: L("Marquee Ticker", "跑马灯"),
         summary: L("Seamless, endlessly scrolling ticker rows with feathered edges.", "首尾无缝、无限滚动的行情条，边缘柔和羽化。"),
         prompt: L(
-            "Two stacked ticker rows scroll horizontally forever without a visible seam: a compact stock tape with symbols, prices and green/red change chips, and below it an oversized kinetic headline of keywords separated by gradient stars, travelling the opposite way. Motion is perfectly linear at a constant speed (≈60 pt/s for the tape, 80% of that for the headline) so it reads like a physical belt; content is duplicated end-to-end and wrapped modulo its own width. Both edges are feathered by a gradient mask spanning the outer 12% of the width, so items glide in and out of view. Dragging a belt scrubs it by hand and a flick coasts with exponential momentum before the belt resumes — editorial, confident, always on.",
-            "上下两条行情带无缝地无限横向滚动：上方是紧凑的股票行情，包含代码、价格与红绿涨跌标签；下方是超大号的动态关键词标题，以渐变星形分隔，并朝相反方向移动。运动严格匀速线性（行情带约60pt/秒，标题行为其80%），像一条真实的传送带；内容首尾复制拼接，并按自身宽度取模循环。左右两端各以占宽度12%的渐变遮罩羽化，让内容柔和地滑入滑出；拖动可手动拨动传送带，甩出后带惯性滑行再恢复——有编辑感、自信、始终在线。"
+            "Two stacked ticker rows scroll horizontally forever without a visible seam: a compact stock tape with symbols, prices and green/red change chips, and below it an oversized kinetic headline of keywords separated by gradient stars, travelling the opposite way. Motion is perfectly linear at a constant speed (≈60 pt/s for the tape, 80% of that for the headline) so it reads like a physical belt; content is duplicated end-to-end and wrapped modulo its own width. Both edges are feathered by a gradient mask spanning the outer 12% of the width, so items glide in and out of view. Dragging a belt sideways scrubs it by hand (vertical swipes still scroll the page) and a flick coasts with exponential momentum before the belt resumes — editorial, confident, always on.",
+            "上下两条行情带无缝地无限横向滚动：上方是紧凑的股票行情，包含代码、价格与红绿涨跌标签；下方是超大号的动态关键词标题，以渐变星形分隔，并朝相反方向移动。运动严格匀速线性（行情带约60pt/秒，标题行为其80%），像一条真实的传送带；内容首尾复制拼接，并按自身宽度取模循环。左右两端各以占宽度12%的渐变遮罩羽化，让内容柔和地滑入滑出；横向拖动可手动拨动传送带（竖向滑动仍可滚动页面），甩出后带惯性滑行再恢复——有编辑感、自信、始终在线。"
         ),
         implementation: L(
             "TimelineView(.animation) offsets a fixed-size HStack holding three copies of the strip by (time × speed) mod stripWidth; the width is measured with onGeometryChange and edges are faded with a gradient mask.",
@@ -76,8 +76,10 @@ private struct MarqueeRow<Content: View>: View {
     @State private var stripWidth: CGFloat = 0
     /// Accumulated hand offset in pt (+ = right), from past scrubs and settled flings.
     @State private var manual: CGFloat = 0
-    /// Live drag translation while a finger holds the belt.
+    /// Live drag translation while a finger holds the belt, measured from where the drag engaged.
     @State private var liveX: CGFloat = 0
+    /// Horizontal translation at the moment the drag engaged, so the belt doesn't jump by the start-up distance.
+    @State private var grabX: CGFloat = 0
     /// Set while held: the belt's own travel freezes at this moment.
     @State private var heldAt: Date?
     /// Seconds the belt spent held, removed from its clock so it resumes where it stopped.
@@ -85,8 +87,6 @@ private struct MarqueeRow<Content: View>: View {
     /// Release velocity (pt/s) of the last fling, decaying exponentially from `flingStart`.
     @State private var flingVelocity: CGFloat = 0
     @State private var flingStart = Date.distantPast
-    /// Resets on system cancellation too, so a stolen touch never leaves the belt frozen.
-    @GestureState private var pressing = false
 
     /// Momentum time constant: a fling coasts for ~1 s.
     private let coast: Double = 0.35
@@ -121,25 +121,26 @@ private struct MarqueeRow<Content: View>: View {
             .clipped()
             .mask { edgeFade }
             .contentShape(Rectangle())
-            .gesture(scrub)
-            .onChange(of: pressing) { _, isPressing in
-                if !isPressing { release(velocity: 0) }
-            }
+            // Page-safe scrub: attached simultaneously and engaged only by a mostly horizontal drag, so a vertical
+            // swipe that starts on a belt still scrolls the detail page; a system cancel ends it as a still release.
+            .pageSafeHorizontalDrag(minimumDistance: 8, onChanged: scrubChanged, onEnded: scrubEnded)
     }
 
     /// Horizontal scrub; a release with speed flings the belt, which coasts and then carries on.
-    private var scrub: some Gesture {
-        DragGesture(minimumDistance: 8)
-            .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                if heldAt == nil { grab() }
-                liveX = value.translation.width
-            }
-            .onEnded { value in release(velocity: value.velocity.width) }
+    private func scrubChanged(_ value: DragGesture.Value) {
+        if heldAt == nil { grab(at: value.translation.width) }
+        liveX = value.translation.width - grabX
     }
 
-    private func grab() {
+    /// `nil` when the system cancelled the drag: settle where the finger left the belt, without a flick.
+    private func scrubEnded(_ value: DragGesture.Value?) {
+        release(velocity: value?.velocity.width ?? 0)
+    }
+
+    private func grab(at translation: CGFloat) {
         let now = Date()
+        grabX = translation
+        liveX = 0
         manual += flingOffset(at: now)
         flingVelocity = 0
         heldAt = now
@@ -151,6 +152,7 @@ private struct MarqueeRow<Content: View>: View {
         let now = Date()
         manual += liveX
         liveX = 0
+        grabX = 0
         pausedTime += now.timeIntervalSince(start)
         heldAt = nil
         flingVelocity = velocity.clamped(to: -3000...3000)

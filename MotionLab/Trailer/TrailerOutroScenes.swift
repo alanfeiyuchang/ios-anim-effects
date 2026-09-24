@@ -211,7 +211,13 @@ private struct TrailerChatPanel: View {
         let appear = M.spring(t, at: 49.25, response: 0.6, damping: 0.82)
         let exit = M.easeInOut(M.progress(t, 51.55, 0.8))
         let size = CGSize(width: 334, height: 276)
-        VStack(alignment: .leading, spacing: 14) {
+        let scaleValue: Double = (0.94 + 0.06 * appear) * (1 - 0.72 * exit)
+        let scale = CGFloat(scaleValue)
+        let blur = CGFloat(exit) * 6
+        let fadeOut: Double = 1 - M.progress(t, 51.9, 0.45)
+        let opacity: Double = M.clamp(appear * 2) * fadeOut
+        let center: CGPoint = M.mix(TrailerLayout.promptCenter, CGPoint(x: 195, y: 280), exit)
+        return VStack(alignment: .leading, spacing: 14) {
             header
             userBubble
             aiBubble
@@ -220,10 +226,10 @@ private struct TrailerChatPanel: View {
         .padding(16)
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .background(TrailerGlass(shape: RoundedRectangle(cornerRadius: 26, style: .continuous), shadowOpacity: 0.55))
-        .scaleEffect(CGFloat((0.94 + 0.06 * appear) * (1 - 0.72 * exit)))
-        .blur(radius: CGFloat(exit) * 6)
-        .opacity(M.clamp(appear * 2) * (1 - M.progress(t, 51.9, 0.45)))
-        .position(M.mix(TrailerLayout.promptCenter, CGPoint(x: 195, y: 280), exit))
+        .scaleEffect(scale)
+        .blur(radius: blur)
+        .opacity(opacity)
+        .position(center)
     }
 
     private var header: some View {

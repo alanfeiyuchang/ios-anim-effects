@@ -66,7 +66,9 @@ private struct HookSwarm: View {
                 let fadeIn = M.progress(t, M.hash(index, 4) * 0.4, 0.5)
                 let alpha = (0.35 + 0.6 * depth) * fadeIn * (1 - M.progress(u, 0.82, 0.18))
                 guard alpha > 0.01 else { continue }
-                let radius = CGFloat((1.2 + 2.8 * depth) * (1 - 0.55 * pow(u, 2)))
+                let size: Double = 1.2 + 2.8 * depth
+                let shrink: Double = 1 - 0.55 * u * u
+                let radius = CGFloat(size * shrink)
                 let head = Self.position(index, t: t)
                 let tail = Self.position(index, t: t - 0.04)
                 let color = Self.colors[index % Self.colors.count]

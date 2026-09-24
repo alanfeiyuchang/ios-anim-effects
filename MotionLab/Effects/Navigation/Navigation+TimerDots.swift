@@ -71,7 +71,11 @@ private struct TimerDotsDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task(id: TimerRunKey(page: page, paused: paused, dwell: dwell)) {
             guard !paused else { return }
-            try? await Task.sleep(for: .seconds(max(dwell - banked, 0.05)))
+            // Count the time already run since `runStart` too: the task restarts when the page re-appears
+            // while @State (and the fill drawn from it) survives, so sleeping a full `dwell - banked`
+            // would leave the capsule sitting full for a whole extra dwell.
+            let elapsed: Double = banked + Date().timeIntervalSince(runStart)
+            try? await Task.sleep(for: .seconds(max(dwell - elapsed, 0.05)))
             guard !Task.isCancelled else { return }
             show((page + 1) % timerPages.count, byUser: false)
         }

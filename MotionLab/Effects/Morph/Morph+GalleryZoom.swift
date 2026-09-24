@@ -71,6 +71,8 @@ private struct GalleryZoomDemo: View {
     @State private var autoIndex = 4
     @State private var autoStage = 0
     @State private var flingTask: Task<Void, Never>?
+    /// Set by `fling()`, cleared by `close()` (or a finger taking over): a fling cut short must still close.
+    @State private var flingPending = false
     /// Resets on system cancellation too, so a cancelled pull never leaves the photo offset, tilted or between pages.
     @GestureState private var dragging = false
     @Environment(\.colorScheme) private var colorScheme
@@ -123,6 +125,15 @@ private struct GalleryZoomDemo: View {
             flingTask = nil
             commitPendingPage()
             axis = nil
+            // Settle without animation, so a return never shows the photo offset, tilted or half-faded.
+            var settle = Transaction()
+            settle.disablesAnimations = true
+            withTransaction(settle) {
+                drag = .zero
+                pageDrag = 0
+                if flingPending { selected = nil }
+            }
+            flingPending = false
         }
     }
 
@@ -192,6 +203,7 @@ private struct GalleryZoomDemo: View {
             .onChanged { value in
                 flingTask?.cancel()
                 flingTask = nil
+                flingPending = false
                 if axis == nil {
                     // A new touch lands a page that is still settling, then locks to the dominant direction.
                     commitPendingPage()
@@ -287,6 +299,7 @@ private struct GalleryZoomDemo: View {
 
     private func fling() {
         commitPendingPage()
+        flingPending = true
         withAnimation(.easeOut(duration: 0.28)) { drag = CGSize(width: 46, height: 120) }
         flingTask?.cancel()
         flingTask = Task { @MainActor in
@@ -307,6 +320,7 @@ private struct GalleryZoomDemo: View {
 
     private func close() {
         commitPendingPage()
+        flingPending = false
         withAnimation(returnSpring) {
             selected = nil
             drag = .zero

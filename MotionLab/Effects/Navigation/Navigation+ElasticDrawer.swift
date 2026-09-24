@@ -43,6 +43,8 @@ private struct ElasticDrawerDemo: View {
     @State private var bulge: CGFloat = 0
     @State private var bulgeY: CGFloat = 160
     @State private var dragStart: CGFloat?
+    /// A pull that began away from the drawer's edge while it was closed: ignored until the finger lifts.
+    @State private var ignoringDrag = false
 
     private let openWidth: CGFloat = 190
     private let frameSize = CGSize(width: 250, height: 320)
@@ -115,6 +117,12 @@ private struct ElasticDrawerDemo: View {
     }
 
     private func dragChanged(_ value: DragGesture.Value) {
+        if ignoringDrag { return }
+        if dragStart == nil && width < openWidth / 2 && value.startLocation.x > width + 44 {
+            // Closed: only a true edge pull opens it, so the bulge always starts under the finger.
+            ignoringDrag = true
+            return
+        }
         let start = dragStart ?? width
         if dragStart == nil { dragStart = width }
         let raw: CGFloat = start + value.translation.width * 0.8
@@ -133,6 +141,10 @@ private struct ElasticDrawerDemo: View {
 
     /// Release projects the flick; a system cancellation (`nil`) settles from the current width and drops the bulge.
     private func dragEnded(_ value: DragGesture.Value?) {
+        if ignoringDrag {
+            ignoringDrag = false
+            return
+        }
         let start = dragStart ?? width
         dragStart = nil
         let projected: CGFloat = value.map { start + $0.predictedEndTranslation.width * 0.8 } ?? width

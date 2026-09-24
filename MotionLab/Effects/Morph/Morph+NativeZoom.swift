@@ -11,7 +11,7 @@ extension Effect {
             "iOS 18 风格缩放推入：图块放大成详情页，返回时再缩回原位。"
         ),
         prompt: L(
-            "A grid of rounded gradient tiles. Tapping a tile (it first presses in slightly) opens its detail page with a zoom push: the page grows out of the tile's exact frame and corner radius to fill the screen on a smooth spring (response 0.5 s, damping 0.86), cross-fading from the tile artwork to the full page while the grid dims to 30% behind it. Closing reverses the path into the same tile. The page can also be pulled down or swiped right: it follows the finger, shrinks up to 30% and rounds its corners, while up or left drags barely move it; release past a third of the way (or with a flick) flies it home, otherwise it springs back. Continuous, interruptible and anchored to where it came from.",
+            "A grid of rounded gradient tiles. Tapping a tile (it first presses in slightly) opens its detail page with a zoom push: the page grows out of the tile's exact frame and corner radius to fill the screen on a smooth spring (response 0.5 s, damping 0.86), cross-fading from the tile artwork to the full page while the grid dims to 30% behind it. Closing reverses the path into the same tile. The page can also be pulled down or swiped right: it follows the finger, shrinks to as little as 70% and rounds its corners, while up or left drags barely move it; release past a third of the way (or with a flick) flies it home, otherwise it springs back. Continuous, interruptible and anchored to where it came from.",
             "一组圆角渐变图块。点击时图块先轻压，随后详情页从它的精确位置与圆角中“长”出来铺满屏幕：弹簧（响应 0.5 秒、阻尼 0.86）平滑舒展，图块插画渐隐为完整页面，背后网格压暗至 30%。关闭时沿原路缩回同一图块。也可下拉或右滑，页面跟手缩小（最多 30%）并变圆角，上滑或左滑几乎不动；拖过三分之一或快速甩出即飞回原位，否则弹回。连贯、可打断，始终锚定出发点。"
         ),
         implementation: L(

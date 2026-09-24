@@ -368,6 +368,15 @@ private struct TraceButtonDemo: View {
     @State private var token = 0
     @State private var task: Task<Void, Never>?
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        if ctx.isStill {
+            // Still thumbnail: mid-deploy, the comet ~40% of the way round the outline.
+            _phase = State(initialValue: .working)
+            _started = State(initialValue: Date.now.addingTimeInterval(-0.4 * max(ctx["lap"], 0.2)))
+        }
+    }
+
     var body: some View {
         VStack(spacing: 22) {
             Button(action: tap) { face }

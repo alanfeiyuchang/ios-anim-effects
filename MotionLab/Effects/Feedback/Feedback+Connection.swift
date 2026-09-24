@@ -42,6 +42,12 @@ private struct ConnectionBannerDemo: View {
     @State private var phase: LinkPhase = .online
     @State private var token = 0
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnail: the offline banner pushing a desaturated feed, not a plain feed.
+        _phase = State(initialValue: ctx.isStill ? .offline : .online)
+    }
+
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: 0.82) }
 
     var body: some View {

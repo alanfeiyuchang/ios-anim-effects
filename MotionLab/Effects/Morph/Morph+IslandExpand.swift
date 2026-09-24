@@ -36,6 +36,15 @@ private struct IslandExpandDemo: View {
     @State private var tall = false
     @State private var showContent = false
 
+    init(ctx: DemoContext) {
+        self.ctx = ctx
+        // Still thumbnail: the expanded live-activity card rather than a bare pill on an empty canvas.
+        let seeded: Bool = ctx.isStill
+        _wide = State(initialValue: seeded)
+        _tall = State(initialValue: seeded)
+        _showContent = State(initialValue: seeded)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             island

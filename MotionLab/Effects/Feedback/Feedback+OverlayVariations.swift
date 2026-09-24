@@ -298,6 +298,12 @@ private struct TipPopoverDemo: View {
         }
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(alignment: .top) {
+            // The photo being edited, so the closed state still reads as an editor rather than a blank card.
+            TipEditorCanvas()
+                .padding(.top, 20)
+                .allowsHitTesting(false)
+        }
         .autoplay(ctx.isPreview, every: 2.4, delay: 0.5) { toggle() }
     }
 
@@ -380,6 +386,30 @@ private struct TipPopoverDemo: View {
             if !ctx.isPreview { Haptics.tap() }
             withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { open = true }
         }
+    }
+}
+
+/// A faint placeholder photo (sky, sun, mountains) above the toolbar.
+private struct TipEditorCanvas: View {
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+        return shape
+            .fill(LinearGradient(colors: [Palette.sky.opacity(0.22), Palette.violet.opacity(0.12)], startPoint: .top, endPoint: .bottom))
+            .frame(width: 250, height: 180)
+            .overlay(alignment: .topTrailing) {
+                Circle()
+                    .fill(Palette.amber.opacity(0.4))
+                    .frame(width: 30, height: 30)
+                    .padding(22)
+            }
+            .overlay(alignment: .bottom) {
+                Image(systemName: "mountain.2.fill")
+                    .font(.system(size: 96))
+                    .foregroundStyle(Palette.indigo.opacity(0.2))
+                    .offset(y: 16)
+            }
+            .clipShape(shape)
+            .overlay { shape.strokeBorder(Palette.stroke) }
     }
 }
 

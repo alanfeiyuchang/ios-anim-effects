@@ -8,8 +8,8 @@ extension Effect {
         name: L("Masked Line Rise", "遮罩逐行升起"),
         summary: L("Headline lines rise out of invisible slots, one after another, then exit upward.", "标题逐行从隐形槽口中升起，随后向上退场。"),
         prompt: L(
-            "An editorial headline of three short lines, each living in its own clipped slot so the type appears to rise out of an invisible baseline. On entry every line starts one full line-height below its slot, tilted 6° around its leading baseline, then springs up and straightens (response ≈0.7 s, damping ≈0.85) with a 90 ms stagger top to bottom; a small uppercase eyebrow fades in first and a gradient rule draws out from the left 200 ms after the last line lands. After a pause the lines exit upward through the top of their slots with the same stagger and the next headline rises in. Confident, magazine-grade kinetic type.",
-            "三行简短的杂志式标题，每一行都位于自己的裁剪槽口中，文字仿佛从看不见的基线里升起。入场时，每行从槽口下方整整一行高处开始，绕行首基线倾斜6°，随后以弹簧（响应约0.7秒、阻尼约0.85）上升并回正，自上而下错开90毫秒；上方的小号大写眉标先淡入，最后一行落定200毫秒后，一道渐变细线从左向右画出。停留片刻后，各行以同样的错开节奏从槽口顶部向上退出，下一组标题随之升起。自信、有杂志水准的动态排版。"
+            "An editorial headline of three short lines, each living in its own clipped slot so the type appears to rise out of an invisible baseline. On entry every line starts one full line-height below its slot, tilted 6° around its leading baseline, then springs up and straightens (response ≈0.7 s, damping ≈0.85) with a 90 ms stagger top to bottom; a small uppercase eyebrow fades in first and a gradient rule draws out from the left 200 ms after the last line lands. After a pause the lines exit upward through the top of their slots with the same stagger and the next headline rises in; a tap skips ahead at once. Confident, magazine-grade kinetic type.",
+            "三行简短的杂志式标题，每一行都位于自己的裁剪槽口中，文字仿佛从看不见的基线里升起。入场时，每行从槽口下方整整一行高处开始，绕行首基线倾斜6°，随后以弹簧（响应约0.7秒、阻尼约0.85）上升并回正，自上而下错开90毫秒；上方的小号大写眉标先淡入，最后一行落定200毫秒后，一道渐变细线从左向右画出。停留片刻后，各行以同样的错开节奏从槽口顶部向上退出，下一组标题随之升起，轻点可立即切换。自信、有杂志水准的动态排版。"
         ),
         implementation: L(
             "Each line is offset by ±its height inside a .clipped() frame and rotated with an anchor at its bottom-leading corner; a phase enum drives per-line springs delayed by index, and a scaleEffect(x:anchor: .leading) draws the rule.",
@@ -37,6 +37,8 @@ private struct TextMaskedLinesDemo: View {
     let ctx: DemoContext
     @State private var phase: TextMaskedPhase
     @State private var index = 0
+    /// Bumped by a tap: restarts the loop, which first sends the current headline out.
+    @State private var skips = 0
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -83,7 +85,14 @@ private struct TextMaskedLinesDemo: View {
         }
         .frame(width: 290, alignment: .leading)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { await loop() }
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap for the next headline", "点击切换下一组标题"), ctx: ctx)
+                .padding(.bottom, 14)
+                .allowsHitTesting(false)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { skip() }
+        .task(id: skips) { await loop(skipping: skips > 0) }
     }
 
     private func lineAnimation(_ i: Int, count: Int) -> Animation {
@@ -102,8 +111,35 @@ private struct TextMaskedLinesDemo: View {
         return .easeIn(duration: 0.25)
     }
 
-    private func loop() async {
-        try? await Task.sleep(for: .seconds(0.35))
+    private func skip() {
+        guard !ctx.isPreview else { return }
+        Haptics.selection()
+        skips += 1
+    }
+
+    /// Next headline without animation: its lines wait below their slots, ready to rise.
+    private func advance() {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            phase = .below
+            index += 1
+        }
+    }
+
+    private func loop(skipping: Bool) async {
+        if skipping {
+            // A tap: lift the current headline out right away, then raise the next one.
+            if phase == .shown {
+                phase = .above
+                try? await Task.sleep(for: .seconds(0.4 + ctx["stagger"] * 2))
+                if Task.isCancelled { return }
+            }
+            advance()
+            try? await Task.sleep(for: .seconds(0.05))
+        } else {
+            try? await Task.sleep(for: .seconds(0.35))
+        }
         while !Task.isCancelled {
             phase = .shown
             try? await Task.sleep(for: .seconds(2.8))
@@ -111,12 +147,7 @@ private struct TextMaskedLinesDemo: View {
             phase = .above
             try? await Task.sleep(for: .seconds(0.8 + ctx["stagger"] * 3))
             if Task.isCancelled { return }
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                phase = .below
-                index += 1
-            }
+            advance()
             try? await Task.sleep(for: .seconds(0.08))
         }
     }

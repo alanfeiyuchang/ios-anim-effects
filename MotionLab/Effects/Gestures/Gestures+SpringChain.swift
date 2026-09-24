@@ -8,8 +8,8 @@ extension Effect {
         name: L("Spring Chain Trail", "弹簧链尾迹"),
         summary: L("A comet of dots chasing your finger, each on a slightly lazier spring.", "一串圆点追随手指，每颗的弹簧都比前一颗更慵懒。"),
         prompt: L(
-            "A chain of 10 glowing dots, shrinking from 52 pt at the head to 16 pt at the tail and shifting hue from mint to violet while fading from 100% to 35% opacity, is linked by a faint gradient thread. Touching or dragging anywhere on the stage sets the head's target; the head springs toward the finger and every following dot springs toward the dot in front of it (link response ≈ 0.12 s, damping 0.7), integrated per frame, so motion propagates down the chain like a whip: it stretches along fast strokes, curls through turns and coils back into a bead when the finger stops. The head sits on top and soft colored shadows add depth. Organic, like a school of fish following a lure.",
-            "十颗发光圆点由一根淡淡的渐变细线串起：从头部52pt递减到尾部16pt，色相由薄荷绿渐变为紫色，透明度从100%递减到35%。在舞台任意位置按下或拖动都会设置头部的目标；头部以弹簧追向手指，其后每一颗圆点都以弹簧追向它前面那一颗（链节响应约0.12秒、阻尼0.7），逐帧积分，运动像鞭子一样沿链条传递：快速划动时整串被拉长，转弯时卷曲，手指停下后又盘回一颗珠子。头部始终置顶，柔和的同色投影增加层次。有机灵动，像鱼群追逐诱饵。"
+            "A chain of 10 glowing dots, shrinking from 52 pt at the head to 16 pt at the tail and shifting hue from mint to violet while fading from 100% to 35% opacity, is linked by a faint gradient thread. Grabbing the head (a 56 pt hit disc, so swipes elsewhere still scroll the page) and dragging sets its target; the head springs toward the finger and every following dot springs toward the dot in front of it (link response ≈ 0.12 s, damping 0.7), integrated per frame, so motion propagates down the chain like a whip: it stretches along fast strokes, curls through turns and coils back into a bead when the finger stops. The head sits on top and soft colored shadows add depth. Organic, like a school of fish following a lure.",
+            "十颗发光圆点由一根淡淡的渐变细线串起：从头部52pt递减到尾部16pt，色相由薄荷绿渐变为紫色，透明度从100%递减到35%。按住头部（56 pt触控圆，其他位置的滑动仍可滚动页面）拖动即可设置它的目标；头部以弹簧追向手指，其后每一颗圆点都以弹簧追向它前面那一颗（链节响应约0.12秒、阻尼0.7），逐帧积分，运动像鞭子一样沿链条传递：快速划动时整串被拉长，转弯时卷曲，手指停下后又盘回一颗珠子。头部始终置顶，柔和的同色投影增加层次。有机灵动，像鱼群追逐诱饵。"
         ),
         implementation: L(
             "A reference-type model steps a spring per dot inside TimelineView (4 semi-implicit Euler substeps): the head's goal is the finger, each other dot's goal is its predecessor. The timeline pauses ~2 s after the chain settles.",
@@ -88,24 +88,16 @@ private struct GestureSpringChainDemo: View {
         let goal = target ?? center
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
             let _ = model.step(to: timeline.date, count: count, target: goal, response: ctx["link"], damping: ctx["damping"])
+            let head = model.positions.first ?? goal
+            // Only a live disc around the head takes touches, so swipes elsewhere still scroll the page.
             ChainDots(positions: model.positions)
+                .contentShape(ChainHitArea(center: head, radius: 56))
+                .gesture(chainDrag)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .updating($pressing) { _, state, _ in state = true }
-                .onChanged { value in
-                    held = true
-                    touched = true
-                    wake()
-                    target = value.location
-                }
-                .onEnded { _ in endHold() }
-        )
         .overlay(alignment: .bottom) {
-            DemoHint(text: L("Drag anywhere", "在任意位置拖动"), ctx: ctx)
+            DemoHint(text: L("Grab the big dot and drag", "按住大圆点拖动"), ctx: ctx)
                 .padding(.bottom, 14)
                 .allowsHitTesting(false)
         }
@@ -113,6 +105,18 @@ private struct GestureSpringChainDemo: View {
         .onChange(of: pressing) { _, isPressing in
             if !isPressing { endHold() }
         }
+    }
+
+    private var chainDrag: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
+            .onChanged { value in
+                held = true
+                touched = true
+                wake()
+                target = value.location
+            }
+            .onEnded { _ in endHold() }
     }
 
     /// Release or system cancellation: the chain coils up where the finger left it, then the timeline sleeps.
@@ -147,6 +151,15 @@ private struct GestureSpringChainDemo: View {
             try? await Task.sleep(for: .seconds(2.2))
             if token == sleepToken { awake = false }
         }
+    }
+}
+
+private struct ChainHitArea: Shape {
+    let center: CGPoint
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
     }
 }
 

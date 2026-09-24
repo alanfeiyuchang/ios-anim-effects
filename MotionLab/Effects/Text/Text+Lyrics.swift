@@ -8,8 +8,8 @@ extension Effect {
         name: L("Synced Lyrics", "逐字歌词"),
         summary: L("Music-app lyrics: the active line fills word by word as the column glides up.", "音乐 App 式歌词：当前行逐字填色，歌词列平滑上移。"),
         prompt: L(
-            "Full-bleed lyrics on a deep violet player card. The active line is set in heavy 24 pt type at full size; a soft-edged fill sweeps across it from left to right in time with the vocal, turning each word from 35% to 100% white with a faint glow. When a line finishes, the whole column glides up one line on an ease-out-back curve (~450 ms, slight overshoot) so the next line lands in the focus slot; lines above and below sit at 92% scale, dim with distance and blur by ~1.2 pt per line, like a shallow depth of field, and the column dissolves through a soft gradient mask at its top and bottom edges. The song starts with its first line in focus and nothing above it. Musical, immersive and calm.",
-            "深紫色播放器卡片上铺满歌词。当前行以24 pt粗体完整显示；一道边缘柔和的填色随演唱节奏从左向右扫过，让每个字从35%白逐渐变为100%白并带淡淡辉光。一行唱完后，整列歌词以带轻微过冲的缓出回弹曲线（约450毫秒）上移一行，下一行正好落入焦点位置；上下其余行缩小至92%，随距离变暗，并每行增加约1.2 pt模糊，如同浅景深；歌词列的上下边缘通过柔和的渐变遮罩淡出。歌曲从第一行开始，上方不会出现其他歌词。富有音乐性、沉浸而安静。"
+            "Full-bleed lyrics on a deep violet player card. The active line is set in heavy 24 pt type at full size; a soft-edged fill sweeps across it from left to right in time with the vocal, turning each word from 35% to 100% white with a faint glow. When a line finishes, the whole column glides up one line on an ease-out-back curve (~450 ms, slight overshoot) so the next line lands in the focus slot; lines above and below sit at 92% scale, dim with distance and blur by ~1.2 pt per line, like a shallow depth of field, and the column dissolves through a soft gradient mask at its top and bottom edges. The song starts with its first line in focus and nothing above it; tapping any line seeks to it. Musical, immersive and calm.",
+            "深紫色播放器卡片上铺满歌词。当前行以24 pt粗体完整显示；一道边缘柔和的填色随演唱节奏从左向右扫过，让每个字从35%白逐渐变为100%白并带淡淡辉光。一行唱完后，整列歌词以带轻微过冲的缓出回弹曲线（约450毫秒）上移一行，下一行正好落入焦点位置；上下其余行缩小至92%，随距离变暗，并每行增加约1.2 pt模糊，如同浅景深；歌词列的上下边缘通过柔和的渐变遮罩淡出。歌曲从第一行开始，上方不会出现其他歌词；点按任意一行即跳转到该行。富有音乐性、沉浸而安静。"
         ),
         implementation: L(
             "A TimelineView(.animation) derives the current line, its fill progress and an eased scroll position from elapsed time; the active line overlays a white copy masked by a LinearGradient whose stops follow the progress.",
@@ -45,6 +45,21 @@ private struct TextLyricsDemo: View {
     }
 
     var body: some View {
+        VStack(spacing: 16) {
+            card
+            DemoHint(text: L("Tap a line to jump to it", "点击歌词跳转到该行"), ctx: ctx)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Seeks so `line` becomes the active line from its first beat.
+    private func seek(to line: Int) {
+        guard !ctx.isPreview, !ctx.isStill else { return }
+        Haptics.selection()
+        start = Date().addingTimeInterval(-Double(line) * max(ctx["duration"], 0.5))
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
@@ -53,7 +68,8 @@ private struct TextLyricsDemo: View {
                     elapsed: timeline.date.timeIntervalSince(start),
                     lineDuration: max(ctx["duration"], 0.5),
                     blur: ctx["blur"],
-                    glow: ctx.bool("glow")
+                    glow: ctx.bool("glow"),
+                    onSeek: seek(to:)
                 )
             }
             .frame(height: 196)
@@ -79,7 +95,6 @@ private struct TextLyricsDemo: View {
             in: RoundedRectangle(cornerRadius: 28, style: .continuous)
         )
         .shadow(color: Color(hex: 0x3B2A8C).opacity(0.35), radius: 20, y: 12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var header: some View {
@@ -115,6 +130,7 @@ private struct TextLyricsColumn: View {
     let lineDuration: Double
     let blur: Double
     let glow: Bool
+    let onSeek: (Int) -> Void
 
     private let lineHeight: CGFloat = 64
 
@@ -142,6 +158,10 @@ private struct TextLyricsColumn: View {
             .scaleEffect(CGFloat(1 - 0.08 * min(far, 1)), anchor: .leading)
             .opacity(isActive ? 1 : max(0.75 - far * 0.2, 0.1))
             .blur(radius: isActive ? 0 : CGFloat(far * blur))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture { onSeek(i) }
+            // After the tap target, so the hit area travels with the line.
             .offset(y: CGFloat(distance) * lineHeight + lineHeight * 0.9)
     }
 

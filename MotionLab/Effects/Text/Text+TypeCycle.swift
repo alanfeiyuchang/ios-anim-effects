@@ -8,8 +8,8 @@ extension Effect {
         name: L("Type & Replace Cycle", "打字轮换"),
         summary: L("Each keyword pops in glyph by glyph, holds, then is selected and replaced or lifts away.", "关键词逐字弹跳打出、停留，再被全选替换或整词上浮离场。"),
         prompt: L(
-            "A hero line ends in a rotating keyword set in gradient type, followed by a 3 pt rounded caret. Each keyword types in at 70 ms per character, every glyph popping up from 30% scale and 12 pt low with a back-ease overshoot over 140 ms while the solid caret rides it; it holds 1.4 s as the caret blinks at ~1.9 Hz, then leaves as a whole word, never letter by letter: by default Select & replace flashes a translucent accent selection over it for 300 ms before it vanishes at once, or Lift away floats it 18 pt up while it fades on an ease-in over 300 ms. A 250 ms pause with a blinking caret precedes the next word. The rhythm — quick in, patient hold, brisk out — feels human, like someone live-editing a headline.",
-            "主标题末尾是一个轮换的关键词，使用渐变文字，后面跟着一根3 pt的圆角光标。关键词以每字70毫秒打出，每个字在140毫秒内从30%大小、低12 pt处带回弹缓动跳出，光标常亮紧随；停留1.4秒，光标约1.9 Hz闪烁；随后整词离场而非逐字删除：默认「全选替换」覆上半透明强调色选区300毫秒后一次性消失，或「上浮离场」在300毫秒内缓入上移18 pt并淡出。下一个词出现前还有250毫秒的光标闪烁停顿。快进、耐心停留、利落退出的节奏很有人味，像有人在实时修改标题。"
+            "A hero line ends in a rotating keyword set in gradient type, followed by a 3 pt rounded caret. Each keyword types in at 70 ms per character, every glyph popping up from 30% scale and 12 pt low with a back-ease overshoot over 140 ms while the solid caret rides it; it holds 1.4 s as the caret blinks at ~1.9 Hz, then leaves as a whole word, never letter by letter: by default Select & replace flashes a translucent accent selection over it for 300 ms before it vanishes at once, or Lift away floats it 18 pt up while it fades on an ease-in over 300 ms. A 250 ms pause with a blinking caret precedes the next word; a tap triggers the exit early. The rhythm — quick in, patient hold, brisk out — feels human, like someone live-editing a headline.",
+            "主标题末尾是一个轮换的关键词，使用渐变文字，后面跟着一根3 pt的圆角光标。关键词以每字70毫秒打出，每个字在140毫秒内从30%大小、低12 pt处带回弹缓动跳出，光标常亮紧随；停留1.4秒，光标约1.9 Hz闪烁；随后整词离场而非逐字删除：默认「全选替换」覆上半透明强调色选区300毫秒后一次性消失，或「上浮离场」在300毫秒内缓入上移18 pt并淡出。下一个词出现前有250毫秒闪烁停顿，轻点可提前离场。快进、耐心停留、利落退出的节奏很有人味，像有人在实时修改标题。"
         ),
         implementation: L(
             "A TimelineView(.animation) walks a per-word schedule (type, hold, exit, pause) built from each word's length and returns the visible prefix, the newest glyph's age, caret state, selection flag and lift progress; the last three glyphs are drawn separately with an age-driven back-ease pop, and the gradient is masked over the whole line. No animation state is stored.",
@@ -40,6 +40,9 @@ private struct TypeCycleFrame {
 
 private struct TypeCycleDemo: View {
     let ctx: DemoContext
+    /// Seconds added to the clock by taps: each tap jumps the schedule to the current word's exit
+    /// (or, if it is already leaving, to the start of the next word).
+    @State private var shift: Double = 0
 
     private var words: [String] {
         ctx.language == .zh
@@ -56,12 +59,46 @@ private struct TypeCycleDemo: View {
                 line(stillFrame)
             } else {
                 TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-                    line(schedule(at: timeline.date.timeIntervalSinceReferenceDate))
+                    line(schedule(at: timeline.date.timeIntervalSinceReferenceDate + shift))
                 }
             }
+            DemoHint(text: L("Tap to replace the word", "点击替换关键词"), ctx: ctx)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 18)
         }
         .frame(width: 280, alignment: .leading)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture { skip() }
+    }
+
+    private func skip() {
+        guard !ctx.isPreview, !ctx.isStill else { return }
+        Haptics.selection()
+        shift += skipAmount(at: Date().timeIntervalSinceReferenceDate + shift)
+    }
+
+    /// Time from `time` to the current word's exit, or to the next word if the exit already started.
+    private func skipAmount(at time: Double) -> Double {
+        let perChar: Double = max(ctx["typeSpeed"], 0.01)
+        let hold: Double = ctx["hold"]
+        let list = words.map { word in word.map { String($0) } }
+        let durations = slotDurations(list, perChar: perChar, hold: hold)
+        let total: Double = durations.reduce(0, +)
+        var t: Double = time.truncatingRemainder(dividingBy: max(total, 0.1))
+        for (index, chars) in list.enumerated() {
+            guard t >= durations[index] else {
+                let exitStart = Double(chars.count) * perChar + hold
+                return t < exitStart ? exitStart - t : durations[index] - t
+            }
+            t -= durations[index]
+        }
+        return 0
+    }
+
+    /// Each word's slot: typing, hold, a 300 ms exit and a 250 ms pause.
+    private func slotDurations(_ list: [[String]], perChar: Double, hold: Double) -> [Double] {
+        list.map { chars in Double(chars.count) * perChar + hold + 0.3 + 0.25 }
     }
 
     private var stillFrame: TypeCycleFrame {
@@ -126,14 +163,9 @@ private struct TypeCycleDemo: View {
         let perChar: Double = max(ctx["typeSpeed"], 0.01)
         let hold: Double = ctx["hold"]
         let selectMode = ctx.int("erase") == 1
-        let pause: Double = 0.25
         let list = words.map { word in word.map { String($0) } }
-        var durations: [Double] = []
-        for chars in list {
-            let count = Double(chars.count)
-            // Both exits take the whole word out in 300 ms.
-            durations.append(count * perChar + hold + 0.3 + pause)
-        }
+        // Both exits take the whole word out in 300 ms.
+        let durations = slotDurations(list, perChar: perChar, hold: hold)
         let total: Double = durations.reduce(0, +)
         var t: Double = time.truncatingRemainder(dividingBy: max(total, 0.1))
         let blink = time.truncatingRemainder(dividingBy: 0.52) < 0.26

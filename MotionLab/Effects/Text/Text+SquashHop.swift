@@ -59,7 +59,7 @@ private struct SquashHopDemo: View {
             }
         }
         .fixedSize()
-        .padding(.top, ctx.cg("height") * 2.4)
+        .padding(.top, ctx.cg("height") * 2)
     }
 
     private func letter(_ char: String, index: Int, pose: HopPose) -> some View {

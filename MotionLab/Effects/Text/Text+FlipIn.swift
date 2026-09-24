@@ -8,8 +8,8 @@ extension Effect {
         name: L("3D Flip-in Letters", "3D 翻转入场"),
         summary: L("Letters hinge into place in 3D, one after another.", "字母依次以 3D 铰链翻转落位。"),
         prompt: L(
-            "A heavy, rounded display word in a warm sunset gradient assembles itself letter by letter: each glyph starts rotated −100° around the horizontal axis (flipping top-to-bottom; the alternative hinges left-to-right around the vertical axis) with strong perspective, 12 pt low, blurred and transparent, then hinges upright on a lively spring (≈0.55 s response, 0.7 damping) with a 60 ms stagger in reading order, overshooting a few degrees before settling. After a beat the word exits with the same stagger, flipping forward to +100° and dissolving, and the next word flips in while a small chapter pill beneath glides to mark its place in the sequence — bold, rhythmic kinetic typography, like a title sequence.",
-            "暖色日落渐变的粗圆体大字逐字组装：每个字形起始时绕水平轴旋转−100°（上下翻转；另一选项为绕竖直轴左右翻转），带强烈透视，下沉12pt、模糊且透明；随后以富有活力的弹簧（响应约0.55秒、阻尼0.7）按阅读顺序每隔60毫秒依次翻起立正，先过冲几度再稳定。停留片刻后，整词以同样的错开节奏向前翻转到+100°并消散，下一个词接着翻入，下方的小章节胶囊随之滑动标示当前位置——大胆、有节奏的动态排版，宛如片头字幕。"
+            "A heavy, rounded display word in a warm sunset gradient assembles itself letter by letter: each glyph starts rotated −100° around the horizontal axis (flipping top-to-bottom; the alternative hinges left-to-right around the vertical axis) with strong perspective, 12 pt low, blurred and transparent, then hinges upright on a lively spring (≈0.55 s response, 0.7 damping) with a 60 ms stagger in reading order, overshooting a few degrees before settling. After a beat the word exits with the same stagger, flipping forward to +100° and dissolving, and the next word flips in while a small chapter pill beneath glides to mark its place; a tap skips ahead at once — bold, rhythmic kinetic typography, like a title sequence.",
+            "暖色日落渐变的粗圆体大字逐字组装：每个字形起始时绕水平轴旋转−100°（上下翻转；另一选项为绕竖直轴左右翻转），带强烈透视，下沉12pt、模糊且透明；随后以富有活力的弹簧（响应约0.55秒、阻尼0.7）按阅读顺序每隔60毫秒依次翻起立正，先过冲几度再稳定。停留片刻后，整词以同样的错开节奏向前翻转到+100°并消散，下一个词接着翻入，下方的小章节胶囊随之滑动标示位置，轻点可立即跳到下一个词——大胆、有节奏的动态排版，宛如片头字幕。"
         ),
         implementation: L(
             "Each character is its own Text with rotation3DEffect, offset, blur and opacity keyed to a phase enum, animated via .animation(.spring(...).delay(i × stagger), value: phase).",
@@ -48,6 +48,8 @@ private struct FlipInDemo: View {
     @State private var index = 0
     /// Mirrors `index` outside the animation-disabled reset so the chapter dots can glide.
     @State private var shownIndex = 0
+    /// Bumped by a tap: restarts the loop, which first sends the current word out.
+    @State private var skips = 0
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -76,9 +78,12 @@ private struct FlipInDemo: View {
             .foregroundStyle(Palette.sunset)
             .shadow(color: Palette.coral.opacity(0.28), radius: 14, y: 10)
             pageDots
+            DemoHint(text: L("Tap for the next word", "点击切换下一个词"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { await loop() }
+        .contentShape(Rectangle())
+        .onTapGesture { skip() }
+        .task(id: skips) { await loop(skipping: skips > 0) }
     }
 
     /// Which title card of the sequence is showing — a small chapter marker under the word.
@@ -98,8 +103,35 @@ private struct FlipInDemo: View {
             .delay(Double(i) * ctx["stagger"])
     }
 
-    private func loop() async {
-        try? await Task.sleep(for: .seconds(0.3))
+    private func skip() {
+        guard !ctx.isPreview else { return }
+        Haptics.selection()
+        skips += 1
+    }
+
+    /// Next word without animation: the letters wait hidden, ready to flip in.
+    private func advance() {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            phase = .hidden
+            index += 1
+        }
+    }
+
+    private func loop(skipping: Bool) async {
+        if skipping {
+            // A tap: flip the current word out right away, then bring the next one in.
+            if phase == .shown {
+                phase = .exited
+                try? await Task.sleep(for: .seconds(0.45))
+                if Task.isCancelled { return }
+            }
+            advance()
+            try? await Task.sleep(for: .seconds(0.05))
+        } else {
+            try? await Task.sleep(for: .seconds(0.3))
+        }
         while !Task.isCancelled {
             phase = .shown
             shownIndex = index
@@ -108,12 +140,7 @@ private struct FlipInDemo: View {
             phase = .exited
             try? await Task.sleep(for: .seconds(0.9))
             if Task.isCancelled { return }
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                phase = .hidden
-                index += 1
-            }
+            advance()
             try? await Task.sleep(for: .seconds(0.08))
         }
     }

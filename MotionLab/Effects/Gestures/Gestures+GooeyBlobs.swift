@@ -8,8 +8,8 @@ extension Effect {
         name: L("Gooey Drag", "黏液拖拽"),
         summary: L("Pull a droplet out of a blob and watch the liquid bridge stretch, snap and re-merge.", "从团块中拉出液滴，液桥拉伸、断开再融合。"),
         prompt: L(
-            "A 112 pt liquid blob sits at the centre with a 72 pt droplet fused to its right side and a 34 pt satellite drop hidden inside that droplet, all rendered as one aurora-gradient surface (mint → sky → violet) with a soft glow. The surface uses a metaball look: shapes are blurred about 14 pt and alpha-thresholded at 50%, so whenever they come close a smooth, necking liquid bridge forms between them. Dragging pulls the droplet toward the finger on a simulated spring (response 0.5 s, damping 0.45); the bridge thins and snaps as it leaves, and the satellite peels out and trails behind on a softer, laggier spring. Releasing flings the droplet home, where it overshoots, merges and wobbles before settling. Viscous, tactile and delightfully liquid.",
-            "中央是一个112 pt的液态团块，右侧融着一颗72 pt的液滴，液滴里还藏着一颗34 pt的小卫星滴，三者渲染成同一块带柔光的极光渐变表面（薄荷绿、天蓝、紫）。表面用“元球”手法：图形先模糊约14 pt，再按50%透明度阈值裁切，只要彼此靠近就会长出平滑、带颈缩的液桥。拖动时液滴由模拟弹簧（响应0.5秒、阻尼0.45）拉向手指，液桥越拉越细直至断开，小卫星也脱离出来，以更软、更滞后的弹簧拖在后面。松手后液滴被弹回原位，过冲、融合、晃几下才稳住。黏稠可触。"
+            "A 112 pt liquid blob sits at the centre with a 72 pt droplet fused to its right side and a 34 pt satellite drop hidden inside that droplet, all rendered as one aurora-gradient surface (mint → sky → violet) with a soft glow. The surface uses a metaball look: shapes are blurred about 14 pt and alpha-thresholded at 50%, so whenever they come close a smooth, necking liquid bridge forms between them. Grabbing the droplet (only a disc around it takes touches, so swipes elsewhere scroll the page) pulls it toward the finger on a simulated spring (response 0.5 s, damping 0.45); the bridge thins and snaps as it leaves, and the satellite peels out and trails behind on a softer, laggier spring. Releasing flings the droplet home, where it overshoots, merges and wobbles before settling. Viscous, tactile and delightfully liquid.",
+            "中央是一个112 pt的液态团块，右侧融着一颗72 pt的液滴，液滴里还藏着一颗34 pt的小卫星滴，三者渲染成同一块带柔光的极光渐变表面（薄荷绿、天蓝、紫）。表面用“元球”手法：图形先模糊约14 pt，再按50%透明度阈值裁切，只要彼此靠近就会长出平滑、带颈缩的液桥。按住液滴拖动（别处仍可滚动页面），它由模拟弹簧（响应0.5秒、阻尼0.45）拉向手指，液桥越拉越细直至断开，小卫星也脱离出来，以更软、更滞后的弹簧拖在后面。松手后液滴被弹回原位，过冲、融合、晃几下才稳住。黏稠可触。"
         ),
         implementation: L(
             "A TimelineView(.animation) steps a small spring integrator stored in a reference-type model and pauses once it settles; a Canvas blurs and alpha-thresholds the circles into metaballs that mask an aurora gradient, while a second blurred Canvas draws the glow, all flattened with drawingGroup() instead of a costly view shadow.",
@@ -24,6 +24,16 @@ extension Effect {
         ]
     ) { ctx in
         GooeyDemo(ctx: ctx)
+    }
+}
+
+/// Touch disc around the droplet, given as an offset from the centre of the stage.
+private struct GooHitArea: Shape {
+    let offset: CGPoint
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(ellipseIn: CGRect(x: rect.midX + offset.x - radius, y: rect.midY + offset.y - radius, width: radius * 2, height: radius * 2))
     }
 }
 
@@ -109,10 +119,11 @@ private struct GooeyDemo: View {
                     }
             }
             .drawingGroup()
+            // Only a live disc around the droplet takes touches, so swipes elsewhere still scroll the page.
+            .contentShape(GooHitArea(offset: model.droplet, radius: 58))
+            .gesture(dragGesture)
         }
         .frame(width: area, height: area)
-        .contentShape(Rectangle())
-        .gesture(dragGesture)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
             DemoHint(text: L("Pull the droplet away", "把液滴拉出来"), ctx: ctx)

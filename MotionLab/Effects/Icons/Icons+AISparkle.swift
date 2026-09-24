@@ -8,8 +8,8 @@ extension Effect {
         name: L("AI Sparkle", "AI 星芒"),
         summary: L("A four-point star sways and breathes in shifting colour while two satellites twinkle.", "四角星芒摇曳呼吸、色彩流转，两颗小星在旁闪烁。"),
         prompt: L(
-            "The now-familiar 'AI' mark: a large four-point star with concave, curved sides, filled with a conic gradient of violet, pink, amber and sky that rotates 60° per second so the colour appears to flow around the glyph. The star sways ±12° on a 4 s sine and breathes between 92% and 106% scale, over a blurred halo of the same gradient at 50% opacity. Two small satellite stars (top-right and bottom-left) twinkle in counter-phase: every 1.6 s each pops from 30% to 100% scale while turning 45°, then shrinks back as it turns another 45°. In Thinking mode all of this runs 2.5× faster, while a tiny spark orbits the star on its own steady 1.2 s lap. It feels intelligent, gentle and alive.",
-            "如今常见的「AI」标志：一个四边内凹、呈弧形的四角大星芒，填充由紫、粉、琥珀、天蓝组成的锥形渐变，渐变每秒旋转60°，颜色仿佛绕着图形流动。星芒以4秒周期的正弦做±12°摇摆，并在92%到106%之间呼吸缩放，下方衬着一层同样渐变、50%透明度的模糊光晕。两颗小卫星星芒（右上与左下）反相闪烁：每1.6秒从30%放大到100%并旋转45°，再边转45°边缩回。切到「思考中」时，以上节奏全部加快2.5倍，另有一粒小火花按自己的节奏每1.2秒绕星芒转一圈。聪明、温柔、有生命力。"
+            "The now-familiar 'AI' mark: a large four-point star with concave, curved sides, filled with a conic gradient of violet, pink, amber and sky that rotates 60° per second so the colour appears to flow around the glyph. The star sways ±12° on a 4 s sine and breathes between 92% and 106% scale, over a blurred halo of the same gradient at 50% opacity. Two small satellite stars (top-right and bottom-left) twinkle in counter-phase: every 1.6 s each pops from 30% to 100% scale while turning 45°, then shrinks back as it turns another 45°. In Thinking mode all of this runs 2.5× faster, while a tiny spark fades in to orbit the star on its own steady 1.2 s lap; tapping toggles Idle and Thinking without a phase jump. It feels intelligent, gentle and alive.",
+            "如今常见的「AI」标志：一个四边内凹、呈弧形的四角大星芒，填充由紫、粉、琥珀、天蓝组成的锥形渐变，渐变每秒旋转60°，颜色仿佛绕着图形流动。星芒以4秒周期的正弦做±12°摇摆，并在92%到106%之间呼吸缩放，下方衬着一层同样渐变、50%透明度的模糊光晕。两颗小卫星星芒（右上与左下）反相闪烁：每1.6秒从30%放大到100%并旋转45°，再边转45°边缩回。切到「思考中」时，以上节奏全部加快2.5倍，小火花淡入并每1.2秒绕星一圈；轻点可无缝切换待机与思考。聪明、温柔、鲜活。"
         ),
         implementation: L(
             "A custom Shape draws the concave four-point star with quadratic curves; a TimelineView(.animation) drives its rotation, scale and the angle of an AngularGradient fill, plus the satellites' twinkle and the orbiting spark.",
@@ -50,22 +50,56 @@ private struct SparkleStar: Shape {
 
 private struct AISparkleDemo: View {
     let ctx: DemoContext
+    /// A tap flips the Mode parameter's state (Idle ↔ Thinking) locally.
+    @State private var flipped = false
+    /// Scene clock value at the last tap, and when that tap happened (reference-date seconds),
+    /// so switching the 2.5× Thinking rate continues from the same phase instead of jumping.
+    @State private var clockBase: Double = 0
+    @State private var clockStart: Double = Date().timeIntervalSinceReferenceDate
+    @State private var flippedAt: Double = -.infinity
 
     private let colors: [Color] = [Palette.violet, Palette.pink, Palette.amber, Palette.sky, Palette.violet]
 
+    private var thinking: Bool { (ctx.int("mode") == 1) != flipped }
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-            let raw: Double = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3_600)
-            let thinking = ctx.int("mode") == 1
-            let time: Double = raw * ctx["speed"] * (thinking ? 2.5 : 1)
-            // The spark keeps its own 1.2 s orbit (Speed only), not the 2.5× Thinking clock.
-            let sparkTime: Double = raw * ctx["speed"]
-            scene(time: time, sparkTime: sparkTime, thinking: thinking)
+        VStack(spacing: 18) {
+            TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
+                let now: Double = timeline.date.timeIntervalSinceReferenceDate
+                // The spark keeps its own 1.2 s orbit (Speed only), not the 2.5× Thinking clock.
+                let sparkTime: Double = now.truncatingRemainder(dividingBy: 3_600) * ctx["speed"]
+                scene(time: clock(at: now), sparkTime: sparkTime, thinking: thinking, sparkOpacity: sparkOpacity(at: now))
+            }
+            DemoHint(text: L("Tap to toggle Thinking", "点击切换「思考中」"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture { toggle() }
     }
 
-    private func scene(time: Double, sparkTime: Double, thinking: Bool) -> some View {
+    private var rate: Double { ctx["speed"] * (thinking ? 2.5 : 1) }
+
+    private func clock(at now: Double) -> Double {
+        clockBase + (now - clockStart) * rate
+    }
+
+    /// The spark fades in over 0.3 s when Thinking starts and out when it stops.
+    private func sparkOpacity(at now: Double) -> Double {
+        let fade: Double = min(max((now - flippedAt) / 0.3, 0), 1)
+        return thinking ? fade : 1 - fade
+    }
+
+    private func toggle() {
+        guard !ctx.isPreview, !ctx.isStill else { return }
+        let now = Date().timeIntervalSinceReferenceDate
+        clockBase = clock(at: now)
+        clockStart = now
+        flippedAt = now
+        flipped.toggle()
+        Haptics.tap(.light)
+    }
+
+    private func scene(time: Double, sparkTime: Double, thinking: Bool, sparkOpacity: Double) -> some View {
         let fill = AngularGradient(colors: colors, center: .center, angle: .degrees(time * 60))
         let sway: Double = 12 * sin(time * 2 * Double.pi / 4)
         let breath: CGFloat = 0.99 + 0.07 * CGFloat(sin(time * 2 * Double.pi / 2.2))
@@ -84,9 +118,8 @@ private struct AISparkleDemo: View {
                 .offset(x: 78, y: -70)
             satellite(time: time, phase: 0.5, fill: fill)
                 .offset(x: -74, y: 66)
-            if thinking {
-                spark(time: sparkTime)
-            }
+            spark(time: sparkTime)
+                .opacity(sparkOpacity)
         }
         .frame(width: 260, height: 260)
     }

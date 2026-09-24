@@ -8,8 +8,8 @@ extension Effect {
         name: L("Typewriter", "打字机"),
         summary: L("Characters type in with a human rhythm and a blinking caret.", "字符以真人般的节奏逐字打出，光标柔和闪烁。"),
         prompt: L(
-            "A monospaced headline inside a minimal terminal card types itself out one character at a time, with each keystroke landing after a slightly randomised interval (±30%) so the rhythm feels human rather than mechanical. A gradient caret sits flush after the last glyph: it stays solid while typing and, once the phrase completes, blinks with a soft 0.5 s ease-in-out fade. After a 1.4 s hold the line deletes backwards at roughly twice the typing speed and the next phrase begins — focused, alive, quietly confident.",
-            "极简终端卡片中的等宽标题逐字打出，每次击键的间隔都带有约±30%的随机抖动，让节奏更像真人输入而非机械播放。渐变光标紧贴最后一个字符：输入过程中保持常亮，整句完成后以0.5秒缓入缓出的柔和淡入淡出闪烁。停留1.4秒后，文字以约两倍速度向后删除，随即开始下一句——专注、有生命力、从容而自信。"
+            "A monospaced headline inside a minimal terminal card types itself out one character at a time, with each keystroke landing after a slightly randomised interval (±30%) so the rhythm feels human rather than mechanical. A gradient caret sits flush after the last glyph: it stays solid while typing and, once the phrase completes, blinks with a soft 0.5 s ease-in-out fade. After a 1.4 s hold the line deletes backwards at roughly twice the typing speed and the next phrase begins; a tap backspaces in a quick burst and jumps to the next one — focused, alive, quietly confident.",
+            "极简终端卡片中的等宽标题逐字打出，每次击键的间隔都带有约±30%的随机抖动，让节奏更像真人输入而非机械播放。渐变光标紧贴最后一个字符：输入过程中保持常亮，整句完成后以0.5秒缓入缓出的柔和淡入淡出闪烁。停留1.4秒后，文字以约两倍速度向后删除，随即开始下一句；轻点会快速退格并跳到下一句——专注、有生命力、从容而自信。"
         ),
         implementation: L(
             "An async .task loop appends characters with jittered Task.sleep delays; the caret blinks with phaseAnimator only while idle.",
@@ -30,6 +30,10 @@ private struct TypewriterDemo: View {
     let ctx: DemoContext
     @State private var typed: String
     @State private var isTyping: Bool
+    /// The phrase being typed; kept across restarts so a tap moves exactly one phrase forward.
+    @State private var phraseIndex = 0
+    /// Bumped by a tap: restarts the typing task on the next phrase.
+    @State private var skips = 0
 
     init(ctx: DemoContext) {
         self.ctx = ctx
@@ -61,8 +65,22 @@ private struct TypewriterDemo: View {
         .padding(22)
         .frame(width: 316, alignment: .leading)
         .demoCard(cornerRadius: 24)
+        .overlay(alignment: .bottom) {
+            DemoHint(text: L("Tap for the next line", "点击输入下一句"), ctx: ctx)
+                .offset(y: 34)
+                .allowsHitTesting(false)
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task(id: "\(ctx.language.rawValue)-\(ctx["speed"])") { await run() }
+        .contentShape(Rectangle())
+        .onTapGesture { skip() }
+        .task(id: "\(ctx.language.rawValue)-\(ctx["speed"])-\(skips)") { await run() }
+    }
+
+    private func skip() {
+        guard !ctx.isPreview, !ctx.isStill else { return }
+        Haptics.tap(.light)
+        phraseIndex += 1
+        skips += 1
     }
 
     private var header: some View {
@@ -80,8 +98,14 @@ private struct TypewriterDemo: View {
     private func run() async {
         let cps = max(ctx["speed"], 1)
         let list = phrases
-        var index = 0
-        typed = ""
+        var index = phraseIndex
+        // After a tap, backspace whatever is on the line in a quick burst before typing the next phrase.
+        isTyping = true
+        while !typed.isEmpty {
+            typed.removeLast()
+            try? await Task.sleep(for: .seconds(0.018))
+            if Task.isCancelled { return }
+        }
         while !Task.isCancelled {
             let characters = Array(list[index % list.count])
             isTyping = true
@@ -100,7 +124,9 @@ private struct TypewriterDemo: View {
                 if Task.isCancelled { return }
             }
             try? await Task.sleep(for: .seconds(0.25))
+            if Task.isCancelled { return }
             index += 1
+            phraseIndex = index
         }
     }
 }

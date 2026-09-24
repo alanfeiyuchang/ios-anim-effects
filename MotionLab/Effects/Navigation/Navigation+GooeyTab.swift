@@ -42,12 +42,18 @@ private struct GooeyTabDemo: View {
 
     private let barWidth: CGFloat = 300
 
+    /// Grid previews and still thumbnails get faint screen content above the bar.
+    private var thumbnail: Bool { ctx.isPreview || ctx.isStill }
+
     var body: some View {
         VStack(spacing: 30) {
             Text(gooeyTitles[selected], ctx.language)
                 .font(.title2.weight(.bold))
                 .id(selected)
                 .transition(.blurReplace)
+            if thumbnail {
+                NavigationScreenPlaceholder(rows: 2, showsTitle: false)
+            }
             bar
             DemoHint(text: L("Tap a tab", "点击任一标签"), ctx: ctx)
         }

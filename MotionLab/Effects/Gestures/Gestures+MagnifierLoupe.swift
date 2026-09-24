@@ -8,8 +8,8 @@ extension Effect {
         name: L("Magnifier Loupe", "放大镜取色"),
         summary: L("A floating loupe that follows your finger and renders the swatches beneath at 3×.", "跟随手指的悬浮放大镜，以 3 倍清晰呈现下方色块。"),
         prompt: L(
-            "A 12×9 grid of tiny colour swatches (hue across, brightness down, each labelled with an unreadable 3 pt hex code) fills a 300×225 pt panel. Touching it pops a 100 pt circular loupe 78 pt above the finger, springing from 40% to 100% from its bottom edge (response 0.3 s, damping 0.7); it flips below the finger near the top edge and slides inward near the sides so the lens never leaves the panel. Inside, the content is re-rendered rather than upscaled at 3× around the touch point, so the labels turn crisp, with a crosshair on the sampled swatch, a 3 pt white rim, a soft shadow and a capsule beneath showing the colour and hex value. The loupe tracks the finger with zero latency and shrinks away on lift.",
-            "一块300×225 pt的面板铺满12×9的迷你色块（横向变色相、纵向变明度，每块标着3 pt、肉眼难辨的色值）。按下时，100 pt的圆形放大镜在手指上方78 pt处以底边为锚点从40%弹到100%（响应0.3秒、阻尼0.7）；靠近顶部就翻到指下，靠近两侧就向内平移，始终不出面板。镜内以触点为中心按3倍重新绘制而非位图放大，色值变得清晰可读；十字准星标出取样点，白边与投影让镜片浮起，下方胶囊显示色块与色值。零延迟跟手，抬指即缩小消失。精准又带点魔法感。"
+            "A 12×9 grid of tiny colour swatches (hue across, brightness down, each labelled with an unreadable 3 pt hex code) fills a 300×225 pt panel. Touching it pops a 100 pt circular loupe 78 pt above the finger, springing from 40% to 100% from its bottom edge (response 0.3 s, damping 0.7); it flips below the finger near the top edge and slides inward near the sides, so the lens never crosses the panel's top or side edges. Inside, the content is re-rendered rather than upscaled at 3× around the touch point, so the labels turn crisp, with a crosshair on the sampled swatch, a 3 pt white rim, a soft shadow and a capsule beneath showing the colour and hex value. The loupe tracks the finger with zero latency and shrinks away on lift.",
+            "一块300×225 pt的面板铺满12×9的迷你色块（横向变色相、纵向变明度，每块标着3 pt、肉眼难辨的色值）。按下时，100 pt的圆形放大镜在手指上方78 pt处以底边为锚点从40%弹到100%（响应0.3秒、阻尼0.7）；靠近顶部就翻到指下，靠近两侧就向内平移，镜片从不越出面板顶边和两侧。镜内以触点为中心按3倍重新绘制而非位图放大，色值变得清晰可读；十字准星标出取样点，白边与投影让镜片浮起，下方胶囊显示色块与色值。零延迟跟手，抬指即缩小消失。精准又带点魔法感。"
         ),
         implementation: L(
             "The swatch scene is a GraphicsContext drawing function; the loupe is a second Canvas that translates and scales its context around the touch point before drawing the same scene, clipped to a circle. The loupe view is Animatable so programmatic moves stay in sync.",
@@ -191,13 +191,14 @@ private struct LoupeView: View, Animatable {
     }
 
     var body: some View {
-        let lift = diameter / 2 + 28
+        let half = diameter / 2
+        let lift = half + 28
         let above = y - lift
-        let flipped = above < diameter / 2 - 30
+        // Flip below the finger as soon as the lens would cross the panel's top edge.
+        let flipped = above < half
         let centerY = flipped ? y + lift : above
         // Keep the whole lens inside the panel horizontally; the crosshair still shows the touched point.
-        let half = diameter / 2
-        let lensX = x.clamped(to: min(half - 4, SwatchScene.size.width / 2)...max(SwatchScene.size.width - half + 4, SwatchScene.size.width / 2))
+        let lensX = x.clamped(to: min(half, SwatchScene.size.width / 2)...max(SwatchScene.size.width - half, SwatchScene.size.width / 2))
         let cell = SwatchScene.cellIndex(at: CGPoint(x: x, y: y))
 
         VStack(spacing: 8) {

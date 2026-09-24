@@ -42,8 +42,14 @@ private struct NotchTabBarDemo: View {
     private let inset: CGFloat = 20
     private let barHeight: CGFloat = 64
 
+    /// Grid previews and still thumbnails get faint screen content above the bar.
+    private var thumbnail: Bool { ctx.isPreview || ctx.isStill }
+
     var body: some View {
         VStack(spacing: 24) {
+            if thumbnail {
+                NavigationScreenPlaceholder().padding(.top, 20)
+            }
             Spacer(minLength: 0)
             bar
             DemoHint(text: L("Tap a tab", "点击任一标签"), ctx: ctx)

@@ -40,6 +40,9 @@ private struct SearchTabMorphDemo: View {
     @State private var searching = false
     @State private var selected = 0
 
+    /// Grid previews and still thumbnails get faint screen content above the bar.
+    private var thumbnail: Bool { ctx.isPreview || ctx.isStill }
+
     var body: some View {
         VStack(spacing: 14) {
             Spacer(minLength: 0)
@@ -49,7 +52,20 @@ private struct SearchTabMorphDemo: View {
                 .padding(.bottom, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(alignment: .top) { thumbnailScreen }
         .autoplay(ctx.isPreview, every: 1.8) { setSearching(!searching) }
+    }
+
+    /// The home screen behind the bar in thumbnails; it gives way to the suggestions while searching.
+    @ViewBuilder
+    private var thumbnailScreen: some View {
+        if thumbnail {
+            NavigationScreenPlaceholder()
+                .padding(.top, 20)
+                .opacity(searching ? 0 : 1)
+                .blur(radius: searching ? 6 : 0)
+                .animation(.easeInOut(duration: 0.3), value: searching)
+        }
     }
 
     private var spring: Animation {

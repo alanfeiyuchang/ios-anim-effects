@@ -47,8 +47,14 @@ private struct RippleTabBarDemo: View {
 
     private let slot: CGFloat = 60
 
+    /// Grid previews and still thumbnails get faint screen content above the bar.
+    private var thumbnail: Bool { ctx.isPreview || ctx.isStill }
+
     var body: some View {
         VStack(spacing: 24) {
+            if thumbnail {
+                NavigationScreenPlaceholder().padding(.top, 20)
+            }
             Spacer(minLength: 0)
             dock
             DemoHint(text: L("Tap any icon", "点击任一图标"), ctx: ctx)

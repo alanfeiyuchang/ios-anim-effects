@@ -53,3 +53,40 @@ extension View {
         modifier(PageSafeHorizontalDragModifier(minimumDistance: minimumDistance, onChanged: onChanged, onEnded: onEnded))
     }
 }
+
+/// Faint screen content for tab-bar demos in grid previews and still thumbnails, so a thumbnail reads as an app
+/// screen rather than a lone bar on a blank stage. Demos show it only when `ctx.isPreview || ctx.isStill`; the
+/// detail stage is unchanged. It never takes touches.
+struct NavigationScreenPlaceholder: View {
+    var rows: Int = 3
+    var showsTitle: Bool = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if showsTitle {
+                Capsule()
+                    .fill(Color.primary.opacity(0.14))
+                    .frame(width: 120, height: 12)
+                    .padding(.leading, 4)
+            }
+            ForEach(0..<rows, id: \.self) { _ in
+                row
+            }
+        }
+        .frame(width: 290)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private var row: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(Color.primary.opacity(0.08))
+                .frame(width: 28, height: 28)
+            PlaceholderLines(count: 2, color: Color.primary.opacity(0.08))
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 44)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}

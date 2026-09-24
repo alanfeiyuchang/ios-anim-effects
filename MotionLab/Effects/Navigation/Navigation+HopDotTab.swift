@@ -46,8 +46,14 @@ private struct HopDotTabDemo: View {
 
     private let slot: CGFloat = 56
 
+    /// Grid previews and still thumbnails get faint screen content above the bar.
+    private var thumbnail: Bool { ctx.isPreview || ctx.isStill }
+
     var body: some View {
         VStack(spacing: 28) {
+            if thumbnail {
+                NavigationScreenPlaceholder().padding(.top, 20)
+            }
             Spacer(minLength: 0)
             bar
             DemoHint(text: L("Tap an icon", "点击任一图标"), ctx: ctx)

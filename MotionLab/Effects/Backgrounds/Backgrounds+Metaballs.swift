@@ -7,161 +7,272 @@ extension Effect {
         interaction: .gesture,
         name: L("Liquid Metaballs", "液态融球"),
         summary: L(
-            "Iridescent goo blobs orbit and fuse — your finger becomes one of them.",
-            "虹彩液滴环绕流动、彼此融合，手指也会变成其中一滴。"
+            "Mercury beads orbit a chrome pool; drag a droplet out until its neck pinches off and it springs home.",
+            "水银珠环绕一汪镜面液池；拖出一颗液滴，细颈被拉断后它会弹回并重新融合。"
         ),
         prompt: L(
-            "On a near-black plum canvas, several liquid blobs (seven by default) orbit a central pulsing drop along slow Lissajous paths (roughly 7–15 s periods). Whenever two blobs approach they stretch a viscous neck, merge into one smooth surface and pinch apart again, like mercury or a lava lamp seen from above. The liquid is filled with an iridescent pink → violet → sky gradient whose direction slowly rotates, and carries a soft violet bloom around its silhouette. Tapping or dragging sideways across the canvas spawns a finger blob that grows in over ~200 ms and trails the finger with a gentle lag, gooping into any drop it passes; lifting (or ~0.45 s after a tap) shrinks it away. Organic, playful, tactile.",
-            "近黑的梅子色画布上，数个液滴（默认七个）绕着一颗中心脉动的主液滴，沿缓慢的李萨如轨迹（周期约 7–15 秒）环绕。两滴靠近时会拉出黏稠的“颈部”，融合成一整块光滑曲面，再缓缓断开，宛如俯视水银或熔岩灯。液体填充粉 → 紫 → 天蓝的虹彩渐变，渐变方向缓慢旋转，轮廓外带一圈柔和紫色辉光。点击或横向拖过画布时，会在约 200 毫秒内长出一个跟随手指、略带延迟的液滴，经过之处与其他液滴黏连融合；松手（或点击约 0.45 秒后）液滴收缩消失。有机、灵动、富有触感。"
+            "On a graphite canvas, liquid mercury: a pulsing central pool with several beads (seven by default) orbiting on slow Lissajous paths (≈7–15 s). When beads touch they neck and fuse into one chrome surface, then pinch apart. The metal is a slowly rotating graphite → silver → ice-blue gradient with a crisp 3 pt specular rim on every upper-left edge (the silhouette minus itself shifted toward the light, added with plusLighter) and a tight contact shadow beneath instead of a glow. Dragging sideways pulls a droplet out of the pool on a neck that thins as it stretches; past ~90 pt it pinches off with a rigid haptic, and the freed droplet springs back (response 0.5 s, damping 0.55), overshoots and re-merges. Releasing earlier retracts it neck and all. Heavy, cool, surface-tension tactile.",
+            "石墨色画布上一汪液态水银：中央液池脉动，数颗水银珠（默认七颗）沿缓慢的李萨如轨迹（约 7–15 秒）环绕。相碰时拉出细颈、融成一片镜面再分开。金属填充缓慢旋转的石墨 → 银 → 冰蓝渐变，每个左上边缘有一道朝向光源、以 plusLighter 叠加的清晰 3pt 高光边，下方是紧致投影而非辉光。横向拖动会从液池里拉出一颗液滴，细颈越拉越细；超过约 90pt 即断开并伴随清脆触感，脱离的液滴以弹簧（响应 0.5 秒、阻尼 0.55）弹回、略微过冲后重新融合。提前松手则连颈缩回。沉甸冷冽，表面张力十足。"
         ),
         implementation: L(
-            "Canvas with an alphaThreshold filter stacked on a blur filter turns overlapping white circles into a single gooey silhouette, which masks an animated LinearGradient; the bloom is a second, blurred Canvas of the same blobs and the stack renders through drawingGroup() rather than a view shadow. A small model smooths the finger blob.",
-            "Canvas 叠加 alphaThreshold 与 blur 滤镜，使重叠的白色圆形变成连续黏稠的轮廓，再作为遮罩显示动态 LinearGradient；辉光由绘制相同液滴的第二个模糊 Canvas 提供，整体经 drawingGroup() 渲染而非视图阴影。小型模型负责平滑手指液滴。"
+            "One model produces the circles (pool, beads, the finger droplet and a tapering neck chain); a Canvas stacking alphaThreshold on blur turns them into a silhouette that masks a rotating LinearGradient. A second threshold pass, minus a copy shifted 3 pt with destinationOut, is the plusLighter rim; a blurred offset Canvas is the contact shadow. The freed droplet integrates a damped spring.",
+            "同一个模型给出所有圆（液池、水银珠、手指液滴与逐渐变细的颈部链），叠加 alphaThreshold 与 blur 的 Canvas 把它们合成轮廓，遮罩旋转的 LinearGradient。第二遍阈值轮廓以 destinationOut 减去偏移 3pt 的副本，得到 plusLighter 高光边；模糊偏移的 Canvas 充当接触投影。断开的液滴用阻尼弹簧积分回弹。"
         ),
-        apis: ["Canvas", "GraphicsContext.Filter.alphaThreshold", "GraphicsContext.Filter.blur", "mask", "DragGesture"],
-        tags: ["metaball", "goo", "liquid", "blob", "融球", "液态", "黏液", "流体"],
+        apis: ["Canvas", "GraphicsContext.Filter.alphaThreshold", "GraphicsContext.BlendMode.destinationOut", "blendMode(.plusLighter)", "DragGesture"],
+        tags: ["metaball", "mercury", "liquid metal", "surface tension", "融球", "水银", "液态金属", "表面张力"],
         params: [
-            .slider("count", L("Blobs", "液滴数量"), 3...10, default: 7, step: 1, decimals: 0),
-            .slider("goo", L("Gooeyness", "黏稠度"), 6...30, default: 16, decimals: 0, unit: "pt"),
+            .slider("count", L("Beads", "水银珠数量"), 3...10, default: 7, step: 1, decimals: 0),
+            .slider("goo", L("Surface tension", "表面张力"), 6...30, default: 16, decimals: 0, unit: "pt"),
             .slider("speed", L("Orbit speed", "环绕速度"), 0.2...2.0, default: 0.8, unit: "×"),
+            .slider("pinch", L("Pinch-off distance", "断颈距离"), 50...140, default: 90, decimals: 0, unit: "pt"),
         ]
     ) { ctx in
         MetaballsDemo(ctx: ctx)
     }
 }
 
-private final class GooModel {
+/// Mercury model: orbiting beads plus a finger droplet that stretches out of the pool on a neck,
+/// pinches off past `pinch` points and springs home (response 0.5 s, damping 0.55) to re-merge.
+private final class MercuryModel {
     let clock = BackgroundClock()
     var touch: CGPoint?
-    private(set) var finger: CGPoint?
-    private(set) var fingerScale: Double = 0
-    /// Speed-scaled time of the last step, read by the bloom layer.
+    /// Previews never buzz.
+    var haptics = true
     private(set) var time: Double = 0
+    private(set) var drop: CGPoint?
+    /// Whether the droplet still hangs on its neck (false once it pinched off).
+    private(set) var attached = false
+    private var velocity = CGVector.zero
+    /// Pinched during the current touch: the finger no longer grabs until it lifts.
+    private var latched = false
 
-    /// Advances time and the smoothed finger blob. `simulated` replaces the touch in previews.
-    func step(now: Double, speed: Double, simulated: CGPoint?) -> Double {
+    static func core(size: CGSize, t: Double) -> (center: CGPoint, radius: CGFloat) {
+        let side: CGFloat = min(size.width, size.height)
+        let radius: CGFloat = side * CGFloat(0.13 + 0.015 * sin(t * 1.7))
+        return (CGPoint(x: size.width / 2, y: size.height / 2), radius)
+    }
+
+    static func dropRadius(size: CGSize) -> CGFloat {
+        min(size.width, size.height) * 0.075
+    }
+
+    func step(now: Double, speed: Double, size: CGSize, pinch: CGFloat, simulated: CGPoint?) -> Double {
         let t = clock.advance(to: now, speed: speed)
-        let target = touch ?? simulated
-        if let target = target {
-            if let current = finger {
-                let k = CGFloat(clock.follow(rate: 10))
-                finger = CGPoint(x: current.x + (target.x - current.x) * k, y: current.y + (target.y - current.y) * k)
-            } else {
-                finger = target
-            }
-        }
-        fingerScale += ((target == nil ? 0 : 1) - fingerScale) * clock.follow(rate: 12)
         time = t
+        let dt: Double = clock.delta
+        guard dt > 0 else { return t }
+        let core = Self.core(size: size, t: t)
+        let target: CGPoint? = touch ?? simulated
+        if target == nil { latched = false }
+        if let target, !latched {
+            follow(target, core: core, dt: dt, pinch: pinch)
+        } else if let current = drop {
+            springHome(current, core: core, dt: dt)
+        }
         return t
     }
 
-    static func blobs(count: Int, size: CGSize, t: Double) -> [CGRect] {
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        let side = min(size.width, size.height)
-        let orbit = side * 0.34
-        var rects: [CGRect] = []
-        let coreRadius = side * CGFloat(0.13 + 0.015 * sin(t * 1.7))
-        rects.append(CGRect(x: center.x - coreRadius, y: center.y - coreRadius, width: coreRadius * 2, height: coreRadius * 2))
+    /// The droplet leaves the pool's rim toward the finger and chases it with a short exponential lag.
+    private func follow(_ target: CGPoint, core: (center: CGPoint, radius: CGFloat), dt: Double, pinch: CGFloat) {
+        let current: CGPoint
+        if let drop {
+            current = drop
+        } else {
+            let dx: CGFloat = target.x - core.center.x
+            let dy: CGFloat = target.y - core.center.y
+            let length: CGFloat = max(hypot(dx, dy), 0.001)
+            current = CGPoint(x: core.center.x + dx / length * core.radius * 0.6, y: core.center.y + dy / length * core.radius * 0.6)
+            attached = true
+        }
+        let k: CGFloat = CGFloat(1 - exp(-dt * 9))
+        let next = CGPoint(x: current.x + (target.x - current.x) * k, y: current.y + (target.y - current.y) * k)
+        velocity = CGVector(dx: (next.x - current.x) / CGFloat(dt), dy: (next.y - current.y) / CGFloat(dt))
+        drop = next
+        let stretch: CGFloat = hypot(next.x - core.center.x, next.y - core.center.y) - core.radius
+        if attached && stretch > pinch {
+            attached = false
+            latched = true
+            if haptics { Haptics.tap(.rigid) }
+        }
+    }
+
+    /// Semi-implicit damped spring toward the pool's centre; merged once it sinks back inside.
+    private func springHome(_ current: CGPoint, core: (center: CGPoint, radius: CGFloat), dt: Double) {
+        let omega: CGFloat = 2 * .pi / 0.5
+        let damping: CGFloat = 0.55
+        let step: CGFloat = CGFloat(dt)
+        let ox: CGFloat = current.x - core.center.x
+        let oy: CGFloat = current.y - core.center.y
+        velocity.dx += (-omega * omega * ox - 2 * damping * omega * velocity.dx) * step
+        velocity.dy += (-omega * omega * oy - 2 * damping * omega * velocity.dy) * step
+        let next = CGPoint(x: current.x + velocity.dx * step, y: current.y + velocity.dy * step)
+        let distance: CGFloat = hypot(next.x - core.center.x, next.y - core.center.y)
+        let speed: CGFloat = hypot(velocity.dx, velocity.dy)
+        if distance < core.radius * 0.35 && speed < 40 {
+            drop = nil
+            attached = false
+            velocity = .zero
+        } else {
+            drop = next
+        }
+    }
+
+    /// Every circle of the liquid for this frame: pool, beads, droplet and its tapering neck.
+    func circles(count: Int, size: CGSize, pinch: CGFloat) -> [CGRect] {
+        let t = time
+        let core = Self.core(size: size, t: t)
+        let side: CGFloat = min(size.width, size.height)
+        let orbit: CGFloat = side * 0.34
+        var rects: [CGRect] = [Self.circle(core.center, core.radius)]
         for i in 0..<max(count, 0) {
-            let a = 0.5 + BackgroundMath.rand(i, 1) * 0.7
-            let b = 0.5 + BackgroundMath.rand(i, 2) * 0.7
-            let p = BackgroundMath.rand(i, 3) * BackgroundMath.tau
-            let x = center.x + orbit * CGFloat(sin(t * a + p))
-            let y = center.y + orbit * CGFloat(cos(t * b + p * 1.3))
-            let r = side * CGFloat(0.06 + BackgroundMath.rand(i, 4) * 0.06)
-            rects.append(CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2))
+            let a: Double = 0.5 + BackgroundMath.rand(i, 1) * 0.7
+            let b: Double = 0.5 + BackgroundMath.rand(i, 2) * 0.7
+            let p: Double = BackgroundMath.rand(i, 3) * BackgroundMath.tau
+            let x: CGFloat = core.center.x + orbit * CGFloat(sin(t * a + p))
+            let y: CGFloat = core.center.y + orbit * CGFloat(cos(t * b + p * 1.3))
+            let r: CGFloat = side * CGFloat(0.05 + BackgroundMath.rand(i, 4) * 0.05)
+            rects.append(Self.circle(CGPoint(x: x, y: y), r))
+        }
+        guard let drop else { return rects }
+        let dropR: CGFloat = Self.dropRadius(size: size)
+        rects.append(Self.circle(drop, dropR))
+        if attached {
+            // Neck: a chain of circles from the pool to the droplet, thinning as the stretch nears the pinch.
+            let dx: CGFloat = drop.x - core.center.x
+            let dy: CGFloat = drop.y - core.center.y
+            let length: CGFloat = hypot(dx, dy)
+            let stretch: CGFloat = max(length - core.radius, 0)
+            let thin: CGFloat = max(1 - stretch / max(pinch, 1), 0)
+            let links: Int = max(Int(length / 7), 3)
+            for k in 1..<links {
+                let f: CGFloat = CGFloat(k) / CGFloat(links)
+                let base: CGFloat = core.radius * 0.5 * (1 - f) + dropR * 0.7 * f
+                let r: CGFloat = base * (0.3 + 0.7 * thin)
+                rects.append(Self.circle(CGPoint(x: core.center.x + dx * f, y: core.center.y + dy * f), r))
+            }
         }
         return rects
+    }
+
+    private static func circle(_ center: CGPoint, _ radius: CGFloat) -> CGRect {
+        CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
     }
 }
 
 private struct MetaballsDemo: View {
     let ctx: DemoContext
-    @State private var model = GooModel()
+    @State private var model = MercuryModel()
     @State private var size = CGSize(width: 340, height: 340)
+
+    private static let chrome: [Color] = [
+        Color(hex: 0x2E333B), Color(hex: 0x8A94A3), Color(hex: 0xEEF3F8), Color(hex: 0xA9CBE6), Color(hex: 0x3A414C),
+    ]
 
     var body: some View {
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
             let now = timeline.date.timeIntervalSinceReferenceDate
-            // Step once per frame, before either canvas draws, so bloom and goo share the same instant.
-            let t = model.step(now: now, speed: ctx["speed"], simulated: simulatedTouch(now: now))
-            let spin = now * 0.35
+            // Step once per frame, before any canvas draws, so shadow, metal and rim share the same instant.
+            let _ = model.step(now: now, speed: ctx["speed"], size: size, pinch: ctx.cg("pinch"), simulated: simulatedTouch(now: now))
+            let circles = model.circles(count: ctx.int("count"), size: size, pinch: ctx.cg("pinch"))
+            let spin: Double = now * 0.35
             let dx = CGFloat(0.5 * cos(spin))
             let dy = CGFloat(0.5 * sin(spin))
             ZStack {
-                MetaBloom(model: model, t: t, count: ctx.int("count"))
+                MercuryShadow(circles: circles)
                 LinearGradient(
-                    colors: [Palette.pink, Palette.violet, Palette.sky],
+                    colors: Self.chrome,
                     startPoint: UnitPoint(x: 0.5 + dx, y: 0.5 + dy),
                     endPoint: UnitPoint(x: 0.5 - dx, y: 0.5 - dy)
                 )
                 .mask {
-                    GooCanvas(model: model, t: t, ctx: ctx)
+                    MercurySilhouette(circles: circles, goo: ctx.cg("goo"))
                 }
+                MercuryRim(circles: circles, goo: ctx.cg("goo"))
+                    .blendMode(.plusLighter)
             }
-            // Bloom comes from a blurred Canvas, and the whole stack renders in one Metal pass
-            // instead of an offscreen view shadow on a mask that changes every frame.
             .drawingGroup()
         }
-        .background(Color(hex: 0x0D0A1A))
+        .background(Color(hex: 0x101216))
         .onGeometryChange(for: CGSize.self) { proxy in
             proxy.size
         } action: { newSize in
             size = newSize
         }
+        .onAppear { model.haptics = !ctx.isPreview }
         .backgroundsTouch { location in model.touch = location } onEnded: { model.touch = nil }
-        .backgroundsHint(L("Tap or drag sideways through the liquid", "点击或横向拖过液体"), ctx)
+        .backgroundsHint(L("Drag a droplet out of the pool", "从液池里拖出一颗液滴"), ctx)
+        .onDisappear { model.touch = nil }
     }
 
-    /// Previews can't be touched, so a Lissajous "finger" wanders through the goo instead.
+    /// Previews can't be touched: every 3.2 s a "finger" drags outward from the pool past the pinch, then lifts.
     private func simulatedTouch(now: Double) -> CGPoint? {
         guard ctx.isPreview else { return nil }
+        let cycle: Double = now.truncatingRemainder(dividingBy: 3.2)
+        guard cycle < 2.0 else { return nil }
+        let angle: Double = (now / 3.2).rounded(.down) * 2.4
+        let reach: CGFloat = min(size.width, size.height) * CGFloat(0.12 + 0.3 * cycle / 2.0)
         return CGPoint(
-            x: size.width * CGFloat(0.5 + 0.34 * sin(now * 0.8)),
-            y: size.height * CGFloat(0.5 + 0.3 * sin(now * 1.15))
+            x: size.width / 2 + reach * CGFloat(cos(angle)),
+            y: size.height / 2 + reach * CGFloat(sin(angle))
         )
     }
 }
 
-private struct GooCanvas: View {
-    let model: GooModel
-    let t: Double
-    let ctx: DemoContext
+/// The liquid's silhouette: blurred white circles cut at 50% alpha, so nearby shapes neck and fuse.
+private struct MercurySilhouette: View {
+    let circles: [CGRect]
+    let goo: CGFloat
 
     var body: some View {
-        Canvas { context, size in
-            context.addFilter(.alphaThreshold(min: 0.5, color: .white))
-            context.addFilter(.blur(radius: ctx.cg("goo")))
-            context.drawLayer { layer in
-                for rect in GooModel.blobs(count: ctx.int("count"), size: size, t: t) {
-                    layer.fill(Path(ellipseIn: rect), with: .color(.white))
+        Canvas { context, _ in
+            MercuryRim.silhouette(&context, circles: circles, goo: goo, color: .white)
+        }
+    }
+}
+
+/// Specular rim: the silhouette minus a copy shifted 3 pt away from the top-left light (destinationOut),
+/// leaving a crisp crescent on every upper-left edge; composited with plusLighter.
+private struct MercuryRim: View {
+    let circles: [CGRect]
+    let goo: CGFloat
+
+    static func silhouette(_ context: inout GraphicsContext, circles: [CGRect], goo: CGFloat, color: Color) {
+        context.addFilter(.alphaThreshold(min: 0.5, color: color))
+        context.addFilter(.blur(radius: goo))
+        context.drawLayer { layer in
+            for rect in circles {
+                layer.fill(Path(ellipseIn: rect), with: .color(.white))
+            }
+        }
+    }
+
+    var body: some View {
+        Canvas { context, _ in
+            context.drawLayer { rim in
+                rim.opacity = 0.85
+                rim.drawLayer { lit in
+                    MercuryRim.silhouette(&lit, circles: circles, goo: goo, color: Color(hex: 0xF4FAFF))
                 }
-                if let finger = model.finger, model.fingerScale > 0.01 {
-                    let r = min(size.width, size.height) * 0.11 * CGFloat(model.fingerScale)
-                    let rect = CGRect(x: finger.x - r, y: finger.y - r, width: r * 2, height: r * 2)
-                    layer.fill(Path(ellipseIn: rect), with: .color(.white))
+                rim.blendMode = .destinationOut
+                rim.translateBy(x: 3, y: 3)
+                rim.drawLayer { cut in
+                    MercuryRim.silhouette(&cut, circles: circles, goo: goo, color: .white)
                 }
             }
         }
     }
 }
 
-/// Violet glow behind the goo: the same blobs, blurred, no threshold, at the frame's shared time `t`.
-private struct MetaBloom: View {
-    let model: GooModel
-    let t: Double
-    let count: Int
+/// Tight contact shadow under the metal (no bloom): the same circles, darkened, blurred and dropped 5 pt.
+private struct MercuryShadow: View {
+    let circles: [CGRect]
 
     var body: some View {
-        Canvas { context, size in
-            context.addFilter(.blur(radius: 24))
-            let color = GraphicsContext.Shading.color(Palette.violet.opacity(0.55))
-            for rect in GooModel.blobs(count: count, size: size, t: t) {
-                context.fill(Path(ellipseIn: rect.insetBy(dx: -4, dy: -4)), with: color)
-            }
-            if let finger = model.finger, model.fingerScale > 0.01 {
-                let r = min(size.width, size.height) * 0.11 * CGFloat(model.fingerScale) + 4
-                context.fill(Path(ellipseIn: CGRect(x: finger.x - r, y: finger.y - r, width: r * 2, height: r * 2)), with: color)
+        Canvas { context, _ in
+            context.addFilter(.blur(radius: 6))
+            let shade = GraphicsContext.Shading.color(.black.opacity(0.6))
+            for rect in circles {
+                context.fill(Path(ellipseIn: rect.offsetBy(dx: 0, dy: 5)), with: shade)
             }
         }
     }

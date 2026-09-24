@@ -41,8 +41,8 @@ private struct ButtonDepthPressDemo: View {
         VStack(spacing: 0) {
             Spacer()
             Button {
+                // The haptic lands as the face bottoms out (see DepthKey), not on release.
                 taps += 1
-                Haptics.tap(.medium)
             } label: {
                 Text(ctx.language == .zh ? "开始游戏" : "PLAY NOW")
                     .font(.system(size: 20, weight: .heavy, design: .rounded))
@@ -59,7 +59,8 @@ private struct ButtonDepthPressDemo: View {
                     base: palette.base,
                     releaseDamping: ctx["bounce"],
                     forcePressed: autoPressed,
-                    taps: taps
+                    taps: taps,
+                    haptics: !ctx.isPreview
                 )
             )
             Spacer()
@@ -93,34 +94,40 @@ private struct ButtonDepthStyle: ButtonStyle {
     let forcePressed: Bool
     /// Counts completed taps, so a tap whose press the key never saw still plays a full press.
     let taps: Int
+    let haptics: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         DepthKey(style: self, configuration: configuration)
     }
 }
 
-/// The key itself. Inside a scroll view (the detail page) iOS delays a button's pressed state until
-/// it knows the touch isn't a scroll, so a quick tap reports press and release almost together and the
-/// face never visibly sinks. The key therefore holds its pressed look for a minimum time, so every
-/// tap bottoms out before it springs back.
+/// The key itself. `LatchedPress` holds the pressed look long enough for a quick tap inside the detail
+/// page's scroll view to bottom out, and the medium haptic lands as the face bottoms out.
 private struct DepthKey: View {
     let style: ButtonDepthStyle
     let configuration: ButtonStyleConfiguration
-    @State private var held = false
-    @State private var pressedAt = Date.distantPast
-    @State private var releasedAt = Date.distantPast
-    @State private var releaseTask: Task<Void, Never>?
 
-    private static let minimumHold: TimeInterval = 0.14
     private let size = CGSize(width: 220, height: 62)
 
     var body: some View {
+        LatchedPress(
+            isPressed: configuration.isPressed,
+            taps: style.taps,
+            forced: style.forcePressed,
+            // The stiff press spring (response 0.12 s) has covered ~90% of the travel by now.
+            pressDelay: 0.08,
+            onPress: style.haptics ? { Haptics.tap(.medium) } : nil
+        ) { pressed in
+            key(pressed: pressed)
+        }
+    }
+
+    private func key(pressed: Bool) -> some View {
         let depth = style.depth
         let travel = style.travel
         let top = style.top
         let bottom = style.bottom
         let base = style.base
-        let pressed = held || style.forcePressed
         let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
         return ZStack(alignment: .top) {
             shape
@@ -149,41 +156,5 @@ private struct DepthKey: View {
                 : .spring(response: 0.35, dampingFraction: style.releaseDamping),
             value: pressed
         )
-        .onChange(of: configuration.isPressed) { _, isPressed in
-            releaseTask?.cancel()
-            if isPressed {
-                pressedAt = .now
-                held = true
-            } else {
-                releasedAt = .now
-                let remaining = Self.minimumHold - Date.now.timeIntervalSince(pressedAt)
-                guard remaining > 0 else {
-                    held = false
-                    return
-                }
-                releaseTask = Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(remaining))
-                    guard !Task.isCancelled else { return }
-                    held = false
-                }
-            }
-        }
-        // A very quick tap can deliver press and release in the same frame, before the key ever
-        // renders as pressed; the action still fires, so play one full press from it.
-        .onChange(of: style.taps) {
-            guard !held, Date.now.timeIntervalSince(releasedAt) > 0.3 else { return }
-            releaseTask?.cancel()
-            pressedAt = .now
-            held = true
-            releaseTask = Task { @MainActor in
-                try? await Task.sleep(for: .seconds(Self.minimumHold))
-                guard !Task.isCancelled else { return }
-                held = false
-            }
-        }
-        .onDisappear {
-            releaseTask?.cancel()
-            held = false
-        }
     }
 }

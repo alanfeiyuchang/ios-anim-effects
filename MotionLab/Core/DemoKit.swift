@@ -379,6 +379,133 @@ struct DemoHint: View {
     }
 }
 
+/// Turns a button's `configuration.isPressed` into a pressed look that every tap visibly plays.
+///
+/// Inside a scroll view (the detail page) iOS delays a button's pressed state until it knows the touch
+/// isn't a scroll, so a quick tap reports press and release almost together, often in the same frame,
+/// and a style driven by `isPressed` never shows its press. `LatchedPress` holds the pressed look for at
+/// least `minimumHold` after a press it saw; and when the button's action bumps `taps` without the press
+/// ever arriving, it replays one full press (a press seen in the last 0.3 s is not doubled).
+/// `forced` (preview autoplay, the detail intro) shows the pressed look directly and never latches.
+///
+///     func makeBody(configuration: Configuration) -> some View {
+///         LatchedPress(isPressed: configuration.isPressed, taps: taps, forced: forcePressed) { pressed in
+///             configuration.label
+///                 .scaleEffect(pressed ? 0.94 : 1)
+///                 .animation(.spring(response: 0.35, dampingFraction: 0.6), value: pressed)
+///         }
+///     }
+///
+/// `onPress` runs `pressDelay` after a real (latched) press begins, e.g. a haptic timed to the moment the
+/// press animation bottoms out; the hold is stretched to cover `pressDelay`, so a quick tap still gets it.
+/// `onRelease` runs when the latched press lets go. Neither runs for `forced` or when the view disappears.
+struct LatchedPress<Content: View>: View {
+    let isPressed: Bool
+    let taps: Int
+    let forced: Bool
+    let minimumHold: TimeInterval
+    let pressDelay: TimeInterval
+    let onPress: (@MainActor () -> Void)?
+    let onRelease: (@MainActor () -> Void)?
+    let content: (Bool) -> Content
+
+    @State private var held = false
+    @State private var pressedAt = Date.distantPast
+    @State private var releasedAt = Date.distantPast
+    @State private var releaseTask: Task<Void, Never>?
+    @State private var pressTask: Task<Void, Never>?
+
+    init(
+        isPressed: Bool,
+        taps: Int = 0,
+        forced: Bool = false,
+        minimumHold: TimeInterval = 0.14,
+        pressDelay: TimeInterval = 0,
+        onPress: (@MainActor () -> Void)? = nil,
+        onRelease: (@MainActor () -> Void)? = nil,
+        @ViewBuilder content: @escaping (Bool) -> Content
+    ) {
+        self.isPressed = isPressed
+        self.taps = taps
+        self.forced = forced
+        self.minimumHold = minimumHold
+        self.pressDelay = pressDelay
+        self.onPress = onPress
+        self.onRelease = onRelease
+        self.content = content
+    }
+
+    /// The press always lasts long enough for `onPress` to land before the release.
+    private var hold: TimeInterval {
+        max(minimumHold, pressDelay > 0 ? pressDelay + 0.04 : 0)
+    }
+
+    var body: some View {
+        content(held || forced)
+            .onChange(of: isPressed) { _, pressing in
+                if pressing {
+                    begin()
+                } else {
+                    releasedAt = .now
+                    endAfterHold()
+                }
+            }
+            // A very quick tap can deliver press and release in the same frame, before the view ever
+            // renders as pressed; the action still fires, so play one full press from it.
+            .onChange(of: taps) {
+                guard !held, Date.now.timeIntervalSince(releasedAt) > 0.3 else { return }
+                begin()
+                endAfterHold()
+            }
+            .onDisappear {
+                releaseTask?.cancel()
+                pressTask?.cancel()
+                releaseTask = nil
+                pressTask = nil
+                held = false
+            }
+    }
+
+    private func begin() {
+        releaseTask?.cancel()
+        pressedAt = .now
+        guard !held else { return }
+        held = true
+        guard let onPress else { return }
+        pressTask?.cancel()
+        guard pressDelay > 0 else {
+            onPress()
+            return
+        }
+        let delay = pressDelay
+        pressTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            onPress()
+        }
+    }
+
+    private func endAfterHold() {
+        releaseTask?.cancel()
+        let remaining = hold - Date.now.timeIntervalSince(pressedAt)
+        guard remaining > 0 else {
+            end()
+            return
+        }
+        releaseTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(remaining))
+            guard !Task.isCancelled else { return }
+            end()
+        }
+    }
+
+    private func end() {
+        guard held else { return }
+        held = false
+        onRelease?()
+    }
+}
+
 /// Placeholder "content lines" used in skeletons, cards and lists.
 struct PlaceholderLines: View {
     var count: Int = 3

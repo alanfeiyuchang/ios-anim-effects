@@ -64,7 +64,7 @@ private struct NotchSlideDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 3.6, delay: 0.6) { simulate() }
         .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
+            if !isPressing { endHold(completed: false) }
         }
         .onDisappear { settleNow() }
     }
@@ -165,15 +165,16 @@ private struct NotchSlideDemo: View {
                 if now > passed && !ctx.isPreview { Haptics.tap(.rigid) }
                 passed = now
             }
-            .onEnded { _ in endHold() }
+            .onEnded { _ in endHold(completed: true) }
     }
 
-    /// Single, guarded end of a real drag (lift or system cancellation).
-    private func endHold() {
+    /// Single, guarded end of a real drag. Only a lift at the end of the track pays; a system
+    /// cancellation (the touch was stolen) always slides back without committing.
+    private func endHold(completed: Bool) {
         guard held else { return }
         held = false
         guard !done else { return }
-        if raw >= maxX * 0.97 {
+        if completed && raw >= maxX * 0.97 {
             commit(haptic: true)
         } else {
             reset()

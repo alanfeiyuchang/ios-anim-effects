@@ -101,7 +101,7 @@ private struct CoilSpringDemo: View {
         }
         .autoplay(ctx.isPreview, every: 3.6, delay: 0.4) { simulate() }
         .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
+            if !isPressing { endHold(completed: false) }
         }
         .onDisappear { script?.cancel() }
     }
@@ -156,14 +156,14 @@ private struct CoilSpringDemo: View {
                 let dy = value.translation.height
                 stretch = dy >= 0 ? rubberBand(dy, limit: 150, coefficient: 0.8) : rubberBand(dy, limit: 90, coefficient: 0.8)
             }
-            .onEnded { _ in endHold() }
+            .onEnded { _ in endHold(completed: true) }
     }
 
-    /// Release or system cancellation: the weight springs back to rest.
-    private func endHold() {
+    /// Release or system cancellation (silent, no haptic): the weight springs back to rest.
+    private func endHold(completed: Bool) {
         guard held else { return }
         held = false
-        release(haptic: true)
+        release(haptic: completed)
     }
 
     private func release(haptic: Bool) {

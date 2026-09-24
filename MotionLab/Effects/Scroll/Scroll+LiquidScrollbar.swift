@@ -12,8 +12,8 @@ extension Effect {
             "列表右侧有一个自定义渐变滑块，静止时不可见；一开始滚动，它就以快速弹簧淡入，宽度从5 pt变为8 pt。滑块的位置严格跟随内容，形状却是液态的：长度按可见比例计算，每帧30 pt时最多再拉长60%，朝运动反方向拖尾，滚动变慢时再以弹簧（响应0.3秒、阻尼0.55）缩回。越过两端继续拉时，它像水滴一样被挤扁在边缘，长度最多减少70%、鼓宽2 pt，旁边的小气泡显示已读百分比。滚动停下0.8秒后，滑块与气泡一起消融。"
         ),
         implementation: L(
-            "onScrollGeometryChange reports offset, range and viewport as one Equatable struct; the action derives a per-frame velocity and overscroll that set the thumb's length, anchor and width through an .animation(spring, value:), and onScrollPhaseChange plus a delayed Task controls visibility.",
-            "onScrollGeometryChange 把偏移、可滚动范围与视口打包成一个 Equatable 结构体；回调据此推算每帧速度与越界量，经由 .animation(spring, value:) 决定滑块的长度、锚点与宽度，onScrollPhaseChange 配合延时 Task 控制显隐。"
+            "onScrollGeometryChange reports offset, range and viewport as one Equatable struct; the action derives a per-frame velocity and overscroll that set the thumb's length, anchor and width through an .animation(spring, value:), a 70 ms debounce Task relaxes it when the offset stops changing, and onScrollPhaseChange plus a delayed Task controls visibility.",
+            "onScrollGeometryChange 把偏移、可滚动范围与视口打包成一个 Equatable 结构体；回调据此推算每帧速度与越界量，经由 .animation(spring, value:) 决定滑块的长度、锚点与宽度，偏移停止变化 70 毫秒后由防抖 Task 让它回弹，onScrollPhaseChange 配合延时 Task 控制显隐。"
         ),
         apis: ["onScrollGeometryChange", "onScrollPhaseChange", "animation(_:value:)", "Task.sleep", "scaleEffect(x:y:anchor:)"],
         tags: ["scrollbar", "thumb", "liquid", "velocity", "滚动条", "滑块", "液态", "速度"],
@@ -40,6 +40,7 @@ private struct ScrollLiquidBarDemo: View {
     @State private var velocity: CGFloat = 0
     @State private var visible = false
     @State private var hideTask: Task<Void, Never>?
+    @State private var relaxTask: Task<Void, Never>?
     @State private var down = false
 
     var body: some View {
@@ -64,15 +65,21 @@ private struct ScrollLiquidBarDemo: View {
         }, action: { oldValue, newValue in
             metrics = newValue
             velocity = (newValue.offset - oldValue.offset).clamped(to: -30...30)
+            scheduleRelax()
         })
         .onScrollPhaseChange { _, newPhase in
             if newPhase.isScrolling {
                 hideTask?.cancel()
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { visible = true }
             } else {
+                relaxTask?.cancel()
                 velocity = 0
                 scheduleHide()
             }
+        }
+        .onDisappear {
+            hideTask?.cancel()
+            relaxTask?.cancel()
         }
         .overlay(alignment: .topTrailing) {
             ScrollLiquidThumb(
@@ -90,6 +97,17 @@ private struct ScrollLiquidBarDemo: View {
             withAnimation(.easeInOut(duration: 1.3)) {
                 position.scrollTo(edge: down ? .bottom : .top)
             }
+        }
+    }
+
+    /// Geometry only changes while the content moves: a finger held still sends nothing, so treat
+    /// 70 ms without a change as "stopped" and let the spring pull the thumb back to its length.
+    private func scheduleRelax() {
+        relaxTask?.cancel()
+        relaxTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(70))
+            guard !Task.isCancelled else { return }
+            velocity = 0
         }
     }
 

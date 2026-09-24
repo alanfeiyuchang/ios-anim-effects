@@ -64,6 +64,8 @@ private struct ScrollCollapsingDemo: View {
                 showsDivider: ctx.bool("divider"),
                 language: ctx.language
             )
+            // Purely decorative (the plus glyph is not a button): drags on the title scroll the list.
+            .allowsHitTesting(false)
         }
         .autoplay(ctx.isPreview, every: 2.2) {
             down.toggle()

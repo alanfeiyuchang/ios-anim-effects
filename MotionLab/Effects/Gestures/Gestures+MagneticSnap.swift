@@ -65,7 +65,7 @@ private struct MagneticSnapDemo: View {
         }
         .autoplay(ctx.isPreview, every: 1.6) { simulate() }
         .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
+            if !isPressing { endHold(completed: false) }
         }
         .onDisappear { script?.cancel() }
     }
@@ -142,7 +142,7 @@ private struct MagneticSnapDemo: View {
                     if newHover != nil && !ctx.isPreview { Haptics.selection() }
                 }
             }
-            .onEnded { _ in endHold() }
+            .onEnded { _ in endHold(completed: true) }
     }
 
     /// A real touch over a scripted hop: stop it and land the tile on its target so the drag starts from an anchor.
@@ -159,22 +159,23 @@ private struct MagneticSnapDemo: View {
         }
     }
 
-    /// Release or system cancellation: the tile snaps to the closest anchor.
-    private func endHold() {
+    /// A lift snaps the tile to the closest anchor; a system cancellation (the touch was stolen)
+    /// springs it back to the anchor it started from, silently.
+    private func endHold(completed: Bool) {
         guard held else { return }
         held = false
-        release()
+        release(completed: completed)
     }
 
-    private func release() {
-        let landing = nearest(to: rawPoint)
+    private func release(completed: Bool) {
+        let landing = completed ? nearest(to: rawPoint) : home
         withAnimation(.spring(response: 0.38, dampingFraction: ctx["damping"])) {
             home = landing
             drag = .zero
             dragging = false
             hover = nil
         }
-        if !ctx.isPreview { Haptics.tap(.medium) }
+        if completed && !ctx.isPreview { Haptics.tap(.medium) }
     }
 
     private func simulate() {

@@ -12,8 +12,8 @@ extension Effect {
             "一段聊天记录，胶囊形消息气泡排在44 pt高的行中左右交替（收到的在左、发出的蓝色渐变在右），间距10 pt。气泡并没有和滚动牢牢粘在一起：每个气泡都通过自己的弹簧跟随，离运动前沿越远，弹簧越松（响应0.2→0.45秒、阻尼0.62），滞后也越多——最多为每帧滚动增量的1.2倍，上限40 pt。因此快速滚动时气泡间距像手风琴一样被拉开，滚动停下后，气泡带着轻微过冲弹回聚拢。布局本身不变，只有偏移在动。灵动、真实，一眼就是iOS的味道。"
         ),
         implementation: L(
-            "onScrollGeometryChange tracks the offset and its per-frame delta; each row offsets by delta × its normalised screen position and carries its own .animation(.spring(response:…), value: delta), so rows chase each other. onScrollPhaseChange resets the delta to zero when the scroll settles.",
-            "onScrollGeometryChange 跟踪偏移及每帧增量；每一行按「增量 × 自身归一化屏幕位置」偏移，并各自带有 .animation(.spring(response:…), value: delta)，于是各行相互追赶。滚动停止时由 onScrollPhaseChange 把增量归零。"
+            "onScrollGeometryChange tracks the offset and its per-frame delta; each row offsets by delta × its normalised screen position and carries its own .animation(.spring(response:…), value: delta), so rows chase each other. A 70 ms debounce Task and onScrollPhaseChange reset the delta to zero once the scroll stops moving.",
+            "onScrollGeometryChange 跟踪偏移及每帧增量；每一行按「增量 × 自身归一化屏幕位置」偏移，并各自带有 .animation(.spring(response:…), value: delta)，于是各行相互追赶。滚动停止移动时，由 70 毫秒防抖 Task 与 onScrollPhaseChange 把增量归零。"
         ),
         apis: ["onScrollGeometryChange", "onScrollPhaseChange", "animation(_:value:)", "spring(response:dampingFraction:)", "ScrollPosition"],
         tags: ["elastic", "chat", "bubbles", "spring", "弹性", "聊天", "气泡", "弹簧"],
@@ -54,6 +54,7 @@ private struct ScrollElasticListDemo: View {
     @State private var delta: CGFloat = 0
     @State private var viewport: CGFloat = 340
     @State private var down = false
+    @State private var settleTask: Task<Void, Never>?
 
     private let rowHeight: CGFloat = 44
     private let gap: CGFloat = 10
@@ -76,10 +77,15 @@ private struct ScrollElasticListDemo: View {
         }, action: { oldValue, newValue in
             offset = newValue
             delta = (newValue - oldValue).clamped(to: -40...40)
+            scheduleSettle()
         })
         .onScrollPhaseChange { _, newPhase in
-            if newPhase == .idle { delta = 0 }
+            if newPhase == .idle {
+                settleTask?.cancel()
+                delta = 0
+            }
         }
+        .onDisappear { settleTask?.cancel() }
         .onGeometryChange(for: CGFloat.self, of: { proxy in proxy.size.height }, action: { newHeight in
             viewport = max(newHeight, 1)
         })
@@ -88,6 +94,17 @@ private struct ScrollElasticListDemo: View {
             withAnimation(.easeInOut(duration: 0.9)) {
                 position.scrollTo(edge: down ? .bottom : .top)
             }
+        }
+    }
+
+    /// Geometry only changes while the content moves: a finger held still sends nothing, so treat
+    /// 70 ms without a change as "stopped" and let the springs pull the bubbles back together.
+    private func scheduleSettle() {
+        settleTask?.cancel()
+        settleTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(70))
+            guard !Task.isCancelled else { return }
+            delta = 0
         }
     }
 

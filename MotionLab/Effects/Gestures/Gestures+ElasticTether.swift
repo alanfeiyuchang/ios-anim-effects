@@ -134,7 +134,7 @@ private struct ElasticTetherDemo: View {
         }
         .autoplay(ctx.isPreview, every: 2.4) { simulate() }
         .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
+            if !isPressing { endHold(completed: false) }
         }
         .onDisappear { settleNow() }
     }
@@ -183,14 +183,22 @@ private struct ElasticTetherDemo: View {
                     height: rubberBand(value.translation.height, limit: tetherPullLimit)
                 )
             }
-            .onEnded { _ in endHold() }
+            .onEnded { _ in endHold(completed: true) }
     }
 
-    /// Single, guarded end of a real pull (lift or system cancellation): fire.
-    private func endHold() {
+    /// Single, guarded end of a real pull. A lift fires; a system cancellation (the touch was
+    /// stolen) springs the pouch home without firing and without a haptic.
+    private func endHold(completed: Bool) {
         guard held else { return }
         held = false
-        release(haptic: true)
+        if completed {
+            release(haptic: true)
+        } else {
+            withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+                drag = .zero
+                dragging = false
+            }
+        }
     }
 
     private func release(haptic: Bool) {

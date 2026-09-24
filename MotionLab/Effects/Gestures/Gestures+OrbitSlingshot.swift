@@ -99,6 +99,14 @@ private final class OrbitModel {
         pendingVelocity = nil
     }
 
+    /// The touch was cancelled by the system: put the moon back where it was grabbed, with no launch.
+    /// A moon resting on the pad stays there; one grabbed mid-orbit carries on with its old velocity.
+    func cancelHold(at point: CGPoint) {
+        position = point
+        isHeld = false
+        lastDate = nil
+    }
+
     private func respawn(flashStar: Bool) {
         position = orbitPad
         velocity = .zero
@@ -175,7 +183,7 @@ private struct OrbitSlingshotDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 5.0, delay: 0.3) { autoLaunch() }
         .onChange(of: dragging) { _, isDragging in
-            if !isDragging { release() }
+            if !isDragging { release(completed: false) }
         }
     }
 
@@ -229,17 +237,22 @@ private struct OrbitSlingshotDemo: View {
                 let scale: CGFloat = length > 90 ? 90 / length : 1
                 pull = CGSize(width: dx * scale, height: dy * scale)
             }
-            .onEnded { _ in release() }
+            .onEnded { _ in release(completed: true) }
     }
 
-    /// Single, guarded end of a pull (normal release or system cancellation): launch from where the moon is.
-    private func release() {
+    /// Single, guarded end of a pull. A lift launches from where the moon is; a system cancellation
+    /// (the touch was stolen) puts it back where it was grabbed, with no launch and no haptic.
+    private func release(completed: Bool) {
         guard let start = anchor else { return }
-        let from = CGPoint(x: start.x + pull.width, y: start.y + pull.height)
-        model.launch(from: from, velocity: launchVelocity())
+        if completed {
+            let from = CGPoint(x: start.x + pull.width, y: start.y + pull.height)
+            model.launch(from: from, velocity: launchVelocity())
+            if !ctx.isPreview { Haptics.tap(.medium) }
+        } else {
+            model.cancelHold(at: start)
+        }
         anchor = nil
         pull = .zero
-        if !ctx.isPreview { Haptics.tap(.medium) }
     }
 
     private func autoLaunch() {

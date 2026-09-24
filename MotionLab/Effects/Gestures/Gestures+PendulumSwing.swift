@@ -67,7 +67,7 @@ private struct PendulumSwingDemo: View {
             script?.cancel()
         }
         .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
+            if !isPressing { endHold(completed: false) }
         }
     }
 
@@ -95,14 +95,14 @@ private struct PendulumSwingDemo: View {
                 withAnimation(swing) { angle = lagAngle(forVelocity: value.velocity.width) }
                 relaxWhenStill()
             }
-            .onEnded { _ in endHold() }
+            .onEnded { _ in endHold(completed: true) }
     }
 
-    /// Release or system cancellation: the badge swings home.
-    private func endHold() {
+    /// Release or system cancellation (silent, no haptic): the badge swings home.
+    private func endHold(completed: Bool) {
         guard held else { return }
         held = false
-        release(haptic: true)
+        release(haptic: completed)
     }
 
     private func relaxWhenStill() {

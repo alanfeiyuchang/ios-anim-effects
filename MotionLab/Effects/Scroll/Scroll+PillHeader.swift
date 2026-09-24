@@ -59,7 +59,10 @@ private struct ScrollPillHeaderDemo: View {
         .onScrollPhaseChange { _, newPhase in
             if newPhase == .interacting { scripted = false }
         }
-        .overlay(alignment: .top) { header }
+        .overlay(alignment: .top) {
+            // Title, search field and avatar are decorative (no controls), so drags on them scroll the list.
+            header.allowsHitTesting(false)
+        }
         .clipped()
         .autoplay(ctx.isPreview, every: 1.8) {
             scripted = true

@@ -183,7 +183,7 @@ private struct VerletRopeDemo: View {
         .onChange(of: iterations) { wake() }
         .onChange(of: pressing) { _, isPressing in
             // System cancellation (no onEnded): let go with no fling.
-            if !isPressing { letGo(velocity: .zero) }
+            if !isPressing { letGo(velocity: .zero, completed: false) }
         }
     }
 
@@ -220,16 +220,17 @@ private struct VerletRopeDemo: View {
                 guard let offset = grabOffset else { return }
                 model.grab = CGPoint(x: value.location.x - offset.width, y: value.location.y - offset.height)
             }
-            .onEnded { value in letGo(velocity: value.velocity) }
+            .onEnded { value in letGo(velocity: value.velocity, completed: true) }
     }
 
-    /// Single, guarded release (lift hands over the finger's velocity; cancellation passes zero).
-    private func letGo(velocity: CGSize) {
+    /// Single, guarded release (lift hands over the finger's velocity and taps; cancellation passes
+    /// zero and stays silent).
+    private func letGo(velocity: CGSize, completed: Bool) {
         guard grabOffset != nil else { return }
         grabOffset = nil
         model.release(velocity: velocity)
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isHeld = false }
-        if !ctx.isPreview { Haptics.tap(.soft) }
+        if completed && !ctx.isPreview { Haptics.tap(.soft) }
     }
 
     private var charmCenter: CGPoint {

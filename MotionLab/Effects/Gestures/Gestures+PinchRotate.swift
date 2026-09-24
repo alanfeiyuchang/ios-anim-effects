@@ -59,7 +59,7 @@ private struct PinchRotateDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.7) { autoStep() }
         .onChange(of: pinching) { _, isPinching in
-            if !isPinching { endHold() }
+            if !isPinching { endHold(completed: false) }
         }
         .onDisappear { script?.cancel() }
     }
@@ -96,14 +96,20 @@ private struct PinchRotateDemo: View {
                 scale = baseScale * magnification
                 degrees = baseDegrees + rotation
             }
-            .onEnded { _ in endHold() }
+            .onEnded { _ in endHold(completed: true) }
     }
 
-    /// Release or system cancellation: settle and re-base, so the next pinch starts from the landed transform.
-    private func endHold() {
+    /// Settle and re-base, so the next pinch starts from the landed transform. A lift lands where the
+    /// fingers left it (with a soft tap); a system cancellation (the touch was stolen) settles from the
+    /// transform the pinch started from, so nothing it did is kept, and stays silent.
+    private func endHold(completed: Bool) {
         guard held else { return }
         held = false
-        settle()
+        if completed {
+            settle(scale: scale, degrees: degrees, haptic: true)
+        } else {
+            settle(scale: baseScale, degrees: baseDegrees, haptic: false)
+        }
     }
 
     private func displayScale(_ raw: CGFloat) -> CGFloat {
@@ -112,10 +118,10 @@ private struct PinchRotateDemo: View {
         return raw
     }
 
-    private func settle() {
+    private func settle(scale fromScale: CGFloat, degrees fromDegrees: Double, haptic: Bool) {
         let snap = ctx.int("mode") == 1
-        let finalScale = snap ? displayScale(scale).clamped(to: 1...maxScale) : 1
-        let finalDegrees = snap ? (degrees / 90).rounded() * 90 : 0
+        let finalScale = snap ? displayScale(fromScale).clamped(to: 1...maxScale) : 1
+        let finalDegrees = snap ? (fromDegrees / 90).rounded() * 90 : 0
         withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
             scale = finalScale
             degrees = finalDegrees
@@ -123,7 +129,7 @@ private struct PinchRotateDemo: View {
         }
         baseScale = finalScale
         baseDegrees = finalDegrees
-        if !ctx.isPreview { Haptics.tap(.soft) }
+        if haptic && !ctx.isPreview { Haptics.tap(.soft) }
     }
 
     private func reset() {

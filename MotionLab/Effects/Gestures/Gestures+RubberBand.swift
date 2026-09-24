@@ -68,7 +68,7 @@ private struct RubberBandDemo: View {
         }
         .autoplay(ctx.isPreview, every: 1.5) { simulate() }
         .onChange(of: pressing) { _, isPressing in
-            if !isPressing { endHold() }
+            if !isPressing { endHold(completed: false) }
         }
         .onDisappear { script?.cancel() }
     }
@@ -97,14 +97,14 @@ private struct RubberBandDemo: View {
                 }
                 drag = value.translation
             }
-            .onEnded { _ in endHold() }
+            .onEnded { _ in endHold(completed: true) }
     }
 
-    /// Release or system cancellation: the tile springs back to centre.
-    private func endHold() {
+    /// Release or system cancellation (silent, no haptic): the tile springs back to centre.
+    private func endHold(completed: Bool) {
         guard held else { return }
         held = false
-        release()
+        release(haptic: completed)
     }
 
     /// Simulated drags release from a Task (outside the muted autoplay call), so they pass `haptic: false`.

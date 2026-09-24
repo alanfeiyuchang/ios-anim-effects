@@ -37,6 +37,8 @@ private struct ButtonSoftPressDemo: View {
     let ctx: DemoContext
     @State private var on: [Bool] = [false, true, false, false]
     @State private var bounces: [Int] = [0, 0, 0, 0]
+    /// Real taps per key, so a tap whose press the key never saw still plays a full press.
+    @State private var taps: [Int] = [0, 0, 0, 0]
     @State private var step = 0
     /// Momentary mode: the key autoplay is holding down for a beat.
     @State private var pulsed: Int?
@@ -79,7 +81,10 @@ private struct ButtonSoftPressDemo: View {
 
     private func key(_ index: Int, size: CGFloat, corner: CGFloat, glyph: CGFloat) -> some View {
         let lit = ctx.bool("latch") ? on[index] : pulsed == index
-        return Button { toggle(index) } label: {
+        return Button {
+            taps[index] += 1
+            toggle(index)
+        } label: {
             Image(systemName: Self.symbols[index])
                 .font(.system(size: glyph, weight: .semibold))
                 .foregroundStyle(lit ? AnyShapeStyle(accent) : AnyShapeStyle(Color.secondary))
@@ -91,13 +96,15 @@ private struct ButtonSoftPressDemo: View {
                 size: size,
                 corner: corner,
                 depth: ctx.cg("depth"),
-                response: ctx["response"]
+                response: ctx["response"],
+                taps: taps[index],
+                haptics: !ctx.isPreview
             )
         )
     }
 
+    /// The soft haptic lands as the key sinks (see ButtonSoftStyle), not on release.
     private func toggle(_ index: Int) {
-        Haptics.tap(.soft)
         guard ctx.bool("latch") else {
             // Momentary keys: sink only while held, bounce the glyph on every press.
             bounces[index] += 1
@@ -124,17 +131,27 @@ private struct ButtonSoftStyle: ButtonStyle {
     let corner: CGFloat
     let depth: CGFloat
     let response: Double
+    let taps: Int
+    let haptics: Bool
 
     func makeBody(configuration: Configuration) -> some View {
-        let inset = configuration.isPressed || latched
-        return configuration.label
-            .frame(width: size, height: size)
-            .background {
-                ButtonSoftSurface(inset: inset, corner: corner, depth: depth)
-            }
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: response, dampingFraction: 0.75), value: inset)
-            .animation(.spring(response: response, dampingFraction: 0.75), value: configuration.isPressed)
+        // Latched so a quick tap inside the detail page's scroll view still visibly sinks the key;
+        // the soft haptic fires as the press begins.
+        LatchedPress(
+            isPressed: configuration.isPressed,
+            taps: taps,
+            onPress: { if haptics { Haptics.tap(.soft) } }
+        ) { pressed in
+            let inset = pressed || latched
+            configuration.label
+                .frame(width: size, height: size)
+                .background {
+                    ButtonSoftSurface(inset: inset, corner: corner, depth: depth)
+                }
+                .scaleEffect(pressed ? 0.97 : 1)
+                .animation(.spring(response: response, dampingFraction: 0.75), value: inset)
+                .animation(.spring(response: response, dampingFraction: 0.75), value: pressed)
+        }
     }
 }
 

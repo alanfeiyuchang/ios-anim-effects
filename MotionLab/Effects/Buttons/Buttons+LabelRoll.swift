@@ -31,6 +31,8 @@ private struct ButtonLabelRollDemo: View {
     let ctx: DemoContext
     @State private var rolled = false
     @State private var clock: Double = 0
+    /// Counts real taps, so a tap whose press the button never saw still dips it.
+    @State private var taps = 0
 
     private var title: String { ctx.language == .zh ? "立即开始" : "Get started" }
 
@@ -60,7 +62,10 @@ private struct ButtonLabelRollDemo: View {
     }
 
     private var primaryButton: some View {
-        Button(action: roll) {
+        Button {
+            taps += 1
+            roll()
+        } label: {
             HStack(spacing: 8) {
                 Text(verbatim: title)
                     .textRenderer(
@@ -93,7 +98,7 @@ private struct ButtonLabelRollDemo: View {
             .overlay(Capsule().strokeBorder(Color.white.opacity(0.2), lineWidth: 1))
             .shadow(color: .black.opacity(0.25), radius: 14, y: 8)
         }
-        .buttonStyle(ButtonRollPressStyle())
+        .buttonStyle(ButtonRollPressStyle(taps: taps))
     }
 
     private var secondaryButton: some View {
@@ -190,9 +195,14 @@ private struct ButtonRollingArrow: View {
 }
 
 private struct ButtonRollPressStyle: ButtonStyle {
+    let taps: Int
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+        // Latched so a quick tap inside the detail page's scroll view still shows the dip.
+        LatchedPress(isPressed: configuration.isPressed, taps: taps) { pressed in
+            configuration.label
+                .scaleEffect(pressed ? 0.97 : 1)
+                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: pressed)
+        }
     }
 }

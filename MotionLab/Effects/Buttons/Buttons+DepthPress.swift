@@ -116,7 +116,7 @@ private struct DepthKey: View {
             forced: style.forcePressed,
             // The stiff press spring (response 0.12 s) has covered ~90% of the travel by now.
             pressDelay: 0.08,
-            onPress: style.haptics ? { Haptics.tap(.medium) } : nil
+            onPress: { if style.haptics { Haptics.tap(.medium) } }
         ) { pressed in
             key(pressed: pressed)
         }

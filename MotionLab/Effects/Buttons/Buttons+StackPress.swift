@@ -107,8 +107,8 @@ private struct ButtonStackStyle: ButtonStyle {
             taps: taps,
             forced: forcePressed,
             pressDelay: max(0.12, stagger + 0.1),
-            onPress: haptics ? { Haptics.tap(.rigid) } : nil,
-            onRelease: haptics ? { Haptics.tap(.light) } : nil
+            onPress: { if haptics { Haptics.tap(.rigid) } },
+            onRelease: { if haptics { Haptics.tap(.light) } }
         ) { pressed in
             ZStack(alignment: .topLeading) {
                 slab(0, pressed: pressed) { EmptyView() }

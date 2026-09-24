@@ -67,7 +67,7 @@ private struct CardsRewindDemo: View {
         let exit = exits[id] ?? 0
         let depth = deck.firstIndex(of: id) ?? 0
         let isTop = exit == 0 && depth == 0
-        let tilt = isTop ? Double(drag.width / 110) * 12 : 0
+        let tilt = isTop ? (Double(drag.width / 110) * 12).clamped(to: -12...12) : 0
         let spin = Double(exit) * ctx["spin"]
         let x: CGFloat = exit != 0 ? exit * 440 : (isTop ? drag.width : 0)
         let y: CGFloat = exit != 0 ? 40 : (isTop ? drag.height * 0.4 : CGFloat(depth) * 14)

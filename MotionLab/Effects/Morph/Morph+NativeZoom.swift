@@ -11,14 +11,14 @@ extension Effect {
             "iOS 18 风格缩放推入：图块放大成详情页，返回时再缩回原位。"
         ),
         prompt: L(
-            "A grid of rounded gradient tiles. Tapping a tile (it first presses in slightly) opens its detail page with a zoom push: the page grows out of the tile's exact frame and corner radius to fill the screen on a smooth spring (response 0.5 s, damping 0.86), cross-fading from the tile artwork to the full page while the grid dims to 30% behind it. Closing reverses the path into the same tile. The page can also be pulled down or swiped right: it follows the finger, shrinks up to 30% and rounds its corners; release past a third of the way (or with a flick) flies it home, otherwise it springs back. Continuous, interruptible and anchored to where it came from.",
-            "一组圆角渐变图块。点击时图块先轻压，随后详情页从它的精确位置与圆角中“长”出来铺满屏幕：弹簧（响应 0.5 秒、阻尼 0.86）平滑舒展，图块插画渐隐为完整页面，背后网格压暗至 30%。关闭时沿原路缩回同一图块。也可下拉或右滑，页面跟手缩小（最多 30%）并变圆角；拖过三分之一或快速甩出即飞回原位，否则弹回。连贯、可打断，始终锚定出发点。"
+            "A grid of rounded gradient tiles. Tapping a tile (it first presses in slightly) opens its detail page with a zoom push: the page grows out of the tile's exact frame and corner radius to fill the screen on a smooth spring (response 0.5 s, damping 0.86), cross-fading from the tile artwork to the full page while the grid dims to 30% behind it. Closing reverses the path into the same tile. The page can also be pulled down or swiped right: it follows the finger, shrinks up to 30% and rounds its corners, while up or left drags barely move it; release past a third of the way (or with a flick) flies it home, otherwise it springs back. Continuous, interruptible and anchored to where it came from.",
+            "一组圆角渐变图块。点击时图块先轻压，随后详情页从它的精确位置与圆角中“长”出来铺满屏幕：弹簧（响应 0.5 秒、阻尼 0.86）平滑舒展，图块插画渐隐为完整页面，背后网格压暗至 30%。关闭时沿原路缩回同一图块。也可下拉或右滑，页面跟手缩小（最多 30%）并变圆角，上滑或左滑几乎不动；拖过三分之一或快速甩出即飞回原位，否则弹回。连贯、可打断，始终锚定出发点。"
         ),
         implementation: L(
-            "Tiles report their frames with onGeometryChange into a named coordinate space; the full-size detail page is placed by an Animatable modifier that interpolates frame, scale and corner radius from the source rect, so no nested NavigationStack is needed. In a real app, use navigationTransition(.zoom(sourceID:in:)) with matchedTransitionSource.",
-            "图块通过 onGeometryChange 在命名坐标空间中上报自身位置；全尺寸详情页由遵循 Animatable 的修饰器从来源矩形插值出位置、缩放与圆角，无需嵌套 NavigationStack。真实 App 中可直接使用 navigationTransition(.zoom(sourceID:in:)) 配合 matchedTransitionSource。"
+            "Tiles report their frames with onGeometryChange into a named coordinate space; the full-size detail page is placed by an Animatable modifier that interpolates frame, scale and corner radius from the source rect, so no nested NavigationStack is needed; a down/right-only UIKit pan drives the dismiss drag. In a real app, use navigationTransition(.zoom(sourceID:in:)) with matchedTransitionSource.",
+            "图块通过 onGeometryChange 在命名坐标空间中上报自身位置；全尺寸详情页由遵循 Animatable 的修饰器从来源矩形插值出位置、缩放与圆角，无需嵌套 NavigationStack；只接受下拉或右滑的 UIKit 拖动手势驱动返回。真实 App 中可直接使用 navigationTransition(.zoom(sourceID:in:)) 配合 matchedTransitionSource。"
         ),
-        apis: ["onGeometryChange(for:of:action:)", "Animatable", "coordinateSpace(_:)", "DragGesture", "navigationTransition(.zoom(sourceID:in:))"],
+        apis: ["onGeometryChange(for:of:action:)", "Animatable", "coordinateSpace(_:)", "UIGestureRecognizerRepresentable", "navigationTransition(.zoom(sourceID:in:))"],
         tags: ["zoom", "navigation", "hero", "ios 18", "缩放转场", "导航", "推入", "系统转场"],
         params: [
             .choice("columns", L("Columns", "列数"), [L("2", "2"), L("3", "3")], default: 1),
@@ -64,8 +64,6 @@ private struct NativeZoomDemo: View {
     @State private var frames: [Int: CGRect] = [:]
     @State private var stage: CGSize = .zero
     @State private var autoIndex = 0
-    /// Resets on system cancellation too, so a cancelled pull never leaves the page shrunk and offset.
-    @GestureState private var dragging = false
 
     private var lift: CGFloat { min(max(drag.width, drag.height, 0) / 320, 1) }
 
@@ -102,26 +100,27 @@ private struct NativeZoomDemo: View {
             .scaleEffect(1 - lift * 0.3)
             .offset(x: drag.width * 0.6, y: drag.height * 0.6)
             .allowsHitTesting(open > 0.5)
-            .gesture(dismissDrag)
-            .onChange(of: dragging) { _, active in
-                if !active && drag != .zero {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { drag = .zero }
-                }
-            }
+            // Only a mostly down or right drag engages (the page scroll waits for it); up and left swipes scroll
+            // the detail page instead.
+            .gesture(PageSafePan(directions: [.down, .right], isEnabled: open > 0.5, onChanged: dragChanged, onEnded: dragEnded))
     }
 
-    private var dismissDrag: some Gesture {
-        DragGesture(minimumDistance: 12)
-            .updating($dragging) { _, state, _ in state = true }
-            .onChanged { drag = $0.translation }
-            .onEnded { value in
-                let flick = max(value.predictedEndTranslation.width, value.predictedEndTranslation.height)
-                if lift > 0.33 || flick > 420 {
-                    close()
-                } else {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { drag = .zero }
-                }
-            }
+    /// Down and right follow the finger 1:1; up and left (after a down/right start) only give a few points.
+    private func dragChanged(_ t: CGSize) {
+        drag = CGSize(
+            width: t.width > 0 ? t.width : rubberBand(t.width, limit: 12),
+            height: t.height > 0 ? t.height : rubberBand(t.height, limit: 12)
+        )
+    }
+
+    /// `nil` means the system cancelled the drag: settle back without judging a flick.
+    private func dragEnded(_ end: PageSafePanEnd?) {
+        let predicted = end?.predictedEndTranslation ?? .zero
+        if lift > 0.33 || max(predicted.width, predicted.height) > 420 {
+            close()
+        } else {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { drag = .zero }
+        }
     }
 
     private func present(_ id: Int) {

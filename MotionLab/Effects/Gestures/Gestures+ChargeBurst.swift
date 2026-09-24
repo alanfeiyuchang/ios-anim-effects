@@ -12,8 +12,8 @@ extension Effect {
             "112 pt的靛蓝紫渐变核心（闪电图标）嵌在168 pt的轨道圆环中。长按时，圆环以薄荷、天蓝、紫、粉角向渐变从12点顺时针用1.2秒线性填满；核心下沉到90%，光晕渐强，百分比同步递增。满格时一下重触感，核心以1.5 pt高频抖动；提前松手则圆环平滑回落。满格松手则爆发：白光绽开、0.3秒褪去，14枚胶囊粒子带着±10°角度与70%–130%速度差异飞散，受重力下坠并缩小淡出，冲击波0.8秒内消散，核心以高弹性弹簧（阻尼0.45）弹回并略超原尺寸。"
         ),
         implementation: L(
-            "A zero-distance DragGesture marks press and release; charge animates linearly and is interrupted by a spring on release. An Animatable ring view shows the live percentage, TimelineView drives the primed jitter, and a re-identified burst view animates its particles on appear.",
-            "零距离 DragGesture 捕获按下与松开；蓄力值线性动画，松手时被弹簧动画打断。Animatable 圆环视图实时显示百分比，TimelineView 驱动蓄满后的抖动，爆发视图通过更换 id 重新出现并播放粒子动画。"
+            "A zero-distance DragGesture marks press and release; charge animates linearly and is interrupted by a spring on release. An Animatable ring view shows the live percentage, TimelineView drives the primed jitter, and a re-identified burst view animates an Animatable particle field on appear, so the gravity drop is evaluated every frame and the paths curve.",
+            "零距离 DragGesture 捕获按下与松开；蓄力值线性动画，松手时被弹簧动画打断。Animatable 圆环视图实时显示百分比，TimelineView 驱动蓄满后的抖动；爆发视图通过更换 id 重新出现，其粒子层遵循 Animatable，每帧计算重力下坠，使轨迹呈弧线。"
         ),
         apis: ["DragGesture", "Animatable", "TimelineView", "trim(from:to:)", "AngularGradient", "id(_:)"],
         tags: ["long press", "hold", "charge", "burst", "particles", "长按", "蓄力", "爆发", "粒子"],
@@ -224,14 +224,34 @@ private struct BurstView: View {
             Circle()
                 .stroke(Palette.sky.opacity(Double(1 - progress)), lineWidth: 1 + 6 * (1 - progress))
                 .frame(width: 120 + 220 * progress, height: 120 + 220 * progress)
-            ForEach(0..<max(count, 1), id: \.self) { index in
-                particle(index)
-            }
+            BurstParticles(count: count, seed: seed, progress: progress)
         }
         .allowsHitTesting(false)
         .onAppear {
             withAnimation(.easeOut(duration: 0.3)) { flash = 1 }
             withAnimation(.easeOut(duration: 0.8)) { progress = 1 }
+        }
+    }
+}
+
+/// Animatable, so each particle's position is evaluated on every frame: the radius grows with
+/// `progress` while gravity pulls with `progress²`, which curves the paths instead of
+/// interpolating straight between the two end offsets.
+private struct BurstParticles: View, Animatable {
+    let count: Int
+    let seed: Int
+    var progress: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<max(count, 1), id: \.self) { index in
+                particle(index)
+            }
         }
     }
 
@@ -248,11 +268,13 @@ private struct BurstView: View {
         let radius = 60 + 110 * progress * speed
         // Light gravity: a downward drift that grows with the square of time.
         let drop = 70 * progress * progress
+        // Point each capsule along its current heading (derivative of the path).
+        let heading = atan2(Double(sin(angle) * 110 * speed + 140 * progress), Double(cos(angle) * 110 * speed))
         let color = Palette.spectrum[index % Palette.spectrum.count]
         return Capsule()
             .fill(color)
             .frame(width: 4 + 12 * (1 - progress) * speed, height: 5)
-            .rotationEffect(.radians(Double(angle)))
+            .rotationEffect(.radians(heading))
             .offset(x: cos(angle) * radius, y: sin(angle) * radius + drop)
             .opacity(Double(1 - progress))
     }

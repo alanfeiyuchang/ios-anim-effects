@@ -34,6 +34,8 @@ private struct CardsTossDemo: View {
     @State private var order: [Int] = [4, 0, 1, 2, 3, 5]
     @State private var drag: CGSize = .zero
     @State private var grab = UnitPoint.center
+    /// Offset that cancels the jump from moving the rotation anchor off-centre while the card is tilted.
+    @State private var pivotShift: CGSize = .zero
     @State private var tossX: CGFloat = 0
     @State private var tossY: CGFloat = 0
     @State private var tossSpin: Double = 0
@@ -80,6 +82,7 @@ private struct CardsTossDemo: View {
             withTransaction(transaction) {
                 drag = .zero
                 grab = .center
+                pivotShift = .zero
             }
         }
         var transaction = Transaction()
@@ -90,12 +93,12 @@ private struct CardsTossDemo: View {
     private func card(_ id: Int) -> some View {
         let depth = order.firstIndex(of: id) ?? 0
         let isTop = depth == 0
-        let rest = Double((id * 5) % 9) - 4
+        let rest = restAngle(id)
         let lever: Double = grab.y < 0.5 ? 1 : -1
         let swing = (Double(drag.width) / 8 * lever).clamped(to: -18...18)
         let angle: Double = isTop ? rest + swing + tossSpin : rest
-        let x: CGFloat = isTop ? drag.width + tossX : 0
-        let y: CGFloat = isTop ? drag.height + tossY : CGFloat(depth) * 3
+        let x: CGFloat = isTop ? drag.width + tossX + pivotShift.width : 0
+        let y: CGFloat = isTop ? drag.height + tossY + pivotShift.height : CGFloat(depth) * 3
         return CardsDeckFace(index: id, language: ctx.language, width: cardsTossSize.width, height: cardsTossSize.height)
             .rotationEffect(.degrees(angle), anchor: isTop ? grab : .center)
             .scaleEffect(isTop && (drag != .zero || rise) ? 1.03 : 1)
@@ -116,10 +119,10 @@ private struct CardsTossDemo: View {
                     held = true
                     sequence?.cancel()
                     sequence = nil
-                    grab = UnitPoint(
+                    pickUp(at: UnitPoint(
                         x: (value.startLocation.x / cardsTossSize.width).clamped(to: 0...1),
                         y: (value.startLocation.y / cardsTossSize.height).clamped(to: 0...1)
-                    )
+                    ))
                 }
                 withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.8)) {
                     drag = value.translation
@@ -131,16 +134,49 @@ private struct CardsTossDemo: View {
                 if hypot(value.translation.width, value.translation.height) > ctx.cg("threshold") {
                     toss(direction: value.predictedEndTranslation.width >= 0 ? 1 : -1)
                 } else {
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) { drag = .zero }
+                    putDown()
                 }
             }
+    }
+
+    /// The top card's resting tilt, in degrees.
+    private func restAngle(_ id: Int) -> Double {
+        Double((id * 5) % 9) - 4
+    }
+
+    /// Moves the rotation anchor to the grab point without a visible hop: rotating the same angle
+    /// around a different anchor displaces the card by (R − I)(anchor − centre), so the same amount is
+    /// added to the offset in the same (unanimated) transaction.
+    private func pickUp(at point: UnitPoint) {
+        let theta = CGFloat(restAngle(order.first ?? 0) * .pi / 180)
+        let dx = (point.x - 0.5) * cardsTossSize.width
+        let dy = (point.y - 0.5) * cardsTossSize.height
+        let shift = CGSize(
+            width: dx * cos(theta) - dy * sin(theta) - dx,
+            height: dx * sin(theta) + dy * cos(theta) - dy
+        )
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            grab = point
+            pivotShift = shift
+        }
+    }
+
+    /// Back onto the pile: the anchor and its compensation spring home together with the drag.
+    private func putDown() {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) {
+            drag = .zero
+            grab = .center
+            pivotShift = .zero
+        }
     }
 
     /// System cancellation (no `onEnded`): let the card fall back onto the pile.
     private func cancelHold() {
         guard held else { return }
         held = false
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) { drag = .zero }
+        putDown()
     }
 
     private func toss(direction: CGFloat, haptic: Bool = true) {
@@ -181,6 +217,7 @@ private struct CardsTossDemo: View {
             tossY = 0
             tossSpin = 0
             grab = .center
+            pivotShift = .zero
         }
         tossing = false
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { rise = true }
@@ -191,7 +228,7 @@ private struct CardsTossDemo: View {
         autoDirection = -autoDirection
         let direction = autoDirection
         let muted = Haptics.isMuted || ctx.isPreview
-        grab = UnitPoint(x: direction > 0 ? 0.8 : 0.2, y: 0.15)
+        pickUp(at: UnitPoint(x: direction > 0 ? 0.8 : 0.2, y: 0.15))
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
             drag = CGSize(width: direction * 50, height: -20)
         }

@@ -8,14 +8,14 @@ extension Effect {
         name: L("Custom Pull-to-Refresh", "自定义下拉刷新"),
         summary: L("A rubber-banded list reveals an arc that fills, flips and spins.", "带橡皮筋阻尼的列表下拉，露出逐渐填满、翻转并旋转的圆弧。"),
         prompt: L(
-            "A message list scrolls inside a rounded card; pulled past its top, it follows the finger with the native rubber-band resistance (it moves less the further you pull). Behind it, centered in the revealed gap, a 28 pt indicator grows from 60% to 100% scale while a gradient arc fills clockwise in proportion to the pull; its arrow flips 180° with a springy snap and a medium haptic the moment the 72 pt threshold is crossed. Releasing past the threshold settles the list at a 60 pt hold on a spring while the arc becomes a continuously spinning 270° loader; when the data arrives, a new row springs in at the top and the list glides back to rest with a success haptic. Releasing early simply springs back. Tactile, responsive and satisfying.",
-            "圆角卡片中的消息列表可独立滚动；到顶后继续下拉，列表带着系统原生的橡皮筋阻尼跟随手指（拉得越远越“沉”）。列表背后、露出的缝隙中央，是一个 28 pt 的指示器：随下拉距离从 60% 放大到 100%，渐变圆弧按比例顺时针填满；越过 72 pt 阈值的瞬间，箭头以弹性快速翻转 180°，并伴随中等强度触感。越过阈值后松手，列表以弹簧停在 60 pt 的等待位，圆弧变成持续旋转的 270° 加载环；数据返回时，新条目从顶部弹入，列表平滑回到原位，并伴随成功触感。未达阈值就松手则直接弹回。手感扎实、令人满足。"
+            "A message list sits in a rounded card; pulled down, it follows the finger with native-feeling rubber-band resistance (it moves less the further you pull), while upward swipes still scroll the page. Behind it, centered in the revealed gap, a 28 pt indicator grows from 60% to 100% scale while a gradient arc fills clockwise in proportion to the pull; its arrow flips 180° with a springy snap and a medium haptic the moment the 72 pt threshold is crossed. Releasing past the threshold settles the list at a 60 pt hold on a spring while the arc becomes a continuously spinning 270° loader; when the data arrives, a new row springs in at the top and the list glides back to rest with a success haptic. Releasing early simply springs back. Tactile, responsive and satisfying.",
+            "圆角卡片中的消息列表向下拉时，带着近似原生的橡皮筋阻尼跟随手指（拉得越远越“沉”），向上滑仍会滚动页面。列表背后、露出的缝隙中央，是一个 28 pt 的指示器：随下拉距离从 60% 放大到 100%，渐变圆弧按比例顺时针填满；越过 72 pt 阈值的瞬间，箭头以弹性快速翻转 180°，并伴随中等强度触感。越过阈值后松手，列表以弹簧停在 60 pt 的等待位，圆弧变成持续旋转的 270° 加载环；数据返回时，新条目从顶部弹入，列表平滑回到原位，并伴随成功触感。未达阈值就松手则直接弹回。手感扎实、令人满足。"
         ),
         implementation: L(
-            "The rows live in their own always-bouncing ScrollView: onScrollGeometryChange reads the top overscroll (contentOffset.y + contentInsets.top < 0) as the pull, so the page never moves with it; threshold crossings flip the arrow with a haptic, onScrollPhaseChange catches the release past the threshold, and an offset holds the list while an async refresh inserts a row with a transition.",
-            "条目放在独立且始终可回弹的 ScrollView 中：onScrollGeometryChange 把顶部越界量（contentOffset.y + contentInsets.top < 0）作为下拉距离，页面不会跟着移动；越过阈值时翻转箭头并触发触感，onScrollPhaseChange 捕捉越过阈值后的松手，再以偏移让列表停住，异步刷新后以过渡插入新条目。"
+            "A UIPanGestureRecognizer bridged with UIGestureRecognizerRepresentable only begins on mostly downward drags and makes the page's scroll pan wait for it; its translation, rubber-banded, offsets the rows. Crossing the threshold flips the arrow with a haptic, the release past it holds the list at an offset, and an async refresh inserts a row with a transition.",
+            "通过 UIGestureRecognizerRepresentable 桥接的 UIPanGestureRecognizer 只在以向下为主的拖动时开始，并让页面的滚动手势等待它失败；其位移经橡皮筋阻尼后偏移列表。越过阈值时翻转箭头并触发触感，越过阈值后松手以偏移让列表停住，异步刷新后以过渡插入新条目。"
         ),
-        apis: ["ScrollView", "onScrollGeometryChange", "onScrollPhaseChange", "trim(from:to:)", "TimelineView", "transition"],
+        apis: ["UIGestureRecognizerRepresentable", "UIPanGestureRecognizer", "trim(from:to:)", "TimelineView", "transition"],
         tags: ["pull to refresh", "refresh", "rubber band", "list", "下拉刷新", "刷新", "橡皮筋", "列表"],
         params: [
             .slider("duration", L("Refresh time", "刷新时长"), 0.5...3.0, default: 1.2, decimals: 1, unit: "s"),
@@ -43,8 +43,8 @@ private struct RefreshSample {
 
 private struct PullRefreshDemo: View {
     let ctx: DemoContext
-    /// The list's own top overscroll (native rubber band), reported by its scroll view.
-    @State private var overscroll: CGFloat = 0
+    /// The finger's rubber-banded pull, reported by the list's pan.
+    @State private var fingerPull: CGFloat = 0
     /// Extra shift of the rows: the scripted pull of previews and the hold height while refreshing.
     @State private var shift: CGFloat = 0
     @State private var refreshing = false
@@ -57,7 +57,7 @@ private struct PullRefreshDemo: View {
 
     private let holdHeight: CGFloat = 60
     private var threshold: CGFloat { ctx.cg("resistance") }
-    private var pull: CGFloat { overscroll + shift }
+    private var pull: CGFloat { fingerPull + shift }
     private var live: Bool { !ctx.isPreview && !ctx.isStill }
 
     init(ctx: DemoContext) {
@@ -72,7 +72,7 @@ private struct PullRefreshDemo: View {
                 PullIndicator(progress: min(pull / threshold, 1), armed: armed, refreshing: refreshing, preview: ctx.isPreview)
                     .frame(height: max(pull, 1))
                     .opacity(pull > 6 ? 1 : 0)
-                // The list scrolls on its own: its top overscroll is the pull, like a native refresh control.
+                // A downward pan on the list is the pull; other directions scroll the page.
                 FeedbackRefreshList(live: live, hold: shift, onPull: pullChanged, onRelease: release) {
                     list
                 }
@@ -104,9 +104,9 @@ private struct PullRefreshDemo: View {
         .background(Palette.elevated)
     }
 
-    /// Every change of the list's top overscroll; `byFinger` is true while a finger is on the list.
+    /// Every change of the finger's pull; `byFinger` is true while a finger is on the list.
     private func pullChanged(_ value: CGFloat, byFinger: Bool) {
-        overscroll = value
+        fingerPull = value
         if byFinger { userDriven = true }
         guard !refreshing else { return }
         updateArmed(pull, buzz: byFinger)
@@ -120,7 +120,7 @@ private struct PullRefreshDemo: View {
     }
 
     /// Finger lifted (or the touch was cancelled), or the scripted pull ended: refresh if armed. Otherwise the
-    /// scroll view's own bounce takes the list home.
+    /// list springs home (the pull in `FeedbackRefreshList`, the shift here).
     private func release() {
         guard !refreshing else { return }
         guard pull >= threshold else {
@@ -129,7 +129,7 @@ private struct PullRefreshDemo: View {
             return
         }
         refreshing = true
-        // The native bounce removes the overscroll while the shift grows to the hold height.
+        // The finger's pull springs back while the shift grows to the hold height.
         withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) { shift = holdHeight }
         let wait = ctx["duration"]
         // Only a real pull buzzes; the autoplay's simulated pull stays silent.

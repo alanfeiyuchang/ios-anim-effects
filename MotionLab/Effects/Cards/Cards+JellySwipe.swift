@@ -8,14 +8,14 @@ extension Effect {
         name: L("Jelly Swipe", "果冻滑卡"),
         summary: L("Cards stretch along the drag velocity like jelly, wobble when the finger stops and pop in with a squash.", "卡片沿拖动速度像果冻一样拉伸，手指停下时晃动，新卡片挤压弹出。"),
         prompt: L(
-            "A deck of 190×240 pt destination cards with 24 pt corners. While dragging, the top card follows the finger and stretches along the direction of travel in proportion to speed — up to 18% longer and 9% thinner at 3,000 pt/s — through a wobbly spring (response 0.28 s, damping 0.32), so when the finger pauses for 80 ms or lets go the card jiggles back to shape. Releasing past 100 pt or with a fast flick throws it off-stage still stretched; the next card then pops forward with a squash-and-stretch keyframe sequence (x/y 108/92% → 95/105% → 102/98% → 100% over ~0.55 s) while the pile behind steps up. Playful, gummy and elastic.",
-            "一叠190×240 pt、24 pt圆角的目的地卡片。拖动时顶部卡片跟手，并按速度沿运动方向拉伸——3000 pt/s时最多拉长18%、变细9%——拉伸由易晃动的弹簧（响应0.28秒、阻尼0.32）驱动，手指停顿80毫秒或松开时，卡片便抖动着恢复原形。拖过100 pt或快速甩动后松手，卡片带着拉伸飞出舞台；下一张随即以挤压拉伸关键帧弹到前面（x/y依次108/92%→95/105%→102/98%→100%，约0.55秒），后方卡堆同步上移。俏皮而Q弹。"
+            "A deck of 190×240 pt destination cards with 24 pt corners. While dragging, the top card follows the finger and stretches along the direction of travel in proportion to speed — up to 18% longer and 15% thinner at 3,000 pt/s, keeping its area — through a wobbly spring (response 0.28 s, damping 0.32). When the finger pauses for 80 ms or lets go, the overshoot flips into a squash, so the card jiggles stretch → squash → stretch back to shape. Releasing past 100 pt or with a fast flick throws it off-stage still stretched; the next card then pops forward with a squash-and-stretch keyframe sequence (x/y 108/92% → 95/105% → 102/98% → 100% over ~0.55 s) while the pile behind steps up. Playful, gummy and elastic.",
+            "一叠190×240 pt、24 pt圆角的目的地卡片。拖动时顶部卡片跟手，并按速度沿运动方向拉伸——3000 pt/s时最多拉长18%、变细15%，面积不变——由易晃动的弹簧（响应0.28秒、阻尼0.32）驱动；手指停顿80毫秒或松开时，过冲翻转为挤压，卡片“拉长、压扁、再拉长”地抖回原形。拖过100 pt或快速甩动后松手，卡片带着拉伸飞出舞台；下一张随即以挤压拉伸关键帧弹到前面（x/y依次108/92%→95/105%→102/98%→100%，约0.55秒），后方卡堆同步上移。俏皮而Q弹。"
         ),
         implementation: L(
-            "DragGesture.velocity sets a stretch vector that an .animation(value:) spring smooths; the card is rotated to the velocity angle, scaled on x and rotated back. A debounce Task relaxes the stretch when events stop, and keyframeAnimator plays the pop.",
-            "DragGesture.velocity 设置拉伸向量，并由 .animation(value:) 弹簧平滑；卡片先旋转到速度方向、在 x 轴缩放、再旋转回来。事件停止时由防抖 Task 放松拉伸，keyframeAnimator 播放弹出效果。"
+            "DragGesture.velocity sets a signed, traceless strain tensor (s·cos2θ, s·sin2θ) that an .animation(value:) spring smooths; a GeometryEffect applies an area-preserving stretch (1+s along, 1/(1+s) across), so the spring's overshoot through zero becomes a squash. A debounce Task relaxes the strain when events stop, and keyframeAnimator plays the pop.",
+            "DragGesture.velocity 设置带符号的无迹应变张量 (s·cos2θ, s·sin2θ)，由 .animation(value:) 弹簧平滑；GeometryEffect 施加面积不变的拉伸（沿向 1+s、横向 1/(1+s)），弹簧越过零点的过冲因此变成挤压。事件停止时由防抖 Task 放松应变，keyframeAnimator 播放弹出效果。"
         ),
-        apis: ["DragGesture.Value.velocity", "scaleEffect(x:y:)", "keyframeAnimator", "animation(_:value:)", "Task.sleep"],
+        apis: ["DragGesture.Value.velocity", "GeometryEffect", "keyframeAnimator", "animation(_:value:)", "Task.sleep"],
         tags: ["jelly", "swipe", "squash", "stretch", "果冻", "滑卡", "挤压拉伸", "弹性"],
         params: [
             .slider("jelly", L("Jelly amount", "果冻程度"), 0...2, default: 1),
@@ -31,7 +31,8 @@ private struct CardsJellySwipeDemo: View {
     let ctx: DemoContext
     @State private var order: [Int] = Array(0..<5)
     @State private var offset: CGSize = .zero
-    /// Stretch vector: direction = travel direction, length = amount (0…0.18).
+    /// Signed strain tensor (e1, e2) = s·(cos 2θ, sin 2θ): s = amount (0…0.18), θ = travel angle.
+    /// Relaxing through zero flips the principal axis by 90°, so the overshoot squashes.
     @State private var stretch: CGSize = .zero
     @State private var pops = 0
     @State private var relaxTask: Task<Void, Never>?
@@ -83,7 +84,8 @@ private struct CardsJellySwipeDemo: View {
         let progress = min(abs(offset.width) / max(ctx.cg("threshold"), 1), 1)
         let slot = max(CGFloat(depth) - progress, 0)
         let appear: Double = depth < 3 ? 1 : (depth == 3 ? Double(progress) : 0)
-        return CardsJellyBody(stretch: isTop ? stretch : .zero, content: CardsDeckFace(index: id, language: ctx.language))
+        return CardsDeckFace(index: id, language: ctx.language)
+            .modifier(CardsJellyStrain(e1: isTop ? stretch.width : 0, e2: isTop ? stretch.height : 0))
             .animation(.spring(response: 0.28, dampingFraction: ctx["wobble"]), value: stretch)
             .keyframeAnimator(initialValue: CardsJellyPop(), trigger: pops) { content, pop in
                 content.scaleEffect(x: isTop ? pop.x : 1, y: isTop ? pop.y : 1)
@@ -144,7 +146,8 @@ private struct CardsJellySwipeDemo: View {
         let speed = hypot(velocity.width, velocity.height)
         guard speed > 1 else { return .zero }
         let amount = min(speed / 3000, 1) * 0.18 * ctx.cg("jelly")
-        return CGSize(width: velocity.width / speed * amount, height: velocity.height / speed * amount)
+        let theta = atan2(velocity.height, velocity.width)
+        return CGSize(width: amount * cos(2 * theta), height: amount * sin(2 * theta))
     }
 
     /// DragGesture only reports movement: treat 80 ms without events as "stopped".
@@ -170,7 +173,8 @@ private struct CardsJellySwipeDemo: View {
         guard !flinging else { return }
         flinging = true
         if haptic && !ctx.isPreview { Haptics.tap(.medium) }
-        stretch = CGSize(width: direction * 0.18 * ctx.cg("jelly"), height: 0)
+        // Horizontal travel (θ = 0 or π): the tensor is (s, 0) either way.
+        stretch = CGSize(width: 0.18 * ctx.cg("jelly"), height: 0)
         withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
             offset = CGSize(width: direction * 460, height: offset.height + 30)
         }
@@ -199,7 +203,7 @@ private struct CardsJellySwipeDemo: View {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             offset = CGSize(width: direction * 60, height: -4)
         }
-        stretch = CGSize(width: direction * 0.14 * ctx.cg("jelly"), height: 0)
+        stretch = CGSize(width: 0.14 * ctx.cg("jelly"), height: 0)
         script?.cancel()
         script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.35))
@@ -217,22 +221,40 @@ private struct CardsJellyPop {
     var y: CGFloat = 1
 }
 
-/// Stretches its content along the stretch vector: rotate to the travel angle, scale on x, rotate back.
-private struct CardsJellyBody<Content: View>: View, Animatable {
-    var stretch: CGSize
-    let content: Content
+/// Area-preserving stretch from a signed strain tensor (e1, e2) = s·(cos 2θ, sin 2θ):
+/// scale 1 + s along θ and 1 / (1 + s) across, around the view centre. Because the tensor is
+/// animated component-wise, a spring that overshoots zero lands on the perpendicular axis,
+/// which is a squash along the original travel direction.
+private struct CardsJellyStrain: GeometryEffect {
+    var e1: CGFloat
+    var e2: CGFloat
 
-    var animatableData: CGSize.AnimatableData {
-        get { stretch.animatableData }
-        set { stretch.animatableData = newValue }
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(e1, e2) }
+        set {
+            e1 = newValue.first
+            e2 = newValue.second
+        }
     }
 
-    var body: some View {
-        let amount = hypot(stretch.width, stretch.height)
-        let angle = amount > 0.0001 ? atan2(Double(stretch.height), Double(stretch.width)) : 0
-        content
-            .rotationEffect(.radians(-angle))
-            .scaleEffect(x: 1 + amount, y: 1 - amount * 0.5)
-            .rotationEffect(.radians(angle))
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let s = (e1 * e1 + e2 * e2).squareRoot()
+        guard s > 0.0001 else { return ProjectionTransform(CGAffineTransform.identity) }
+        let along = 1 + s
+        let across = 1 / along
+        let mean = (along + across) / 2
+        let half = (along - across) / 2
+        // R(θ)·diag(along, across)·R(−θ), written with cos 2θ = e1 / s and sin 2θ = e2 / s.
+        let a = mean + half * e1 / s
+        let d = mean - half * e1 / s
+        let b = half * e2 / s
+        let cx = size.width / 2
+        let cy = size.height / 2
+        let transform = CGAffineTransform(
+            a: a, b: b, c: b, d: d,
+            tx: cx - (a * cx + b * cy),
+            ty: cy - (b * cx + d * cy)
+        )
+        return ProjectionTransform(transform)
     }
 }

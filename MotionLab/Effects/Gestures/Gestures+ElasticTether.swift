@@ -6,7 +6,7 @@ extension Effect {
         category: .gestures,
         interaction: .gesture,
         name: L("Elastic Band Launcher", "弹力皮筋发射"),
-        summary: L("A stone in a pouch between two fork posts: bands sag when slack, thin when drawn, and fire the stone.", "弹弓叉架两柱间的皮兜夹着石子：皮筋松时下垂、拉紧变细，松手把石子射出。"),
+        summary: L("A stone in a pouch between two fork posts: bands sag when slack, thin when drawn, and fire the stone.", "Y形叉架两柱间的皮兜夹着石子：皮筋松时下垂、拉紧变细，松手把石子射出。"),
         prompt: L(
             "A Y-shaped slingshot fork has two posts 156 pt apart; pink-to-coral elastic bands run from the post tips to a leather pouch cradling a 40 pt glossy stone, straight across at rest. Dragging the pouch draws it back with rubber-band resistance (limit 140 pt per axis). Each band reacts to its own length: shorter than its 78 pt rest it sags by 70% of the slack; stretched, it pulls straight and thins from 6 pt to 2 pt. On release the stone fires opposite the pull, flying 2.5× the draw while shrinking to 40% and fading over 0.5 s, and the empty pouch snaps through the post line on an under-damped spring (response 0.55 s, damping 0.32), oscillating two or three times. A new stone pops in 0.65 s later; a rigid haptic scales with the draw. Taut and twangy.",
             "Y形弹弓叉架的两根立柱相距156 pt，粉到珊瑚色的皮筋从柱尖连到皮兜，兜里夹着40 pt光泽石子，静止时皮筋笔直。拖动皮兜向后拉弓，带橡皮筋阻力（每轴上限140 pt）。每条皮筋按自身长度变化：短于78 pt时按松弛量的70%下垂，拉长时绷直并从6 pt变细到2 pt。松手后石子反向射出，飞出拉动距离的2.5倍，0.5秒内缩到40%并淡出；空皮兜以欠阻尼弹簧（响应0.55秒、阻尼0.32）冲过两柱连线，振荡两三次。0.65秒后新石子弹入，硬朗触感随拉动增强。紧绷而带劲。"

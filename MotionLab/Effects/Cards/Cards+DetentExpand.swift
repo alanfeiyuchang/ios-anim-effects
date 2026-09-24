@@ -45,7 +45,7 @@ private struct CardsDetentDemo: View {
             // 280 pt top detent + room for the rubber band above it (≤ 60 pt, ~30–40 pt in practice).
             card
                 .frame(height: 330, alignment: .top)
-            DemoHint(text: L("Drag the card down", "向下拖动卡片"), ctx: ctx)
+            DemoHint(text: L("Drag the card up or down", "上下拖动卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: detent) {

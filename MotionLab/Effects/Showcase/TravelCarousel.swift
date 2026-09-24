@@ -11,14 +11,14 @@ extension Effect {
             "可滑动的目的地照片卡片，随滚动位置缩放、倾斜并产生视差，页码点会拉伸变形。"
         ),
         prompt: L(
-            "A horizontal carousel of tall destination cards (200×240 pt, 24 pt corners) with a scrim, a country eyebrow, a bold place name and a “126 shots” caption. The centered card sits at 100% scale. As a card moves toward the edge it shrinks to ~86%, rotates up to 5° in the scroll direction and fades to 65% opacity, all mapped directly to scroll offset. Inside each card the photo is 72 pt wider than its frame and shifts opposite to the scroll by up to 36 pt, giving a window-like parallax. Paging snaps card by card with view-aligned targeting. Below, the active page dot stretches into a 22 pt orange capsule while the others shrink to 6 pt dots on a spring (response 0.35 s, damping 0.7), with a selection haptic per page. It feels deep, tactile and editorial.",
-            "横向轮播一排竖版目的地卡片（200 × 240pt，圆角 24pt），带渐变遮罩、国家小标题、粗体地名和照片数。居中卡片保持 100%；越往边缘，按滚动偏移缩到约 86%、朝滚动方向最多倾斜 5°、透明度降到 65%。卡内照片比卡框宽 72pt，随滚动反向最多平移 36pt，像透过窗户看风景。翻页按视图对齐逐张吸附。下方当前页码点以弹簧（响应 0.35 秒、阻尼 0.7）拉成 22pt 橙色胶囊，其余缩成 6pt 圆点，每翻一页一次选择触感。有纵深感。"
+            "A horizontal carousel of tall destination cards (200×240 pt, 24 pt corners) with a scrim, a country eyebrow, a bold place name and a “126 shots” caption. The centered card sits at 100% scale. As a card moves toward the edge it shrinks to ~86%, rotates up to 5° in the scroll direction and fades to 65% opacity, all mapped linearly to its distance from the centre. Inside each card the photo is 72 pt wider than its frame and shifts opposite to the scroll by up to 36 pt, giving a window-like parallax. Paging snaps card by card with view-aligned targeting. Below, the active page dot stretches into a 22 pt orange capsule while the others shrink to 6 pt dots on a spring (response 0.35 s, damping 0.7), with a selection haptic per page. It feels deep, tactile and editorial.",
+            "横向轮播一排竖版目的地卡片（200 × 240pt，圆角 24pt），带渐变遮罩、国家小标题、粗体地名和照片数。居中卡片保持 100%；越往边缘，按与中心的距离线性缩到约 86%、朝滚动方向最多倾斜 5°、透明度降到 65%。卡内照片比卡框宽 72pt，随滚动反向最多平移 36pt，像透过窗户看风景。翻页按视图对齐逐张吸附。下方当前页码点以弹簧（响应 0.35 秒、阻尼 0.7）拉成 22pt 橙色胶囊，其余缩成 6pt 圆点，每翻一页一次选择触感。有纵深感。"
         ),
         implementation: L(
-            "ScrollView + LazyHStack with scrollTargetLayout, viewAligned target behavior, scrollPosition(id:) and contentMargins of (measured width − 200) / 2 so the snapped card is exactly centred; scrollTransition maps phase.value to scale, rotation and opacity on the card and to an x-offset on the oversized image inside it.",
-            "ScrollView + LazyHStack 配合 scrollTargetLayout、viewAligned 吸附与 scrollPosition(id:)，contentMargins 取（实测宽度 − 200）/ 2，保证吸附后的卡片精确居中；scrollTransition 把 phase.value 映射为卡片的缩放、旋转和透明度，并映射为卡内超宽图片的横向偏移。"
+            "ScrollView + LazyHStack with scrollTargetLayout, viewAligned target behavior, scrollPosition(id:) and contentMargins of (measured width − 200) / 2 so the snapped card is exactly centred; visualEffect reads each card's midX in the .scrollView space, turns it into a linear −1…1 page distance and maps that to scale, rotation and opacity on the card and to an x-offset on the oversized image inside it.",
+            "ScrollView + LazyHStack 配合 scrollTargetLayout、viewAligned 吸附与 scrollPosition(id:)，contentMargins 取（实测宽度 − 200）/ 2，保证吸附后的卡片精确居中；visualEffect 读取每张卡片在 .scrollView 坐标中的 midX，换算成 −1…1 的线性页距，映射为卡片的缩放、旋转和透明度，以及卡内超宽图片的横向偏移。"
         ),
-        apis: ["scrollTransition", "scrollTargetBehavior(.viewAligned)", "scrollPosition(id:)", "contentMargins", "onGeometryChange", "LazyHStack"],
+        apis: ["visualEffect", "scrollTargetBehavior(.viewAligned)", "scrollPosition(id:)", "contentMargins", "onGeometryChange", "LazyHStack"],
         tags: ["carousel", "parallax", "paging", "cards", "轮播", "视差", "分页", "卡片"],
         params: [
             .slider("tilt", L("Edge tilt", "边缘倾斜"), 0...12, default: 5, decimals: 0, unit: "°"),
@@ -92,16 +92,23 @@ private struct TravelCarouselDemo: View {
         let tilt = ctx["tilt"]
         let shrink = 1 - ctx.cg("minScale")
         let parallax = ctx.cg("parallax")
+        let width = viewportWidth
         return ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 14) {
                 ForEach(0..<count, id: \.self) { index in
-                    TravelCarouselCard(spot: TravelCarouselSpot.all[index], language: ctx.language, parallax: parallax)
-                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                            content
-                                .scaleEffect(1 - CGFloat(abs(phase.value)) * shrink)
-                                .rotationEffect(.degrees(phase.value * tilt))
-                                .opacity(1 - abs(phase.value) * 0.35)
-                        }
+                    TravelCarouselCard(
+                        spot: TravelCarouselSpot.all[index],
+                        language: ctx.language,
+                        parallax: parallax,
+                        viewportWidth: width
+                    )
+                    .visualEffect { content, proxy in
+                        let d = TravelCarouselCard.distance(proxy, viewportWidth: width)
+                        return content
+                            .scaleEffect(1 - abs(d) * shrink)
+                            .rotationEffect(.degrees(Double(d) * tilt))
+                            .opacity(1 - Double(abs(d)) * 0.35)
+                    }
                 }
             }
             .scrollTargetLayout()
@@ -143,8 +150,19 @@ private struct TravelCarouselCard: View {
     let spot: TravelCarouselSpot
     let language: AppLanguage
     let parallax: CGFloat
+    let viewportWidth: CGFloat
 
     private static let size = CGSize(width: 200, height: 240)
+    /// Card width plus the stack spacing: one page of scroll.
+    nonisolated private static let pitch: CGFloat = 214
+
+    /// Signed distance of the card's centre from the carousel's centre, in pages (−1…1).
+    /// Linear in the scroll offset, so scale, tilt and parallax move with the finger instead of
+    /// jumping when a card starts to leave the visible area (as `scrollTransition` phases do).
+    nonisolated static func distance(_ proxy: GeometryProxy, viewportWidth: CGFloat) -> CGFloat {
+        let raw = (proxy.frame(in: .scrollView).midX - viewportWidth / 2) / pitch
+        return min(max(raw, -1), 1)
+    }
 
     var body: some View {
         photo
@@ -170,10 +188,11 @@ private struct TravelCarouselCard: View {
 
     private var photo: some View {
         let amount = parallax
+        let width = viewportWidth
         return LandscapeArt(seed: spot.seed)
             .frame(width: Self.size.width + amount * 2, height: Self.size.height)
-            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                content.offset(x: -CGFloat(phase.value) * amount)
+            .visualEffect { content, proxy in
+                content.offset(x: -Self.distance(proxy, viewportWidth: width) * amount)
             }
             .frame(width: Self.size.width, height: Self.size.height)
             .clipped()

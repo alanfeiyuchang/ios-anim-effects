@@ -224,7 +224,7 @@ private struct BurstView: View {
             Circle()
                 .stroke(Palette.sky.opacity(Double(1 - progress)), lineWidth: 1 + 6 * (1 - progress))
                 .frame(width: 120 + 220 * progress, height: 120 + 220 * progress)
-            BurstParticles(count: count, seed: seed, progress: progress)
+            ChargeBurstParticles(count: count, seed: seed, progress: progress)
         }
         .allowsHitTesting(false)
         .onAppear {
@@ -237,7 +237,7 @@ private struct BurstView: View {
 /// Animatable, so each particle's position is evaluated on every frame: the radius grows with
 /// `progress` while gravity pulls with `progress²`, which curves the paths instead of
 /// interpolating straight between the two end offsets.
-private struct BurstParticles: View, Animatable {
+private struct ChargeBurstParticles: View, Animatable {
     let count: Int
     let seed: Int
     var progress: CGFloat

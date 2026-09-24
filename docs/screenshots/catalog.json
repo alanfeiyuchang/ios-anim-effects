@@ -9521,7 +9521,7 @@
         }
       ],
       "prompt" : {
-        "en" : "An app row with a gradient icon, a title and a trailing 88 × 36 pt tinted pill reading GET in bold blue. On tap the label shrinks and blurs away while the pill springs into a 36 pt circle (response 0.45 s, damping 0.8); a short quarter arc spins around the hairline track while 'waiting', then a determinate blue arc with round caps fills clockwise from 12 o'clock in small linear steps, with a 11 pt rounded stop square popping in at the center. At 100% the circle springs back out into a pill that now reads OPEN, with a success haptic. Tapping during download cancels back to GET.",
+        "en" : "An app row with a gradient icon, a title and a trailing 88 × 36 pt tinted pill reading GET in bold blue. On tap the label shrinks and blurs away while the pill springs into a 36 pt circle (response 0.45 s, damping 0.8); a short quarter arc spins around the thin 3 pt track while 'waiting', then a determinate blue arc with round caps fills clockwise from 12 o'clock in small linear steps, with a 11 pt rounded stop square popping in at the center. At 100% the circle springs back out into a pill that now reads OPEN, with a success haptic. Tapping during download cancels back to GET.",
         "zh" : "一行应用条目：左侧渐变图标与标题，右侧是一枚 88 × 36 pt 的浅蓝胶囊，蓝色粗体写着“获取”。点击后文字缩小、模糊消失，胶囊以弹簧（响应 0.45 秒、阻尼 0.8）收缩成 36 pt 圆形；“等待中”时一段四分之一圆弧沿细轨道旋转，随后蓝色圆头进度弧从 12 点方向顺时针以细小的线性步进填满，圆心弹出一个 11 pt 的圆角“停止”方块。到达 100% 时圆形弹性舒展回胶囊，文字变为“打开”，并伴随成功触感。下载途中再次点击则取消并回到“获取”。"
       },
       "summary" : {
@@ -11819,8 +11819,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A 250 × 56 pt outlined capsule reads 'Download · 1.2 GB' in indigo on a 10% indigo tint. On tap it presses to 96%, the label cross-fades to 'Downloading 0%', and a solid indigo → violet fill sweeps in from the left edge in irregular chunks (0.45 s smooth each). Where the fill passes, the label turns white — two stacked labels are clipped to either side of the fill edge, so letters split mid-glyph as it crosses. At 100% the capsule crossfades to green, the label rolls to 'Open', and the button bounces 1.0 → 1.05 → 1.0 with a success haptic. Tap again to reset. Honest, legible, compact.",
-        "zh" : "一枚 250 × 56 pt 的描边胶囊，10% 靛蓝底色上写着靛蓝色的“下载 · 1.2 GB”。点击后按钮压到 96%，文字交叉淡换为“正在下载 0%”，一层靛蓝 → 紫罗兰的实色填充从左边缘分段扫入（每段 0.45 秒平滑曲线）。填充经过处文字变白——上下叠放两层文字，分别裁切在填充边缘两侧，所以边缘经过时一个字母会被一分为二。到达 100% 时胶囊交叉淡变为绿色，文字滚动为“打开”，按钮在 1.0 → 1.05 → 1.0 间弹一下并伴随成功触感。再次点击重置。诚实、清晰、紧凑。"
+        "en" : "A 250 × 56 pt outlined capsule reads 'Download · 1.2 GB' in indigo on a 10% indigo tint. On tap it presses to 96%, the label rolls to 'Downloading 0%', and a solid indigo → violet fill sweeps in from the left edge in irregular chunks (0.45 s smooth each). Where the fill passes, the label turns white — two stacked labels are clipped to either side of the fill edge, so letters split mid-glyph as it crosses. At 100% the capsule crossfades to green, the label rolls to 'Open', and the button bounces 1.0 → 1.05 → 1.0 with a success haptic. Tap again to reset. Honest, legible, compact.",
+        "zh" : "一枚 250 × 56 pt 的描边胶囊，10% 靛蓝底色上写着靛蓝色的“下载 · 1.2 GB”。点击后按钮压到 96%，文字滚动为“正在下载 0%”，一层靛蓝 → 紫罗兰的实色填充从左边缘分段扫入（每段 0.45 秒平滑曲线）。填充经过处文字变白——上下叠放两层文字，分别裁切在填充边缘两侧，所以边缘经过时一个字母会被一分为二。到达 100% 时胶囊交叉淡变为绿色，文字滚动为“打开”，按钮在 1.0 → 1.05 → 1.0 间弹一下并伴随成功触感。再次点击重置。诚实、清晰、紧凑。"
       },
       "summary" : {
         "en" : "The button's own surface fills left to right, inverting the label as it passes.",
@@ -11972,8 +11972,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A 230 × 56 pt outlined capsule labeled 'Deploy' with a hairline border. On tap the label changes to 'Deploying…' and pulses between 55% and 100% opacity, while a comet — a 28%-long segment of the outline with a transparent tail and a bright sky → violet head, 3 pt wide and softly blurred beneath — laps the border once every 1.2 s. When the job finishes, the comet's tail stops and its head keeps drawing until the whole outline is traced in green over 0.5 s, the label rolls to 'Live' with a check, a faint green fill fades in, and a success haptic fires. Technical, focused, premium.",
-        "zh" : "一枚 230 × 56 pt 的描边胶囊按钮，细线边框，写着“部署”。点击后文字变为“正在部署…”并在 55% 与 100% 透明度间脉动；同时一道彗星光——占轮廓 28% 长度、尾部透明、头部为明亮的天蓝 → 紫罗兰、线宽 3 pt、下方带柔和模糊——每 1.2 秒沿边框绕行一圈。任务完成时彗星尾巴停住，头部继续前进，在 0.5 秒内把整圈轮廓描成绿色；文字滚动为带对勾的“已上线”，淡淡的绿色底色浮现，并伴随成功触感。技术感、专注、高级。"
+        "en" : "A 230 × 56 pt outlined capsule labeled 'Deploy' with a hairline border. On tap the label changes to 'Deploying…' and pulses between 55% and 100% opacity, while a comet — a 28%-long segment of the outline with a transparent tail and a bright sky → violet head, 3 pt wide and softly blurred beneath — laps the border once every 1.2 s. When the job finishes, a green trace sets off from the comet's head and runs on around the loop until the whole outline is green, over 0.5 s; the label rolls to 'Live' with a check, a faint green fill fades in, and a success haptic fires. Technical, focused, premium.",
+        "zh" : "一枚 230 × 56 pt 的描边胶囊按钮，细线边框，写着“部署”。点击后文字变为“正在部署…”并在 55% 与 100% 透明度间脉动；同时一道彗星光——占轮廓 28% 长度、尾部透明、头部为明亮的天蓝 → 紫罗兰、线宽 3 pt、下方带柔和模糊——每 1.2 秒沿边框绕行一圈。任务完成时，一道绿色描边从彗星头部出发继续绕行，在 0.5 秒内把整圈轮廓描成绿色；文字滚动为带对勾的“已上线”，淡淡的绿色底色浮现，并伴随成功触感。技术感、专注、高级。"
       },
       "summary" : {
         "en" : "A comet of light laps the button's outline while it works, then closes the loop in green.",
@@ -12563,8 +12563,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A plain black 124 × 36 pt capsule sits at the top of a lock screen. When an event arrives (AirPods connected, payment done, timer finished) the island bulges outward like a system alert: it widens to 250 × 44 pt on a lively spring (response 0.45 s, damping 0.62) while the whole pill pumps to 107% in 140 ms and springs back. A tinted glyph bounces in on the left and a short label and value fade in on the right, 100 ms after the growth starts; a success haptic lands with it. After a 1.5 s hold the content fades first and the pill contracts to its resting size on a calm spring (0.4 s, damping 0.85). Glanceable, self-dismissing, never needs a tap.",
-        "zh" : "锁屏顶部静置着一枚 124 × 36 pt 的纯黑胶囊。每当有事件到来（耳机已连接、支付完成、计时结束），灵动岛就像系统提示那样向外鼓起：以活泼的弹簧（响应 0.45 秒、阻尼 0.62）横向撑到 250 × 44 pt，整体同时在 140 毫秒内鼓到 107% 再弹回。生长开始 100 毫秒后，左侧着色图标弹跳入场，右侧短标签与数值淡入，并伴随成功触感。停留 1.5 秒后内容先淡出，胶囊再以平缓弹簧（0.4 秒、阻尼 0.85）缩回原尺寸。一眼即懂，自动消失，无需点击。"
+        "en" : "A plain black 124 × 36 pt capsule sits at the top of a lock screen. When an event arrives (AirPods connected, payment done, timer finished) the island bulges outward like a system alert: it widens to 250 × 44 pt on a lively spring (response 0.45 s, damping 0.62) while the whole pill pumps to 107% in 140 ms and springs back. A tinted glyph bounces in on the left and a short label and value fade in on the right, 100 ms after the growth starts; a success haptic marks the event's arrival. After a 1.5 s hold the content fades first and the pill contracts to its resting size on a calm spring (0.4 s, damping 0.85). Glanceable, self-dismissing, never needs a tap.",
+        "zh" : "锁屏顶部静置着一枚 124 × 36 pt 的纯黑胶囊。每当有事件到来（耳机已连接、支付完成、计时结束），灵动岛就像系统提示那样向外鼓起：以活泼的弹簧（响应 0.45 秒、阻尼 0.62）横向撑到 250 × 44 pt，整体同时在 140 毫秒内鼓到 107% 再弹回。事件一到即有成功触感；生长开始 100 毫秒后，左侧着色图标弹跳入场，右侧短标签与数值淡入。停留 1.5 秒后内容先淡出，胶囊再以平缓弹簧（0.4 秒、阻尼 0.85）缩回原尺寸。一眼即懂，自动消失，无需点击。"
       },
       "summary" : {
         "en" : "System-style alerts: the island bulges sideways to announce an event, then shrinks back on its own.",
@@ -13156,9 +13156,8 @@
     },
     {
       "apis" : [
-        "ScrollView",
-        "onScrollGeometryChange",
-        "onScrollPhaseChange",
+        "UIGestureRecognizerRepresentable",
+        "UIPanGestureRecognizer",
         "trim(from:to:)",
         "TimelineView",
         "transition"
@@ -13167,8 +13166,8 @@
       "family" : "feedback.refresh",
       "id" : "feedback.pull-refresh",
       "implementation" : {
-        "en" : "The rows live in their own always-bouncing ScrollView: onScrollGeometryChange reads the top overscroll (contentOffset.y + contentInsets.top < 0) as the pull, so the page never moves with it; threshold crossings flip the arrow with a haptic, onScrollPhaseChange catches the release past the threshold, and an offset holds the list while an async refresh inserts a row with a transition.",
-        "zh" : "条目放在独立且始终可回弹的 ScrollView 中：onScrollGeometryChange 把顶部越界量（contentOffset.y + contentInsets.top < 0）作为下拉距离，页面不会跟着移动；越过阈值时翻转箭头并触发触感，onScrollPhaseChange 捕捉越过阈值后的松手，再以偏移让列表停住，异步刷新后以过渡插入新条目。"
+        "en" : "A UIPanGestureRecognizer bridged with UIGestureRecognizerRepresentable only begins on mostly downward drags and makes the page's scroll pan wait for it; its translation, rubber-banded, offsets the rows. Crossing the threshold flips the arrow with a haptic, the release past it holds the list at an offset, and an async refresh inserts a row with a transition.",
+        "zh" : "通过 UIGestureRecognizerRepresentable 桥接的 UIPanGestureRecognizer 只在以向下为主的拖动时开始，并让页面的滚动手势等待它失败；其位移经橡皮筋阻尼后偏移列表。越过阈值时翻转箭头并触发触感，越过阈值后松手以偏移让列表停住，异步刷新后以过渡插入新条目。"
       },
       "interaction" : "gesture",
       "name" : {
@@ -13202,8 +13201,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A message list scrolls inside a rounded card; pulled past its top, it follows the finger with the native rubber-band resistance (it moves less the further you pull). Behind it, centered in the revealed gap, a 28 pt indicator grows from 60% to 100% scale while a gradient arc fills clockwise in proportion to the pull; its arrow flips 180° with a springy snap and a medium haptic the moment the 72 pt threshold is crossed. Releasing past the threshold settles the list at a 60 pt hold on a spring while the arc becomes a continuously spinning 270° loader; when the data arrives, a new row springs in at the top and the list glides back to rest with a success haptic. Releasing early simply springs back. Tactile, responsive and satisfying.",
-        "zh" : "圆角卡片中的消息列表可独立滚动；到顶后继续下拉，列表带着系统原生的橡皮筋阻尼跟随手指（拉得越远越“沉”）。列表背后、露出的缝隙中央，是一个 28 pt 的指示器：随下拉距离从 60% 放大到 100%，渐变圆弧按比例顺时针填满；越过 72 pt 阈值的瞬间，箭头以弹性快速翻转 180°，并伴随中等强度触感。越过阈值后松手，列表以弹簧停在 60 pt 的等待位，圆弧变成持续旋转的 270° 加载环；数据返回时，新条目从顶部弹入，列表平滑回到原位，并伴随成功触感。未达阈值就松手则直接弹回。手感扎实、令人满足。"
+        "en" : "A message list sits in a rounded card; pulled down, it follows the finger with native-feeling rubber-band resistance (it moves less the further you pull), while upward swipes still scroll the page. Behind it, centered in the revealed gap, a 28 pt indicator grows from 60% to 100% scale while a gradient arc fills clockwise in proportion to the pull; its arrow flips 180° with a springy snap and a medium haptic the moment the 72 pt threshold is crossed. Releasing past the threshold settles the list at a 60 pt hold on a spring while the arc becomes a continuously spinning 270° loader; when the data arrives, a new row springs in at the top and the list glides back to rest with a success haptic. Releasing early simply springs back. Tactile, responsive and satisfying.",
+        "zh" : "圆角卡片中的消息列表向下拉时，带着近似原生的橡皮筋阻尼跟随手指（拉得越远越“沉”），向上滑仍会滚动页面。列表背后、露出的缝隙中央，是一个 28 pt 的指示器：随下拉距离从 60% 放大到 100%，渐变圆弧按比例顺时针填满；越过 72 pt 阈值的瞬间，箭头以弹性快速翻转 180°，并伴随中等强度触感。越过阈值后松手，列表以弹簧停在 60 pt 的等待位，圆弧变成持续旋转的 270° 加载环；数据返回时，新条目从顶部弹入，列表平滑回到原位，并伴随成功触感。未达阈值就松手则直接弹回。手感扎实、令人满足。"
       },
       "summary" : {
         "en" : "A rubber-banded list reveals an arc that fills, flips and spins.",
@@ -13634,8 +13633,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A ticket stepper — minus button, rolling count, plus button in a 200 × 52 pt capsule — sits under 'Tickets · Max 4 per order'. Valid taps roll the digit with a numeric transition and a light tick. Tapping plus at the limit does not shake: the capsule stretches 6% toward the tapped side from its leading anchor in 0.1 s, the digit rises 10 pt and drops back past its line by 3 pt, and both snap home on a bouncy spring in 0.4 s — a rubber band hitting its end stop. The plus glyph dims to 30%, the border flashes red and the 'Max 4' caption turns red and pulses to 106%, with a rigid haptic. Clear boundaries, zero scolding.",
-        "zh" : "一个购票步进器——减号、滚动数字、加号，装在 200 × 52 pt 的胶囊里——位于“票数 · 每单最多 4 张”下方。有效点击会让数字以数字转场滚动并伴随轻触感。在上限时点击加号不会抖动：胶囊以前缘为锚点在 0.1 秒内向点击一侧拉长 6%，数字上升 10 pt 再越过基线下沉 3 pt，然后二者一起以弹跳弹簧在 0.4 秒内弹回原位——像橡皮筋撞到尽头。加号变暗到 30%，边框闪红，“最多 4 张”说明文字变红并脉冲到 106%，同时伴随一次硬朗触感。边界清晰，从不责备。"
+        "en" : "A ticket stepper — minus button, rolling count, plus button in a 200 × 52 pt capsule — sits under 'Tickets · Max 4 per order'. Valid taps roll the digit with a numeric transition and a light tick. Tapping plus at the limit does not shake: the capsule stretches 6% toward the tapped side from its leading anchor in 0.1 s, the digit rises 10 pt and drops back past its line by 3 pt, and both snap home on a bouncy spring (digit 0.3 s, capsule 0.4 s) — a rubber band hitting its end stop. The plus glyph dims to 30%, the border flashes red and the 'Max 4' caption turns red and pulses to 106%, with a rigid haptic. Clear boundaries, zero scolding.",
+        "zh" : "一个购票步进器——减号、滚动数字、加号，装在 200 × 52 pt 的胶囊里——位于“票数 · 每单最多 4 张”下方。有效点击会让数字以数字转场滚动并伴随轻触感。在上限时点击加号不会抖动：胶囊以前缘为锚点在 0.1 秒内向点击一侧拉长 6%，数字上升 10 pt 再越过基线下沉 3 pt，然后二者以弹跳弹簧弹回原位（数字 0.3 秒、胶囊 0.4 秒）——像橡皮筋撞到尽头。加号变暗到 30%，边框闪红，“最多 4 张”说明文字变红并脉冲到 106%，同时伴随一次硬朗触感。边界清晰，从不责备。"
       },
       "summary" : {
         "en" : "Pushing past the maximum stretches the stepper like rubber and snaps it back.",
@@ -13934,9 +13933,9 @@
     },
     {
       "apis" : [
-        "DragGesture",
+        "UIGestureRecognizerRepresentable",
         "scaleEffect",
-        "predictedEndTranslation",
+        "UIPanGestureRecognizer",
         "spring(response:dampingFraction:)",
         "animation(_:value:)"
       ],
@@ -13944,8 +13943,8 @@
       "family" : "feedback.overlay",
       "id" : "feedback.receding-sheet",
       "implementation" : {
-        "en" : "One presented flag plus a live drag offset feed a single 'openness' value (0…1) that drives the page's scale, corner radius and scrim; the sheet's rows use per-index delayed springs, and a DragGesture with predictedEndTranslation decides dismissal.",
-        "zh" : "一个展示标志加上实时拖动位移，合成单一的“展开度”（0…1），驱动页面的缩放、圆角与遮罩；面板各行使用按序号递增延迟的弹簧，DragGesture 结合 predictedEndTranslation 判断是否关闭。"
+        "en" : "One presented flag plus a live drag offset feed a single 'openness' value (0…1) that drives the page's scale, corner radius and scrim; the sheet's rows use per-index delayed springs, and a down-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) with a flick projection decides dismissal.",
+        "zh" : "一个展示标志加上实时拖动位移，合成单一的“展开度”（0…1），驱动页面的缩放、圆角与遮罩；面板各行使用按序号递增延迟的弹簧，只接受向下拖动的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable，页面滚动会等它失败）结合甩动投影判断是否关闭。"
       },
       "interaction" : "gesture",
       "name" : {
@@ -13991,8 +13990,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A photo grid with three selected photos and a trash button. On tap the page recedes: it scales to 92%, rounds its corners from 18 to 30 pt, slides down 10 pt and dims under a 25% scrim, while a 200 pt confirmation sheet rises on a spring (response 0.45 s, damping 0.86). Inside, the 'Delete 3 photos?' title, a red 'Delete' button and 'Cancel' cascade in, each rising 18 pt and fading in, staggered 50 ms. Dragging the sheet down tracks 1:1 and scrubs the page back toward 100%; past 60 pt or a flick dismisses, otherwise it springs back. Confirming fires a firm haptic as the sheet leaves and the three photos shrink away. Deliberate, reversible.",
-        "zh" : "照片网格里选中了三张，右上角有删除按钮。点击后页面退向纵深：缩到 92%，圆角由 18 pt 变 30 pt，下沉 10 pt，并压上 25% 的暗色遮罩；与此同时，一张 200 pt 的确认面板以弹簧（响应 0.45 秒、阻尼 0.86）升起。面板里“删除 3 张照片？”标题、红色“删除”与“取消”按钮依次上浮 18 pt 淡入，间隔 50 毫秒。向下拖动面板 1:1 跟手，页面随之按比例回到 100%；超过 60 pt 或快速下甩即关闭，否则弹回。确认删除时面板退场、给出一记硬朗触感，三张照片缩小消失。郑重，且随时可以反悔。"
+        "en" : "A photo grid with three selected photos and a trash button. On tap the page recedes: it scales to 92%, rounds its corners from 18 to 30 pt, slides down 10 pt and dims under a 25% scrim, while a 200 pt confirmation sheet rises from the bottom edge (not grown out of its button) on a spring (response 0.45 s, damping 0.86). Inside, the 'Delete 3 photos?' title, a red 'Delete' button and 'Cancel' cascade in, each rising 18 pt and fading in, staggered 50 ms. Dragging the sheet down tracks 1:1 and scrubs the page back toward 100%; past 60 pt or a flick dismisses, otherwise it springs back. Confirming fires a firm haptic as the sheet leaves and the three photos shrink away. Deliberate, reversible.",
+        "zh" : "照片网格选中三张，右上角有删除按钮。点击后页面退向纵深：缩到 92%，圆角由 18 pt 变 30 pt，下沉 10 pt，压上 25% 暗色遮罩；同时一张 200 pt 的确认面板从底边（而非由按钮长出）以弹簧（响应 0.45 秒、阻尼 0.86）升起。面板里“删除 3 张照片？”标题、红色“删除”与“取消”按钮依次上浮 18 pt 淡入，间隔 50 毫秒。向下拖动面板 1:1 跟手，页面随之按比例回到 100%；超过 60 pt 或快速下甩即关闭，否则弹回。确认删除时面板退场、给出一记硬朗触感，三张照片缩小消失。郑重且可反悔。"
       },
       "summary" : {
         "en" : "A delete confirmation rises as the page recedes into depth; its buttons cascade in and dragging scrubs the page back.",
@@ -14165,16 +14164,17 @@
       "apis" : [
         "Shape",
         "Path.addQuadCurve",
-        "onScrollGeometryChange",
-        "onScrollPhaseChange",
+        "Path.union",
+        "UIGestureRecognizerRepresentable",
+        "UIPanGestureRecognizer",
         "spring(response:dampingFraction:)"
       ],
       "category" : "feedback",
       "family" : "feedback.refresh",
       "id" : "feedback.goo-refresh",
       "implementation" : {
-        "en" : "A Shape unions two circles and a quad-curve neck whose radii and separation are functions of the pull progress; a shared host reads the pull from the list's own ScrollView overscroll (onScrollGeometryChange), so the page never moves with it, and handles the release (onScrollPhaseChange), threshold haptic and row insertion.",
-        "zh" : "Shape 将两个圆与一段二次曲线颈部合并，半径与间距都是下拉进度的函数；共享的宿主视图从列表自身 ScrollView 的顶部越界量读取下拉距离（onScrollGeometryChange），页面不会跟着移动，并负责松手判定（onScrollPhaseChange）、阈值触感与新条目插入。"
+        "en" : "A Shape unions two circles and a quad-curve neck whose radii and separation are functions of the pull progress; a shared host reads the pull from a downward-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable) that the page's scroll waits for, and handles the release, threshold haptic and row insertion.",
+        "zh" : "Shape 将两个圆与一段二次曲线颈部合并，半径与间距都是下拉进度的函数；共享的宿主视图从只接受向下拖动的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable）读取下拉距离，页面滚动会等它失败，并负责松手判定、阈值触感与新条目插入。"
       },
       "interaction" : "gesture",
       "name" : {
@@ -14198,7 +14198,7 @@
           "default" : 44,
           "id" : "stretch",
           "kind" : "slider",
-          "max" : 70,
+          "max" : 46,
           "min" : 20,
           "name" : {
             "en" : "Tail stretch",
@@ -14208,8 +14208,8 @@
         }
       ],
       "prompt" : {
-        "en" : "Pulling a notification list reveals an indigo gum drop: a 32 pt head holding a refresh arrow, joined by a tapering neck to a tail that follows the finger. As the list's native rubber-band overscroll grows the head shrinks to 22 pt, the tail thins from 32 pt to 10 pt and stretches up to 44 pt below, and the arrow turns with the pull. At the 80 pt threshold the neck snaps with a medium haptic: the drop is replaced by a 26 pt spinner that pops in on a bouncy spring while the list holds at 70 pt. When the refresh ends a new row slides in from the top, the list springs home and a success haptic plays. Stretchy, tactile, nostalgic.",
-        "zh" : "下拉通知列表时露出一颗靛蓝色“黏滴”：32 pt 的头部里有一个刷新箭头，通过一段渐细的颈部连着跟随手指的尾巴。随着列表原生的橡皮筋越界下拉加大，头部缩到 22 pt，尾巴从 32 pt 细到 10 pt 并最多向下拉长 44 pt，箭头随下拉转动。到达 80 pt 阈值时颈部“啪”地断开，伴随中等触感：液滴被一枚 26 pt 的加载圈替代，以弹跳弹簧弹出，列表停在 70 pt。刷新结束后新条目从顶部滑入，列表弹回原位并触发成功触感。有弹性、有触感，带点怀旧。"
+        "en" : "Pulling a notification list reveals an indigo gum drop: a 32 pt head holding a refresh arrow, joined by a tapering neck to a tail that follows the finger. As the rubber-banded pull grows the head shrinks to 22 pt, the tail thins from 32 pt to 10 pt and stretches up to 44 pt below, and the arrow turns with the pull. At the 80 pt threshold the neck snaps with a medium haptic: the drop is replaced by a 26 pt spinner that pops in on a bouncy spring while the list holds at 70 pt. When the refresh ends a new row slides in from the top, the list springs home and a success haptic plays. Stretchy, tactile, nostalgic.",
+        "zh" : "下拉通知列表时露出一颗靛蓝色“黏滴”：32 pt 的头部里有一个刷新箭头，通过一段渐细的颈部连着跟随手指的尾巴。随着带橡皮筋阻尼的下拉加大，头部缩到 22 pt，尾巴从 32 pt 细到 10 pt 并最多向下拉长 44 pt，箭头随下拉转动。到达 80 pt 阈值时颈部“啪”地断开，伴随中等触感：液滴被一枚 26 pt 的加载圈替代，以弹跳弹簧弹出，列表停在 70 pt。刷新结束后新条目从顶部滑入，列表弹回原位并触发成功触感。有弹性、有触感，带点怀旧。"
       },
       "summary" : {
         "en" : "Pulling stretches a sticky drop until it snaps into a spinner.",
@@ -14231,7 +14231,7 @@
         "LinearGradient",
         "TimelineView",
         "rotationEffect",
-        "onScrollGeometryChange"
+        "UIGestureRecognizerRepresentable"
       ],
       "category" : "feedback",
       "family" : "feedback.refresh",
@@ -14586,15 +14586,15 @@
         "onGeometryChange(for:of:action:)",
         "Animatable",
         "coordinateSpace(_:)",
-        "DragGesture",
+        "UIGestureRecognizerRepresentable",
         "navigationTransition(.zoom(sourceID:in:))"
       ],
       "category" : "morph",
       "family" : "morph.hero",
       "id" : "morph.native-zoom",
       "implementation" : {
-        "en" : "Tiles report their frames with onGeometryChange into a named coordinate space; the full-size detail page is placed by an Animatable modifier that interpolates frame, scale and corner radius from the source rect, so no nested NavigationStack is needed. In a real app, use navigationTransition(.zoom(sourceID:in:)) with matchedTransitionSource.",
-        "zh" : "图块通过 onGeometryChange 在命名坐标空间中上报自身位置；全尺寸详情页由遵循 Animatable 的修饰器从来源矩形插值出位置、缩放与圆角，无需嵌套 NavigationStack。真实 App 中可直接使用 navigationTransition(.zoom(sourceID:in:)) 配合 matchedTransitionSource。"
+        "en" : "Tiles report their frames with onGeometryChange into a named coordinate space; the full-size detail page is placed by an Animatable modifier that interpolates frame, scale and corner radius from the source rect, so no nested NavigationStack is needed; a down\/right-only UIKit pan drives the dismiss drag. In a real app, use navigationTransition(.zoom(sourceID:in:)) with matchedTransitionSource.",
+        "zh" : "图块通过 onGeometryChange 在命名坐标空间中上报自身位置；全尺寸详情页由遵循 Animatable 的修饰器从来源矩形插值出位置、缩放与圆角，无需嵌套 NavigationStack；只接受下拉或右滑的 UIKit 拖动手势驱动返回。真实 App 中可直接使用 navigationTransition(.zoom(sourceID:in:)) 配合 matchedTransitionSource。"
       },
       "interaction" : "tap",
       "name" : {
@@ -14648,8 +14648,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A grid of rounded gradient tiles. Tapping a tile (it first presses in slightly) opens its detail page with a zoom push: the page grows out of the tile's exact frame and corner radius to fill the screen on a smooth spring (response 0.5 s, damping 0.86), cross-fading from the tile artwork to the full page while the grid dims to 30% behind it. Closing reverses the path into the same tile. The page can also be pulled down or swiped right: it follows the finger, shrinks up to 30% and rounds its corners; release past a third of the way (or with a flick) flies it home, otherwise it springs back. Continuous, interruptible and anchored to where it came from.",
-        "zh" : "一组圆角渐变图块。点击时图块先轻压，随后详情页从它的精确位置与圆角中“长”出来铺满屏幕：弹簧（响应 0.5 秒、阻尼 0.86）平滑舒展，图块插画渐隐为完整页面，背后网格压暗至 30%。关闭时沿原路缩回同一图块。也可下拉或右滑，页面跟手缩小（最多 30%）并变圆角；拖过三分之一或快速甩出即飞回原位，否则弹回。连贯、可打断，始终锚定出发点。"
+        "en" : "A grid of rounded gradient tiles. Tapping a tile (it first presses in slightly) opens its detail page with a zoom push: the page grows out of the tile's exact frame and corner radius to fill the screen on a smooth spring (response 0.5 s, damping 0.86), cross-fading from the tile artwork to the full page while the grid dims to 30% behind it. Closing reverses the path into the same tile. The page can also be pulled down or swiped right: it follows the finger, shrinks up to 30% and rounds its corners, while up or left drags barely move it; release past a third of the way (or with a flick) flies it home, otherwise it springs back. Continuous, interruptible and anchored to where it came from.",
+        "zh" : "一组圆角渐变图块。点击时图块先轻压，随后详情页从它的精确位置与圆角中“长”出来铺满屏幕：弹簧（响应 0.5 秒、阻尼 0.86）平滑舒展，图块插画渐隐为完整页面，背后网格压暗至 30%。关闭时沿原路缩回同一图块。也可下拉或右滑，页面跟手缩小（最多 30%）并变圆角，上滑或左滑几乎不动；拖过三分之一或快速甩出即飞回原位，否则弹回。连贯、可打断，始终锚定出发点。"
       },
       "summary" : {
         "en" : "The iOS 18 zoom push: a tile grows into its detail page and shrinks back home.",
@@ -14745,7 +14745,7 @@
     {
       "apis" : [
         "matchedGeometryEffect",
-        "DragGesture",
+        "UIGestureRecognizerRepresentable",
         "scaleEffect(_:anchor:)",
         "rubber-band",
         "spring(response:dampingFraction:)"
@@ -14754,8 +14754,8 @@
       "family" : "morph.container",
       "id" : "morph.zoom-sheet",
       "implementation" : {
-        "en" : "Button and sheet share matchedGeometryEffect ids for their background and icon; a DragGesture offsets the sheet with rubber-banding and feeds a progress value that un-scales the page and fades the scrim.",
-        "zh" : "按钮与面板的背景和图标共享 matchedGeometryEffect ID；DragGesture 带橡皮筋地移动面板，并输出进度值用于恢复页面缩放、淡出遮罩。"
+        "en" : "Button and sheet share matchedGeometryEffect ids for their background and icon; a down-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) offsets the sheet with rubber-banding and feeds a progress value that un-scales the page and fades the scrim.",
+        "zh" : "按钮与面板的背景和图标共享 matchedGeometryEffect ID；只接受向下拖动的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable，页面滚动会等它失败）带橡皮筋地移动面板，并输出进度值用于恢复页面缩放、淡出遮罩。"
       },
       "interaction" : "tap",
       "name" : {
@@ -14801,8 +14801,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A 56 pt circular share button floats in the bottom-right corner above a photo page. Tapping it grows the button itself into a floating bottom sheet inset 8 pt from the screen edges with 32 pt continuous corners: position, size and fill (brand indigo → elevated surface) interpolate on a spring (response ≈0.5 s, damping ≈0.84) and the share glyph glides into the sheet header. The page behind scales to 92% from its top edge and dims under a 25% scrim, echoing the iOS card presentation. Sheet rows (contacts, then actions) rise in with a 50 ms stagger. The sheet can be dragged down 1:1 — the scrim and page scale track the drag — and releasing past ~100 pt collapses it back into the button; dragging up rubber-bands.",
-        "zh" : "一张照片页面的右下角悬浮着 56pt 的圆形分享按钮。点击后按钮本身生长为一个距屏幕边缘 8pt、圆角 32pt 的悬浮底部面板：位置、尺寸与填充色（品牌靛蓝 → 浮层表面色）在弹簧（响应约 0.5 秒、阻尼约 0.84）中插值，分享图标平滑滑入面板页眉。背后的页面以顶边为锚点缩小到 92%，并覆上 25% 的暗色遮罩，呼应 iOS 卡片式呈现。面板内容（联系人、操作）以 50 毫秒间隔依次浮现。面板可 1:1 向下拖拽，遮罩与页面缩放随拖拽实时变化；松手超过约 100pt 时收回为按钮，向上拖拽则呈橡皮筋阻尼。"
+        "en" : "A 56 pt circular share button floats in the bottom-right corner above a photo page. Tapping it grows the button itself into a floating bottom sheet inset 8 pt from the screen edges with 32 pt continuous corners: position, size and fill (brand indigo → elevated surface) interpolate on a spring (response ≈0.5 s, damping ≈0.84) and the share glyph glides into the sheet header. The page behind scales to 92% from its top edge and dims under a 25% scrim, echoing the iOS card presentation. Sheet rows (contacts, then actions) rise in with a 50 ms stagger. The sheet can be dragged down 1:1 — the scrim and page scale track the drag — and releasing past ~100 pt collapses it back into the button; reversing upward rubber-bands.",
+        "zh" : "一张照片页面的右下角悬浮着 56pt 的圆形分享按钮。点击后按钮本身生长为一个距屏幕边缘 8pt、圆角 32pt 的悬浮底部面板：位置、尺寸与填充色（品牌靛蓝 → 浮层表面色）在弹簧（响应约 0.5 秒、阻尼约 0.84）中插值，分享图标平滑滑入面板页眉。背后的页面以顶边为锚点缩小到 92%，并覆上 25% 的暗色遮罩，呼应 iOS 卡片式呈现。面板内容（联系人、操作）以 50 毫秒间隔依次浮现。面板可 1:1 向下拖拽，遮罩与页面缩放随拖拽实时变化；松手超过约 100pt 时收回为按钮，回拉向上则呈橡皮筋阻尼。"
       },
       "summary" : {
         "en" : "A share button grows into a floating sheet while the page recedes behind it.",
@@ -14823,7 +14823,7 @@
       "apis" : [
         "matchedGeometryEffect",
         "@Namespace",
-        "DragGesture",
+        "UIGestureRecognizerRepresentable",
         "contentTransition(.symbolEffect(.replace))",
         "regularMaterial"
       ],
@@ -14831,8 +14831,8 @@
       "family" : "morph.hero",
       "id" : "morph.mini-player",
       "implementation" : {
-        "en" : "Bar and full player are exclusive views sharing matchedGeometryEffect ids for the material background, artwork and title (applied before their frames so sizes interpolate); playing state drives the artwork scale and shadow; a DragGesture offsets the player and collapses past a threshold.",
-        "zh" : "播放条与完整播放器互斥显示，材质背景、封面与标题共享 matchedGeometryEffect ID（放在 frame 之前以便尺寸插值）；播放状态驱动封面缩放与投影；DragGesture 让播放器跟手下移，越过阈值即收起。"
+        "en" : "Bar and full player are exclusive views sharing matchedGeometryEffect ids for the material background, artwork and title (applied before their frames so sizes interpolate); playing state drives the artwork scale and shadow; a down-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) offsets the player and collapses it past a threshold.",
+        "zh" : "播放条与完整播放器互斥显示，材质背景、封面与标题共享 matchedGeometryEffect ID（放在 frame 之前以便尺寸插值）；播放状态驱动封面缩放与投影；只接受向下拖动的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable，页面滚动会等它失败）让播放器跟手下移，越过阈值即收起。"
       },
       "interaction" : "tap",
       "name" : {
@@ -15105,8 +15105,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A 126 × 37 pt black capsule sits at the top of the screen showing a compact ride status (car glyph, \"4m\"). A tap expands it on two axes in sequence: the width springs out to 300 pt first (response ≈0.42 s, damping 0.72, a small sideways overshoot), then ≈90 ms later the height drops to 156 pt on a slightly softer spring while the corner radius grows from 18.5 to 42 pt. The compact glyphs fade out immediately; the expanded content — driver row, a large \"4 min\" and a progress track — fades in with a 8 pt blur-to-sharp and a 90% → 100% scale anchored at the top, starting two stagger steps later. Collapsing runs in reverse. One elastic piece of hardware, not a view swap.",
-        "zh" : "屏幕顶部一枚 126 × 37pt 的黑色胶囊，显示紧凑的行程状态（车辆图标与「4m」）。点击后按两个轴依次展开：宽度先以弹簧（响应约 0.42 秒、阻尼 0.72，带一点横向过冲）拉到 300pt，约 90 毫秒后高度再以稍柔的弹簧下拉到 156pt，圆角同时从 18.5pt 增至 42pt。紧凑图标立刻淡出；展开内容（司机信息行、大号「4 分钟」与进度条）晚两个错峰步长出现，伴随 8pt 模糊到清晰、以顶部为锚点 90% → 100% 的缩放。收起时顺序相反。整体像一块有弹性的硬件，而非视图替换。"
+        "en" : "A 126 × 37 pt black capsule sits at the top of the screen showing a compact ride status (car glyph, \"4m\"). A tap expands it on two axes in sequence: the width springs out to 300 pt first (response ≈0.42 s, damping 0.72, a small sideways overshoot), then ≈90 ms later the height drops to 156 pt on a slightly softer spring while the corner radius grows from 18.5 to 42 pt. At ≈0.23 s (two stagger steps) the compact glyphs cross-fade out over 0.3 s as the expanded content — driver row, a large \"4 min\" and a progress track — fades in with an 8 pt blur-to-sharp and a 90% → 100% scale anchored at the top. Collapsing runs in reverse. One elastic piece of hardware, not a view swap.",
+        "zh" : "屏幕顶部一枚 126 × 37pt 的黑色胶囊，显示紧凑的行程状态（车辆图标与「4m」）。点击后按两个轴依次展开：宽度先以弹簧（响应约 0.42 秒、阻尼 0.72，带一点横向过冲）拉到 300pt，约 90 毫秒后高度再以稍柔的弹簧下拉到 156pt，圆角同时从 18.5pt 增至 42pt。约 0.23 秒后，紧凑图标用 0.3 秒交叉淡出，展开内容（司机信息行、大号「4 分钟」与进度条）同时出现，带 8pt 模糊到清晰、以顶部为锚点 90% → 100% 的缩放。收起时顺序相反。整体像一块有弹性的硬件，而非视图替换。"
       },
       "summary" : {
         "en" : "A black status pill stretches sideways first, then drops down into a live-activity card.",
@@ -15126,7 +15126,7 @@
     {
       "apis" : [
         "matchedGeometryEffect",
-        "DragGesture",
+        "UIGestureRecognizerRepresentable",
         "predictedEndTranslation",
         "withAnimation(_:completionCriteria:_:completion:)",
         "rotationEffect"
@@ -15135,8 +15135,8 @@
       "family" : "morph.hero",
       "id" : "morph.gallery-zoom",
       "implementation" : {
-        "en" : "Grid tiles and the current page share a matchedGeometryEffect id; one DragGesture locks its axis on the first movement: horizontal drives a paging offset whose settle spring swaps the page index in its completion, vertical drives the dismiss offset, tilt and backdrop.",
-        "zh" : "网格缩略图与当前页共享 matchedGeometryEffect ID；同一个 DragGesture 在首次移动时锁定方向：横向驱动分页位移，吸附弹簧在 completion 中切换页码；竖向驱动关闭位移、倾斜与背景透明度。"
+        "en" : "Grid tiles and the current page share a matchedGeometryEffect id; one down\/left\/right-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) locks its axis on the first movement: horizontal drives a paging offset whose settle spring swaps the page index in its completion, downward drives the dismiss offset, tilt and backdrop.",
+        "zh" : "网格缩略图与当前页共享 matchedGeometryEffect ID；同一个只接受向下\/左\/右的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable，页面滚动会等它失败）在首次移动时锁定方向：横向驱动分页位移，吸附弹簧在 completion 中切换页码；向下驱动关闭位移、倾斜与背景透明度。"
       },
       "interaction" : "tap",
       "name" : {
@@ -15194,8 +15194,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer on a smooth spring (response ≈0.45 s, damping 0.86) while a black backdrop fades in. The viewer pages like Photos: a sideways swipe drags the whole strip 1:1 with the next photo peeking 16 pt behind a gap, rubber-bands at either end, and past 30% of the width (or a flick) snaps to the neighbour on a critically damped spring with a selection tick. A vertical pull locks to dismissal instead: the photo follows the finger, tilts up to ±6° with the sideways drift and the backdrop fades; past ~90 pt or a flick it flies into its own cell on an under-damped spring (≈0.7) that lands with a small bounce.",
-        "zh" : "3 × 3 圆角缩略图网格（圆角 14pt）。点击一张，它以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从格子放大为全屏查看器，黑色背景淡入。查看器像“照片”一样分页：横向滑动时整条胶片 1:1 跟手，下一张隔着 16pt 间隙探出，两端带橡皮筋阻尼；拖过宽度的 30% 或快速轻扫，即以临界阻尼弹簧吸附到相邻照片，并伴随一次选择触感。若先竖向拖动则锁定为关闭手势：照片跟手移动，随横向偏移倾斜最多 ±6°，背景渐隐；超过约 90pt 或快速甩出，它以欠阻尼弹簧（约 0.7）飞回自己的格子，落位时轻轻一弹。"
+        "en" : "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer on a smooth spring (response ≈0.45 s, damping 0.86) while a black backdrop fades in. The viewer pages like Photos: a sideways swipe drags the whole strip 1:1 with the next photo peeking 16 pt behind a gap, rubber-bands at either end, and past 30% of the width (or a flick) snaps to the neighbour on a critically damped spring with a selection tick. A downward pull locks to dismissal instead (an upward swipe scrolls the page): the photo follows the finger, tilts up to ±6° with the sideways drift and the backdrop fades; past ~90 pt or a flick it flies into its own cell on an under-damped spring (≈0.7) that lands with a small bounce.",
+        "zh" : "3 × 3 圆角缩略图网格（圆角 14pt）。点击一张，它以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从格子放大为全屏查看器，黑色背景淡入。查看器像“照片”一样分页：横向滑动时整条胶片 1:1 跟手，下一张隔 16pt 间隙探出，两端带橡皮筋阻尼；拖过宽度的 30% 或快速轻扫，即以临界阻尼弹簧吸附到相邻照片，并伴随一次选择触感。先向下拖则转为关闭（上滑滚动页面）：照片跟手移动，随横向偏移倾斜最多 ±6°，背景渐隐；超过约 90pt 或快速甩出，它以欠阻尼弹簧（约 0.7）飞回自己的格子，落位轻弹。"
       },
       "summary" : {
         "en" : "A thumbnail zooms into a full-bleed paging viewer: swipe sideways between photos, fling one down to send it home.",
@@ -16216,8 +16216,8 @@
         }
       ],
       "prompt" : {
-        "en" : "Twelve 48 pt gradient app tiles sit in a 4 × 3 grid on 64 pt centres. A tap sends them into a 110 pt-radius ring, one after another in reading order, ≈30 ms apart, each on its own spring (response ≈0.55 s, damping 0.72) so the ring assembles like a clock being dealt. While travelling, every tile rotates to point away from the centre, and a count label (\"12 apps\") scales up from 60% in the middle once the last tile lands. Tapping again returns them to the grid in reverse order, un-rotating as they settle. The motion is choreographed, orbital and ceremonial rather than a simple reflow.",
-        "zh" : "十二枚 48pt 的渐变应用图块以 64pt 间距排成 4 × 3 网格。点击后，它们按阅读顺序依次（间隔约 30 毫秒）飞入半径 110pt 的圆环，每枚各自使用弹簧（响应约 0.55 秒、阻尼 0.72），圆环像被一张张发牌般拼成一只表盘。飞行过程中每枚图块转向背离圆心的方向；最后一枚落位后，中央的计数标签（「12 个应用」）从 60% 放大出现。再次点击，图块按相反顺序回到网格，同时转回正向。编排感强、带有轨道感与仪式感，而不是简单的重排。"
+        "en" : "Twelve 48 pt gradient app tiles sit in a 4 × 3 grid on 64 pt centres. A tap sends them into a 110 pt-radius ring, one after another in reading order, ≈30 ms apart, each on its own spring (response ≈0.55 s, damping 0.72) so the ring assembles like a clock being dealt. While travelling, every tile rotates to point away from the centre, and a count label (\"12 apps\") scales up from 60% in the middle as the last tiles fly in. Tapping again returns them to the grid in reverse order, un-rotating as they settle. The motion is choreographed, orbital and ceremonial rather than a simple reflow.",
+        "zh" : "十二枚 48pt 的渐变应用图块以 64pt 间距排成 4 × 3 网格。点击后，它们按阅读顺序依次（间隔约 30 毫秒）飞入半径 110pt 的圆环，每枚各自使用弹簧（响应约 0.55 秒、阻尼 0.72），圆环像被一张张发牌般拼成一只表盘。飞行过程中每枚图块转向背离圆心的方向；最后几枚飞入时，中央的计数标签（「12 个应用」）从 60% 放大出现。再次点击，图块按相反顺序回到网格，同时转回正向。编排感强、带有轨道感与仪式感，而不是简单的重排。"
       },
       "summary" : {
         "en" : "Twelve app tiles leave their grid one by one and swing into a circle, turning to face outward.",
@@ -16683,8 +16683,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A 300 × 64 pt floating tab bar with four icons; the selected icon sits in a 48 pt gradient blob. Choosing a tab splits the blob into a head and a tail that travel on separate springs: the head leaps to the new tab first (response ≈0.3 s, damping 0.72) while the tail follows ≈100 ms later on a softer spring. Both are drawn as metaballs — blurred ≈9 pt and alpha-thresholded — plus a bridge whose thickness shrinks with their distance, so the blob stretches into a droplet, necks thin and pulls itself back together at the destination. The chosen icon turns white and bounces. It feels viscous, alive and a little mischievous.",
-        "zh" : "一个 300 × 64pt 的悬浮标签栏，含四个图标；选中图标坐在一团 48pt 的渐变液滴里。切换标签时，液滴分成头、尾两部分，由各自的弹簧驱动：头部先跃向新标签（响应约 0.3 秒、阻尼 0.72），尾部延迟约 100 毫秒以更柔的弹簧跟上。两者以融球方式绘制——约 9pt 模糊后再做透明度阈值——中间还有一段粗细随距离变细的连接桥，于是液滴被拉成水滴状、颈部变细，最终在目标处重新聚拢。被选中的图标变白并弹跳一下。黏稠、有生命力，还带点调皮。"
+        "en" : "A 300 × 64 pt floating tab bar with four icons; the selected icon sits in a 50 pt gradient blob. Choosing a tab splits the blob into a head and a tail that travel on separate springs: the head leaps to the new tab first (response ≈0.3 s, damping 0.72) while the tail follows ≈100 ms later on a softer spring. Both are drawn as metaballs — blurred ≈9 pt and alpha-thresholded — plus a bridge whose thickness shrinks with their distance, so the blob stretches into a droplet, necks thin and pulls itself back together at the destination. The chosen icon turns white and bounces. It feels viscous, alive and a little mischievous.",
+        "zh" : "一个 300 × 64pt 的悬浮标签栏，含四个图标；选中图标坐在一团 50pt 的渐变液滴里。切换标签时，液滴分成头、尾两部分，由各自的弹簧驱动：头部先跃向新标签（响应约 0.3 秒、阻尼 0.72），尾部延迟约 100 毫秒以更柔的弹簧跟上。两者以融球方式绘制——约 9pt 模糊后再做透明度阈值——中间还有一段粗细随距离变细的连接桥，于是液滴被拉成水滴状、颈部变细，最终在目标处重新聚拢。被选中的图标变白并弹跳一下。黏稠、有生命力，还带点调皮。"
       },
       "summary" : {
         "en" : "The selection is a liquid blob: its head races to the new tab and the tail stretches, necks and snaps after it.",
@@ -18285,8 +18285,8 @@
         }
       ],
       "prompt" : {
-        "en" : "Over full-bleed album art, a single-row glass mini player (artwork, title, play and skip) floats 12 pt above the bottom and in from the sides with 30 pt corners. Dragging it up, or tapping, moves through three detents: 72 pt mini player, 190 pt controls, full sheet. Every property follows the height: margins shrink from 12 pt to 0, bottom corners flatten while top corners ease from 30 to 24 pt, glass turns into an opaque surface, and the scrubber, transport and 'Up Next' fade in as room appears. The sheet tracks the finger 1:1, rubber-bands past the ends and springs (response 0.45 s, damping 0.8) to the detent nearest the projected end, with a light tick each time. Floating becomes grounded in one gesture.",
-        "zh" : "整屏专辑封面之上，一条单行玻璃迷你播放条（封面、歌名、播放与下一首）悬浮在距底部与两侧 12 pt 处，圆角 30 pt。向上拖动或轻点，依次经过三档：72 pt 迷你条、190 pt 控制区、全屏面板。一切都随高度变化：边距从 12 pt 收到 0，底部圆角渐平、顶部圆角由 30 缓到 24 pt，玻璃渐变为不透明表面；进度条、播放控件与“待播清单”随空间出现依次淡入。面板 1:1 跟手，越界有橡皮筋阻尼，松手按预测终点以弹簧（响应 0.45 秒、阻尼 0.8）吸附到最近档位，每档一记轻触。一个手势，由悬浮到贴边。"
+        "en" : "Over full-bleed album art, a single-row glass mini player (artwork, title, play and skip) floats 12 pt above the bottom and in from the sides with 30 pt corners. Dragging it up, or tapping, moves through three detents: 72 pt mini player, 190 pt controls, full sheet. Every property follows the height: margins shrink from 12 pt to 0, bottom corners flatten while top corners ease from 30 to 24 pt, glass turns into an opaque surface, and the scrubber, transport and 'Up Next' fade in as room appears. The sheet tracks the finger 1:1, rubber-bands past the ends and springs (response 0.45 s, damping 0.8) to the detent nearest the projected end, with a light tick each time. No view swap or matched-geometry morph: one surface is reshaped by the finger, floating to grounded.",
+        "zh" : "整屏封面上，一条单行玻璃迷你播放条（封面、歌名、播放与下一首）悬浮在距底部与两侧 12 pt 处，圆角 30 pt。向上拖动或轻点，依次经过三档：72 pt 迷你条、190 pt 控制区、全屏面板。一切都随高度变化：边距从 12 pt 收到 0，底部圆角渐平、顶部圆角由 30 缓到 24 pt，玻璃变为不透明；进度条、控件与“待播清单”依次淡入。面板 1:1 跟手，越界带橡皮筋，松手按预测终点以弹簧（响应 0.45 秒、阻尼 0.8）吸附到最近档位，每档一记轻触。不换视图、不做共享元素变形：一块面板随手指由悬浮变贴边。"
       },
       "summary" : {
         "en" : "A floating glass mini player grows into a full Now Playing sheet, its margins and corners melting into the screen edges.",
@@ -19523,8 +19523,8 @@
       "family" : "cards.tilt",
       "id" : "cards.rim-light",
       "implementation" : {
-        "en" : "The light position (±1 at the card's edges, up to ±1.3 just outside them, read from a 330×250 pt touch area) sets an AngularGradient stroke whose peak angle is atan2 of the light, an offset specular stripe with plusLighter blending and two rotation3DEffects; a TimelineView orbits the light until the first touch.",
-        "zh" : "光源位置（卡片边缘为 ±1，可越过边缘到 ±1.3，取自 330×250 pt 的触摸区域）决定 AngularGradient 描边的峰值角度（取 atan2），并驱动以 plusLighter 混合的偏移镜面光带与两个 rotation3DEffect；首次触摸前由 TimelineView 让光源环绕。"
+        "en" : "The light position (±1 at the card's edges, up to ±1.24 in a 30 pt margin around it: the card takes a drag at once, the margin only a mostly horizontal one, so vertical swipes still scroll the page) sets an AngularGradient stroke whose peak angle is atan2 of the light, an offset specular stripe with plusLighter blending and two rotation3DEffects; a TimelineView orbits the light until the first touch.",
+        "zh" : "光源位置（卡片边缘为 ±1，在卡片外 30 pt 边距内可到 ±1.24；卡片上立即跟手，边距内仅响应以水平为主的拖动，竖向滑动仍可滚动页面）决定 AngularGradient 描边的峰值角度（取 atan2），并驱动以 plusLighter 混合的偏移镜面光带与两个 rotation3DEffect；首次触摸前由 TimelineView 让光源环绕。"
       },
       "interaction" : "gesture",
       "name" : {
@@ -19610,16 +19610,16 @@
       },
       "params" : [
         {
-          "default" : 175,
-          "id" : "distance",
+          "default" : 8,
+          "id" : "tilt",
           "kind" : "slider",
-          "max" : 195,
-          "min" : 170,
+          "max" : 14,
+          "min" : 4,
           "name" : {
-            "en" : "Slide distance",
-            "zh" : "滑出距离"
+            "en" : "Pull tilt",
+            "zh" : "抽出倾斜"
           },
-          "unit" : "pt"
+          "unit" : "°"
         },
         {
           "default" : 0.55000000000000004,
@@ -19668,7 +19668,7 @@
     {
       "apis" : [
         "DragGesture.Value.velocity",
-        "scaleEffect(x:y:)",
+        "GeometryEffect",
         "keyframeAnimator",
         "animation(_:value:)",
         "Task.sleep"
@@ -19677,8 +19677,8 @@
       "family" : "cards.swipe",
       "id" : "cards.jelly-swipe",
       "implementation" : {
-        "en" : "DragGesture.velocity sets a stretch vector that an .animation(value:) spring smooths; the card is rotated to the velocity angle, scaled on x and rotated back. A debounce Task relaxes the stretch when events stop, and keyframeAnimator plays the pop.",
-        "zh" : "DragGesture.velocity 设置拉伸向量，并由 .animation(value:) 弹簧平滑；卡片先旋转到速度方向、在 x 轴缩放、再旋转回来。事件停止时由防抖 Task 放松拉伸，keyframeAnimator 播放弹出效果。"
+        "en" : "DragGesture.velocity sets a signed, traceless strain tensor (s·cos2θ, s·sin2θ) that an .animation(value:) spring smooths; a GeometryEffect applies an area-preserving stretch (1+s along, 1\/(1+s) across), so the spring's overshoot through zero becomes a squash. A debounce Task relaxes the strain when events stop, and keyframeAnimator plays the pop.",
+        "zh" : "DragGesture.velocity 设置带符号的无迹应变张量 (s·cos2θ, s·sin2θ)，由 .animation(value:) 弹簧平滑；GeometryEffect 施加面积不变的拉伸（沿向 1+s、横向 1\/(1+s)），弹簧越过零点的过冲因此变成挤压。事件停止时由防抖 Task 放松应变，keyframeAnimator 播放弹出效果。"
       },
       "interaction" : "gesture",
       "name" : {
@@ -19724,8 +19724,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A deck of 190×240 pt destination cards with 24 pt corners. While dragging, the top card follows the finger and stretches along the direction of travel in proportion to speed — up to 18% longer and 9% thinner at 3,000 pt\/s — through a wobbly spring (response 0.28 s, damping 0.32), so when the finger pauses for 80 ms or lets go the card jiggles back to shape. Releasing past 100 pt or with a fast flick throws it off-stage still stretched; the next card then pops forward with a squash-and-stretch keyframe sequence (x\/y 108\/92% → 95\/105% → 102\/98% → 100% over ~0.55 s) while the pile behind steps up. Playful, gummy and elastic.",
-        "zh" : "一叠190×240 pt、24 pt圆角的目的地卡片。拖动时顶部卡片跟手，并按速度沿运动方向拉伸——3000 pt\/s时最多拉长18%、变细9%——拉伸由易晃动的弹簧（响应0.28秒、阻尼0.32）驱动，手指停顿80毫秒或松开时，卡片便抖动着恢复原形。拖过100 pt或快速甩动后松手，卡片带着拉伸飞出舞台；下一张随即以挤压拉伸关键帧弹到前面（x\/y依次108\/92%→95\/105%→102\/98%→100%，约0.55秒），后方卡堆同步上移。俏皮而Q弹。"
+        "en" : "A deck of 190×240 pt destination cards with 24 pt corners. While dragging, the top card follows the finger and stretches along the direction of travel in proportion to speed — up to 18% longer and 15% thinner at 3,000 pt\/s, keeping its area — through a wobbly spring (response 0.28 s, damping 0.32). When the finger pauses for 80 ms or lets go, the overshoot flips into a squash, so the card jiggles stretch → squash → stretch back to shape. Releasing past 100 pt or with a fast flick throws it off-stage still stretched; the next card then pops forward with a squash-and-stretch keyframe sequence (x\/y 108\/92% → 95\/105% → 102\/98% → 100% over ~0.55 s) while the pile behind steps up. Playful, gummy and elastic.",
+        "zh" : "一叠190×240 pt、24 pt圆角的目的地卡片。拖动时顶部卡片跟手，并按速度沿运动方向拉伸——3000 pt\/s时最多拉长18%、变细15%，面积不变——由易晃动的弹簧（响应0.28秒、阻尼0.32）驱动；手指停顿80毫秒或松开时，过冲翻转为挤压，卡片拉长、压扁、再拉长地抖回原形。拖过100 pt或快速甩动后松手，卡片带着拉伸飞出舞台；下一张随即以挤压拉伸关键帧弹到前面（x\/y依次108\/92%→95\/105%→102\/98%→100%，约0.55秒），后方卡堆上移。俏皮Q弹。"
       },
       "summary" : {
         "en" : "Cards stretch along the drag velocity like jelly, wobble when the finger stops and pop in with a squash.",
@@ -22052,8 +22052,8 @@
       "family" : "scroll.list-motion",
       "id" : "scroll.elastic-list",
       "implementation" : {
-        "en" : "onScrollGeometryChange tracks the offset and its per-frame delta; each row offsets by delta × its normalised screen position and carries its own .animation(.spring(response:…), value: delta), so rows chase each other. A 70 ms debounce Task and onScrollPhaseChange reset the delta to zero once the scroll stops moving.",
-        "zh" : "onScrollGeometryChange 跟踪偏移及每帧增量；每一行按「增量 × 自身归一化屏幕位置」偏移，并各自带有 .animation(.spring(response:…), value: delta)，于是各行相互追赶。滚动停止移动时，由 70 毫秒防抖 Task 与 onScrollPhaseChange 把增量归零。"
+        "en" : "onScrollGeometryChange feeds each offset, timestamped with CACurrentMediaTime, into a smoothed pt\/s velocity; each row offsets by velocity × 20 ms × elasticity × its normalised screen position and carries its own .animation(.spring(response:…), value: velocity), so rows chase each other. A 70 ms debounce Task and onScrollPhaseChange reset the velocity once the scroll stops moving.",
+        "zh" : "onScrollGeometryChange 把每次偏移连同 CACurrentMediaTime 时间戳换算成平滑后的 pt\/s 速度；每一行按「速度 × 20 毫秒 × 弹性 × 自身归一化屏幕位置」偏移，并各自带有 .animation(.spring(response:…), value: velocity)，于是各行相互追赶。滚动停止移动时，由 70 毫秒防抖 Task 与 onScrollPhaseChange 把速度归零。"
       },
       "interaction" : "scroll",
       "name" : {
@@ -22087,8 +22087,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A chat thread of alternating capsule message bubbles on 44 pt rows (incoming on the left, outgoing blue gradient on the right) with 10 pt gaps. The bubbles are not glued to the scroll: each one follows through its own spring, and the further a bubble sits from the leading edge of the motion, the looser its spring (response 0.2 → 0.45 s, damping 0.62) and the more it lags — up to 1.2× the per-frame scroll delta, capped at 40 pt. Fast scrolling therefore stretches the gaps open like an accordion, and when the scroll comes to rest the bubbles bounce back together with a small overshoot. Nothing changes layout; only offsets move. Lively, physical and unmistakably iOS.",
-        "zh" : "一段聊天记录，胶囊形消息气泡排在44 pt高的行中左右交替（收到的在左、发出的蓝色渐变在右），间距10 pt。气泡并没有和滚动牢牢粘在一起：每个气泡都通过自己的弹簧跟随，离运动前沿越远，弹簧越松（响应0.2→0.45秒、阻尼0.62），滞后也越多——最多为每帧滚动增量的1.2倍，上限40 pt。因此快速滚动时气泡间距像手风琴一样被拉开，滚动停下后，气泡带着轻微过冲弹回聚拢。布局本身不变，只有偏移在动。灵动、真实，一眼就是iOS的味道。"
+        "en" : "A chat thread of alternating capsule message bubbles on 44 pt rows (incoming on the left, outgoing blue gradient on the right) with 10 pt gaps. The bubbles are not glued to the scroll: each one follows through its own spring, and the further a bubble sits from the leading edge of the motion, the looser its spring (response 0.2 → 0.45 s, damping 0.62) and the more it lags — by the scroll velocity (measured in pt\/s from timestamped offsets) × 24 ms, capped at 40 pt, so 60 Hz and 120 Hz screens look alike. Fast scrolling therefore stretches the gaps open like an accordion, and when the scroll comes to rest the bubbles bounce back together with a small overshoot. Nothing changes layout; only offsets move. Lively, physical and unmistakably iOS.",
+        "zh" : "一段聊天记录，胶囊形消息气泡排在44 pt高的行中左右交替（收到的在左、发出的蓝色渐变在右），间距10 pt。气泡并没有和滚动牢牢粘在一起：每个气泡都通过自己的弹簧跟随，离运动前沿越远，弹簧越松（响应0.2→0.45秒、阻尼0.62），滞后也越多——滞后量为滚动速度（按时间戳换算为pt\/s）×24毫秒，上限40 pt，60 Hz与120 Hz屏幕观感一致。因此快速滚动时气泡间距像手风琴一样被拉开，滚动停下后，气泡带着轻微过冲弹回聚拢。布局不变，只有偏移在动。灵动真实，一眼就是iOS。"
       },
       "summary" : {
         "en" : "Chat bubbles trail the scroll on springs, stretching apart and bouncing back together like iMessage.",
@@ -22791,8 +22791,8 @@
       "family" : "scroll.indicator",
       "id" : "scroll.liquid-scrollbar",
       "implementation" : {
-        "en" : "onScrollGeometryChange reports offset, range and viewport as one Equatable struct; the action derives a per-frame velocity and overscroll that set the thumb's length, anchor and width through an .animation(spring, value:), a 70 ms debounce Task relaxes it when the offset stops changing, and onScrollPhaseChange plus a delayed Task controls visibility.",
-        "zh" : "onScrollGeometryChange 把偏移、可滚动范围与视口打包成一个 Equatable 结构体；回调据此推算每帧速度与越界量，经由 .animation(spring, value:) 决定滑块的长度、锚点与宽度，偏移停止变化 70 毫秒后由防抖 Task 让它回弹，onScrollPhaseChange 配合延时 Task 控制显隐。"
+        "en" : "onScrollGeometryChange reports offset, range and viewport as one Equatable struct; the action turns CACurrentMediaTime-stamped offsets into a smoothed pt\/s velocity and overscroll that set the thumb's length, anchor and width through an .animation(spring, value:), a 70 ms debounce Task relaxes it when the offset stops changing, and onScrollPhaseChange plus a delayed Task controls visibility.",
+        "zh" : "onScrollGeometryChange 把偏移、可滚动范围与视口打包成一个 Equatable 结构体；回调借助 CACurrentMediaTime 时间戳推算平滑的 pt\/s 速度与越界量，经由 .animation(spring, value:) 决定滑块的长度、锚点与宽度，偏移停止变化 70 毫秒后由防抖 Task 让它回弹，onScrollPhaseChange 配合延时 Task 控制显隐。"
       },
       "interaction" : "scroll",
       "name" : {
@@ -22836,8 +22836,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A list scrolls with a custom gradient thumb on its right edge that is invisible at rest; the moment scrolling starts it fades in and widens from 5 to 8 pt on a quick spring. Its position tracks the content exactly, while its shape is liquid: the length, proportional to the visible fraction, stretches up to 60% longer at 30 pt per frame, trailing opposite the motion, and springs back as the scroll slows (response 0.3 s, damping 0.55). Pulled past either end it squashes against the edge like a droplet, losing up to 70% of its length and bulging 2 pt wider, with a small bubble beside it reading the percentage. 0.8 s after the scroll settles, thumb and bubble melt away.",
-        "zh" : "列表右侧有一个自定义渐变滑块，静止时不可见；一开始滚动，它就以快速弹簧淡入，宽度从5 pt变为8 pt。滑块的位置严格跟随内容，形状却是液态的：长度按可见比例计算，每帧30 pt时最多再拉长60%，朝运动反方向拖尾，滚动变慢时再以弹簧（响应0.3秒、阻尼0.55）缩回。越过两端继续拉时，它像水滴一样被挤扁在边缘，长度最多减少70%、鼓宽2 pt，旁边的小气泡显示已读百分比。滚动停下0.8秒后，滑块与气泡一起消融。"
+        "en" : "A list scrolls with a custom gradient thumb on its right edge that is invisible at rest; the moment scrolling starts it fades in and widens from 5 to 8 pt on a quick spring. Its position tracks the content exactly, while its shape is liquid: the length, proportional to the visible fraction, stretches up to 60% longer at 1,800 pt\/s (velocity from timestamped offsets, so 60 Hz and 120 Hz match), trailing opposite the motion, and springs back as the scroll slows (response 0.3 s, damping 0.55). Pulled past either end it squashes against the edge like a droplet, losing up to 70% of its length and bulging 2 pt wider, with a small bubble beside it reading the percentage. 0.8 s after the scroll settles, thumb and bubble melt away.",
+        "zh" : "列表右侧有一个自定义渐变滑块，静止时不可见；一开始滚动，它就以快速弹簧淡入，宽度从5 pt变为8 pt。滑块的位置严格跟随内容，形状却是液态的：长度按可见比例计算，速度达1800 pt\/s时最多再拉长60%（速度按时间戳换算，60 Hz与120 Hz一致），朝运动反方向拖尾，滚动变慢时再以弹簧（响应0.3秒、阻尼0.55）缩回。越过两端继续拉时，它像水滴一样被挤扁在边缘，长度最多减少70%、鼓宽2 pt，旁边的小气泡显示已读百分比。滚动停下0.8秒后，滑块与气泡一起消融。"
       },
       "summary" : {
         "en" : "A custom scroll thumb that stretches with speed, squashes at the ends and melts away when idle.",
@@ -23025,8 +23025,8 @@
       "family" : "text.kinetic",
       "id" : "text.wave",
       "implementation" : {
-        "en" : "A custom TextRenderer (iOS 18) iterates Text.Layout lines → runs → glyphs and offsets\/rotates each glyph's GraphicsContext; a TimelineView(.animation) feeds it the time.",
-        "zh" : "自定义 TextRenderer（iOS 18）遍历 Text.Layout 的行 → Run → 字形，对每个字形的 GraphicsContext 施加位移与旋转；TimelineView(.animation) 提供时间。"
+        "en" : "A custom TextRenderer (iOS 18) iterates Text.Layout lines → runs → glyphs and offsets\/rotates each glyph's GraphicsContext; a TimelineView(.animation) feeds it the time. A long press reports onPressingChanged to set a swell target that the timeline approaches exponentially.",
+        "zh" : "自定义 TextRenderer（iOS 18）遍历 Text.Layout 的行 → Run → 字形，对每个字形的 GraphicsContext 施加位移与旋转；TimelineView(.animation) 提供时间。长按手势的 onPressingChanged 设定涌起目标，由时间线按指数曲线逼近。"
       },
       "interaction" : "loop",
       "name" : {
@@ -23082,8 +23082,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A bold, rounded headline filled with a sunset gradient ripples like a flag: every glyph rises and falls on a continuous sine wave that travels left-to-right, each character phase-shifted from its neighbour so a smooth crest rolls through the word. As a glyph crests it also tilts a few degrees around its own centre, following the slope of the wave, and an optional slow hue drift shifts colour along the line. The loop is seamless and frame-locked at 60\/120 fps — playful yet controlled, like type floating on water.",
-        "zh" : "粗体圆角标题填充日落渐变，像旗帜一样荡漾：每个字形沿一条从左向右行进的连续正弦波上下起伏，相邻字符之间存在相位差，让一道平滑的波峰滚过整个单词。字形到达波峰时，还会围绕自身中心顺着波形斜率轻微倾斜数度；可选的缓慢色相漂移让颜色沿着文字流动。循环无缝，与60\/120帧刷新同步——俏皮而不失控制，仿佛文字漂浮在水面上。"
+        "en" : "A bold, rounded headline filled with a sunset gradient ripples like a flag: every glyph rises and falls on a continuous sine wave that travels left-to-right, each character phase-shifted from its neighbour so a smooth crest rolls through the word. As a glyph crests it also tilts a few degrees around its own centre, following the slope of the wave, and an optional slow hue drift shifts colour along the line. Touching and holding swells the amplitude by up to 90% within ~0.2 s, easing back on release. The loop is seamless and frame-locked at 60\/120 fps — playful yet controlled, like type floating on water.",
+        "zh" : "粗体圆角标题填充日落渐变，像旗帜一样荡漾：每个字形沿一条从左向右行进的连续正弦波上下起伏，相邻字符之间存在相位差，让一道平滑的波峰滚过整个单词。字形到达波峰时，还会围绕自身中心顺着波形斜率轻微倾斜数度；可选的缓慢色相漂移让颜色沿着文字流动。按住舞台时振幅约0.2秒内增大至多90%，松手后回落。循环无缝，与60\/120帧刷新同步——俏皮而不失控制，仿佛文字漂浮在水面上。"
       },
       "summary" : {
         "en" : "Every glyph bobs and tilts on a travelling sine wave.",
@@ -23158,8 +23158,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A monospaced headline inside a minimal terminal card types itself out one character at a time, with each keystroke landing after a slightly randomised interval (±30%) so the rhythm feels human rather than mechanical. A gradient caret sits flush after the last glyph: it stays solid while typing and, once the phrase completes, blinks with a soft 0.5 s ease-in-out fade. After a 1.4 s hold the line deletes backwards at roughly twice the typing speed and the next phrase begins — focused, alive, quietly confident.",
-        "zh" : "极简终端卡片中的等宽标题逐字打出，每次击键的间隔都带有约±30%的随机抖动，让节奏更像真人输入而非机械播放。渐变光标紧贴最后一个字符：输入过程中保持常亮，整句完成后以0.5秒缓入缓出的柔和淡入淡出闪烁。停留1.4秒后，文字以约两倍速度向后删除，随即开始下一句——专注、有生命力、从容而自信。"
+        "en" : "A monospaced headline inside a minimal terminal card types itself out one character at a time, with each keystroke landing after a slightly randomised interval (±30%) so the rhythm feels human rather than mechanical. A gradient caret sits flush after the last glyph: it stays solid while typing and, once the phrase completes, blinks with a soft 0.5 s ease-in-out fade. After a 1.4 s hold the line deletes backwards at roughly twice the typing speed and the next phrase begins; a tap backspaces in a quick burst and jumps to the next one — focused, alive, quietly confident.",
+        "zh" : "极简终端卡片中的等宽标题逐字打出，每次击键的间隔都带有约±30%的随机抖动，让节奏更像真人输入而非机械播放。渐变光标紧贴最后一个字符：输入过程中保持常亮，整句完成后以0.5秒缓入缓出的柔和淡入淡出闪烁。停留1.4秒后，文字以约两倍速度向后删除，随即开始下一句；轻点会快速退格并跳到下一句——专注、有生命力、从容而自信。"
       },
       "summary" : {
         "en" : "Characters type in with a human rhythm and a blinking caret.",
@@ -23408,8 +23408,8 @@
         }
       ],
       "prompt" : {
-        "en" : "Dimmed text — a headline such as \"Thinking…\" and a \"slide to unlock\" pill — is lit by a soft diagonal band of light that sweeps from left to right inside the glyphs only. The letters rest at about 30% opacity of the primary colour; the band ramps to full brightness at its centre and fades out on both sides, crossing the word about every 2.2 s on a continuous linear loop with no visible reset. In the aurora variant the band carries a violet-pink-amber gradient. It reads as a calm, intelligent \"working\" state rather than a loading spinner.",
-        "zh" : "处于弱化状态的文字——如“思考中…”标题与“滑动来解锁”胶囊——被一道柔和的斜向光带照亮，光只在字形内部从左向右扫过。文字静止时约为主色30%的不透明度；光带中心提亮到100%，两侧渐隐，以约2.2秒一轮的匀速连续循环穿过文字，不留任何重置痕迹。极光变体中光带带有紫—粉—琥珀的渐变色。整体传达的是冷静、智能的“正在处理”状态，而非生硬的加载转圈。"
+        "en" : "Dimmed text — a headline such as \"Thinking…\" and a \"slide to unlock\" pill — is lit by a soft diagonal band of light that sweeps from left to right inside the glyphs only. The letters rest at about 30% opacity of the primary colour; the band ramps to full brightness at its centre and fades out on both sides, crossing the word about every 2.2 s on a continuous linear loop with no visible reset; a tap fires an extra, narrower band across both texts in 0.65 s. In the aurora variant the band carries a violet-pink-amber gradient. It reads as a calm, intelligent \"working\" state rather than a loading spinner.",
+        "zh" : "处于弱化状态的文字——如“思考中…”标题与“滑动来解锁”胶囊——被一道柔和的斜向光带照亮，光只在字形内部从左向右扫过。文字静止时约为主色30%的不透明度；光带中心提亮到100%，两侧渐隐，以约2.2秒一轮的匀速连续循环穿过文字，不留任何重置痕迹；轻点会额外射出一道更窄的光带，0.65秒扫过两段文字。极光变体中光带带有紫—粉—琥珀的渐变色。整体传达的是冷静、智能的“正在处理”状态，而非生硬的加载转圈。"
       },
       "summary" : {
         "en" : "A soft band of light sweeps across the letters.",
@@ -23646,8 +23646,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A heavy, rounded display word in a warm sunset gradient assembles itself letter by letter: each glyph starts rotated −100° around the horizontal axis (flipping top-to-bottom; the alternative hinges left-to-right around the vertical axis) with strong perspective, 12 pt low, blurred and transparent, then hinges upright on a lively spring (≈0.55 s response, 0.7 damping) with a 60 ms stagger in reading order, overshooting a few degrees before settling. After a beat the word exits with the same stagger, flipping forward to +100° and dissolving, and the next word flips in while a small chapter pill beneath glides to mark its place in the sequence — bold, rhythmic kinetic typography, like a title sequence.",
-        "zh" : "暖色日落渐变的粗圆体大字逐字组装：每个字形起始时绕水平轴旋转−100°（上下翻转；另一选项为绕竖直轴左右翻转），带强烈透视，下沉12pt、模糊且透明；随后以富有活力的弹簧（响应约0.55秒、阻尼0.7）按阅读顺序每隔60毫秒依次翻起立正，先过冲几度再稳定。停留片刻后，整词以同样的错开节奏向前翻转到+100°并消散，下一个词接着翻入，下方的小章节胶囊随之滑动标示当前位置——大胆、有节奏的动态排版，宛如片头字幕。"
+        "en" : "A heavy, rounded display word in a warm sunset gradient assembles itself letter by letter: each glyph starts rotated −100° around the horizontal axis (flipping top-to-bottom; the alternative hinges left-to-right around the vertical axis) with strong perspective, 12 pt low, blurred and transparent, then hinges upright on a lively spring (≈0.55 s response, 0.7 damping) with a 60 ms stagger in reading order, overshooting a few degrees before settling. After a beat the word exits with the same stagger, flipping forward to +100° and dissolving, and the next word flips in while a small chapter pill beneath glides to mark its place; a tap skips ahead at once — bold, rhythmic kinetic typography, like a title sequence.",
+        "zh" : "暖色日落渐变的粗圆体大字逐字组装：每个字形起始时绕水平轴旋转−100°（上下翻转；另一选项为绕竖直轴左右翻转），带强烈透视，下沉12pt、模糊且透明；随后以富有活力的弹簧（响应约0.55秒、阻尼0.7）按阅读顺序每隔60毫秒依次翻起立正，先过冲几度再稳定。停留片刻后，整词以同样的错开节奏向前翻转到+100°并消散，下一个词接着翻入，下方的小章节胶囊随之滑动标示位置，轻点可立即跳到下一个词——大胆、有节奏的动态排版，宛如片头字幕。"
       },
       "summary" : {
         "en" : "Letters hinge into place in 3D, one after another.",
@@ -23808,8 +23808,8 @@
         }
       ],
       "prompt" : {
-        "en" : "Two stacked ticker rows scroll horizontally forever without a visible seam: a compact stock tape with symbols, prices and green\/red change chips, and below it an oversized kinetic headline of keywords separated by gradient stars, travelling the opposite way. Motion is perfectly linear at a constant speed (≈60 pt\/s for the tape, 80% of that for the headline) so it reads like a physical belt; content is duplicated end-to-end and wrapped modulo its own width. Both edges are feathered by a gradient mask spanning the outer 12% of the width, so items glide in and out of view — editorial, confident, always on.",
-        "zh" : "上下两条行情带无缝地无限横向滚动：上方是紧凑的股票行情，包含代码、价格与红绿涨跌标签；下方是超大号的动态关键词标题，以渐变星形分隔，并朝相反方向移动。运动严格匀速线性（行情带约60pt\/秒，标题行为其80%），像一条真实的传送带；内容首尾复制拼接，并按自身宽度取模循环。左右两端各以占宽度12%的渐变遮罩羽化，让内容柔和地滑入滑出——有编辑感、自信、始终在线。"
+        "en" : "Two stacked ticker rows scroll horizontally forever without a visible seam: a compact stock tape with symbols, prices and green\/red change chips, and below it an oversized kinetic headline of keywords separated by gradient stars, travelling the opposite way. Motion is perfectly linear at a constant speed (≈60 pt\/s for the tape, 80% of that for the headline) so it reads like a physical belt; content is duplicated end-to-end and wrapped modulo its own width. Both edges are feathered by a gradient mask spanning the outer 12% of the width, so items glide in and out of view. Dragging a belt sideways scrubs it by hand (vertical swipes still scroll the page) and a flick coasts with exponential momentum before the belt resumes — editorial, confident, always on.",
+        "zh" : "上下两条行情带无缝地无限横向滚动：上方是紧凑的股票行情，包含代码、价格与红绿涨跌标签；下方是超大号的动态关键词标题，以渐变星形分隔，并朝相反方向移动。运动严格匀速线性（行情带约60pt\/秒，标题行为其80%），像一条真实的传送带；内容首尾复制拼接，并按自身宽度取模循环。左右两端各以占宽度12%的渐变遮罩羽化，让内容柔和地滑入滑出；横向拖动可手动拨动传送带（竖向滑动仍可滚动页面），甩出后带惯性滑行再恢复——有编辑感、自信、始终在线。"
       },
       "summary" : {
         "en" : "Seamless, endlessly scrolling ticker rows with feathered edges.",
@@ -23837,8 +23837,8 @@
       "family" : "text.emphasis",
       "id" : "text.synced-lyrics",
       "implementation" : {
-        "en" : "A TimelineView(.animation) derives the current line, its fill progress and an eased scroll position from elapsed time; the active line overlays a white copy masked by a LinearGradient whose stops follow the progress.",
-        "zh" : "TimelineView(.animation) 根据经过时间推算当前行、填色进度与缓动后的滚动位置；当前行叠加一层白色副本，用随进度移动色标的 LinearGradient 作为遮罩。"
+        "en" : "A TimelineView(.animation) derives the current line, its fill progress and an eased scroll position from elapsed time; the active line overlays a white copy masked by a LinearGradient whose stops follow the progress. A tap-to-seek keeps the on-screen column position and lets the gap decay along Spring.value(target:time:).",
+        "zh" : "TimelineView(.animation) 根据经过时间推算当前行、填色进度与缓动后的滚动位置；当前行叠加一层白色副本，用随进度移动色标的 LinearGradient 作为遮罩。点按跳转时保留屏幕上的歌词列位置，差值沿 Spring.value(target:time:) 衰减。"
       },
       "interaction" : "loop",
       "name" : {
@@ -23882,8 +23882,8 @@
         }
       ],
       "prompt" : {
-        "en" : "Full-bleed lyrics on a deep violet player card. The active line is set in heavy 24 pt type at full size; a soft-edged fill sweeps across it from left to right in time with the vocal, turning each word from 35% to 100% white with a faint glow. When a line finishes, the whole column glides up one line on an ease-out-back curve (~450 ms, slight overshoot) so the next line lands in the focus slot; lines above and below sit at 92% scale, dim with distance and blur by ~1.2 pt per line, like a shallow depth of field, and the column dissolves through a soft gradient mask at its top and bottom edges. The song starts with its first line in focus and nothing above it. Musical, immersive and calm.",
-        "zh" : "深紫色播放器卡片上铺满歌词。当前行以24 pt粗体完整显示；一道边缘柔和的填色随演唱节奏从左向右扫过，让每个字从35%白逐渐变为100%白并带淡淡辉光。一行唱完后，整列歌词以带轻微过冲的缓出回弹曲线（约450毫秒）上移一行，下一行正好落入焦点位置；上下其余行缩小至92%，随距离变暗，并每行增加约1.2 pt模糊，如同浅景深；歌词列的上下边缘通过柔和的渐变遮罩淡出。歌曲从第一行开始，上方不会出现其他歌词。富有音乐性、沉浸而安静。"
+        "en" : "Full-bleed lyrics on a deep violet player card. The active line is set in heavy 24 pt type at full size; a soft-edged fill sweeps across it from left to right in time with the vocal, turning each word from 35% to 100% white with a faint glow. When a line finishes, the whole column glides up one line on an ease-out-back curve (~450 ms, slight overshoot) so the next line lands in the focus slot; lines above and below sit at 92% scale, dim with distance and blur by ~1.2 pt per line, like a shallow depth of field, and the column dissolves through a soft gradient mask at its top and bottom edges. The song starts with its first line in focus and nothing above it; tapping any line, even a distant or earlier one, springs the column to it. Musical, immersive and calm.",
+        "zh" : "深紫色播放器卡片上铺满歌词。当前行以24 pt粗体完整显示；一道边缘柔和的填色随演唱节奏从左向右扫过，让每个字从35%白逐渐变为100%白并带淡淡辉光。一行唱完后，整列歌词以带轻微过冲的缓出回弹曲线（约450毫秒）上移一行，下一行正好落入焦点位置；上下其余行缩小至92%，随距离变暗，并每行增加约1.2 pt模糊，如同浅景深；歌词列的上下边缘通过柔和的渐变遮罩淡出。歌曲从第一行开始，上方不出现其他歌词；点按任意一行（即便较远或已唱过），歌词列会弹簧般滑去。富有音乐性、沉浸而安静。"
       },
       "summary" : {
         "en" : "Music-app lyrics: the active line fills word by word as the column glides up.",
@@ -23960,8 +23960,8 @@
         }
       ],
       "prompt" : {
-        "en" : "An editorial headline of three short lines, each living in its own clipped slot so the type appears to rise out of an invisible baseline. On entry every line starts one full line-height below its slot, tilted 6° around its leading baseline, then springs up and straightens (response ≈0.7 s, damping ≈0.85) with a 90 ms stagger top to bottom; a small uppercase eyebrow fades in first and a gradient rule draws out from the left 200 ms after the last line lands. After a pause the lines exit upward through the top of their slots with the same stagger and the next headline rises in. Confident, magazine-grade kinetic type.",
-        "zh" : "三行简短的杂志式标题，每一行都位于自己的裁剪槽口中，文字仿佛从看不见的基线里升起。入场时，每行从槽口下方整整一行高处开始，绕行首基线倾斜6°，随后以弹簧（响应约0.7秒、阻尼约0.85）上升并回正，自上而下错开90毫秒；上方的小号大写眉标先淡入，最后一行落定200毫秒后，一道渐变细线从左向右画出。停留片刻后，各行以同样的错开节奏从槽口顶部向上退出，下一组标题随之升起。自信、有杂志水准的动态排版。"
+        "en" : "An editorial headline of three short lines, each living in its own clipped slot so the type appears to rise out of an invisible baseline. On entry every line starts one full line-height below its slot, tilted 6° around its leading baseline, then springs up and straightens (response ≈0.7 s, damping ≈0.85) with a 90 ms stagger top to bottom; a small uppercase eyebrow fades in first and a gradient rule draws out from the left 200 ms after the last line lands. After a pause the lines exit upward through the top of their slots with the same stagger and the next headline rises in; a tap skips ahead at once. Confident, magazine-grade kinetic type.",
+        "zh" : "三行简短的杂志式标题，每一行都位于自己的裁剪槽口中，文字仿佛从看不见的基线里升起。入场时，每行从槽口下方整整一行高处开始，绕行首基线倾斜6°，随后以弹簧（响应约0.7秒、阻尼约0.85）上升并回正，自上而下错开90毫秒；上方的小号大写眉标先淡入，最后一行落定200毫秒后，一道渐变细线从左向右画出。停留片刻后，各行以同样的错开节奏从槽口顶部向上退出，下一组标题随之升起，轻点可立即切换。自信、有杂志水准的动态排版。"
       },
       "summary" : {
         "en" : "Headline lines rise out of invisible slots, one after another, then exit upward.",
@@ -24156,22 +24156,22 @@
     {
       "apis" : [
         "Animatable",
+        "scaleEffect(x:y:anchor:)",
         "spring(duration:bounce:)",
-        "blur(radius:)",
-        "clipped()",
-        "animation(_:value:)"
+        "animation(_:value:)",
+        "contentTransition(.numericText())"
       ],
       "category" : "text",
       "family" : "text.number",
       "id" : "text.slot-reel",
       "implementation" : {
-        "en" : "Each reel is an Animatable view whose animatableData is an unbounded step count; it draws four digits around the window and derives blur and stretch from the distance still to travel, driven by .spring(duration:bounce:) delayed per column.",
-        "zh" : "每个滚轮是一个 Animatable 视图，animatableData 为无上限的累计步数；它只绘制窗口附近的四个数字，并根据剩余滚动距离推算模糊与拉伸，动画使用按列延迟的 .spring(duration:bounce:)。"
+        "en" : "Each digit is an Animatable view whose animatableData is an unbounded quarter-turn count; it draws only the leaving and arriving faces, placing each at y = h\/2·sin θ with scaleEffect(y: cos θ) and a depth tint. A .spring(duration:bounce:) per column, with the bounce solved from the travel for a constant overshoot, is applied through animation(_:value:).",
+        "zh" : "每位数字是一个 Animatable 视图，animatableData 为无上限的四分之一圈计数；它只绘制离开与到来的两个面，分别放在 y = h\/2·sin θ 处，并以 scaleEffect(y: cos θ) 和纵深明暗表现翻转。每列使用 .spring(duration:bounce:)，其回弹量由行程反推以保持相同的过冲，通过 animation(_:value:) 施加。"
       },
       "interaction" : "tap",
       "name" : {
-        "en" : "Slot-Machine Digits",
-        "zh" : "老虎机数字"
+        "en" : "Tumbling Prism Digits",
+        "zh" : "翻滚棱柱数字"
       },
       "params" : [
         {
@@ -24181,52 +24181,52 @@
           "max" : 2,
           "min" : 0.59999999999999998,
           "name" : {
-            "en" : "Spin duration",
-            "zh" : "旋转时长"
+            "en" : "Tumble duration",
+            "zh" : "翻滚时长"
           },
           "unit" : "s"
         },
         {
-          "default" : 0.22,
+          "default" : 0.12,
           "id" : "stagger",
           "kind" : "slider",
-          "max" : 0.40000000000000002,
+          "max" : 0.29999999999999999,
           "min" : 0.050000000000000003,
           "name" : {
-            "en" : "Reel stagger",
-            "zh" : "停轮间隔"
+            "en" : "Landing stagger",
+            "zh" : "落定间隔"
           },
           "unit" : "s"
         },
         {
-          "default" : 0.20000000000000001,
-          "id" : "bounce",
+          "default" : 0.29999999999999999,
+          "id" : "settle",
           "kind" : "slider",
-          "max" : 0.40000000000000002,
+          "max" : 0.5,
           "min" : 0,
           "name" : {
-            "en" : "Stop kickback",
-            "zh" : "停止回弹"
+            "en" : "Settle overshoot",
+            "zh" : "落定过冲"
           },
           "unit" : ""
         }
       ],
       "prompt" : {
-        "en" : "Four ivory digit reels sit in a dark cabinet behind a thin amber payline, each window showing the current digit plus slivers of its neighbours on a curved, shaded drum. Tapping Spin sends every reel rolling downward through at least two full cycles: while fast the digits blur (up to 5 pt) and stretch 12% vertically, and they sharpen as the reel slows. The reels stop left to right, each 0.22 s after the previous one, on a spring with ~20% bounce, so every digit overshoots the payline by about half a digit and kicks back into place. A rigid haptic tick marks each stop. It feels like a real one-armed bandit: suspense, then four decisive clunks.",
-        "zh" : "深色机箱里并排四个象牙白数字滚轮，中间横着一条细细的琥珀色中奖线；每个窗口显示当前数字，并在带明暗的弧面上露出上下相邻数字的一角。点击「转一下」，所有滚轮向下飞转至少两整圈：高速时数字模糊（最高5 pt）并纵向拉伸12%，减速时逐渐清晰。滚轮从左到右依次停下，每个比前一个晚0.22秒，停止使用约20%回弹的弹簧——数字先冲过中奖线约半格再回落到位，每次停轮伴随一次清脆的触感。像真正的老虎机：先吊足胃口，再「咔、咔、咔、咔」四声落定。"
+        "en" : "A five-digit arcade score (04825) sits in a floating card, each digit printed on the face of an indigo-to-violet prism 52×68 pt. Tapping the card adds points: every digit that changes tumbles forward about its horizontal axis, the old face tipping up and away while the next rises from below, foreshortened to cos θ, narrowing slightly with depth, lit on the upward face and shaded on the downward one. The tens and units prisms add one and two extra full cycles, so the right side whirls longest. Each prism decelerates on a spring whose damping is tuned to its travel, so every digit overshoots by the same ~0.3 face and rocks back; they land left to right, 0.12 s apart, each with a selection tick, while a +points pill rolls its figure. Chunky, tactile, arcade-bright.",
+        "zh" : "悬浮卡片里是一组五位街机分数（04825），每位数字印在一根52×68 pt、靛蓝到紫色渐变的棱柱面上。点击卡片加分：发生变化的数位绕水平轴向前翻滚，旧面向上翻走，新面从下方翻起，高度按cos θ透视压缩、随纵深略微收窄，朝上的面受光、朝下的面变暗。十位和个位额外多转一圈和两圈，右侧转得最久。每根棱柱以按行程调节阻尼的弹簧减速，因此每位都恰好冲过约0.3个面再摇回；从左到右每隔0.12秒依次落定，各伴随一次选择触感，同时“+分数”胶囊滚动更新。厚实、有手感、街机般明亮。"
       },
       "summary" : {
-        "en" : "Four reels whip downward with speed blur and stop one by one with a kickback.",
-        "zh" : "四个滚轮带着速度模糊向下飞转，逐个停下并轻轻回弹。"
+        "en" : "Each score digit is a 3D prism that tumbles forward face by face, slows down and rocks into place.",
+        "zh" : "每位分数都是一根 3D 棱柱，一面接一面向前翻滚，减速后轻轻摇摆着落定。"
       },
       "tags" : [
-        "slot machine",
-        "reel",
-        "jackpot",
+        "tumble",
+        "prism",
+        "score",
         "counter",
-        "老虎机",
-        "滚轮",
-        "抽奖",
+        "翻滚",
+        "棱柱",
+        "计分",
         "数字滚动"
       ]
     },
@@ -24800,8 +24800,8 @@
       "family" : "text.kinetic",
       "id" : "text.squash-hop",
       "implementation" : {
-        "en" : "A TimelineView(.animation) feeds elapsed time into a pure function that maps each letter's phase to height, x\/y scale and shadow size; scale is anchored at .bottom so squashes plant on the baseline.",
-        "zh" : "TimelineView(.animation) 把经过时间传入一个纯函数，将每个字母的相位映射为高度、横纵缩放与阴影大小；缩放以 .bottom 为锚点，使压扁时牢牢贴住基线。"
+        "en" : "A TimelineView(.animation) feeds elapsed time into a pure function that maps each letter's phase to lift and a signed squash\/stretch: crouch squash, then stretch = |cos| of the arc (vertical speed), then an impact squash that starts from the stretched pose. Scale is anchored at .bottom; a tapped letter adds an extra hop from its own start time.",
+        "zh" : "TimelineView(.animation) 把经过时间传入纯函数，将每个字母的相位映射为高度与带符号的挤压\/拉伸：起跳前下蹲压扁，腾空时拉伸量取弧线的 |cos|（即竖直速度），落地挤压从拉长姿态开始。缩放以 .bottom 为锚点；点按的字母从自己的起始时间叠加一次额外弹跳。"
       },
       "interaction" : "loop",
       "name" : {
@@ -24847,8 +24847,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A playful word in 50 pt heavy rounded letters sits on an implied floor, each letter with a soft elliptical contact shadow. Letters hop one after another in a travelling wave, 90 ms apart, on a 1.1 s cycle: during the first 45% of its cycle a letter rises up to 30 pt on a sine arc while stretching to 112% height and 92% width; on touchdown it squashes to 78% height and 118% width for ~130 ms, anchored to the baseline, then springs back to neutral and rests. Shadows shrink and fade while their letter is airborne. Classic cartoon squash-and-stretch gives the type weight, elasticity and a cheerful rhythm.",
-        "zh" : "一个俏皮的单词以50 pt粗圆体排列在一条看不见的地面上，每个字母下方都有一块柔和的椭圆接触阴影。字母以行进波的方式依次起跳，间隔90毫秒，周期1.1秒：在各自周期的前45%里，字母沿正弦弧线升高最多30 pt，同时纵向拉长到112%、横向收窄到92%；落地瞬间以基线为锚点压扁到78%高、118%宽，持续约130毫秒，再弹回原形并静止等待。字母腾空时，阴影随之缩小变淡。经典的「挤压与拉伸」让文字有了重量、弹性和欢快的节奏。"
+        "en" : "A playful word in 50 pt heavy rounded letters sits on an implied floor, each letter with a soft elliptical contact shadow. Letters hop one after another in a travelling wave, 90 ms apart, on a 1.1 s cycle: a letter crouches for ~90 ms (squashing to 89% height) and snaps up stretched to 112% height and 92% width, rounds out to neutral at the 30 pt apex of its ~0.5 s sine arc, and stretches again as it falls. On touchdown it snaps from tall to flat, 78% height and 118% width for ~130 ms anchored to the baseline, then recoils and rests. Shadows shrink and fade while airborne; tapping a letter makes it hop out of turn with a light tick. Stretch follows speed, squash follows contact: cartoon weight and bounce.",
+        "zh" : "一个俏皮的单词以50 pt粗圆体排列在看不见的地面上，每个字母下方有柔和的椭圆接触阴影。字母以行进波依次起跳，间隔90毫秒，周期1.1秒：先下蹲约90毫秒、压扁到89%高，随即弹起并拉长到112%高、92%宽；沿约0.5秒的正弦弧升到30 pt顶点时恢复原形，下落时再次拉长。落地瞬间由细长猛然压扁为78%高、118%宽，以基线为锚点持续约130毫秒，随后回弹静止。腾空时阴影缩小变淡；点按字母可让它插队起跳并伴随轻触觉。拉伸随速度、挤压随接触，文字有了卡通般的重量与弹性。"
       },
       "summary" : {
         "en" : "Letters take turns jumping, stretching in the air and squashing on landing.",
@@ -25236,8 +25236,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A hero line ends in a rotating keyword set in gradient type, followed by a 3 pt rounded caret. Each keyword types in at 70 ms per character, every glyph popping up from 30% scale and 12 pt low with a back-ease overshoot over 140 ms while the solid caret rides it; it holds 1.4 s as the caret blinks at ~1.9 Hz, then leaves as a whole word, never letter by letter: by default Select & replace flashes a translucent accent selection over it for 300 ms before it vanishes at once, or Lift away floats it 18 pt up while it fades on an ease-in over 300 ms. A 250 ms pause with a blinking caret precedes the next word. The rhythm — quick in, patient hold, brisk out — feels human, like someone live-editing a headline.",
-        "zh" : "主标题末尾是一个轮换的关键词，使用渐变文字，后面跟着一根3 pt的圆角光标。关键词以每字70毫秒打出，每个字在140毫秒内从30%大小、低12 pt处带回弹缓动跳出，光标常亮紧随；停留1.4秒，光标约1.9 Hz闪烁；随后整词离场而非逐字删除：默认「全选替换」覆上半透明强调色选区300毫秒后一次性消失，或「上浮离场」在300毫秒内缓入上移18 pt并淡出。下一个词出现前还有250毫秒的光标闪烁停顿。快进、耐心停留、利落退出的节奏很有人味，像有人在实时修改标题。"
+        "en" : "A hero line ends in a rotating keyword set in gradient type, followed by a 3 pt rounded caret. Each keyword types in at 70 ms per character, every glyph popping up from 30% scale and 12 pt low with a back-ease overshoot over 140 ms while the solid caret rides it; it holds 1.4 s as the caret blinks at ~1.9 Hz, then leaves as a whole word, never letter by letter: by default Select & replace flashes a translucent accent selection over it for 300 ms before it vanishes at once, or Lift away floats it 18 pt up while it fades on an ease-in over 300 ms. A 250 ms pause with a blinking caret precedes the next word; a tap triggers the exit early. The rhythm — quick in, patient hold, brisk out — feels human, like someone live-editing a headline.",
+        "zh" : "主标题末尾是一个轮换的关键词，使用渐变文字，后面跟着一根3 pt的圆角光标。关键词以每字70毫秒打出，每个字在140毫秒内从30%大小、低12 pt处带回弹缓动跳出，光标常亮紧随；停留1.4秒，光标约1.9 Hz闪烁；随后整词离场而非逐字删除：默认「全选替换」覆上半透明强调色选区300毫秒后一次性消失，或「上浮离场」在300毫秒内缓入上移18 pt并淡出。下一个词出现前有250毫秒闪烁停顿，轻点可提前离场。快进、耐心停留、利落退出的节奏很有人味，像有人在实时修改标题。"
       },
       "summary" : {
         "en" : "Each keyword pops in glyph by glyph, holds, then is selected and replaced or lifts away.",
@@ -26658,8 +26658,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A location glyph sits in a glossy blue disc at the centre of a faint circular grid. Three sonar rings leave the disc one after another, each expanding from 36 pt to the full 250 pt radar over 2.4 s on an ease-out while fading from 45% to 0, so a new ring is always on its way, and the disc breathes ±4% in sync. A conic beam with a bright leading edge and a 70° fading tail rotates once every 3 s. Five nearby-device dots sit at fixed bearings; as the beam passes, each flares to 150% with a glow and decays over about 0.8 s. Calm, continuous and alive, like a device quietly searching.",
-        "zh" : "定位图标放在一枚带光泽的蓝色圆盘里，位于淡淡的圆形网格中央。三道声呐波纹依次离开圆盘，每道在2.4秒内以缓出曲线从36 pt扩散到250 pt的整个雷达范围，透明度从45%降到0，于是总有新的波纹在路上，圆盘也随之做±4%的呼吸。一道锥形扫描光束带着明亮前缘和70°渐隐尾迹，每3秒转一圈。五个“附近设备”小点固定在不同方位，光束扫过时放大到150%并发光，再在约0.8秒内衰减。平静、持续、充满生命感，像设备在安静地搜寻。"
+        "en" : "A location glyph sits in a glossy blue disc at the centre of a faint circular grid. Three sonar rings leave the disc one after another, each expanding from 36 pt to the full 250 pt radar over 2.4 s on an ease-out while fading from 45% to 0, so a new ring is always on its way, and the disc breathes ±4% in sync. A conic beam with a bright leading edge and a 70° fading tail rotates once every 3 s. Five nearby-device dots sit at fixed bearings; as the beam passes, each flares to 150% with a glow and decays over about 0.8 s. A tap fires a bright mint ping ring and one forced 0.8 s beam sweep that lights every dot in turn. Calm, continuous and alive, like a device quietly searching.",
+        "zh" : "定位图标放在一枚带光泽的蓝色圆盘里，位于淡淡的圆形网格中央。三道声呐波纹依次离开圆盘，每道在2.4秒内以缓出曲线从36 pt扩散到250 pt的整个雷达范围，透明度从45%降到0，于是总有新的波纹在路上，圆盘也随之做±4%的呼吸。一道锥形扫描光束带着明亮前缘和70°渐隐尾迹，每3秒转一圈。五个“附近设备”小点固定在不同方位，光束扫过时放大到150%并发光，再在约0.8秒内衰减。轻点发出一道明亮的薄荷色探测波，光束0.8秒强扫一圈，依次点亮光点。平静、持续，像设备在安静地搜寻。"
       },
       "summary" : {
         "en" : "A sweeping beam and sonar rings; nearby dots flare as the beam passes.",
@@ -26743,8 +26743,8 @@
         }
       ],
       "prompt" : {
-        "en" : "The now-familiar 'AI' mark: a large four-point star with concave, curved sides, filled with a conic gradient of violet, pink, amber and sky that rotates 60° per second so the colour appears to flow around the glyph. The star sways ±12° on a 4 s sine and breathes between 92% and 106% scale, over a blurred halo of the same gradient at 50% opacity. Two small satellite stars (top-right and bottom-left) twinkle in counter-phase: every 1.6 s each pops from 30% to 100% scale while turning 45°, then shrinks back as it turns another 45°. In Thinking mode all of this runs 2.5× faster, while a tiny spark orbits the star on its own steady 1.2 s lap. It feels intelligent, gentle and alive.",
-        "zh" : "如今常见的「AI」标志：一个四边内凹、呈弧形的四角大星芒，填充由紫、粉、琥珀、天蓝组成的锥形渐变，渐变每秒旋转60°，颜色仿佛绕着图形流动。星芒以4秒周期的正弦做±12°摇摆，并在92%到106%之间呼吸缩放，下方衬着一层同样渐变、50%透明度的模糊光晕。两颗小卫星星芒（右上与左下）反相闪烁：每1.6秒从30%放大到100%并旋转45°，再边转45°边缩回。切到「思考中」时，以上节奏全部加快2.5倍，另有一粒小火花按自己的节奏每1.2秒绕星芒转一圈。聪明、温柔、有生命力。"
+        "en" : "The now-familiar 'AI' mark: a large four-point star with concave, curved sides, filled with a conic gradient of violet, pink, amber and sky that rotates 60° per second so the colour appears to flow around the glyph. The star sways ±12° on a 4 s sine and breathes between 92% and 106% scale, over a blurred halo of the same gradient at 50% opacity. Two small satellite stars (top-right and bottom-left) twinkle in counter-phase: every 1.6 s each pops from 30% to 100% scale while turning 45°, then shrinks back as it turns another 45°. In Thinking mode all of this runs 2.5× faster, while a tiny spark fades in to orbit the star on its own steady 1.2 s lap; tapping toggles Idle and Thinking without a phase jump. It feels intelligent, gentle and alive.",
+        "zh" : "如今常见的「AI」标志：一个四边内凹、呈弧形的四角大星芒，填充由紫、粉、琥珀、天蓝组成的锥形渐变，渐变每秒旋转60°，颜色仿佛绕着图形流动。星芒以4秒周期的正弦做±12°摇摆，并在92%到106%之间呼吸缩放，下方衬着一层同样渐变、50%透明度的模糊光晕。两颗小卫星星芒（右上与左下）反相闪烁：每1.6秒从30%放大到100%并旋转45°，再边转45°边缩回。切到「思考中」时，以上节奏全部加快2.5倍，小火花淡入并每1.2秒绕星一圈；轻点可无缝切换待机与思考。聪明、温柔、鲜活。"
       },
       "summary" : {
         "en" : "A four-point star sways and breathes in shifting colour while two satellites twinkle.",
@@ -27493,8 +27493,8 @@
       "family" : "gestures.drag-spring",
       "id" : "gestures.jelly-stretch",
       "implementation" : {
-        "en" : "Velocity is converted to a traceless strain tensor (s·cos2θ, s·sin2θ) animated through a custom GeometryEffect that builds an affine stretch around the view center; negative strain naturally becomes a squash.",
-        "zh" : "将速度转换为无迹应变张量 (s·cos2θ, s·sin2θ)，通过自定义 GeometryEffect 以视图中心为原点构建仿射拉伸；负应变自然表现为挤压。"
+        "en" : "Velocity is converted to a signed strain tensor (s·cos2θ, s·sin2θ) animated through a custom GeometryEffect that builds an area-preserving affine stretch (1 + s along, 1\/(1 + s) across) around the view center; negative strain naturally becomes a squash.",
+        "zh" : "将速度转换为带符号的应变张量 (s·cos2θ, s·sin2θ)，通过自定义 GeometryEffect 以视图中心为原点构建保持面积的仿射拉伸（沿向 1 + s、横向 1\/(1 + s)）；负应变自然表现为挤压。"
       },
       "interaction" : "gesture",
       "name" : {
@@ -27836,8 +27836,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A chain of 10 glowing dots, shrinking from 52 pt at the head to 16 pt at the tail and shifting hue from mint to violet while fading from 100% to 35% opacity, is linked by a faint gradient thread. Touching or dragging anywhere on the stage sets the head's target; the head springs toward the finger and every following dot springs toward the dot in front of it (link response ≈ 0.12 s, damping 0.7), integrated per frame, so motion propagates down the chain like a whip: it stretches along fast strokes, curls through turns and coils back into a bead when the finger stops. The head sits on top and soft colored shadows add depth. Organic, like a school of fish following a lure.",
-        "zh" : "十颗发光圆点由一根淡淡的渐变细线串起：从头部52pt递减到尾部16pt，色相由薄荷绿渐变为紫色，透明度从100%递减到35%。在舞台任意位置按下或拖动都会设置头部的目标；头部以弹簧追向手指，其后每一颗圆点都以弹簧追向它前面那一颗（链节响应约0.12秒、阻尼0.7），逐帧积分，运动像鞭子一样沿链条传递：快速划动时整串被拉长，转弯时卷曲，手指停下后又盘回一颗珠子。头部始终置顶，柔和的同色投影增加层次。有机灵动，像鱼群追逐诱饵。"
+        "en" : "A chain of 10 glowing dots, shrinking from 52 pt at the head to 16 pt at the tail and shifting hue from mint to violet while fading from 100% to 35% opacity, is linked by a faint gradient thread. Grabbing the head (a 56 pt hit disc, so swipes elsewhere still scroll the page) and dragging sets its target; the head springs toward the finger and every following dot springs toward the dot in front of it (link response ≈ 0.12 s, damping 0.7), integrated per frame, so motion propagates down the chain like a whip: it stretches along fast strokes, curls through turns and coils back into a bead when the finger stops. The head sits on top and soft colored shadows add depth. Organic, like a school of fish following a lure.",
+        "zh" : "十颗发光圆点由一根淡淡的渐变细线串起：从头部52pt递减到尾部16pt，色相由薄荷绿渐变为紫色，透明度从100%递减到35%。按住头部（56 pt触控圆，其他位置的滑动仍可滚动页面）拖动即可设置它的目标；头部以弹簧追向手指，其后每一颗圆点都以弹簧追向它前面那一颗（链节响应约0.12秒、阻尼0.7），逐帧积分，运动像鞭子一样沿链条传递：快速划动时整串被拉长，转弯时卷曲，手指停下后又盘回一颗珠子。头部始终置顶，柔和的同色投影增加层次。有机灵动，像鱼群追逐诱饵。"
       },
       "summary" : {
         "en" : "A comet of dots chasing your finger, each on a slightly lazier spring.",
@@ -27869,8 +27869,8 @@
       "family" : "gestures.physics",
       "id" : "gestures.charge-burst",
       "implementation" : {
-        "en" : "A zero-distance DragGesture marks press and release; charge animates linearly and is interrupted by a spring on release. An Animatable ring view shows the live percentage, TimelineView drives the primed jitter, and a re-identified burst view animates its particles on appear.",
-        "zh" : "零距离 DragGesture 捕获按下与松开；蓄力值线性动画，松手时被弹簧动画打断。Animatable 圆环视图实时显示百分比，TimelineView 驱动蓄满后的抖动，爆发视图通过更换 id 重新出现并播放粒子动画。"
+        "en" : "A zero-distance DragGesture marks press and release; charge animates linearly and is interrupted by a spring on release. An Animatable ring view shows the live percentage, TimelineView drives the primed jitter, and a re-identified burst view animates an Animatable particle field on appear, so the gravity drop is evaluated every frame and the paths curve.",
+        "zh" : "零距离 DragGesture 捕获按下与松开；蓄力值线性动画，松手时被弹簧动画打断。Animatable 圆环视图实时显示百分比，TimelineView 驱动蓄满后的抖动；爆发视图通过更换 id 重新出现，其粒子层遵循 Animatable，每帧计算重力下坠，使轨迹呈弧线。"
       },
       "interaction" : "gesture",
       "name" : {
@@ -28180,8 +28180,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A 112 pt liquid blob sits at the centre with a 72 pt droplet fused to its right side and a 34 pt satellite drop hidden inside that droplet, all rendered as one aurora-gradient surface (mint → sky → violet) with a soft glow. The surface uses a metaball look: shapes are blurred about 14 pt and alpha-thresholded at 50%, so whenever they come close a smooth, necking liquid bridge forms between them. Dragging pulls the droplet toward the finger on a simulated spring (response 0.5 s, damping 0.45); the bridge thins and snaps as it leaves, and the satellite peels out and trails behind on a softer, laggier spring. Releasing flings the droplet home, where it overshoots, merges and wobbles before settling. Viscous, tactile and delightfully liquid.",
-        "zh" : "中央是一个112 pt的液态团块，右侧融着一颗72 pt的液滴，液滴里还藏着一颗34 pt的小卫星滴，三者渲染成同一块带柔光的极光渐变表面（薄荷绿、天蓝、紫）。表面用“元球”手法：图形先模糊约14 pt，再按50%透明度阈值裁切，只要彼此靠近就会长出平滑、带颈缩的液桥。拖动时液滴由模拟弹簧（响应0.5秒、阻尼0.45）拉向手指，液桥越拉越细直至断开，小卫星也脱离出来，以更软、更滞后的弹簧拖在后面。松手后液滴被弹回原位，过冲、融合、晃几下才稳住。黏稠可触。"
+        "en" : "A 112 pt liquid blob sits at the centre with a 72 pt droplet fused to its right side and a 34 pt satellite drop hidden inside that droplet, all rendered as one aurora-gradient surface (mint → sky → violet) with a soft glow. The surface uses a metaball look: shapes are blurred about 14 pt and alpha-thresholded at 50%, so whenever they come close a smooth, necking liquid bridge forms between them. Grabbing the droplet (only a disc around it takes touches, so swipes elsewhere scroll the page) pulls it toward the finger on a simulated spring (response 0.5 s, damping 0.45); the bridge thins and snaps as it leaves, and the satellite peels out and trails behind on a softer, laggier spring. Releasing flings the droplet home, where it overshoots, merges and wobbles before settling. Viscous, tactile and delightfully liquid.",
+        "zh" : "中央是一个112 pt的液态团块，右侧融着一颗72 pt的液滴，液滴里还藏着一颗34 pt的小卫星滴，三者渲染成同一块带柔光的极光渐变表面（薄荷绿、天蓝、紫）。表面用“元球”手法：图形先模糊约14 pt，再按50%透明度阈值裁切，只要彼此靠近就会长出平滑、带颈缩的液桥。按住液滴拖动（别处仍可滚动页面），它由模拟弹簧（响应0.5秒、阻尼0.45）拉向手指，液桥越拉越细直至断开，小卫星也脱离出来，以更软、更滞后的弹簧拖在后面。松手后液滴被弹回原位，过冲、融合、晃几下才稳住。黏稠可触。"
       },
       "summary" : {
         "en" : "Pull a droplet out of a blob and watch the liquid bridge stretch, snap and re-merge.",
@@ -28882,8 +28882,8 @@
         }
       ],
       "prompt" : {
-        "en" : "A 64×56 pt weight (continuous 16 pt corners, indigo-to-violet gradient, “1 kg” label) hangs from a ceiling bar on a steel-grey coil spring of nine turns, 130 pt long at rest. The weight drags vertically only, rubber-banded toward 150 pt of stretch and 90 pt of compression, and the coil redraws every frame, its turns spreading as it lengthens and its diameter narrowing up to 25% to conserve volume, while a pointer on a tick ruler tracks the weight. On release a physical spring with mass 1, stiffness 90 and damping 3.5 (ζ ≈ 0.18) takes over, so the weight bobs through the rest line five or six times at about 1.5 Hz before settling, with a light or rigid haptic scaled to the pull. Tactile lab physics.",
-        "zh" : "一个64×56 pt的砝码（16 pt圆角，靛紫渐变，标着“1 kg”）由一根9圈钢灰色螺旋弹簧挂在横梁上，弹簧自然长130 pt。砝码只能竖直拖动，拉伸和压缩都带橡皮筋阻尼，分别趋近150 pt和90 pt；弹簧每帧重绘，拉长时圈距拉开、直径最多收窄25%以保持体积，右侧刻度指针同步示位。松手后由质量1、劲度90、阻尼3.5（阻尼比约0.18）的物理弹簧接管，砝码以约1.5 Hz穿过平衡位置五六次才停稳，并按幅度给出轻或硬的触感。如指尖上的物理实验。"
+        "en" : "A 64×56 pt weight (continuous 16 pt corners, indigo-to-violet gradient, “1 kg” label) hangs from a ceiling bar on a steel-grey coil spring of nine turns, 130 pt long at rest. The weight drags vertically only, rubber-banded toward 110 pt of stretch and 90 pt of compression, and the coil redraws every frame, its turns spreading as it lengthens and its diameter narrowing up to 25% to conserve volume, while a pointer on a tick ruler tracks the weight. On release a physical spring with mass 1, stiffness 90 and damping 3.5 (ζ ≈ 0.18) takes over, so the weight bobs through the rest line five or six times at about 1.5 Hz before settling, with a light or rigid haptic scaled to the pull. Tactile lab physics.",
+        "zh" : "一个64×56 pt的砝码（16 pt圆角，靛紫渐变，标着“1 kg”）由一根9圈钢灰色螺旋弹簧挂在横梁上，弹簧自然长130 pt。砝码只能竖直拖动，拉伸和压缩都带橡皮筋阻尼，分别趋近110 pt和90 pt；弹簧每帧重绘，拉长时圈距拉开、直径最多收窄25%以保持体积，右侧刻度指针同步示位。松手后由质量1、劲度90、阻尼3.5（阻尼比约0.18）的物理弹簧接管，砝码以约1.5 Hz穿过平衡位置五六次才停稳，并按幅度给出轻或硬的触感。如指尖上的物理实验。"
       },
       "summary" : {
         "en" : "Pull a weight hanging from a coil spring and watch it bob with real mass, stiffness and damping.",
@@ -36674,5 +36674,5 @@
       "symbol" : "sun.haze.fill"
     }
   ],
-  "generated" : "2026-09-24T04:48:28Z"
+  "generated" : "2026-09-24T05:33:16Z"
 }

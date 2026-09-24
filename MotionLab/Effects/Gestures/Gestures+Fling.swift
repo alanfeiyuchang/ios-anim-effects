@@ -126,6 +126,8 @@ private struct FlingDemo: View {
     @GestureState private var pressing = false
 
     private let arena: CGFloat = 290
+    /// Arena coordinates for the drag, whichever view carries it.
+    private static let space = "flingArena"
 
     var body: some View {
         let puck = ctx.cg("size")
@@ -139,13 +141,14 @@ private struct FlingDemo: View {
                 ArenaBackground()
                 TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
                     let snapshot = model.step(to: timeline.date, bounds: bounds, glide: glide, restitution: restitution, haptics: haptics)
+                    // Only a disc around the live puck takes touches, so swipes elsewhere still scroll the page.
                     FlingLayer(snapshot: snapshot, puck: puck, isDragging: isDragging)
+                        .contentShape(FlingHitArea(center: CGPoint(x: snapshot.position.x + puck / 2, y: snapshot.position.y + puck / 2), radius: puck / 2 + 26))
+                        .gesture(dragGesture(puck: puck, bounds: bounds))
                 }
-                .allowsHitTesting(false)
             }
             .frame(width: arena, height: arena)
-            .contentShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-            .gesture(dragGesture(puck: puck, bounds: bounds))
+            .coordinateSpace(.named(FlingDemo.space))
             DemoHint(text: L("Flick the puck — catch it mid-flight", "甩动圆球，飞行中也能接住"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -180,15 +183,16 @@ private struct FlingDemo: View {
     }
 
     private func dragGesture(puck: CGFloat, bounds: CGSize) -> some Gesture {
-        DragGesture(minimumDistance: 0)
+        DragGesture(minimumDistance: 0, coordinateSpace: .named(FlingDemo.space))
             .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if grabOffset == nil {
-                    // Hit-test against the live, on-screen position so a moving puck can be caught.
+                    // Hit-test against the live position so a moving puck can be caught; the extra
+                    // margin over the hit disc absorbs the frame the puck travelled since it was drawn.
                     let live = model.position
                     let dx = value.startLocation.x - (live.x + puck / 2)
                     let dy = value.startLocation.y - (live.y + puck / 2)
-                    guard (dx * dx + dy * dy).squareRoot() <= puck / 2 + 26 else { return }
+                    guard (dx * dx + dy * dy).squareRoot() <= puck / 2 + 44 else { return }
                     let wasMoving = !model.isResting
                     grabOffset = CGSize(width: value.startLocation.x - live.x, height: value.startLocation.y - live.y)
                     model.isHeld = true
@@ -226,6 +230,16 @@ private struct FlingDemo: View {
         let angle = Double.random(in: 0..<(2 * Double.pi))
         model.velocity = CGVector(dx: CGFloat(cos(angle) * speed), dy: CGFloat(sin(angle) * speed))
         wake()
+    }
+}
+
+/// The touch target: a disc around the puck (finger-sized margin included).
+private struct FlingHitArea: Shape {
+    let center: CGPoint
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
     }
 }
 

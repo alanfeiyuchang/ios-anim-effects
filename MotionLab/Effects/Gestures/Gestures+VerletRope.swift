@@ -152,6 +152,9 @@ private struct VerletRopeDemo: View {
     /// Resets on system cancellation too, so a stolen touch never leaves the charm pinned to a ghost finger.
     @GestureState private var pressing = false
 
+    /// Stage coordinates for the drag (the model's own space).
+    private static let space = "ropeStage"
+
     var body: some View {
         let length = ctx.cg("length")
         let gravity = ctx["gravity"]
@@ -159,13 +162,14 @@ private struct VerletRopeDemo: View {
         ZStack {
             TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview), paused: !awake)) { timeline in
                 let _ = model.step(to: timeline.date, length: length, gravity: gravity, iterations: iterations)
+                // Only a disc around the live charm takes touches, so swipes elsewhere still scroll the page.
                 RopeLayer(points: model.points, direction: model.endDirection, isHeld: isHeld)
+                    .contentShape(RopeHitArea(center: charmCenter, radius: RopeMetrics.charm / 2 + 24))
+                    .gesture(dragGesture)
             }
-            .allowsHitTesting(false)
         }
         .frame(width: RopeMetrics.stage.width, height: RopeMetrics.stage.height)
-        .contentShape(Rectangle())
-        .gesture(dragGesture)
+        .coordinateSpace(.named(VerletRopeDemo.space))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
             DemoHint(text: L("Grab the charm and fling it", "抓住吊坠甩出去"), ctx: ctx)
@@ -203,14 +207,15 @@ private struct VerletRopeDemo: View {
     }
 
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 0)
+        DragGesture(minimumDistance: 0, coordinateSpace: .named(VerletRopeDemo.space))
             .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if grabOffset == nil {
                     let center = charmCenter
                     let dx = value.startLocation.x - center.x
                     let dy = value.startLocation.y - center.y
-                    guard (dx * dx + dy * dy).squareRoot() < RopeMetrics.charm / 2 + 24 else { return }
+                    // A little wider than the hit disc: the charm may have swung on since it was drawn.
+                    guard (dx * dx + dy * dy).squareRoot() < RopeMetrics.charm / 2 + 40 else { return }
                     // Remember where on the charm the finger landed, relative to the cord's end point.
                     grabOffset = CGSize(width: value.startLocation.x - model.end.x, height: value.startLocation.y - model.end.y)
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { isHeld = true }
@@ -237,6 +242,16 @@ private struct VerletRopeDemo: View {
         let end = model.end
         let dir = model.endDirection
         return CGPoint(x: end.x + dir.dx * RopeMetrics.charm / 2, y: end.y + dir.dy * RopeMetrics.charm / 2)
+    }
+}
+
+/// The touch target: a disc around the charm (finger-sized margin included).
+private struct RopeHitArea: Shape {
+    let center: CGPoint
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
     }
 }
 

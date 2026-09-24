@@ -135,6 +135,10 @@ the Compare mode on the family page plays all variations side by side.
    The detail page silences `Haptics.*` for 2.5 s after arrival, a variation switch and Reset (`Haptics.quiet(for:)`),
    so arrival plays never buzz; `.sensoryFeedback` bypasses this, so demos use `Haptics.*` instead.
    When `ctx.isStill` is true a still thumbnail is being rendered: show the finished state (chart drawn, text revealed).
+   **`onAppear` runs in stills too.** `ImageRenderer` fires `onAppear` before it draws, so a demo that seeds settled
+   data and then resets it to zero in `onAppear` (to replay its entrance) renders as empty axes. Guard such resets
+   with `guard !ctx.isStill else { return }` (or `@Environment(\.demoIsStill)` in subviews). The screenshot script's
+   still audit (`-ML_auditStills YES`, `still-audit.json`) flags Data & Charts stills that come out empty.
    **Materials in stills.** Stills are drawn with `ImageRenderer`, which cannot render `Material`
    (`.ultraThinMaterial`, `.thinMaterial`, `.regularMaterial`, `.bar`, …) or Liquid Glass: they come out as
    solid black slabs, very visible on the light-mode cards. Never put a material behind demo content directly;

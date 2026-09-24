@@ -26,6 +26,12 @@ struct MotionLabApp: App {
                 .environment(navigator)
                 .preferredColorScheme(colorScheme)
                 .tint(Palette.accent)
+                .task {
+                    // CI: measure every still thumbnail once the window is up (see `CatalogTools`).
+                    if CatalogTools.shouldAuditStills {
+                        await CatalogTools.auditStills()
+                    }
+                }
         }
     }
 

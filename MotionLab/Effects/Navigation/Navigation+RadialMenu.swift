@@ -51,6 +51,9 @@ private struct RadialMenuDemo: View {
     @State private var chosen: Int?
     @State private var previewPhase = 0
     @State private var pressBeganOpen: Bool?
+    /// True when the current press opened the menu by moving the finger (the case a page scroll can trigger).
+    @State private var openedByMove = false
+    @State private var pressToken = 0
     @State private var token = 0
     /// Resets on system cancellation too (scroll takeover, Control Center pull), which skips `onEnded`.
     @GestureState private var pressing = false
@@ -65,7 +68,9 @@ private struct RadialMenuDemo: View {
             Color.black
                 .opacity(open ? 0.14 : 0)
                 .animation(.easeOut(duration: 0.25), value: open)
-                .allowsHitTesting(false)
+                .contentShape(Rectangle())
+                .onTapGesture { dismissFromScrim() }
+                .allowsHitTesting(open)
             ZStack {
                 ForEach(0..<radialItems.count, id: \.self) { index in
                     itemView(index)
@@ -170,46 +175,90 @@ private struct RadialMenuDemo: View {
     private var pressDrag: some Gesture {
         DragGesture(minimumDistance: 0)
             .updating($pressing) { _, state, _ in state = true }
-            .onChanged { value in
-                if pressBeganOpen == nil {
-                    pressBeganOpen = open
-                    if !open { setOpen(true) }
-                }
-                let center = CGPoint(x: buttonSize / 2, y: buttonSize / 2)
-                let finger = CGPoint(x: value.location.x - center.x, y: value.location.y - center.y)
-                var nearest: Int?
-                var best: CGFloat = 40
-                for index in 0..<radialItems.count {
-                    let p = position(for: index)
-                    let d = hypot(p.x - finger.x, p.y - finger.y)
-                    if d < best {
-                        best = d
-                        nearest = index
-                    }
-                }
-                if nearest != highlighted {
-                    highlighted = nearest
-                    if nearest != nil && !ctx.isPreview { Haptics.selection() }
-                }
-            }
-            .onEnded { value in
-                let wasOpen = pressBeganOpen ?? false
-                pressBeganOpen = nil
-                let moved = hypot(value.translation.width, value.translation.height) > 20
-                if let highlighted {
-                    commit(highlighted)
-                } else if moved || wasOpen {
-                    setOpen(false)
-                }
-            }
+            .onChanged { value in pressChanged(value) }
+            .onEnded { value in pressEnded(value) }
     }
 
-    /// Cancelled press: forget the press so the next touch on + starts fresh, and drop the highlight without
-    /// committing. The menu stays open, so its items can still be tapped. No-op after a normal release.
-    private func cancelPress() {
-        guard pressBeganOpen != nil else { return }
+    /// Touch-down never opens the menu by itself: it opens after a short hold, once the finger has moved
+    /// more than 8 pt, or on a tap's release. A page scroll that starts on + therefore doesn't fan it out.
+    private func pressChanged(_ value: DragGesture.Value) {
+        if pressBeganOpen == nil {
+            pressBeganOpen = open
+            openedByMove = false
+            if !open { scheduleHoldOpen() }
+        }
+        let distance = hypot(value.translation.width, value.translation.height)
+        if !open && distance > 8 {
+            pressToken += 1
+            openedByMove = true
+            setOpen(true)
+        }
+        guard open else { return }
+        let nearest = nearestItem(to: value.location)
+        if nearest != highlighted {
+            highlighted = nearest
+            if nearest != nil && !ctx.isPreview { Haptics.selection() }
+        }
+    }
+
+    private func pressEnded(_ value: DragGesture.Value) {
+        let wasOpen = pressBeganOpen ?? false
         pressBeganOpen = nil
+        openedByMove = false
+        pressToken += 1
+        let moved = hypot(value.translation.width, value.translation.height) > 20
+        if !open {
+            // A tap on the closed button: open on release.
+            setOpen(true)
+        } else if let highlighted {
+            commit(highlighted)
+        } else if moved || wasOpen {
+            setOpen(false)
+        }
+    }
+
+    private func scheduleHoldOpen() {
+        pressToken += 1
+        let current = pressToken
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.15))
+            guard pressToken == current, pressBeganOpen != nil, !open else { return }
+            setOpen(true)
+        }
+    }
+
+    private func nearestItem(to location: CGPoint) -> Int? {
+        let finger = CGPoint(x: location.x - buttonSize / 2, y: location.y - buttonSize / 2)
+        var nearest: Int?
+        var best: CGFloat = 40
+        for index in 0..<radialItems.count {
+            let p = position(for: index)
+            let d = hypot(p.x - finger.x, p.y - finger.y)
+            if d < best {
+                best = d
+                nearest = index
+            }
+        }
+        return nearest
+    }
+
+    /// Cancelled press (scroll takeover, Control Center pull): forget the press so the next touch on + starts
+    /// fresh, and drop the highlight without committing. A press cancelled before the menu opened keeps it
+    /// closed; a menu this press opened by moving (a scroll starting on +) closes again. A menu opened by a
+    /// deliberate hold stays open, so its items can still be tapped. No-op after a normal release.
+    private func cancelPress() {
+        guard let wasOpen = pressBeganOpen else { return }
+        pressBeganOpen = nil
+        pressToken += 1
         highlighted = nil
+        if !wasOpen && openedByMove { setOpen(false) }
+        openedByMove = false
+    }
+
+    private func dismissFromScrim() {
+        guard open else { return }
+        if !ctx.isPreview { Haptics.tap(.light) }
+        setOpen(false)
     }
 
     private func setOpen(_ value: Bool) {

@@ -111,6 +111,7 @@ private struct ScrollRevealModifier: ViewModifier {
     let distance: CGFloat
     let scale: CGFloat
     let blur: CGFloat
+    let threshold: Double
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
@@ -119,8 +120,10 @@ private struct ScrollRevealModifier: ViewModifier {
         let scale = self.scale
         let blur = self.blur
         let animation: Animation = motion ? ShellMotion.reveal.delay(delay) : .easeOut(duration: 0.2)
-        // Considered "in" once 15 % is visible, so sections taller than the screen still resolve.
-        let configuration = ScrollTransitionConfiguration.animated(animation).threshold(.visible(0.15))
+        // Considered "in" as soon as a sliver (2 % by default) is visible: a tall card peeking above the
+        // tab bar must show its top edge, or the list reads as ending there. Sections taller than the
+        // screen resolve too, and the rise-in still plays because it starts while the card is barely in.
+        let configuration = ScrollTransitionConfiguration.animated(animation).threshold(.visible(threshold))
         return content.scrollTransition(configuration, axis: .vertical) { effect, phase in
             let hidden = !phase.isIdentity
             let moves = hidden && motion
@@ -158,9 +161,16 @@ extension View {
         return modifier(AppearEntranceModifier(delay: total, distance: distance, scale: scale, blur: blur))
     }
 
-    /// Reveals the view as it scrolls into the viewport (vertical scroll views).
-    func scrollReveal(delay: Double = 0, distance: CGFloat = 24, scale: CGFloat = 0.96, blur: CGFloat = 4) -> some View {
-        modifier(ScrollRevealModifier(delay: delay, distance: distance, scale: scale, blur: blur))
+    /// Reveals the view as it scrolls into the viewport (vertical scroll views). `threshold` is the
+    /// visible fraction at which the view counts as "in".
+    func scrollReveal(
+        delay: Double = 0,
+        distance: CGFloat = 24,
+        scale: CGFloat = 0.96,
+        blur: CGFloat = 4,
+        threshold: Double = 0.02
+    ) -> some View {
+        modifier(ScrollRevealModifier(delay: delay, distance: distance, scale: scale, blur: blur, threshold: threshold))
     }
 }
 

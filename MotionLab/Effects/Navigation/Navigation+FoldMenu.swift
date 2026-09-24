@@ -41,13 +41,20 @@ private struct FoldMenuDemo: View {
     @State private var token = 0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            button
-            menu
-            Spacer(minLength: 0)
+        ZStack {
+            // Tapping the empty stage folds the open menu away, like a system dropdown.
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { dismiss() }
+                .allowsHitTesting(open)
+            VStack(alignment: .leading, spacing: 8) {
+                button
+                menu
+                Spacer(minLength: 0)
+            }
+            .frame(width: 230)
+            .padding(.top, 36)
         }
-        .frame(width: 230)
-        .padding(.top, 36)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
             DemoHint(text: L("Tap the sort button", "点击排序按钮"), ctx: ctx)
@@ -138,6 +145,13 @@ private struct FoldMenuDemo: View {
     private func toggle() {
         if !ctx.isPreview { Haptics.tap(.light) }
         open.toggle()
+    }
+
+    private func dismiss() {
+        guard open else { return }
+        token += 1
+        if !ctx.isPreview { Haptics.tap(.light) }
+        open = false
     }
 
     private func pick(_ index: Int) {

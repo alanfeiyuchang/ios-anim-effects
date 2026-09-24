@@ -43,9 +43,9 @@ xcodebuild -project MotionLab.xcodeproj -scheme MotionLab -sdk iphonesimulator \
 xcrun simctl uninstall "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/MotionLab.app
 
-# Warm-up launch that also exports the catalog. The wait lets first-boot system banners
-# (e.g. "Ready for Apple Intelligence") appear and expire before any screenshot is taken.
-xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_exportCatalog YES -ML_noIntro YES -ML_freshState YES >/dev/null || true
+# Warm-up launch that also exports the catalog and audits every still thumbnail (-ML_auditStills). The wait
+# lets first-boot system banners (e.g. "Ready for Apple Intelligence") appear and expire before any screenshot.
+xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_exportCatalog YES -ML_auditStills YES -ML_noIntro YES -ML_freshState YES >/dev/null || true
 sleep 45
 CATALOG="$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)/Documents/catalog.json"
 if [[ ! -s "$CATALOG" ]]; then
@@ -53,6 +53,24 @@ if [[ ! -s "$CATALOG" ]]; then
   exit 1
 fi
 cp "$CATALOG" "$OUT/catalog.json"
+
+# Still audit: Data & Charts thumbnails that render as empty axes (e.g. a demo that zeroes its seeded data in
+# onAppear, which ImageRenderer runs) are listed as warnings. STRICT_STILLS=1 turns them into a failure.
+STILLS="$(dirname "$CATALOG")/still-audit.json"
+for _ in $(seq 1 60); do [[ -s "$STILLS" ]] && break; sleep 2; done
+if [[ -s "$STILLS" ]]; then
+  cp "$STILLS" "$OUT/still-audit.json"
+  FLAGGED=$(python3 -c 'import json,sys; f=json.load(open(sys.argv[1]))["flagged"]; print("\n".join(f))' "$STILLS")
+  if [[ -n "$FLAGGED" ]]; then
+    echo "warning: chart stills that look empty (ink below threshold):" >&2
+    echo "$FLAGGED" | sed 's/^/  /' >&2
+    [[ "${STRICT_STILLS:-0}" == "1" ]] && exit 1
+  else
+    echo "Still audit: every chart still shows data."
+  fi
+else
+  echo "warning: the app did not write still-audit.json; still audit skipped" >&2
+fi
 
 # Shot plan: one line per shot, "<name>\t<wait seconds>\t<launch arguments>".
 PLAN="$OUT/plan.tsv"

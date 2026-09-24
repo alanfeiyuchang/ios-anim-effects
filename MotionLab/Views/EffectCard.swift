@@ -115,8 +115,40 @@ struct PreviewStage: View {
     /// Renders the demo's resting frame once. Runs on the main actor (ImageRenderer requires it).
     private func renderSnapshot(key: String, pixelsPerPoint: CGFloat) {
         guard pixelsPerPoint > 0 else { return }
-        let side = StageMetrics.previewCanvas
-        var still = context
+        let image = PreviewStill.render(
+            effect: effect,
+            language: language,
+            colorScheme: colorScheme,
+            pixelsPerPoint: pixelsPerPoint
+        )
+        if let image {
+            PreviewSnapshotCache.shared.insert(image, for: key)
+            // The still cross-fades in over the placeholder.
+            withAnimation(.easeOut(duration: 0.25)) {
+                snapshot = image
+                snapshotKey = key
+            }
+        } else {
+            failedKey = key
+        }
+    }
+}
+
+/// The still-thumbnail pipeline, shared by `PreviewStage` and the CI still audit
+/// (`CatalogTools.auditStills`), so the audit measures exactly what the grid shows.
+enum PreviewStill {
+    /// Rasterises `effect`'s resting frame (default params, preview size) on the authored canvas.
+    /// Returns nil when `ImageRenderer` cannot draw it.
+    @MainActor
+    static func render(
+        effect: Effect,
+        language: AppLanguage,
+        colorScheme: ColorScheme,
+        pixelsPerPoint: CGFloat
+    ) -> UIImage? {
+        guard pixelsPerPoint > 0 else { return nil }
+        let side: CGFloat = StageMetrics.previewCanvas
+        var still = DemoContext(params: effect.defaultParams, isPreview: true, language: language)
         still.isStill = true
         let content = effect.makeDemo(still)
             .frame(width: side, height: side)
@@ -130,16 +162,7 @@ struct PreviewStage: View {
         renderer.proposedSize = ProposedViewSize(width: side, height: side)
         renderer.scale = pixelsPerPoint
         renderer.isOpaque = false
-        if let image = renderer.uiImage {
-            PreviewSnapshotCache.shared.insert(image, for: key)
-            // The still cross-fades in over the placeholder.
-            withAnimation(.easeOut(duration: 0.25)) {
-                snapshot = image
-                snapshotKey = key
-            }
-        } else {
-            failedKey = key
-        }
+        return renderer.uiImage
     }
 }
 

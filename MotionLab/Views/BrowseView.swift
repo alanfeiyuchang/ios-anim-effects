@@ -244,7 +244,7 @@ struct BrowseView: View {
                                 .frame(width: FamilyRowMetrics.cardWidth)
                         }
                         .buttonStyle(PressableCardStyle())
-                        .accessibilityLabel(Text(verbatim: "\(family.name(language)), \(Strings.variationCount(members.count, language))"))
+                        .accessibilityLabel(Text(verbatim: "\(family.name(language))\(Strings.listSeparator(language))\(Strings.variationCount(members.count, language))"))
                         .accessibilityHint(Text(family.summary, language))
                         .environment(\.urgentSnapshots, index < 2)
                     }
@@ -309,7 +309,7 @@ struct BrowseView: View {
                         CategoryTile(category: category, count: count, familyCount: familyCount)
                     }
                     .buttonStyle(PressableCardStyle(depth: 10, tilt: true))
-                    .accessibilityLabel(Text(verbatim: "\(category.title(language)), \(Strings.familiesAndEffects(families: familyCount, effects: count, language))"))
+                    .accessibilityLabel(Text(verbatim: "\(category.title(language))\(Strings.listSeparator(language))\(Strings.familiesAndEffects(families: familyCount, effects: count, language))"))
                     .accessibilityHint(Text(category.subtitle, language))
                     .entrance(revealed, delay: 0.46 + ShellMotion.stagger(index, step: 0.05, cap: 6), distance: 22, scale: 0.95)
                     .scrollReveal()
@@ -717,7 +717,7 @@ struct CategoryView: View {
                     FamilyCard(family: family, effects: members)
                 }
                 .buttonStyle(PressableCardStyle())
-                .accessibilityLabel(Text(verbatim: "\(family.name(language)), \(Strings.variationCount(members.count, language))"))
+                .accessibilityLabel(Text(verbatim: "\(family.name(language))\(Strings.listSeparator(language))\(Strings.variationCount(members.count, language))"))
                 .accessibilityHint(Text(family.summary, language))
                 .appearEntrance(index: index, delay: 0.12, distance: 22, scale: 0.96, blur: 0)
                 .scrollReveal(blur: 0)

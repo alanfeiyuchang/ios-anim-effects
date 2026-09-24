@@ -24,6 +24,9 @@ struct PreviewStage: View {
     /// Shifts the demo inside its frame as the thumbnail moves through a horizontal scroll view
     /// (Featured carousel). Off with Reduce Motion.
     var parallax = false
+    /// Off for a live layer stacked over a still (preview strips): the still's stage shows through,
+    /// so a demo mid-entrance never blends a bare stage over the finished frame.
+    var showsBackground = true
     @Environment(\.appLanguage) private var language
     @Environment(\.previewMotionEnabled) private var motionEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -77,7 +80,7 @@ struct PreviewStage: View {
             .modifier(PreviewParallax(enabled: parallax && !reduceMotion))
         }
         .aspectRatio(1, contentMode: .fit)
-        .background(StageBackground())
+        .background { if showsBackground { StageBackground() } }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(StageRim(cornerRadius: cornerRadius))
         .animation(.easeInOut(duration: 0.25), value: isOnScreen)

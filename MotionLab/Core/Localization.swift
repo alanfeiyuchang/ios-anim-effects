@@ -197,6 +197,10 @@ enum Strings {
     static let replayAll = L("Replay All", "全部重播")
     static let replayAllHint = L("Restarts every variation at the same moment", "让所有变体在同一时刻重新开始")
     static let anyInteraction = L("Any interaction", "全部交互")
+    /// Joins the parts of a VoiceOver label: ", " / "，".
+    static let listSeparator = L(", ", "，")
+    /// Between a VoiceOver label's name and value: ": " / "：".
+    static let labelSeparator = L(": ", "：")
 
     /// "1 family" / "6 families" / "6 个系列".
     static func familyCount(_ count: Int, _ language: AppLanguage) -> String {

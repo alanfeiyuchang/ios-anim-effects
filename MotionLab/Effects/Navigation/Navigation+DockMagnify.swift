@@ -63,7 +63,7 @@ private struct DockMagnifyDemo: View {
     var body: some View {
         VStack(spacing: 18) {
             ZStack(alignment: .bottom) {
-                DockDesktop(language: ctx.language)
+                DockDesktop(language: ctx.language, clearsReplay: !ctx.isPreview)
                 if ctx.isPreview {
                     TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: true))) { timeline in
                         let t = timeline.date.timeIntervalSinceReferenceDate
@@ -276,6 +276,9 @@ private struct DockIcon: View {
 /// Miniature desktop behind the dock: wallpaper, menu bar and a floating window.
 private struct DockDesktop: View {
     let language: AppLanguage
+    /// On the detail stage the Replay orb sits over the top-trailing corner; the menu bar's clock
+    /// steps in so the orb never clips it.
+    var clearsReplay = false
     @Environment(\.colorScheme) private var scheme
 
     private var wallpaper: [Color] {
@@ -300,7 +303,8 @@ private struct DockDesktop: View {
                     .font(.caption2.weight(.semibold).monospacedDigit())
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 14)
+            .padding(.leading, 14)
+            .padding(.trailing, clearsReplay ? 44 : 14)
             .frame(height: 22)
             .background(.black.opacity(0.12))
             window

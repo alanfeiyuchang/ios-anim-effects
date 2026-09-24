@@ -129,7 +129,7 @@ struct SearchView: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text(verbatim: "\(Strings.interactionFilter(language)), \(Strings.categoryFilter(language))"))
+        .accessibilityLabel(Text(verbatim: "\(Strings.interactionFilter(language))\(Strings.listSeparator(language))\(Strings.categoryFilter(language))"))
     }
 
     private static let interactionChipID = "interaction"

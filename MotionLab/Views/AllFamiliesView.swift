@@ -29,6 +29,8 @@ struct AllFamiliesView: View {
     @State private var visibleSections: Set<String> = []
     /// While a chip-initiated jump scrolls, the passing sections do not move the pill.
     @State private var isJumping = false
+    /// Clears `isJumping` once a jump has landed; a newer jump cancels it so it cannot end that one early.
+    @State private var jumpTask: Task<Void, Never>?
     /// Height of the pinned chip strip; a jump lands each category just below it.
     @State private var jumpRowHeight: CGFloat = 52
 
@@ -196,8 +198,10 @@ struct AllFamiliesView: View {
         withAnimation(reduceMotion ? nil : Animation.smooth(duration: 0.5)) {
             reader.scrollTo(section.id, anchor: .top)
         }
-        Task { @MainActor in
+        jumpTask?.cancel()
+        jumpTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { return }
             isJumping = false
             syncJumpTarget()
         }
@@ -265,7 +269,7 @@ private struct FamilyGridItem: View {
             FamilyCard(family: family, effects: members)
         }
         .buttonStyle(PressableCardStyle())
-        .accessibilityLabel(Text(verbatim: "\(family.name(language)), \(Strings.variationCount(members.count, language))"))
+        .accessibilityLabel(Text(verbatim: "\(family.name(language))\(Strings.listSeparator(language))\(Strings.variationCount(members.count, language))"))
         .accessibilityHint(Text(family.summary, language))
         .scrollReveal(blur: 0)
     }

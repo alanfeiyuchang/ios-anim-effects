@@ -284,8 +284,8 @@ struct EffectDetailView: View {
             // Reset / Copy Prompt as custom actions; the demo's own controls (legend chips, range
             // pickers, buttons) stay individually reachable inside it.
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(Text(verbatim: "\(effect.name(language)), \(effect.summary(language))"))
-            .accessibilityHint(Text(verbatim: "\(Strings.interactionFilter(language)): \(effect.interaction.title(language))"))
+            .accessibilityLabel(Text(verbatim: "\(effect.name(language))\(Strings.listSeparator(language))\(effect.summary(language))"))
+            .accessibilityHint(Text(verbatim: "\(Strings.interactionFilter(language))\(Strings.labelSeparator(language))\(effect.interaction.title(language))"))
             .accessibilityAction(named: Text(Strings.reset, language)) { resetDemo() }
             .accessibilityAction(named: Text(Strings.copyPrompt, language)) { copyPrompt(fullPrompt) }
     }

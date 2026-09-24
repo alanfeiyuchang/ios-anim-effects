@@ -407,6 +407,13 @@ struct FamilyPreviewStrip: View {
 
     private static let dwell: Double = 3.2
 
+    /// A stable per-strip share of `dwell` (0, 1/3 or 2/3) before the first hand-off, so the cards on a
+    /// page pass their spotlights on in a ripple instead of in lockstep.
+    private var phase: Double {
+        let seed = effects.first?.id.unicodeScalars.reduce(0) { $0 + Int($1.value) } ?? 0
+        return Self.dwell * Double(seed % 3) / 3
+    }
+
     var body: some View {
         let shown = Array(effects.prefix(slots))
         let extra = effects.count - shown.count
@@ -443,8 +450,10 @@ struct FamilyPreviewStrip: View {
         .task(id: live && isVisible && shown.count > 1) {
             guard live && isVisible && shown.count > 1 else { return }
             let count = shown.count
+            var wait = Self.dwell + phase
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(Self.dwell))
+                try? await Task.sleep(for: .seconds(wait))
+                wait = Self.dwell
                 guard !Task.isCancelled else { return }
                 withAnimation(.smooth(duration: 0.55)) { spotlight = (spotlight + 1) % count }
             }
@@ -470,8 +479,8 @@ private struct StripSlot: View {
             PreviewStage(effect: effect, cornerRadius: 14)
                 .environment(\.previewMotionEnabled, layered ? false : isLit)
             if layered && isLit {
-                PreviewStage(effect: effect, cornerRadius: 14)
-                    .modifier(LiveLayerFadeIn(immediate: !hasStill))
+                PreviewStage(effect: effect, cornerRadius: 14, showsBackground: false)
+                    .modifier(LiveLayerFadeIn(cornerRadius: 14, immediate: !hasStill))
                     .environment(\.previewMotionEnabled, true)
                     .transition(.asymmetric(
                         insertion: .identity,
@@ -486,23 +495,40 @@ private struct StripSlot: View {
 /// frames and its autoplay has begun, then fades it in, so a tile never shows a demo's empty
 /// initial state.
 ///
+/// The live stage arrives without its own background, so while it fades in (and while the demo is
+/// still in its own entrance) the finished still shows through instead of a bare stage washing over
+/// it. Once the demo has settled, a stage backing fades in behind it and covers the still, so demos
+/// that do not fill the tile (spinners, particles) never show a doubled image.
+///
 /// `immediate`: nothing is underneath yet (the still has not rendered), so the live layer shows at
-/// once; hiding it would only prolong the empty tile.
+/// once, backing included; hiding it would only prolong the empty tile.
 private struct LiveLayerFadeIn: ViewModifier {
+    let cornerRadius: CGFloat
     @State private var shown: Bool
+    @State private var backed: Bool
 
-    init(immediate: Bool = false) {
+    init(cornerRadius: CGFloat, immediate: Bool = false) {
+        self.cornerRadius = cornerRadius
         _shown = State(initialValue: immediate)
+        _backed = State(initialValue: immediate)
     }
 
     func body(content: Content) -> some View {
         content
             .opacity(shown ? 1 : 0)
+            .background {
+                StageBackground()
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                    .opacity(backed ? 1 : 0)
+            }
             .task {
-                guard !shown else { return }
+                guard !backed else { return }
                 try? await Task.sleep(for: .seconds(0.7))
                 guard !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.4)) { shown = true }
+                try? await Task.sleep(for: .seconds(1.2))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.3)) { backed = true }
             }
     }
 }
@@ -567,7 +593,7 @@ struct FamilyResultChip: View {
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous))
         }
         .buttonStyle(PressableCardStyle())
-        .accessibilityLabel(Text(verbatim: "\(family.name(language)), \(Strings.variationCount(count, language))"))
+        .accessibilityLabel(Text(verbatim: "\(family.name(language))\(Strings.listSeparator(language))\(Strings.variationCount(count, language))"))
         .accessibilityHint(Text(Strings.openFamily, language))
     }
 }

@@ -360,7 +360,7 @@ struct EffectLink<Label: View>: View {
         .buttonStyle(PressableCardStyle())
         .effectContextMenu(effect)
         // A link is already one VoiceOver stop; give it "<name>, <category>" and the summary as the hint.
-        .accessibilityLabel(Text(verbatim: "\(effect.name(language)), \(effect.category.title(language))"))
+        .accessibilityLabel(Text(verbatim: "\(effect.name(language))\(Strings.listSeparator(language))\(effect.category.title(language))"))
         .accessibilityValue(Text(verbatim: favorites.contains(effect.id) ? Strings.favorited(language) : ""))
         .accessibilityHint(Text(effect.summary, language))
     }

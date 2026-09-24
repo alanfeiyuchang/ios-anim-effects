@@ -9,8 +9,8 @@ extension Effect {
         name: L("Stacked Bars Re-stack", "堆叠柱重新堆叠"),
         summary: L("Toggle a series in the legend and every stack springs to its new height.", "在图例中开关某个系列，每根堆叠柱都会弹性调整到新高度。"),
         prompt: L(
-            "A “Revenue by channel” card with six monthly stacked bars (Apr–Sep, 58% width, 3 pt corners) built from three series — Subscriptions (indigo), In-app (pink) and Ads (amber) — over a dashed grid with a trailing $0–$25k axis. On appear, month columns rise from the baseline one after another, 60 ms apart, on a spring (response ≈ 0.55 s, damping ≈ 0.75). Below, three legend chips act as toggles: switching a series off collapses its segments to zero while the segments above slide down to close the gap, all on one spring, and its chip dims with a strikethrough; switching it back re-stacks them. The header total rolls to the visible sum with a numeric transition. Tapping the chart replays the rise. Crisp, comparative and explorable.",
-            "一张“各渠道营收”卡片：六个月（4 月～9 月）的堆叠柱（柱宽 58%，圆角 3pt）由三个系列组成——订阅（靛蓝）、应用内购（粉）与广告（琥珀），背景为虚线网格，右侧为 $0～$25k 刻度。出现时各月柱子依次从基线升起，间隔 60ms，使用弹簧（响应约 0.55 秒、阻尼约 0.75）。下方三枚图例胶囊即开关：关闭某系列时其分段缩为零、上方分段下滑补位，同在一个弹簧中完成，胶囊变暗并加删除线；重新打开则再次堆叠。标题总额以数字滚动更新为可见系列之和。点击图表重播升起动画。"
+            "A “Revenue by channel” card with six monthly stacked bars (Apr–Sep, 58% width, 3 pt corners) built from three series — Subscriptions (indigo), In-app (pink) and Ads (amber) — over a dashed grid with a trailing $0–$25k axis. On appear, month columns rise from the baseline one after another, 60 ms apart, on a spring (response ≈ 0.55 s, damping ≈ 0.75). Below, three legend chips act as toggles: switching a series off collapses its segments to zero while the segments above slide down to close the gap, all on one spring, and its chip dims with a strikethrough; switching it back re-stacks them. The header total rolls to the visible sum with a numeric transition. Tapping the chart drains the stacks in 180 ms and replays the rise. Crisp, comparative and explorable.",
+            "一张“各渠道营收”卡片：六个月（4 月～9 月）的堆叠柱（柱宽 58%，圆角 3pt）由三个系列组成——订阅（靛蓝）、应用内购（粉）与广告（琥珀），背景为虚线网格，右侧为 $0～$25k 刻度。出现时各月柱子依次从基线升起，间隔 60ms，使用弹簧（响应约 0.55 秒、阻尼约 0.75）。下方三枚图例胶囊即开关：关闭某系列时其分段缩为零、上方分段下滑补位，共用一个弹簧，胶囊变暗并加删除线；重新打开则再堆叠。标题总额以数字滚动更新为可见系列之和。点击图表则柱子先在 180ms 内回落再重新升起。"
         ),
         implementation: L(
             "Swift Charts BarMarks colored with foregroundStyle(by:) stack automatically; hidden series keep their marks at 0 so identities persist and withAnimation(.spring) interpolates every segment. A per-month grow factor animated with staggered delays drives the entrance.",
@@ -58,6 +58,8 @@ private struct StackedBarsDemo: View {
     /// Seeded fully grown so still snapshots show the stacks; `onAppear` (and a tap) replays the rise.
     @State private var grow: [Double] = Array(repeating: 1, count: stackData.count)
     @State private var autoIndex = 0
+    /// Bumped by every rise so a stale delayed rise never fires after a newer tap.
+    @State private var riseGeneration = 0
 
     private var spring: Animation {
         .spring(response: ctx["response"], dampingFraction: ctx["damping"])
@@ -79,7 +81,7 @@ private struct StackedBarsDemo: View {
             chart
                 .frame(height: 170)
                 .contentShape(Rectangle())
-                .onTapGesture { rise() }
+                .onTapGesture { replayRise() }
             legend
         }
         .padding(18)
@@ -175,14 +177,36 @@ private struct StackedBarsDemo: View {
         withAnimation(spring) { visible[index].toggle() }
     }
 
+    /// Arrival: an instant reset to the baseline, then the staggered rise.
     private func rise() {
+        riseGeneration += 1
+        let generation = riseGeneration
         ChartEntrance.replay(reset: {
             grow = Array(repeating: 0, count: stackData.count)
         }, then: {
-            for month in stackData.indices {
-                withAnimation(spring.delay(Double(month) * ctx["stagger"])) { grow[month] = 1 }
-            }
+            guard generation == riseGeneration else { return }
+            staggerRise()
         })
+    }
+
+    /// Tap: the stacks drain to the baseline (easeIn 180 ms) before rising again, so there is no hard cut.
+    private func replayRise() {
+        riseGeneration += 1
+        let generation = riseGeneration
+        withAnimation(.easeIn(duration: 0.18)) {
+            grow = Array(repeating: 0, count: stackData.count)
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.2))
+            guard generation == riseGeneration else { return }
+            staggerRise()
+        }
+    }
+
+    private func staggerRise() {
+        for month in stackData.indices {
+            withAnimation(spring.delay(Double(month) * ctx["stagger"])) { grow[month] = 1 }
+        }
     }
 
     /// Previews: hide one series, then bring it back.

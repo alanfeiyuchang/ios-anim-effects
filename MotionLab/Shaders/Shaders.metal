@@ -163,7 +163,7 @@ float2 mlLensDrop(float2 position, float2 center, float radius, float strength, 
         float wave = exp(-band * band * 40.0) * sin(band * 18.0) * (1.0 - ripple);
         float len = length(local);
         if (len > 0.001) {
-            source += (local / len) * wave * 6.0;
+            source += (local / len) * wave * 9.0;
         }
     }
     return center + float2(c * source.x - s * source.y, s * source.x + c * source.y);

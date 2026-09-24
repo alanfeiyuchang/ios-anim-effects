@@ -32,8 +32,8 @@ extension Effect {
         name: L("Liquid Glass Lens", "液态玻璃透镜"),
         summary: L("Drag a Liquid Glass droplet that refracts the content beneath.", "拖动一滴液态玻璃，实时折射下方内容。"),
         prompt: L(
-            "A Liquid Glass droplet (iOS 26 material) rests over a colorful grid of content. After a 0.1 s hold, dragging keeps the finger's offset and the droplet trails the finger on a tight spring (response ≈ 0.18 s); the glass refracts whatever is beneath in real time, its rim catching specular light. It stretches up to 12% along the exact direction of travel — diagonals included — while narrowing across it, springing round again (response 0.35 s, damping 0.6) on release. A tap makes it pulse like a water bead. On iOS 18 a clear, unblurred bead sits over a Metal lens that stretches along the same heading and sends a ripple ring out on each tap, so the lensing and its liquid motion survive. A physical, optical layer floating over the UI.",
-            "一滴液态玻璃（iOS 26 材质）停在一片色彩丰富的内容网格之上。按住 0.1 秒后拖动，保持手指与水滴的相对偏移，水滴以紧致弹簧（响应约 0.18 秒）跟随手指；玻璃实时折射下方内容，边缘捕捉镜面高光。它沿真实运动方向（包括斜向）拉长最多 12%、垂直方向相应收窄，松手后以弹簧（响应 0.35 秒、阻尼 0.6）回弹成正圆。点击时它像水珠般脉动。iOS 18 上，透明无模糊的水珠下方由 Metal 透镜沿同一方向拉伸，点击时荡开一圈水波，透镜感与液态动感依然保留。如一层悬浮于界面之上的光学材质。"
+            "A Liquid Glass droplet (iOS 26 material) rests over a colorful grid of content. After a 0.1 s hold, dragging keeps the finger's offset and the droplet trails the finger on a tight spring (response ≈ 0.18 s); the glass refracts whatever is beneath in real time, its rim catching specular light. It stretches up to 12% along the exact direction of travel — diagonals included — while narrowing across it, springing round again (response 0.35 s, damping 0.6) on release. A tap makes it pulse like a water bead. On iOS 18 a clear, unblurred bead sits over a light Metal lens — a thin water film, not a magnifier — that stretches along the same heading and sends a bold ripple ring out on each tap, so its liquid motion survives. A physical, optical layer floating over the UI.",
+            "一滴液态玻璃（iOS 26 材质）停在一片色彩丰富的内容网格之上。按住 0.1 秒后拖动，保持手指与水滴的相对偏移，水滴以紧致弹簧（响应约 0.18 秒）跟随手指；玻璃实时折射下方内容，边缘捕捉镜面高光。它沿真实运动方向（包括斜向）拉长最多 12%、垂直方向相应收窄，松手后以弹簧（响应 0.35 秒、阻尼 0.6）回弹成正圆。点击时它像水珠般脉动。iOS 18 上，透明水珠下是一层轻薄的 Metal 透镜（似水膜而非放大镜），沿同向拉伸，点击时荡开明显水波。如一层悬浮于界面之上的光学材质。"
         ),
         implementation: L(
             "On iOS 26 the droplet uses .glassEffect(.regular.interactive(), in: Circle()); earlier systems draw a clear bead (gradient rim, inner hairline, specular highlight — no blur) over an mlLensDrop distortion whose elliptical footprint follows the stretch and whose ripple ring plays on tap. Drag velocity sets a stretch applied as rotate(−θ) → scale → rotate(θ), so it follows any direction.",
@@ -382,7 +382,9 @@ private struct LensRefraction: ViewModifier, Animatable {
             ShaderLibrary.mlLensDrop(
                 .float2(center),
                 .float(radius),
-                .float(0.32),
+                // Deliberately light (a thin water film, not a magnifier) so the droplet's own stretch and
+                // tap ripple carry the effect; the Magnifier and Refracting Sphere own the strong zoom.
+                .float(0.2),
                 .float(heading),
                 .float(stretch),
                 .float(ripple)

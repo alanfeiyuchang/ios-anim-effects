@@ -38,8 +38,63 @@ jobs:
           path: out/
           retention-days: 3
 
+  # Uploads a simulator build to Appetize.io so the site can embed the real, interactive app.
+  # Needs the APPETIZE_API_TOKEN repository secret; without it this job does nothing and the site has no live preview.
+  # The app's public key is kept in docs/appetize.json so later uploads replace the same app (and embed links stay valid).
+  appetize:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[site]')
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    outputs:
+      key: ${{ steps.upload.outputs.key }}
+    env:
+      APPETIZE_API_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for the simulator
+        if: env.APPETIZE_API_TOKEN != ''
+        run: |
+          PICK=$(ls -d /Applications/Xcode_26*.app | grep -v -i beta | sort -V | tail -n 1)
+          sudo xcode-select -s "$PICK"
+          xcodebuild -project MotionLab.xcodeproj -scheme MotionLab -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -configuration Release -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO build > build.log 2>&1 \
+            || { tail -n 40 build.log; exit 1; }
+          cd build/Build/Products/Release-iphonesimulator
+          APP=$(ls -d *.app | head -n 1)
+          zip -qry "$GITHUB_WORKSPACE/app.zip" "$APP"
+      - name: Upload to Appetize
+        id: upload
+        if: env.APPETIZE_API_TOKEN != ''
+        run: |
+          KEY=$(jq -r '.publicKey // empty' docs/appetize.json 2>/dev/null || true)
+          upload() {
+            curl -sS -X POST "https://api.appetize.io/v1/apps$1" -H "X-API-KEY: $APPETIZE_API_TOKEN" \
+              -F "file=@app.zip" -F "platform=ios" -F "note=Motion Lexicon ${GITHUB_SHA::7}"
+          }
+          RESP=$( [ -n "$KEY" ] && upload "/$KEY" || true )
+          NEW=$(echo "$RESP" | jq -r '.publicKey // empty' 2>/dev/null || true)
+          if [ -z "$NEW" ]; then
+            [ -n "$KEY" ] && echo "Updating $KEY failed ($RESP); creating a new app"
+            RESP=$(upload "")
+            NEW=$(echo "$RESP" | jq -r '.publicKey // empty' 2>/dev/null || true)
+          fi
+          if [ -z "$NEW" ]; then echo "Appetize upload failed: $RESP"; exit 1; fi
+          echo "key=$NEW" >> "$GITHUB_OUTPUT"
+          echo "Appetize app: https://appetize.io/app/$NEW"
+          if [ "$NEW" != "$KEY" ]; then
+            printf '{\n  "publicKey": "%s"\n}\n' "$NEW" > docs/appetize.json
+            git config user.name "github-actions[bot]"
+            git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+            git add docs/appetize.json
+            git commit -m "Record Appetize app key [skip ci]"
+            for i in 1 2 3; do git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && break; sleep 5; done
+          fi
+
   site:
-    needs: record
+    needs: [record, appetize]
     # Publish whatever shards finished; missing clips fall back to posters or placeholders on the page.
     if: ${{ !cancelled() && needs.record.result != 'skipped' }}
     concurrency:
@@ -62,7 +117,7 @@ jobs:
           mkdir -p media
           for d in shards/shard-*; do cp -R "$d/media/." media/ 2>/dev/null || true; done
           cp "$(ls shards/shard-*/catalog.json | head -n 1)" catalog.json
-          python3 scripts/build_site.py catalog.json media site
+          APPETIZE_PUBLIC_KEY="${{ needs.appetize.outputs.key }}" python3 scripts/build_site.py catalog.json media site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

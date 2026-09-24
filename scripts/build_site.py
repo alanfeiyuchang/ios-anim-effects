@@ -49,13 +49,24 @@ def main():
     for category in catalog["categories"]:
         category["gradient"] = CATEGORY_GRADIENTS.get(category["id"], ["#6E7BFF", "#A46BFF"])
 
+    # Live, interactive app (Appetize.io); falls back to the key recorded by an earlier upload.
+    key = os.environ.get("APPETIZE_PUBLIC_KEY", "").strip()
+    if not key:
+        try:
+            with open(os.path.join(os.path.dirname(__file__), "..", "docs", "appetize.json"), encoding="utf-8") as f:
+                key = json.load(f).get("publicKey", "")
+        except (OSError, ValueError):
+            key = ""
+    catalog["appetize"] = key
+
     data = json.dumps(catalog, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     page = TEMPLATE.replace("__DATA__", data)
     with open(os.path.join(out_dir, "index.html"), "w", encoding="utf-8") as f:
         f.write(page)
     with open(os.path.join(out_dir, ".nojekyll"), "w") as f:
         f.write("")
-    print(f"Site: {len(catalog['effects'])} effects, {videos} videos, {posters} posters → {out_dir}")
+    print(f"Site: {len(catalog['effects'])} effects, {videos} videos, {posters} posters, "
+          f"live preview {'on (' + key + ')' if key else 'off'} → {out_dir}")
 
 
 TEMPLATE = r"""<!doctype html>
@@ -148,6 +159,11 @@ table.params th{color:var(--muted);font-weight:600}
 .variants .v .media{border-radius:12px}
 .variants .v span{display:block;font-size:11px;margin-top:4px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .variants .v.on span{color:var(--text);font-weight:700}
+.live{position:relative;width:100%;aspect-ratio:9/19.5;max-height:78vh;border-radius:20px;overflow:hidden;background:#000}
+.live iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.hero .btn{position:relative;margin-top:16px}
+.dlg-app{padding:18px;display:grid;place-items:center}
+.dlg-app .live{width:min(390px,100%)}
 footer{padding:40px 0 60px;color:var(--muted);font-size:13px;text-align:center}
 </style>
 </head>
@@ -155,6 +171,7 @@ footer{padding:40px 0 60px;color:var(--muted);font-size:13px;text-align:center}
 <header class="hero"><div class="mesh"></div><div class="wrap">
   <h1 data-i18n="title"></h1><p data-i18n="subtitle"></p>
   <div class="stats" id="stats"></div>
+  <button class="btn" id="tryApp" hidden></button>
 </div></header>
 <div class="bar"><div class="wrap">
   <label class="search"><span aria-hidden="true">⌕</span><input id="q" type="search" autocomplete="off"></label>
@@ -169,11 +186,13 @@ const I18N = {
   zh:{title:"动效词典",subtitle:"高级 iOS 动效活字典：每个动效都附实时录制的动画循环、可调参数与中英专业提示词。",effects:"个动效",categories:"个分类",families:"个家族",
       search:"搜索动效、API、关键词…",all:"全部",prompt:"提示词",copy:"复制提示词",copied:"已复制",impl:"实现方式",apis:"关键 API",tags:"标签",params:"参数",
       param:"参数",def:"默认值",range:"范围",variants:"同家族变体",none:"暂无录像",noResults:"没有匹配的动效",requires:"需要",close:"关闭",
-      foot:"由 Motion Lexicon App 自动生成 · 动画均为 iOS 模拟器实录"},
+      foot:"由 Motion Lexicon App 自动生成 · 动画均为 iOS 模拟器实录",
+      live:"▶ 在线交互试玩",liveApp:"▶ 在线试玩完整 App",video:"返回录像",liveNote:"真实 App 运行在云端 iOS 模拟器中（Appetize.io），可直接点击、拖动。启动约需数秒。"},
   en:{title:"Motion Lexicon",subtitle:"A living dictionary of premium iOS motion — every effect with a real recorded loop, tunable parameters and a native bilingual prompt.",effects:"effects",categories:"categories",families:"families",
       search:"Search effects, APIs, keywords…",all:"All",prompt:"Prompt",copy:"Copy prompt",copied:"Copied",impl:"Implementation",apis:"Key APIs",tags:"Tags",params:"Parameters",
       param:"Parameter",def:"Default",range:"Range",variants:"Variations in this family",none:"No recording yet",noResults:"No matching effects",requires:"Requires",close:"Close",
-      foot:"Generated from the Motion Lexicon app · every animation recorded in the iOS Simulator"}
+      foot:"Generated from the Motion Lexicon app · every animation recorded in the iOS Simulator",
+      live:"▶ Try it live",liveApp:"▶ Try the full app live",video:"Back to video",liveNote:"The real app running in a cloud iOS Simulator (Appetize.io) — tap and drag as on a phone. It takes a few seconds to boot."}
 };
 let lang = localStorage.getItem("ml.lang") || ((navigator.language||"").toLowerCase().startsWith("zh") ? "zh" : "en");
 let cat = null, query = "";
@@ -195,6 +214,21 @@ function mediaHTML(e, autoplay){
   if (p) return `<img loading="lazy" src="${p}" alt="">`;
   return `<div class="none">${t("none")}</div>`;
 }
+// Appetize embed of the real app; `link` deep-links to one screen (motionlexicon://effect/<id>).
+function liveHTML(link){
+  const q = new URLSearchParams({device:"iphone16pro", scale:"auto", autoplay:"true", centered:"both",
+    language: lang === "zh" ? "zh-Hans" : "en", locale: lang === "zh" ? "zh_CN" : "en_US"});
+  if (link) q.set("launchUrl", link);
+  return `<div class="live"><iframe src="https://appetize.io/embed/${encodeURIComponent(DATA.appetize)}?${q}"
+    allow="clipboard-write" title="Motion Lexicon"></iframe></div><p style="color:var(--muted);font-size:12px">${t("liveNote")}</p>`;
+}
+function openApp(){
+  const d = $("#dlg");
+  d.innerHTML = `<div style="position:relative"><button class="btn ghost close" id="x" aria-label="${t("close")}">✕</button>
+    <div class="dlg-app">${liveHTML("")}</div></div>`;
+  d.querySelector("#x").onclick = () => d.close();
+  if (!d.open) d.showModal();
+}
 function cardHTML(e){
   return `<article class="card" data-id="${e.id}" tabindex="0" role="button" aria-label="${esc(L(e.name))}">
     <div class="media">${mediaHTML(e)}${e.requirement?`<span class="badge">${esc(e.requirement)}</span>`:""}</div>
@@ -205,6 +239,7 @@ function render(){
   document.title = lang === "zh" ? "动效词典 · Motion Lexicon" : "Motion Lexicon · 动效词典";
   document.querySelectorAll("[data-i18n]").forEach(n => n.textContent = t(n.dataset.i18n));
   $("#q").placeholder = t("search");
+  $("#tryApp").hidden = !DATA.appetize; $("#tryApp").textContent = t("liveApp");
   $("#lang-zh").classList.toggle("on", lang==="zh"); $("#lang-en").classList.toggle("on", lang==="en");
   $("#stats").innerHTML = `<span class="pill"><b>${DATA.effects.length}</b> ${t("effects")}</span>
     <span class="pill"><b>${DATA.families.length}</b> ${t("families")}</span><span class="pill"><b>${DATA.categories.length}</b> ${t("categories")}</span>`;
@@ -259,7 +294,8 @@ function openEffect(id){
   const sibs = f ? DATA.effects.filter(x => x.family === f.id) : [];
   const d = $("#dlg");
   d.innerHTML = `<div style="position:relative"><button class="btn ghost close" id="x" aria-label="${t("close")}">✕</button>
-   <div class="dlg"><div><div class="media">${mediaHTML(e, true)}</div>
+   <div class="dlg"><div><div id="stage"><div class="media">${mediaHTML(e, true)}</div></div>
+   ${DATA.appetize?`<div style="margin-top:10px"><button class="btn" id="live">${t("live")}</button></div>`:""}
    ${sibs.length>1?`<div class="block"><h5>${t("variants")}</h5><div class="variants">${sibs.map(s=>`<div class="v ${s.id===e.id?"on":""}" data-id="${s.id}"><div class="media">${pick(s,"poster")?`<img loading="lazy" src="${pick(s,"poster")}" alt="">`:""}</div><span>${esc(L(s.name))}</span></div>`).join("")}</div></div>`:""}
    </div><div>
    <div class="meta"><span class="tag">${esc(L((DATA.categories.find(c=>c.id===e.category)||{}).title||{}))}</span>${f?`<span class="tag">${esc(L(f.name))}</span>`:""}${e.requirement?`<span class="tag">${t("requires")} ${esc(e.requirement)}</span>`:""}</div>
@@ -285,6 +321,15 @@ function openEffect(id){
     ev.target.textContent = shownLang === "zh" ? "English prompt" : "中文提示词";
   };
   d.querySelectorAll(".variants .v").forEach(v => v.onclick = () => openEffect(v.dataset.id));
+  const live = d.querySelector("#live");
+  if (live){
+    const stage = d.querySelector("#stage"), recorded = stage.innerHTML;
+    live.onclick = () => {
+      const on = !stage.querySelector(".live");
+      stage.innerHTML = on ? liveHTML("motionlexicon://effect/" + e.id) : recorded;
+      live.textContent = on ? t("video") : t("live");
+    };
+  }
   if (!d.open) d.showModal();
   history.replaceState(null, "", "#" + e.id);
 }
@@ -294,6 +339,7 @@ document.addEventListener("click", ev => {
 });
 document.addEventListener("keydown", ev => { if (ev.key==="Enter" && ev.target.classList && ev.target.classList.contains("card")) openEffect(ev.target.dataset.id); });
 $("#dlg").addEventListener("close", () => history.replaceState(null, "", location.pathname));
+$("#tryApp").onclick = openApp;
 $("#q").addEventListener("input", ev => { query = ev.target.value; render(); });
 $("#lang-zh").onclick = () => { lang="zh"; localStorage.setItem("ml.lang","zh"); render(); };
 $("#lang-en").onclick = () => { lang="en"; localStorage.setItem("ml.lang","en"); render(); };

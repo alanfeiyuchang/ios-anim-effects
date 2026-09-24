@@ -165,7 +165,7 @@ struct RootView: View {
         @Bindable var router = navigator
         return TabView(selection: $router.tab) {
             Tab(Strings.browse(language), systemImage: "square.grid.2x2.fill", value: AppTab.browse) {
-                RoutedStack(initialPath: LaunchOptions.initialPath) { BrowseView() }
+                RoutedStack(initialPath: LaunchOptions.initialPath, acceptsLinks: true) { BrowseView() }
             }
             Tab(Strings.search(language), systemImage: "magnifyingglass", value: AppTab.search, role: .search) {
                 RoutedStack(popsToRootOnSearch: true) { SearchView() }
@@ -257,11 +257,18 @@ struct RoutedStack<Content: View>: View {
     @Environment(AppNavigator.self) private var navigator
     private let initialPath: [Route]
     private let popsToRootOnSearch: Bool
+    private let acceptsLinks: Bool
     private let content: () -> Content
 
-    init(initialPath: [Route] = [], popsToRootOnSearch: Bool = false, @ViewBuilder content: @escaping () -> Content) {
+    init(
+        initialPath: [Route] = [],
+        popsToRootOnSearch: Bool = false,
+        acceptsLinks: Bool = false,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.initialPath = initialPath
         self.popsToRootOnSearch = popsToRootOnSearch
+        self.acceptsLinks = acceptsLinks
         self.content = content
     }
 
@@ -281,14 +288,21 @@ struct RoutedStack<Content: View>: View {
             // SwiftUI's "missing destination" placeholder).
             guard !appliedInitialPath else { return }
             appliedInitialPath = true
-            guard !initialPath.isEmpty else { return }
+            // A `motionlexicon://` link that arrived during launch, before this stack existed.
+            let linked: [Route] = acceptsLinks ? navigator.linkedRoute.map { [$0] } ?? [] : []
+            let path = linked.isEmpty ? initialPath : linked
+            guard !path.isEmpty else { return }
             await Task.yield()
             var transaction = Transaction()
             transaction.disablesAnimations = true
-            withTransaction(transaction) { self.router.path = initialPath }
+            withTransaction(transaction) { self.router.path = path }
         }
         .onChange(of: navigator.searchRevision) {
             if popsToRootOnSearch { self.router.path = [] }
+        }
+        .onChange(of: navigator.linkRevision) {
+            guard acceptsLinks, let route = navigator.linkedRoute else { return }
+            self.router.path = [route]
         }
     }
 

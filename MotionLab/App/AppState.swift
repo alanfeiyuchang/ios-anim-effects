@@ -34,6 +34,22 @@ final class AppNavigator {
         tab = .search
     }
 
+    /// A route requested from outside the app (a `motionlexicon://` link); Browse pushes it.
+    private(set) var linkedRoute: Route?
+    private(set) var linkRevision = 0
+
+    /// Opens `motionlexicon://effect/<id>`, `…/category/<id>`, `…/family/<id>` or `…/families`
+    /// on the Browse tab. Unknown links are ignored.
+    func open(_ url: URL) {
+        guard url.scheme == "motionlexicon", let host = url.host() else { return }
+        let id = url.pathComponents.dropFirst().first ?? ""
+        let raw = id.isEmpty ? host : "\(host):\(id)"
+        guard let route = LaunchOptions.route(from: raw) else { return }
+        linkedRoute = route
+        linkRevision += 1
+        tab = .browse
+    }
+
     var hasActiveFilters: Bool { category != nil || interaction != nil }
 
     func clearFilters() {

@@ -265,7 +265,7 @@ private struct FamilyGridItem: View {
 
     var body: some View {
         let members = EffectFamilies.effects(in: family)
-        ZoomRouteLink(route: Route.family(family.id, source: "allFamilies")) {
+        ZoomRouteLink(route: Route.family(family.id, source: "allFamilies"), cornerRadius: CornerRadius.card) {
             FamilyCard(family: family, effects: members)
         }
         .buttonStyle(PressableCardStyle())

@@ -435,7 +435,7 @@ struct EffectDetailView: View {
                 VStack(spacing: 8) {
                     // Rows cascade in one after another as they scroll into view.
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        EffectLink(effect: item, source: "related") {
+                        EffectLink(effect: item, source: "related", cornerRadius: 12) {
                             RelatedEffectRow(effect: item)
                         }
                         .scrollReveal(delay: 0.06 + ShellMotion.stagger(index, step: 0.07), distance: 18, scale: 0.97, blur: 3)

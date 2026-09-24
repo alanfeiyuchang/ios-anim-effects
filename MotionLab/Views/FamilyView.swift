@@ -157,7 +157,7 @@ private struct FamilyCompareList: View {
             header
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(Array(effects.enumerated()), id: \.element.id) { index, effect in
-                    EffectLink(effect: effect, source: "compare") {
+                    EffectLink(effect: effect, source: "compare", cornerRadius: compact ? CornerRadius.section : CornerRadius.card) {
                         CompareCard(effect: effect, position: index + 1, total: total, compact: compact, replays: replays,
                                     stageNamespace: stageNamespace)
                     }

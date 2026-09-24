@@ -188,7 +188,7 @@ struct BrowseView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: FeaturedMetrics.spacing) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, effect in
-                        EffectLink(effect: effect, source: "featured") {
+                        EffectLink(effect: effect, source: "featured", cornerRadius: CornerRadius.featuredCard) {
                             FeaturedCard(effect: effect, isFocused: index == focused)
                         }
                         .modifier(CoverFlowEffect(enabled: motion))
@@ -239,7 +239,7 @@ struct BrowseView: View {
                 LazyHStack(alignment: .top, spacing: 14) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, family in
                         let members = EffectFamilies.effects(in: family)
-                        ZoomRouteLink(route: Route.family(family.id, source: "browseFamily")) {
+                        ZoomRouteLink(route: Route.family(family.id, source: "browseFamily"), cornerRadius: CornerRadius.card) {
                             FamilyCard(family: family, effects: members)
                                 .frame(width: FamilyRowMetrics.cardWidth)
                         }
@@ -274,7 +274,7 @@ struct BrowseView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 12) {
                     ForEach(recents.effects) { effect in
-                        EffectLink(effect: effect, source: "recent") {
+                        EffectLink(effect: effect, source: "recent", cornerRadius: CornerRadius.compactThumbnail) {
                             CompactEffectCard(effect: effect)
                         }
                         .scrollTransition(.interactive, axis: .horizontal) { content, phase in
@@ -305,7 +305,7 @@ struct BrowseView: View {
                 ForEach(Array(EffectCategory.allCases.enumerated()), id: \.element) { index, category in
                     let count = EffectLibrary.effects(in: category).count
                     let familyCount = EffectFamilies.families(in: category).count
-                    ZoomRouteLink(route: Route.category(category, source: "tile")) {
+                    ZoomRouteLink(route: Route.category(category, source: "tile"), cornerRadius: CornerRadius.section) {
                         CategoryTile(category: category, count: count, familyCount: familyCount)
                     }
                     .buttonStyle(PressableCardStyle(depth: 10, tilt: true))
@@ -713,7 +713,7 @@ struct CategoryView: View {
         LazyVGrid(columns: familyColumns, spacing: 14) {
             ForEach(Array(families.enumerated()), id: \.element.id) { index, family in
                 let members = EffectFamilies.effects(in: family)
-                ZoomRouteLink(route: Route.family(family.id, source: "familyCard")) {
+                ZoomRouteLink(route: Route.family(family.id, source: "familyCard"), cornerRadius: CornerRadius.card) {
                     FamilyCard(family: family, effects: members)
                 }
                 .buttonStyle(PressableCardStyle())

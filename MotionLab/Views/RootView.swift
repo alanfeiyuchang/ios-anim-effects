@@ -102,12 +102,18 @@ struct ZoomSource: ViewModifier {
 /// A navigation link that zooms its destination out of `label` (category tiles, family cards).
 struct ZoomRouteLink<Label: View>: View {
     let route: Route
+    /// Corner radius of a card label, so the zoom back doesn't square off its corners (see `EffectLink`).
+    var cornerRadius: CGFloat? = nil
     @ViewBuilder var label: () -> Label
     @Environment(\.zoomNamespace) private var namespace
 
     var body: some View {
         NavigationLink(value: route) {
-            if let namespace, !route.source.isEmpty {
+            if let namespace, !route.source.isEmpty, let cornerRadius {
+                label().matchedTransitionSource(id: route.zoomID, in: namespace) { source in
+                    source.clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                }
+            } else if let namespace, !route.source.isEmpty {
                 label().matchedTransitionSource(id: route.zoomID, in: namespace)
             } else {
                 label()
@@ -349,6 +355,9 @@ struct EffectLink<Label: View>: View {
     let effect: Effect
     /// Placement name, unique per screen region (see `Route.effect`).
     let source: String
+    /// Corner radius of the card the label draws. The zoom transition snapshots its source as a plain
+    /// rectangle, so without it the card's corners turn square and black while zooming back in.
+    var cornerRadius: CGFloat = CornerRadius.card
     @ViewBuilder var label: () -> Label
     @Environment(\.zoomNamespace) private var namespace
     @Environment(\.appLanguage) private var language
@@ -382,7 +391,9 @@ struct EffectLink<Label: View>: View {
     @ViewBuilder
     private var sourceLabel: some View {
         if let namespace {
-            label().matchedTransitionSource(id: Route.zoomID(effect: effect.id, source: source), in: namespace)
+            label().matchedTransitionSource(id: Route.zoomID(effect: effect.id, source: source), in: namespace) { source in
+                source.clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            }
         } else {
             label()
         }

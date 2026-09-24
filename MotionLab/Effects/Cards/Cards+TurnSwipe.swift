@@ -67,16 +67,20 @@ private struct CardsTurnSwipeDemo: View {
         let threshold = max(ctx.cg("threshold"), 1)
         let progress = min(abs(drag) / threshold, 1)
         let dragAngle = Double(drag / threshold) * ctx["maxAngle"]
-        let angle: Double = isTop ? (thrown ?? dragAngle.clamped(to: -89...89)) + incoming : 0
+        // While the top card is thrown, the card behind already takes the incoming pre-turn
+        // (25° the other way, 92%), so the reorder that follows changes nothing on screen.
+        let preTurn: Double = (depth == 1 && thrown != nil) ? -((thrown ?? 0) >= 0 ? 1 : -1) * 25 : 0
+        let angle: Double = isTop ? (thrown ?? dragAngle.clamped(to: -89...89)) + incoming : preTurn
         let edge = abs(sin(angle * .pi / 180))
         let slot = max(CGFloat(depth) - (thrown == nil ? 0 : 1), 0)
+        let turnScale = 1 - CGFloat(abs(isTop ? incoming : preTurn)) / 25 * 0.08
         return CardsDeckFace(index: id, language: ctx.language)
             .overlay {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(Color.black.opacity(0.45 * edge))
             }
             .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: ctx.cg("perspective"))
-            .scaleEffect(isTop ? 1 - CGFloat(abs(incoming)) / 25 * 0.08 : 1 - slot * 0.06)
+            .scaleEffect(isTop || preTurn != 0 ? turnScale : 1 - slot * 0.06)
             .offset(x: isTop ? drag * 0.55 : 0, y: isTop ? 0 : slot * 16)
             .opacity(depth < 3 ? 1 : (depth == 3 ? Double(progress) : 0))
             .shadow(color: .black.opacity(0.16), radius: 14, y: 8)

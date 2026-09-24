@@ -142,8 +142,17 @@ private struct ScrollLiquidThumb: View {
         let speed = min(abs(velocity) / 30, 1) * stretch
         let length = max(baseLength * (1 + speed) * (1 - squash), 10)
         let top = inset + (track - baseLength) * progress
-        // Stretch trails behind the motion: grow upward when moving down and vice versa.
-        let stretchY = velocity > 0 ? baseLength - length : 0
+        // Past an end the squashed thumb stays pressed against that edge whatever the velocity
+        // (pull, hold or bounce-back); inside the range the stretch trails behind the motion:
+        // grow upward when moving down and vice versa.
+        let stretchY: CGFloat
+        if metrics.offset > metrics.range {
+            stretchY = baseLength - length
+        } else if metrics.offset < 0 {
+            stretchY = 0
+        } else {
+            stretchY = velocity > 0 ? baseLength - length : 0
+        }
         let width: CGFloat = (visible ? 8 : 5) + squash / 0.7 * 2
         ZStack(alignment: .topTrailing) {
             Capsule()

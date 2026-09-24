@@ -67,7 +67,7 @@ private struct DragReorderDemo: View {
                         isLifted: draggingID == item.id,
                         lift: ctx.cg("lift"),
                         onChanged: { dy in userChanged(id: item.id, dy: dy) },
-                        onEnded: { userEnded() }
+                        onEnded: { completed in userEnded(completed: completed) }
                     )
                     .frame(height: rowHeight)
                     .offset(y: rowOffset(index: index, id: item.id))
@@ -105,11 +105,22 @@ private struct DragReorderDemo: View {
         changed(id: id, index: index, dy: dy)
     }
 
-    /// Single, guarded end of a real drag (lift or system cancellation).
-    private func userEnded() {
+    /// Single, guarded end of a real drag. A lift commits the move; a system cancellation
+    /// (e.g. the page scroll stealing the vertical drag) never does.
+    private func userEnded(completed: Bool) {
         guard held else { return }
         held = false
-        ended()
+        if completed { ended() } else { cancelDrag() }
+    }
+
+    /// Cancelled drag: the lifted row and its neighbours spring back to their slots, order unchanged, silently.
+    private func cancelDrag() {
+        guard draggingID != nil else { return }
+        withAnimation(.spring(response: ctx["response"] + 0.08, dampingFraction: 0.78)) {
+            target = dragFrom
+            draggingID = nil
+            dragY = 0
+        }
     }
 
     /// Leaving the screen: stop the script and drop any lifted row back without reordering.
@@ -181,7 +192,8 @@ private struct ReorderRow: View {
     let isLifted: Bool
     let lift: CGFloat
     let onChanged: (CGFloat) -> Void
-    let onEnded: () -> Void
+    /// `true` for a lift, `false` for a system cancellation.
+    let onEnded: (Bool) -> Void
     /// Resets on system cancellation too, so a stolen touch still drops the row (the demo guards double ends).
     @GestureState private var pressing = false
 
@@ -218,10 +230,10 @@ private struct ReorderRow: View {
                 DragGesture(minimumDistance: 0, coordinateSpace: .global)
                     .updating($pressing) { _, state, _ in state = true }
                     .onChanged { value in onChanged(value.translation.height) }
-                    .onEnded { _ in onEnded() }
+                    .onEnded { _ in onEnded(true) }
             )
             .onChange(of: pressing) { _, isPressing in
-                if !isPressing { onEnded() }
+                if !isPressing { onEnded(false) }
             }
     }
 }

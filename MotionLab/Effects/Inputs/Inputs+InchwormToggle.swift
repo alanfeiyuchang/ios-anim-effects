@@ -121,7 +121,6 @@ private struct InchwormToggleDemo: View {
         Task {
             try? await Task.sleep(for: .seconds(ctx["lag"]))
             guard current == generation else { return }
-            if !muted { Haptics.tap() }
             withAnimation(tail) {
                 stretched = false
                 if turningOn {
@@ -130,6 +129,10 @@ private struct InchwormToggleDemo: View {
                     rightEdge = offStart + knob
                 }
             }
+            // The tick lands with the tail, about 60 % into its spring (near its first settle).
+            try? await Task.sleep(for: .seconds(ctx["tail"] * 0.6))
+            guard current == generation, !muted else { return }
+            Haptics.tap()
         }
     }
 }

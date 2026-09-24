@@ -12,8 +12,8 @@ extension Effect {
             "一枚 230 × 64pt 的玻璃胶囊“随便问问”。胶囊内四团高度模糊的色团（紫罗兰、粉、天蓝、薄荷；约 70pt，模糊 18pt）各自沿缓慢的利萨如轨迹漂移，周期 5–9 秒，让填充成为永不重复的流动渐变。顶部白色光泽、细描边与 20% 白色蒙层塑造玻璃感。后方一份未裁切、再模糊 26pt 的色团副本外溢成柔和光晕，颜色随之变化。点击时按钮以弹簧下沉到 96%，色团膨胀 35% 并变亮，约 0.9 秒后缓缓恢复，伴随柔和触感。梦幻、聪明，很有 AI 入口的气质。"
         ),
         implementation: L(
-            "A TimelineView(.animation) offsets four blurred circles along sine/cosine orbits inside a capsule clip, flattened with drawingGroup; the same layer, blurred further and unclipped, forms the halo. A tap drives a keyframeAnimator that scales the blobs and brightness.",
-            "TimelineView(.animation) 让四个模糊圆沿正弦/余弦轨迹在胶囊裁切内偏移，并用 drawingGroup 合成；同一图层进一步模糊且不裁切，形成外部光晕。点击触发 keyframeAnimator，放大色团并提高亮度。"
+            "A TimelineView(.animation) offsets four blurred circles along sine/cosine orbits inside a capsule clip, flattened with drawingGroup; the same layer, flattened on a canvas 80 pt larger on every side so its blobs aren't cut at the capsule edge, then blurred further, forms the halo. A tap drives a keyframeAnimator that scales the blobs and brightness.",
+            "TimelineView(.animation) 让四个模糊圆沿正弦/余弦轨迹在胶囊裁切内偏移，并用 drawingGroup 合成；同一图层在四周各扩出 80pt 的画布上合成（色团不会在胶囊边缘被截断），再进一步模糊，形成外部光晕。点击触发 keyframeAnimator，放大色团并提高亮度。"
         ),
         apis: ["TimelineView", "blur(radius:)", "drawingGroup", "keyframeAnimator", "clipShape"],
         tags: ["plasma", "glass", "ai", "gradient", "等离子", "玻璃", "渐变", "光晕"],
@@ -91,13 +91,15 @@ private struct ButtonPlasmaBody: View {
     var body: some View {
         ZStack {
             if halo {
-                blobLayer
+                // Rendered on a larger canvas so drawingGroup doesn't cut the blobs at the capsule's edge:
+                // the halo is the whole blob field, blurred.
+                blobLayer(bleed: 80)
                     .blur(radius: 26)
                     .opacity(0.7)
                     .allowsHitTesting(false)
             }
             ZStack {
-                blobLayer
+                blobLayer(bleed: 0)
                 Capsule().fill(Color.white.opacity(0.2))
                 Capsule()
                     .fill(LinearGradient(colors: [Color.white.opacity(0.5), .clear], startPoint: .top, endPoint: .center))
@@ -121,13 +123,14 @@ private struct ButtonPlasmaBody: View {
         .shadow(color: .black.opacity(0.2), radius: 4, y: 1)
     }
 
-    private var blobLayer: some View {
+    /// The drifting blobs, flattened by `drawingGroup` into a canvas `bleed` pt larger than the button on every side.
+    private func blobLayer(bleed: CGFloat) -> some View {
         ZStack {
             ForEach(Self.blobs.indices, id: \.self) { index in
                 blob(Self.blobs[index])
             }
         }
-        .frame(width: size.width, height: size.height)
+        .frame(width: size.width + bleed * 2, height: size.height + bleed * 2)
         .keyframeAnimator(initialValue: ButtonPlasmaPulse(), trigger: taps) { content, pulse in
             content
                 .scaleEffect(pulse.scale)

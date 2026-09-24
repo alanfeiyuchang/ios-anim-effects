@@ -8,8 +8,8 @@ extension Effect {
         name: L("Inertial Jog Wheel", "惯性飞梭轮"),
         summary: L("A video-editor jog wheel you spin by hand; flick it and it coasts to a stop.", "视频剪辑用的飞梭轮：手动转动，甩一下还会自己滑行减速。"),
         prompt: L(
-            "A 220 pt jog wheel from a video-editing console: a brushed disc ringed with 36 grip dimples and a finger well, above a timecode readout. Circular dragging turns the wheel 1:1 with the finger's angle around the centre; every 10° advances one frame with a selection haptic, and the readout counts in monospaced digits. The angular velocity of the last moments is tracked, so a flick keeps the wheel coasting after release: it travels velocity × 0.35 s further on a strong ease-out curve (0.15, 0.7, 0.3, 1) lasting 1.2 s, capped at three turns, while the timecode keeps counting every frame it passes. A faint motion-blur arc trails the finger well while spinning. Weighty, precise and addictive.",
-            "220pt 的视频剪辑飞梭轮：拉丝圆盘外圈 36 个防滑凹点，一个指窝，下方是时间码读数。沿圆周拖动时轮子随手指角度 1:1 转动，每 10° 前进一帧并触发选择触觉，读数以等宽数字计数。系统记录松手前的角速度，甩动后轮子继续滑行：额外转过“角速度 × 0.35 秒”，采用强缓出曲线（0.15, 0.7, 0.3, 1），历时 1.2 秒，最多三圈，时间码数过经过的每一帧。高速转动时指窝后拖出一道淡淡的动态模糊弧。厚重、精准、让人上瘾。"
+            "A 220 pt jog wheel from a video-editing console: a brushed disc ringed with 36 grip dimples and a finger well, above a timecode readout. Circular dragging turns the wheel 1:1 with the finger's angle around the centre; every 10° advances one frame with a selection haptic, and the readout counts in monospaced digits. The angular velocity of the last moments is tracked, so a flick keeps the wheel coasting after release: it travels velocity × 0.35 s further on a strong ease-out curve (0.15, 0.7, 0.3, 1) lasting 1.2 s, capped at three turns, while the timecode keeps counting every frame it passes. A faint motion-blur arc trails the finger well while spinning, mirrored for either direction. Weighty, precise and addictive.",
+            "220pt 的视频剪辑飞梭轮：拉丝圆盘外圈 36 个防滑凹点，一个指窝，下方是时间码读数。沿圆周拖动时轮子随手指角度 1:1 转动，每 10° 前进一帧并触发选择触觉，读数以等宽数字计数。系统记录松手前的角速度，甩动后轮子继续滑行：额外转过“角速度 × 0.35 秒”，采用强缓出曲线（0.15, 0.7, 0.3, 1），历时 1.2 秒，最多三圈，时间码数过经过的每一帧。无论顺逆时针，转动时指窝后都拖出一道淡淡的动态模糊弧。厚重、精准、让人上瘾。"
         ),
         implementation: L(
             "atan2 of the touch relative to the centre gives an angle whose wrapped delta accumulates into rotation; timestamps give angular velocity for the coast, animated with a timingCurve. An Animatable face view recomputes the timecode on every interpolated frame.",
@@ -34,6 +34,8 @@ private struct JogWheelDemo: View {
     @State private var lastTime: Date = .now
     @State private var velocity: Double = 0
     @State private var spinning = false
+    /// +1 clockwise, -1 counter-clockwise: which side of the finger well the blur arc trails on.
+    @State private var spinSign: Double = 1
     /// Bumped by every coast and every grab, so a stale coast never clears `spinning` under the finger.
     @State private var coastGeneration = 0
     /// The coast in flight, so a grab starts from the angle on screen rather than the landing angle.
@@ -47,7 +49,7 @@ private struct JogWheelDemo: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-            JogWheelFace(rotation: rotation, degreesPerFrame: ctx["detent"], size: size, spinning: spinning)
+            JogWheelFace(rotation: rotation, degreesPerFrame: ctx["detent"], size: size, spinning: spinning, spinSign: spinSign)
                 .contentShape(Circle())
                 .gesture(drag)
                 .onChange(of: touching) { _, isTouching in
@@ -78,6 +80,7 @@ private struct JogWheelDemo: View {
                     let dt: Double = max(now.timeIntervalSince(lastTime), 0.001)
                     let instant: Double = delta / dt
                     velocity = velocity * 0.6 + instant * 0.4
+                    if abs(delta) > 0.5 { spinSign = delta > 0 ? 1 : -1 }
                     let before = Int((rotation / ctx["detent"]).rounded(.down))
                     stopCoast(at: rotation + delta)
                     let after = Int((rotation / ctx["detent"]).rounded(.down))
@@ -114,6 +117,7 @@ private struct JogWheelDemo: View {
 
     private func coast(by extra: Double) {
         let capped = extra.clamped(to: -1080...1080)
+        if abs(capped) > 1 { spinSign = capped > 0 ? 1 : -1 }
         let duration = ctx["duration"]
         inFlight = JogCoast(from: rotation, delta: capped, start: .now, duration: duration)
         withAnimation(.timingCurve(JogCoast.curve, duration: duration)) {
@@ -160,6 +164,7 @@ private struct JogWheelFace: View, Animatable {
     let degreesPerFrame: Double
     let size: CGFloat
     let spinning: Bool
+    let spinSign: Double
     @Environment(\.colorScheme) private var scheme
 
     var animatableData: Double {
@@ -230,7 +235,8 @@ private struct JogWheelFace: View, Animatable {
             Circle()
                 .trim(from: 0.0, to: 0.08)
                 .stroke(Palette.indigo.opacity(spinning ? 0.35 : 0), style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                .rotationEffect(.degrees(-90 - 30))
+                // The arc spans 28.8° and always trails the well: behind it clockwise, mirrored counter-clockwise.
+                .rotationEffect(.degrees(spinSign < 0 ? -90 + 1.2 : -90 - 30))
                 .frame(width: size * 0.66, height: size * 0.66)
             Circle()
                 .fill(

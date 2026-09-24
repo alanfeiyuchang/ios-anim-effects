@@ -16,7 +16,7 @@ extension Effect {
             "按键是使用自定义 ButtonStyle 的 Button：按下时底色动画为 nil、松手时为缓出；每个圆点由描边圆环与实心内核组成，dropping 状态让各内核以按索引延迟的缓入动画下坠；锁形图标使用 contentTransition(.symbolEffect(.replace))。"
         ),
         apis: ["ButtonStyle", "easeIn(duration:)", "contentTransition(.symbolEffect(.replace))", "rotationEffect", "spring(response:dampingFraction:)"],
-        tags: ["passcode", "pin", "keypad", "lock", "密码", "键盘", "解锁", "抖动"],
+        tags: ["passcode", "pin", "keypad", "lock", "密码", "键盘", "解锁", "坠落"],
         params: [
             .slider("fall", L("Drop distance", "坠落距离"), 16...80, default: 44, decimals: 0, unit: "pt"),
             .slider("damping", L("Dot pop damping", "圆点弹性阻尼"), 0.3...0.9, default: 0.55),

@@ -32,24 +32,26 @@ private extension EnvironmentValues {
     }
 }
 
-/// A rubber-banded list with a pull area on top. The indicator gets the pull progress (1 = armed),
-/// the raw pull height and whether a refresh is running.
+/// A list that scrolls on its own, with a pull area on top: the pull is the list's native top overscroll (see
+/// `FeedbackRefreshList`). The indicator gets the pull progress (1 = armed), the raw pull height and whether a
+/// refresh is running.
 private struct RefreshVarHost<Indicator: View>: View {
     let ctx: DemoContext
     let threshold: CGFloat
     let holdHeight: CGFloat
     let indicator: (CGFloat, CGFloat, Bool) -> Indicator
 
-    @State private var pull: CGFloat = 0
+    /// The list's own top overscroll (native rubber band), reported by its scroll view.
+    @State private var overscroll: CGFloat = 0
+    /// Extra shift of the rows: the scripted pull of previews and the hold height while refreshing.
+    @State private var shift: CGFloat = 0
     @State private var refreshing = false
     @State private var armed = false
     @State private var items: [Int] = [3, 2, 1, 0]
     @State private var nextItem = 4
     @State private var token = 0
-    /// Set by the drag gesture, cleared by the autoplay: only a real pull plays haptics.
+    /// Set by a real pull, cleared by the autoplay: only a real pull plays haptics.
     @State private var userDriven = false
-    /// True while a real finger is pulling; the single end/cancel path clears it.
-    @State private var tracking = false
 
     init(ctx: DemoContext, threshold: CGFloat = 80, holdHeight: CGFloat = 70, @ViewBuilder indicator: @escaping (CGFloat, CGFloat, Bool) -> Indicator) {
         self.ctx = ctx
@@ -57,8 +59,11 @@ private struct RefreshVarHost<Indicator: View>: View {
         self.holdHeight = holdHeight
         self.indicator = indicator
         // Still thumbnails show the indicator mid-pull, just short of the threshold.
-        _pull = State(initialValue: ctx.isStill ? threshold * 0.85 : 0)
+        _shift = State(initialValue: ctx.isStill ? threshold * 0.85 : 0)
     }
+
+    private var pull: CGFloat { overscroll + shift }
+    private var live: Bool { !ctx.isPreview && !ctx.isStill }
 
     var body: some View {
         VStack(spacing: 14) {
@@ -66,17 +71,16 @@ private struct RefreshVarHost<Indicator: View>: View {
                 indicator(min(pull / threshold, 1.2), pull, refreshing)
                     .frame(width: 300, height: max(pull, 1))
                     .clipped()
-                    .environment(\.refreshUserDriven, userDriven && !ctx.isPreview)
-                list
-                    .offset(y: pull)
+                    .environment(\.refreshUserDriven, userDriven && live)
+                // The list scrolls on its own: its top overscroll is the pull, like a native refresh control.
+                FeedbackRefreshList(live: live, hold: shift, onPull: pullChanged, onRelease: release) {
+                    list
+                }
             }
             .frame(width: 300, height: 260, alignment: .top)
             .background(Palette.surface)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .demoCard(cornerRadius: 22)
-            .contentShape(Rectangle())
-            // Simultaneous and downward-only from the top of the list, so other swipes scroll the page.
-            .pageSafePullDown(startZone: 120, onChanged: pullChanged, onEnded: { _ in endPull() })
             DemoHint(text: L("Pull the list down", "向下拖动列表"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -100,44 +104,38 @@ private struct RefreshVarHost<Indicator: View>: View {
         .background(Palette.elevated)
     }
 
-    /// Called only for an engaged downward pull (see `pageSafePullDown`); release and cancellation go to `endPull()`.
-    private func pullChanged(_ value: DragGesture.Value) {
+    /// Every change of the list's top overscroll; `byFinger` is true while a finger is on the list.
+    private func pullChanged(_ value: CGFloat, byFinger: Bool) {
+        overscroll = value
+        if byFinger { userDriven = true }
         guard !refreshing else { return }
-        userDriven = true
-        tracking = true
-        let resisted: CGFloat = rubberBand(max(0, value.translation.height), limit: 260, coefficient: 0.8)
-        updateArmed(resisted)
-        pull = resisted
+        updateArmed(pull, buzz: byFinger)
     }
 
-    /// Normal release or system cancellation, once per pull: refresh if armed, otherwise spring home.
-    private func endPull() {
-        guard tracking else { return }
-        tracking = false
-        release()
-    }
-
-    private func updateArmed(_ value: CGFloat) {
+    private func updateArmed(_ value: CGFloat, buzz: Bool) {
         let nowArmed = value >= threshold
         guard nowArmed != armed else { return }
         armed = nowArmed
-        if nowArmed && userDriven && !ctx.isPreview { Haptics.tap(.medium) }
+        if nowArmed && buzz && live { Haptics.tap(.medium) }
     }
 
+    /// Finger lifted (or the touch was cancelled), or the scripted pull ended: refresh if armed. Otherwise the
+    /// scroll view's own bounce takes the list home.
     private func release() {
         guard !refreshing else { return }
         guard pull >= threshold else {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { pull = 0 }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { shift = 0 }
             armed = false
             return
         }
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+        // The native bounce removes the overscroll while the shift grows to the hold height.
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
             refreshing = true
-            pull = holdHeight
+            shift = holdHeight
         }
         let wait = ctx["duration"]
         // Only a real pull buzzes; the autoplay's simulated pull stays silent.
-        let buzz: Bool = !ctx.isPreview && userDriven
+        let buzz: Bool = live && userDriven
         token += 1
         let current = token
         Task {
@@ -146,7 +144,7 @@ private struct RefreshVarHost<Indicator: View>: View {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.84)) {
                 items.insert(nextItem, at: 0)
                 if items.count > 4 { items.removeLast() }
-                pull = 0
+                shift = 0
                 refreshing = false
             }
             armed = false
@@ -160,12 +158,12 @@ private struct RefreshVarHost<Indicator: View>: View {
         userDriven = false
         token += 1
         let current = token
-        withAnimation(.easeOut(duration: 0.6)) { pull = threshold * 0.6 }
+        withAnimation(.easeOut(duration: 0.6)) { shift = threshold * 0.6 }
         Task {
             try? await Task.sleep(for: .seconds(0.6))
             guard token == current, !refreshing else { return }
-            withAnimation(.easeOut(duration: 0.4)) { pull = threshold + 16 }
-            updateArmed(threshold + 16)
+            withAnimation(.easeOut(duration: 0.4)) { shift = threshold + 16 }
+            updateArmed(threshold + 16, buzz: false)
             try? await Task.sleep(for: .seconds(0.45))
             guard token == current else { return }
             release()
@@ -213,14 +211,14 @@ extension Effect {
         name: L("Gum-Drop Refresh", "黏滴下拉刷新"),
         summary: L("Pulling stretches a sticky drop until it snaps into a spinner.", "下拉把一颗黏稠的液滴越拉越长，直到“啪”地变成加载圈。"),
         prompt: L(
-            "Pulling a notification list reveals an indigo gum drop: a 32 pt head holding a refresh arrow, joined by a tapering neck to a tail that follows the finger. As the rubber-banded pull grows (coefficient 0.8, 260 pt limit) the head shrinks to 22 pt, the tail thins from 32 pt to 10 pt and stretches up to 44 pt below, and the arrow turns with the pull. At the 80 pt threshold the neck snaps with a medium haptic: the drop is replaced by a 26 pt spinner that pops in on a bouncy spring while the list holds at 70 pt. When the refresh ends a new row slides in from the top, the list springs home and a success haptic plays. Stretchy, tactile, nostalgic.",
-            "下拉通知列表时露出一颗靛蓝色“黏滴”：32 pt 的头部里有一个刷新箭头，通过一段渐细的颈部连着跟随手指的尾巴。随着带橡皮筋阻尼的下拉（系数 0.8、上限 260 pt）加大，头部缩到 22 pt，尾巴从 32 pt 细到 10 pt 并最多向下拉长 44 pt，箭头随下拉转动。到达 80 pt 阈值时颈部“啪”地断开，伴随中等触感：液滴被一枚 26 pt 的加载圈替代，以弹跳弹簧弹出，列表停在 70 pt。刷新结束后新条目从顶部滑入，列表弹回原位并触发成功触感。有弹性、有触感，带点怀旧。"
+            "Pulling a notification list reveals an indigo gum drop: a 32 pt head holding a refresh arrow, joined by a tapering neck to a tail that follows the finger. As the list's native rubber-band overscroll grows the head shrinks to 22 pt, the tail thins from 32 pt to 10 pt and stretches up to 44 pt below, and the arrow turns with the pull. At the 80 pt threshold the neck snaps with a medium haptic: the drop is replaced by a 26 pt spinner that pops in on a bouncy spring while the list holds at 70 pt. When the refresh ends a new row slides in from the top, the list springs home and a success haptic plays. Stretchy, tactile, nostalgic.",
+            "下拉通知列表时露出一颗靛蓝色“黏滴”：32 pt 的头部里有一个刷新箭头，通过一段渐细的颈部连着跟随手指的尾巴。随着列表原生的橡皮筋越界下拉加大，头部缩到 22 pt，尾巴从 32 pt 细到 10 pt 并最多向下拉长 44 pt，箭头随下拉转动。到达 80 pt 阈值时颈部“啪”地断开，伴随中等触感：液滴被一枚 26 pt 的加载圈替代，以弹跳弹簧弹出，列表停在 70 pt。刷新结束后新条目从顶部滑入，列表弹回原位并触发成功触感。有弹性、有触感，带点怀旧。"
         ),
         implementation: L(
-            "A Shape unions two circles and a quad-curve neck whose radii and separation are functions of the pull progress; a shared host handles the rubber-banded DragGesture, threshold haptic and row insertion.",
-            "Shape 将两个圆与一段二次曲线颈部合并，半径与间距都是下拉进度的函数；共享的宿主视图负责带橡皮筋阻尼的 DragGesture、阈值触感与新条目插入。"
+            "A Shape unions two circles and a quad-curve neck whose radii and separation are functions of the pull progress; a shared host reads the pull from the list's own ScrollView overscroll (onScrollGeometryChange), so the page never moves with it, and handles the release (onScrollPhaseChange), threshold haptic and row insertion.",
+            "Shape 将两个圆与一段二次曲线颈部合并，半径与间距都是下拉进度的函数；共享的宿主视图从列表自身 ScrollView 的顶部越界量读取下拉距离（onScrollGeometryChange），页面不会跟着移动，并负责松手判定（onScrollPhaseChange）、阈值触感与新条目插入。"
         ),
-        apis: ["Shape", "Path.addQuadCurve", "DragGesture", "rubber-band", "spring(response:dampingFraction:)"],
+        apis: ["Shape", "Path.addQuadCurve", "onScrollGeometryChange", "onScrollPhaseChange", "spring(response:dampingFraction:)"],
         tags: ["pull to refresh", "gooey", "stretch", "drop", "下拉刷新", "黏滴", "拉伸", "液滴"],
         params: [
             .slider("duration", L("Refresh time", "刷新时长"), 0.6...3.0, default: 1.4, decimals: 1, unit: "s"),
@@ -330,7 +328,7 @@ extension Effect {
             "The indicator maps pull progress to the sun's offset, the rays' length and rotation and the sky's opacity; while refreshing a TimelineView spins and pulses the rays.",
             "指示器把下拉进度映射为太阳的位移、光芒的长度与旋转以及天空的不透明度；刷新时由 TimelineView 让光芒旋转并脉动。"
         ),
-        apis: ["LinearGradient", "TimelineView", "rotationEffect", "DragGesture"],
+        apis: ["LinearGradient", "TimelineView", "rotationEffect", "onScrollGeometryChange"],
         tags: ["pull to refresh", "sun", "weather", "sunrise", "下拉刷新", "太阳", "天气", "日出"],
         params: [
             .slider("duration", L("Refresh time", "刷新时长"), 0.6...3.0, default: 1.6, decimals: 1, unit: "s"),

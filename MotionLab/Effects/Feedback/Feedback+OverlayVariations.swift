@@ -258,12 +258,12 @@ extension Effect {
         name: L("Anchored Tip Popover", "锚点提示气泡"),
         summary: L("A feature tip grows out of its arrow's tip, points at a pulsing tool and folds back in.", "功能提示从箭头尖端生长出来，指向正在脉动的工具，再收回原点。"),
         prompt: L(
-            "A floating editor toolbar of four 56 pt tools sits at the bottom. A 240 pt tip bubble with a 14 pt arrow grows out of the arrow's point above the third tool — scaling from 10% at that exact anchor to 100% on a bouncy spring (response 0.42 s, damping 0.62) — so it visibly emanates from what it describes; its title and body fade in 100 ms later. While it is open the target tool glows violet and emits a ring that pulses from 100% to 170% every 1.2 s. 'Got it' collapses the bubble back into its anchor in 0.25 s and the ring stops. Guiding, precise, never blocking.",
-            "底部悬浮着一条由四个 56 pt 工具组成的编辑工具栏。一枚 240 pt 宽、带 14 pt 箭头的提示气泡从第三个工具上方的箭头尖端“长”出来——以该锚点为中心从 10% 缩放到 100%，采用弹跳弹簧（响应 0.42 秒、阻尼 0.62）——让人清楚看到它源自所描述的对象；标题与正文延后 100 毫秒淡入。气泡打开期间目标工具发出紫罗兰光，并每 1.2 秒放出一圈从 100% 扩到 170% 的脉冲环。点击“知道了”，气泡在 0.25 秒内收回锚点，脉冲环随之停止。引导清晰、定位精准、从不挡路。"
+            "A floating editor toolbar of four 56 pt tools sits at the bottom. A 240 pt tip bubble with a 14 pt arrow grows out of the arrow's point above the third tool — scaling from 10% at that exact anchor to 100% on a bouncy spring (response 0.42 s, damping 0.62) — so it visibly emanates from what it describes; its title and body fade in 100 ms later. While it is open the target tool glows violet and emits a ring that pulses from 100% to 170% every 1.2 s. 'Got it' collapses the bubble back into its anchor in 0.25 s; the ring stops and a 6 pt violet dot breathes above the tool every 2 s so it stays findable. Guiding, precise, never blocking.",
+            "底部悬浮着一条由四个 56 pt 工具组成的编辑工具栏。一枚 240 pt 宽、带 14 pt 箭头的提示气泡从第三个工具上方的箭头尖端“长”出来——以该锚点为中心从 10% 缩放到 100%，采用弹跳弹簧（响应 0.42 秒、阻尼 0.62）——清楚表明它源自所描述的对象；标题与正文延后 100 毫秒淡入。气泡打开期间目标工具发出紫罗兰光，并每 1.2 秒放出一圈从 100% 扩到 170% 的脉冲环。点击“知道了”，气泡在 0.25 秒内收回锚点，脉冲环停止，工具上方留一颗每 2 秒呼吸的 6 pt 紫点。引导清晰、从不挡路。"
         ),
         implementation: L(
-            "scaleEffect(_:anchor:) uses a UnitPoint computed from the arrow's x within the bubble, so the spring grows it from the arrow tip; the target's pulse ring is a phaseAnimator shown only while the tip is open.",
-            "scaleEffect(_:anchor:) 的锚点由箭头在气泡内的 x 位置换算成 UnitPoint，弹簧因此从箭头尖端开始放大；目标工具的脉冲环是仅在提示打开时显示的 phaseAnimator。"
+            "scaleEffect(_:anchor:) uses a UnitPoint computed from the arrow's x within the bubble, so the spring grows it from the arrow tip; the target's pulse ring is a phaseAnimator shown only while the tip is open, and a breathing phaseAnimator dot marks it while closed.",
+            "scaleEffect(_:anchor:) 的锚点由箭头在气泡内的 x 位置换算成 UnitPoint，弹簧因此从箭头尖端开始放大；目标工具的脉冲环是仅在提示打开时显示的 phaseAnimator，关闭时改由呼吸的 phaseAnimator 圆点标记。"
         ),
         apis: ["scaleEffect(_:anchor:)", "UnitPoint", "phaseAnimator", "spring(response:dampingFraction:)"],
         tags: ["tip", "popover", "onboarding", "coach mark", "提示", "气泡", "新手引导", "功能介绍"],
@@ -302,7 +302,7 @@ private struct TipPopoverDemo: View {
                 .opacity(open ? 1 : 0)
                 .allowsHitTesting(open)
             toolbar(target: target)
-            DemoHint(text: L("Tap the glowing tool", "点击发光的工具"), ctx: ctx)
+            DemoHint(text: L("Tap the violet-marked tool", "点击紫色标记的工具"), ctx: ctx)
         }
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -364,6 +364,12 @@ private struct TipPopoverDemo: View {
                         .font(.system(size: 19, weight: .semibold))
                         .foregroundStyle(isTarget && open ? Palette.violet : Color.primary)
                         .shadow(color: Palette.violet.opacity(isTarget && open ? 0.6 : 0), radius: 8)
+                    if isTarget && !open {
+                        // Quiet idle cue while the tip is closed, so the target stays findable.
+                        TipIdleDot()
+                            .offset(x: 11, y: -15)
+                            .transition(.scale(scale: 0.2).combined(with: .opacity))
+                    }
                 }
                 .frame(width: 56, height: 56)
                 .contentShape(Rectangle())
@@ -382,6 +388,22 @@ private struct TipPopoverDemo: View {
             if !ctx.isPreview { Haptics.tap() }
             withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) { open = true }
         }
+    }
+}
+
+/// A 6 pt violet dot that breathes every 2 s above the target tool while the tip is closed.
+private struct TipIdleDot: View {
+    var body: some View {
+        Circle()
+            .fill(Palette.violet)
+            .frame(width: 6, height: 6)
+            .phaseAnimator([false, true]) { content, big in
+                content
+                    .scaleEffect(big ? 1.25 : 0.85)
+                    .opacity(big ? 1 : 0.6)
+            } animation: { _ in
+                Animation.easeInOut(duration: 1)
+            }
     }
 }
 

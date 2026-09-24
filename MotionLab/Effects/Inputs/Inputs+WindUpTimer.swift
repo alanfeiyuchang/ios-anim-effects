@@ -8,12 +8,12 @@ extension Effect {
         name: L("Wind-Up Timer", "发条计时器"),
         summary: L("Twist the dial to wind it; let go and it unwinds in real time, then rings.", "拧动表盘上发条，松手后实时回转，归零时响铃摇晃。"),
         prompt: L(
-            "A kitchen-timer dial (210 pt) whose numbered face rotates under a fixed red index at 12 o'clock, with a coral wedge showing the remaining time like a Time Timer. Twisting clockwise winds it: the face follows the finger's angle, ratcheting to 5-second notches with a selection haptic on each click, up to one full turn (60 s). On release it unwinds at a constant, linear rate back to zero — here sped up 4× — while the wedge shrinks and the centre readout counts down every second. At zero the whole timer rings: it shakes ±8° with a decaying keyframed wobble for 600 ms, the softly glowing index flares brighter and a success haptic fires. Grabbing it mid-run freezes it where it is. Mechanical, playful and immediately understandable.",
-            "一只 210pt 厨房计时器：带数字的表面在 12 点钟方向固定的红色指针下转动，珊瑚色扇形像 Time Timer 一样显示剩余时间。顺时针拧动即上发条：表面跟随手指角度，以 5 秒一格的棘轮吸附，每格一次选择触觉，最多一整圈（60 秒）。松手后以恒定线性速度回转到零（演示中加速 4 倍），扇形缩小，中心读数逐秒倒数。归零时计时器“响铃”：以衰减关键帧左右摇晃 ±8°，持续 600 毫秒，常亮微光的指针骤然变亮，并触发成功触觉。运行中抓住它会停在原处。机械、俏皮。"
+            "A kitchen-timer dial (210 pt) whose numbered face rotates under a fixed red index at 12 o'clock, with a coral wedge showing the remaining time like a Time Timer. Twisting clockwise winds it: the face follows the finger's angle, ratcheting to 5-second notches with a selection haptic on each click, up to one full turn (60 s). On release it unwinds at a constant, linear rate back to zero — here sped up 4× — while the wedge shrinks and the centre readout counts down every second. At zero the whole timer rings: it shakes ±8° with a decaying keyframed wobble for 600 ms, the index, whose soft red glow faded in over the last second, flares to full glow at 120% size for about 1 s, and a success haptic fires. Grabbing it mid-run freezes it where it is. Mechanical, playful and instantly clear.",
+            "一只 210pt 厨房计时器：带数字的表面在 12 点钟方向固定的红色指针下转动，珊瑚色扇形像 Time Timer 一样显示剩余时间。顺时针拧动即上发条：表面跟随手指角度，以 5 秒一格的棘轮吸附，每格一次选择触觉，最多一整圈（60 秒）。松手后以恒定线性速度回转到零（演示中加速 4 倍），扇形缩小，中心读数逐秒倒数。归零时计时器“响铃”：以衰减关键帧左右摇晃 ±8°，持续 600 毫秒；指针的红色微光在最后一秒渐亮，此刻放大到 120% 闪耀约 1 秒，同时触发成功触觉。运行中抓住它会停在原处。机械、俏皮。"
         ),
         implementation: L(
-            "Wrapped atan2 deltas accumulate into a clamped angle; release starts a linear animation back to zero whose duration is angle ÷ rate, and an Animatable face redraws the wedge and seconds per frame. Grabbing computes the elapsed position and sets it inside a transaction with animations disabled.",
-            "处理跨界后的 atan2 增量累加为受限角度；松手时启动一个线性动画回到零，时长为 角度 ÷ 速率，Animatable 表盘每帧重绘扇形与秒数。运行中抓取时根据已过时间计算当前位置，并在禁用动画的事务中写回。"
+            "Wrapped atan2 deltas accumulate into a clamped angle; release starts a linear animation back to zero whose duration is angle ÷ rate, and an Animatable face redraws the wedge and seconds per frame, and a keyframeAnimator on the ring count flares the index. Grabbing computes the elapsed position and sets it inside a transaction with animations disabled.",
+            "处理跨界后的 atan2 增量累加为受限角度；松手时启动一个线性动画回到零，时长为 角度 ÷ 速率，Animatable 表盘每帧重绘扇形与秒数，以响铃次数为触发器的 keyframeAnimator 让指针闪耀。运行中抓取时根据已过时间计算当前位置，并在禁用动画的事务中写回。"
         ),
         apis: ["DragGesture", "atan2", "Animatable", "linear(duration:)", "keyframeAnimator", "Transaction"],
         tags: ["dial", "timer", "wind up", "countdown", "旋钮", "计时器", "发条", "倒计时"],
@@ -48,7 +48,7 @@ private struct WindUpTimerDemo: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-            TimerFace(angle: angle, size: size)
+            TimerFace(angle: angle, size: size, rings: rings)
                 .keyframeAnimator(initialValue: 0.0, trigger: rings) { content, wobble in
                     content.rotationEffect(.degrees(wobble))
                 } keyframes: { _ in
@@ -165,6 +165,8 @@ private struct WindUpTimerDemo: View {
 private struct TimerFace: View, Animatable {
     var angle: Double
     let size: CGFloat
+    /// Bumped when the timer rings: the index flares.
+    let rings: Int
 
     var animatableData: Double {
         get { angle }
@@ -214,11 +216,23 @@ private struct TimerFace: View, Animatable {
     }
 
     private var index: some View {
-        VStack {
+        // A soft rest glow fades in over the last second; each ring adds a keyframed flare on top.
+        let rest: Double = max(0, 1 - angle / 6) * 0.35
+        return VStack {
             TimerIndexTriangle()
                 .fill(Palette.red)
                 .frame(width: 14, height: 12)
-                .shadow(color: Palette.red.opacity(angle < 0.5 ? 0.8 : 0), radius: 6)
+                .keyframeAnimator(initialValue: 0.0, trigger: rings) { content, flare in
+                    content
+                        .shadow(color: Palette.red.opacity(min(rest + 0.65 * flare, 1)), radius: 6 + 8 * flare)
+                        .scaleEffect(1 + 0.2 * flare, anchor: .top)
+                } keyframes: { _ in
+                    KeyframeTrack(\.self) {
+                        CubicKeyframe(1, duration: 0.12)
+                        CubicKeyframe(1, duration: 0.25)
+                        CubicKeyframe(0, duration: 0.6)
+                    }
+                }
                 .offset(y: -8)
             Spacer(minLength: 0)
         }

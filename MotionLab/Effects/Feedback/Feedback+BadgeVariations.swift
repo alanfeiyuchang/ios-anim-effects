@@ -216,12 +216,12 @@ extension Effect {
         name: L("Presence Ping", "在线状态涟漪"),
         summary: L("Online dots emit soft radar pings; a teammate going online pops their dot green.", "在线圆点发出柔和的雷达涟漪；同事上线时圆点弹成绿色。"),
         prompt: L(
-            "A 'Design team' card shows five 48 pt gradient avatars in an overlapping row, each with a 14 pt status dot ringed in the card color. Online dots are green and emit a ping every 1.6 s — a ring that grows from 100% to 260% while fading from 55% to 0%, staggered 0.3 s between people so the row twinkles rather than blinks. Every 2.6 s one teammate toggles: going online, their avatar regains full saturation, the gray hollow dot fills green and pops 0.6 → 1.3 → 1.0 on a bouncy spring, and the '3 online' count rolls; going offline reverses it and the avatar dims to 45% saturation. Ambient, social, calm.",
-            "一张“设计团队”卡片上，五个 48 pt 的渐变头像交叠成一排，每个头像右下角有一颗 14 pt 的状态圆点，外圈描着卡片底色。在线圆点为绿色，每 1.6 秒发出一次涟漪——一圈从 100% 扩到 260%、透明度从 55% 降到 0% 的圆环；成员之间错开 0.3 秒，整排像星光闪烁而不是齐刷刷地闪。每 2.6 秒会有一位同事切换状态：上线时头像恢复饱和度，灰色空心圆点被绿色填满并以弹跳弹簧 0.6 → 1.3 → 1.0 弹一下，“3 人在线”计数滚动；下线则反向，头像饱和度降到 45%。安静的氛围感，带着社交温度。"
+            "A 'Design team' card shows five 48 pt gradient avatars in an overlapping row, each with a 14 pt status dot ringed in the card color. Online dots are green and emit a ping every 1.6 s — a ring that grows from 100% to 260% while fading from 55% to 0%, staggered 0.3 s between people so the row twinkles rather than blinks. Every 2.6 s one teammate toggles (a tapped avatar keeps its state for 6 s): going online, their avatar regains full saturation, the gray hollow dot fills green and pops 0.6 → 1.3 → 1.0 on a bouncy spring, and the '3 online' count rolls; going offline reverses it and the avatar dims to 45% saturation. Ambient, social, calm.",
+            "一张“设计团队”卡片上，五个 48 pt 的渐变头像交叠成一排，每个头像右下角有一颗 14 pt 的状态圆点，外圈描着卡片底色。在线圆点为绿色，每 1.6 秒发出一次涟漪——一圈从 100% 扩到 260%、透明度从 55% 降到 0% 的圆环；成员之间错开 0.3 秒，整排如星光般闪烁。每 2.6 秒会有一位同事切换状态（被点过的头像 6 秒内保持不变）：上线时头像恢复饱和度，灰色空心圆点被绿色填满并以弹跳弹簧 0.6 → 1.3 → 1.0 弹一下，“3 人在线”计数滚动；下线则反向，头像饱和度降到 45%。安静而有社交温度。"
         ),
         implementation: L(
-            "A TimelineView computes each online member's ping ring from a phase-shifted fraction; status flips animate saturation and the dot fill, and a keyframeAnimator keyed on the flip count pops the changed dot.",
-            "TimelineView 按错开的相位为每位在线成员计算涟漪圆环；状态切换以动画改变饱和度与圆点填充，以切换次数为触发器的 keyframeAnimator 让变化的圆点弹一下。"
+            "A TimelineView computes each online member's ping ring from a phase-shifted fraction; status flips animate saturation and the dot fill, a keyframeAnimator keyed on the flip count pops the changed dot, and the ambient loop skips members tapped in the last 6 s.",
+            "TimelineView 按错开的相位为每位在线成员计算涟漪圆环；状态切换以动画改变饱和度与圆点填充，以切换次数为触发器的 keyframeAnimator 让变化的圆点弹一下；环境循环会跳过 6 秒内被点过的成员。"
         ),
         apis: ["TimelineView", "saturation(_:)", "keyframeAnimator(initialValue:trigger:)", "contentTransition(.numericText)"],
         tags: ["presence", "online", "status", "avatar", "在线", "状态", "头像", "涟漪"],
@@ -244,6 +244,12 @@ private struct PresencePingDemo: View {
     let ctx: DemoContext
     @State private var online: [Bool] = [true, false, true, true, false]
     @State private var pops: [Int] = [0, 0, 0, 0, 0]
+    /// When each member was last toggled by hand: the ambient cycle leaves them alone for `userHold` seconds.
+    @State private var touched: [Date?] = [nil, nil, nil, nil, nil]
+    /// Bumped on every tap so the ambient loop restarts and waits a full interval before its next change.
+    @State private var cycleEpoch = 0
+
+    private let userHold: TimeInterval = 6
 
     private let members: [PresenceMember] = [
         PresenceMember(initials: "AK", colors: [Palette.sky, Palette.blue]),
@@ -285,7 +291,7 @@ private struct PresencePingDemo: View {
             DemoHint(text: L("Tap an avatar to toggle", "点击头像切换状态"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task(id: ctx["toggle"]) { await cycle() }
+        .task(id: [ctx["toggle"], Double(cycleEpoch)]) { await cycle() }
     }
 
     private func avatar(_ index: Int, t: Double) -> some View {
@@ -328,8 +334,15 @@ private struct PresencePingDemo: View {
                 .offset(x: 1, y: 1)
             }
             .zIndex(Double(members.count - index))
-            .onTapGesture { flip(index, byUser: true) }
+            .onTapGesture { userFlip(index) }
             .animation(.smooth(duration: 0.35), value: isOnline)
+    }
+
+    /// A tap sticks: the member is skipped by the ambient cycle for a while, and the cycle pauses a full interval.
+    private func userFlip(_ index: Int) {
+        touched[index] = Date()
+        cycleEpoch += 1
+        flip(index, byUser: true)
     }
 
     /// Only a user's own tap buzzes; the ambient status cycle stays silent.
@@ -345,8 +358,15 @@ private struct PresencePingDemo: View {
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(max(ctx["toggle"], 0.5)))
             guard !Task.isCancelled else { return }
-            flip(sequence[order % sequence.count], byUser: false)
-            order += 1
+            // Skip members the user toggled recently, so their choice sticks.
+            let now = Date()
+            for _ in 0..<sequence.count {
+                let member = sequence[order % sequence.count]
+                order += 1
+                if let last = touched[member], now.timeIntervalSince(last) < userHold { continue }
+                flip(member, byUser: false)
+                break
+            }
         }
     }
 }

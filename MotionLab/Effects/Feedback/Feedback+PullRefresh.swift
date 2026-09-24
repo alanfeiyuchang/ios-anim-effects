@@ -8,18 +8,18 @@ extension Effect {
         name: L("Custom Pull-to-Refresh", "自定义下拉刷新"),
         summary: L("A rubber-banded list reveals an arc that fills, flips and spins.", "带橡皮筋阻尼的列表下拉，露出逐渐填满、翻转并旋转的圆弧。"),
         prompt: L(
-            "A message list inside a rounded card follows the finger downward with rubber-band resistance (it moves less the further you pull). Behind it, centered in the revealed gap, a 28 pt indicator grows from 60% to 100% scale while a gradient arc fills clockwise in proportion to the pull; its arrow flips 180° with a springy snap and a medium haptic the moment the 72 pt threshold is crossed. Releasing past the threshold settles the list at a 60 pt hold on a spring while the arc becomes a continuously spinning 270° loader; when the data arrives, a new row springs in at the top and the list glides back to rest with a success haptic. Releasing early simply springs back. Tactile, responsive and satisfying.",
-            "圆角卡片中的消息列表随手指下拉，并带有橡皮筋阻尼（拉得越远越“沉”）。列表背后、露出的缝隙中央，是一个 28 pt 的指示器：随下拉距离从 60% 放大到 100%，渐变圆弧按比例顺时针填满；越过 72 pt 阈值的瞬间，箭头以弹性快速翻转 180°，并伴随中等强度触感。越过阈值后松手，列表以弹簧停在 60 pt 的等待位，圆弧变成持续旋转的 270° 加载环；数据返回时，新条目从顶部弹入，列表平滑回到原位，并伴随成功触感。未达阈值就松手则直接弹回。手感扎实、响应灵敏、令人满足。"
+            "A message list scrolls inside a rounded card; pulled past its top, it follows the finger with the native rubber-band resistance (it moves less the further you pull). Behind it, centered in the revealed gap, a 28 pt indicator grows from 60% to 100% scale while a gradient arc fills clockwise in proportion to the pull; its arrow flips 180° with a springy snap and a medium haptic the moment the 72 pt threshold is crossed. Releasing past the threshold settles the list at a 60 pt hold on a spring while the arc becomes a continuously spinning 270° loader; when the data arrives, a new row springs in at the top and the list glides back to rest with a success haptic. Releasing early simply springs back. Tactile, responsive and satisfying.",
+            "圆角卡片中的消息列表可独立滚动；到顶后继续下拉，列表带着系统原生的橡皮筋阻尼跟随手指（拉得越远越“沉”）。列表背后、露出的缝隙中央，是一个 28 pt 的指示器：随下拉距离从 60% 放大到 100%，渐变圆弧按比例顺时针填满；越过 72 pt 阈值的瞬间，箭头以弹性快速翻转 180°，并伴随中等强度触感。越过阈值后松手，列表以弹簧停在 60 pt 的等待位，圆弧变成持续旋转的 270° 加载环；数据返回时，新条目从顶部弹入，列表平滑回到原位，并伴随成功触感。未达阈值就松手则直接弹回。手感扎实、令人满足。"
         ),
         implementation: L(
-            "A DragGesture feeds rubberBand() into an offset; threshold crossings trigger haptics and an arrow flip; release runs an async refresh that inserts a row with a transition.",
-            "DragGesture 的位移经 rubberBand() 处理后驱动偏移；越过阈值时触发触感与箭头翻转；松手后执行异步刷新，并以过渡插入新条目。"
+            "The rows live in their own always-bouncing ScrollView: onScrollGeometryChange reads the top overscroll (contentOffset.y + contentInsets.top < 0) as the pull, so the page never moves with it; threshold crossings flip the arrow with a haptic, onScrollPhaseChange catches the release past the threshold, and an offset holds the list while an async refresh inserts a row with a transition.",
+            "条目放在独立且始终可回弹的 ScrollView 中：onScrollGeometryChange 把顶部越界量（contentOffset.y + contentInsets.top < 0）作为下拉距离，页面不会跟着移动；越过阈值时翻转箭头并触发触感，onScrollPhaseChange 捕捉越过阈值后的松手，再以偏移让列表停住，异步刷新后以过渡插入新条目。"
         ),
-        apis: ["DragGesture", "rubberBand", "trim(from:to:)", "TimelineView", "transition"],
+        apis: ["ScrollView", "onScrollGeometryChange", "onScrollPhaseChange", "trim(from:to:)", "TimelineView", "transition"],
         tags: ["pull to refresh", "refresh", "rubber band", "list", "下拉刷新", "刷新", "橡皮筋", "列表"],
         params: [
             .slider("duration", L("Refresh time", "刷新时长"), 0.5...3.0, default: 1.2, decimals: 1, unit: "s"),
-            .slider("resistance", L("Resistance", "阻尼"), 0.4...1.4, default: 0.9),
+            .slider("resistance", L("Trigger distance", "触发距离"), 56...100, default: 72, decimals: 0, unit: "pt"),
         ]
     ) { ctx in
         PullRefreshDemo(ctx: ctx)
@@ -43,24 +43,27 @@ private struct RefreshSample {
 
 private struct PullRefreshDemo: View {
     let ctx: DemoContext
-    @State private var pull: CGFloat = 0
+    /// The list's own top overscroll (native rubber band), reported by its scroll view.
+    @State private var overscroll: CGFloat = 0
+    /// Extra shift of the rows: the scripted pull of previews and the hold height while refreshing.
+    @State private var shift: CGFloat = 0
     @State private var refreshing = false
     @State private var armed = false
     @State private var items: [Int] = [3, 2, 1, 0]
     @State private var nextItem = 4
     @State private var token = 0
-    /// Set by the drag gesture, cleared by the autoplay: only a real pull plays haptics.
+    /// Set by a real pull, cleared by the autoplay: only a real pull plays haptics.
     @State private var userDriven = false
-    /// True while a real finger is pulling; the single end/cancel path clears it.
-    @State private var tracking = false
 
-    private let threshold: CGFloat = 72
     private let holdHeight: CGFloat = 60
+    private var threshold: CGFloat { ctx.cg("resistance") }
+    private var pull: CGFloat { overscroll + shift }
+    private var live: Bool { !ctx.isPreview && !ctx.isStill }
 
     init(ctx: DemoContext) {
         self.ctx = ctx
         // Still thumbnails show the indicator mid-pull, just short of the threshold.
-        _pull = State(initialValue: ctx.isStill ? 72 * 0.85 : 0)
+        _shift = State(initialValue: ctx.isStill ? 72 * 0.85 : 0)
     }
 
     var body: some View {
@@ -69,16 +72,15 @@ private struct PullRefreshDemo: View {
                 PullIndicator(progress: min(pull / threshold, 1), armed: armed, refreshing: refreshing, preview: ctx.isPreview)
                     .frame(height: max(pull, 1))
                     .opacity(pull > 6 ? 1 : 0)
-                list
-                    .offset(y: pull)
+                // The list scrolls on its own: its top overscroll is the pull, like a native refresh control.
+                FeedbackRefreshList(live: live, hold: shift, onPull: pullChanged, onRelease: release) {
+                    list
+                }
             }
             .frame(width: 300, height: 250, alignment: .top)
             .background(Palette.surface)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .demoCard(cornerRadius: 22)
-            .contentShape(Rectangle())
-            // Simultaneous and downward-only from the top of the list, so other swipes scroll the page.
-            .pageSafePullDown(startZone: 120, onChanged: pullChanged, onEnded: { _ in endPull() })
             DemoHint(text: L("Pull the list down", "向下拖动列表"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -102,42 +104,36 @@ private struct PullRefreshDemo: View {
         .background(Palette.elevated)
     }
 
-    /// Called only for an engaged downward pull (see `pageSafePullDown`); release and cancellation go to `endPull()`.
-    private func pullChanged(_ value: DragGesture.Value) {
+    /// Every change of the list's top overscroll; `byFinger` is true while a finger is on the list.
+    private func pullChanged(_ value: CGFloat, byFinger: Bool) {
+        overscroll = value
+        if byFinger { userDriven = true }
         guard !refreshing else { return }
-        userDriven = true
-        tracking = true
-        let resisted = rubberBand(max(0, value.translation.height), limit: 240, coefficient: ctx.cg("resistance"))
-        updateArmed(resisted)
-        pull = resisted
+        updateArmed(pull, buzz: byFinger)
     }
 
-    /// Normal release or system cancellation, once per pull: refresh if armed, otherwise spring home.
-    private func endPull() {
-        guard tracking else { return }
-        tracking = false
-        release()
-    }
-
-    private func updateArmed(_ value: CGFloat) {
+    private func updateArmed(_ value: CGFloat, buzz: Bool) {
         let nowArmed = value >= threshold
         guard nowArmed != armed else { return }
-        if nowArmed && userDriven && !ctx.isPreview { Haptics.tap(.medium) }
+        if nowArmed && buzz && live { Haptics.tap(.medium) }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) { armed = nowArmed }
     }
 
+    /// Finger lifted (or the touch was cancelled), or the scripted pull ended: refresh if armed. Otherwise the
+    /// scroll view's own bounce takes the list home.
     private func release() {
         guard !refreshing else { return }
         guard pull >= threshold else {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { pull = 0 }
-            updateArmed(0)
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { shift = 0 }
+            updateArmed(0, buzz: false)
             return
         }
         refreshing = true
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { pull = holdHeight }
+        // The native bounce removes the overscroll while the shift grows to the hold height.
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) { shift = holdHeight }
         let wait = ctx["duration"]
         // Only a real pull buzzes; the autoplay's simulated pull stays silent.
-        let buzz: Bool = !ctx.isPreview && userDriven
+        let buzz: Bool = live && userDriven
         token += 1
         let current = token
         Task {
@@ -146,7 +142,7 @@ private struct PullRefreshDemo: View {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
                 items.insert(nextItem, at: 0)
                 if items.count > 4 { items.removeLast() }
-                pull = 0
+                shift = 0
                 refreshing = false
                 armed = false
             }
@@ -160,12 +156,12 @@ private struct PullRefreshDemo: View {
         userDriven = false
         token += 1
         let current = token
-        withAnimation(.easeOut(duration: 0.5)) { pull = threshold * 0.7 }
+        withAnimation(.easeOut(duration: 0.5)) { shift = threshold * 0.7 }
         Task {
             try? await Task.sleep(for: .seconds(0.5))
             guard token == current, !refreshing else { return }
-            withAnimation(.easeOut(duration: 0.3)) { pull = threshold + 14 }
-            updateArmed(threshold + 14)
+            withAnimation(.easeOut(duration: 0.3)) { shift = threshold + 14 }
+            updateArmed(threshold + 14, buzz: false)
             try? await Task.sleep(for: .seconds(0.35))
             guard token == current else { return }
             release()

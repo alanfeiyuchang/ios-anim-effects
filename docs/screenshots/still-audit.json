@@ -1,8 +1,8 @@
 {
   "flagged" : [
-    "charts.scatter-histogram (light, ink 0.077)"
+
   ],
-  "generated" : "2026-09-24T05:34:22Z",
+  "generated" : "2026-09-24T15:22:38Z",
   "stills" : [
     {
       "category" : "showcase",
@@ -40,7 +40,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.fresh-snow",
-      "ink" : 0.1174,
+      "ink" : 0.11749999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -48,7 +48,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.fresh-snow",
-      "ink" : 0.1171,
+      "ink" : 0.11849999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -136,7 +136,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.summit-badge",
-      "ink" : 0.13900000000000001,
+      "ink" : 0.13950000000000001,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -144,7 +144,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.summit-badge",
-      "ink" : 0.14030000000000001,
+      "ink" : 0.1384,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -216,7 +216,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.weather-widget",
-      "ink" : 0.30480000000000002,
+      "ink" : 0.30509999999999998,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -424,7 +424,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.flip-clock",
-      "ink" : 0.076300000000000007,
+      "ink" : 0.077399999999999997,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -432,7 +432,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.flip-clock",
-      "ink" : 0.076300000000000007,
+      "ink" : 0.077399999999999997,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -456,7 +456,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.finance-card",
-      "ink" : 0.1067,
+      "ink" : 0.1069,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -464,7 +464,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.finance-card",
-      "ink" : 0.1062,
+      "ink" : 0.107,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -488,7 +488,7 @@
       "category" : "showcase",
       "flagged" : false,
       "id" : "showcase.ev-charge",
-      "ink" : 0.10050000000000001,
+      "ink" : 0.1002,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -872,7 +872,7 @@
       "category" : "buttons",
       "flagged" : false,
       "id" : "buttons.glow-border",
-      "ink" : 0.31119999999999998,
+      "ink" : 0.34849999999999998,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -880,7 +880,7 @@
       "category" : "buttons",
       "flagged" : false,
       "id" : "buttons.glow-border",
-      "ink" : 0.34360000000000002,
+      "ink" : 0.35980000000000001,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -888,7 +888,7 @@
       "category" : "buttons",
       "flagged" : false,
       "id" : "buttons.neon-breath",
-      "ink" : 0.23830000000000001,
+      "ink" : 0.13919999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -896,7 +896,7 @@
       "category" : "buttons",
       "flagged" : false,
       "id" : "buttons.neon-breath",
-      "ink" : 0.25919999999999999,
+      "ink" : 0.23669999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -904,7 +904,7 @@
       "category" : "buttons",
       "flagged" : false,
       "id" : "buttons.ember-glow",
-      "ink" : 0.069000000000000006,
+      "ink" : 0.074399999999999994,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -912,7 +912,7 @@
       "category" : "buttons",
       "flagged" : false,
       "id" : "buttons.ember-glow",
-      "ink" : 0.076300000000000007,
+      "ink" : 0.069500000000000006,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -920,7 +920,7 @@
       "category" : "buttons",
       "flagged" : false,
       "id" : "buttons.plasma-glass",
-      "ink" : 0.57030000000000003,
+      "ink" : 0.63539999999999996,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -928,7 +928,7 @@
       "category" : "buttons",
       "flagged" : false,
       "id" : "buttons.plasma-glass",
-      "ink" : 0.61860000000000004,
+      "ink" : 0.71240000000000003,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -1656,7 +1656,7 @@
       "category" : "inputs",
       "flagged" : false,
       "id" : "inputs.liquid-slider",
-      "ink" : 0.35349999999999998,
+      "ink" : 0.35389999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -1664,7 +1664,7 @@
       "category" : "inputs",
       "flagged" : false,
       "id" : "inputs.liquid-slider",
-      "ink" : 0.35310000000000002,
+      "ink" : 0.3523,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -1816,7 +1816,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.arc-spinner",
-      "ink" : 0.074999999999999997,
+      "ink" : 0.0683,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -1832,7 +1832,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.dot-bounce",
-      "ink" : 0.73799999999999999,
+      "ink" : 0.7369,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -1880,7 +1880,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.ai-generating",
-      "ink" : 0.2266,
+      "ink" : 0.20430000000000001,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -1888,7 +1888,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.ai-generating",
-      "ink" : 0.2475,
+      "ink" : 0.20050000000000001,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -1896,7 +1896,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.glow-bar",
-      "ink" : 0.23910000000000001,
+      "ink" : 0.2349,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -1904,7 +1904,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.glow-bar",
-      "ink" : 0.2797,
+      "ink" : 0.28029999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -1936,7 +1936,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.story-bars",
-      "ink" : 0.5171,
+      "ink" : 0.51739999999999997,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -1960,7 +1960,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.orbit-dots",
-      "ink" : 0.6845,
+      "ink" : 0.68120000000000003,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -1984,7 +1984,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.audio-wave",
-      "ink" : 0.10920000000000001,
+      "ink" : 0.11,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -1992,7 +1992,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.pulse-rings",
-      "ink" : 0.32629999999999998,
+      "ink" : 0.32919999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2000,7 +2000,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.pulse-rings",
-      "ink" : 0.37119999999999997,
+      "ink" : 0.36930000000000002,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2008,7 +2008,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.square-grid",
-      "ink" : 0.2888,
+      "ink" : 0.28960000000000002,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2016,7 +2016,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.square-grid",
-      "ink" : 0.29389999999999999,
+      "ink" : 0.29339999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2072,7 +2072,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.gyroscope",
-      "ink" : 0.42420000000000002,
+      "ink" : 0.42920000000000003,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2080,7 +2080,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.gyroscope",
-      "ink" : 0.60450000000000004,
+      "ink" : 0.60750000000000004,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2088,7 +2088,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.flip-tile",
-      "ink" : 0.54859999999999998,
+      "ink" : 0.55149999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2096,7 +2096,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.flip-tile",
-      "ink" : 0.6119,
+      "ink" : 0.60960000000000003,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2104,7 +2104,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.infinity-comet",
-      "ink" : 0.3962,
+      "ink" : 0.38019999999999998,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2112,7 +2112,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.infinity-comet",
-      "ink" : 0.4677,
+      "ink" : 0.46589999999999998,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2120,7 +2120,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.heartbeat",
-      "ink" : 0.1333,
+      "ink" : 0.13350000000000001,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2240,7 +2240,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.elastic-ring",
-      "ink" : 0.85740000000000005,
+      "ink" : 0.86299999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2264,7 +2264,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.dash-flow-ring",
-      "ink" : 0.70469999999999999,
+      "ink" : 0.69399999999999995,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2272,7 +2272,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.dash-flow-ring",
-      "ink" : 0.76800000000000002,
+      "ink" : 0.76070000000000004,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2312,7 +2312,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.trace-button",
-      "ink" : 0,
+      "ink" : 0.33040000000000003,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2320,7 +2320,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.trace-button",
-      "ink" : 0.66669999999999996,
+      "ink" : 0.70689999999999997,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2328,7 +2328,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.breathing-skeleton",
-      "ink" : 0.22500000000000001,
+      "ink" : 0.1691,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2336,7 +2336,7 @@
       "category" : "loading",
       "flagged" : false,
       "id" : "loading.breathing-skeleton",
-      "ink" : 0.20599999999999999,
+      "ink" : 0.23619999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2456,7 +2456,7 @@
       "category" : "feedback",
       "flagged" : false,
       "id" : "feedback.connection-banner",
-      "ink" : 0.1928,
+      "ink" : 0.30199999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2464,7 +2464,7 @@
       "category" : "feedback",
       "flagged" : false,
       "id" : "feedback.connection-banner",
-      "ink" : 0.17599999999999999,
+      "ink" : 0.1615,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2536,7 +2536,7 @@
       "category" : "feedback",
       "flagged" : false,
       "id" : "feedback.coach-spotlight",
-      "ink" : 0.40949999999999998,
+      "ink" : 0.4093,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2544,7 +2544,7 @@
       "category" : "feedback",
       "flagged" : false,
       "id" : "feedback.coach-spotlight",
-      "ink" : 0.33739999999999998,
+      "ink" : 0.34010000000000001,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -2728,7 +2728,7 @@
       "category" : "feedback",
       "flagged" : false,
       "id" : "feedback.presence-ping",
-      "ink" : 0.39960000000000001,
+      "ink" : 0.40000000000000002,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2776,7 +2776,7 @@
       "category" : "feedback",
       "flagged" : false,
       "id" : "feedback.tip-popover",
-      "ink" : 0.42470000000000002,
+      "ink" : 0.67400000000000004,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -2784,7 +2784,7 @@
       "category" : "feedback",
       "flagged" : false,
       "id" : "feedback.tip-popover",
-      "ink" : 0.1236,
+      "ink" : 0.080199999999999994,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -3000,7 +3000,7 @@
       "category" : "morph",
       "flagged" : false,
       "id" : "morph.island-expand",
-      "ink" : 0.075200000000000003,
+      "ink" : 0.1321,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -3008,7 +3008,7 @@
       "category" : "morph",
       "flagged" : false,
       "id" : "morph.island-expand",
-      "ink" : 0.075200000000000003,
+      "ink" : 0.1321,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -3720,7 +3720,7 @@
       "category" : "navigation",
       "flagged" : false,
       "id" : "navigation.dock-magnify",
-      "ink" : 0.44319999999999998,
+      "ink" : 0.45040000000000002,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -3728,7 +3728,7 @@
       "category" : "navigation",
       "flagged" : false,
       "id" : "navigation.dock-magnify",
-      "ink" : 0.75880000000000003,
+      "ink" : 0.75260000000000005,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -3736,7 +3736,7 @@
       "category" : "cards",
       "flagged" : false,
       "id" : "cards.tilt-3d",
-      "ink" : 0.82820000000000005,
+      "ink" : 0.85509999999999997,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -3744,7 +3744,7 @@
       "category" : "cards",
       "flagged" : false,
       "id" : "cards.tilt-3d",
-      "ink" : 0.8276,
+      "ink" : 0.85860000000000003,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -3752,7 +3752,7 @@
       "category" : "cards",
       "flagged" : false,
       "id" : "cards.holographic",
-      "ink" : 0.79520000000000002,
+      "ink" : 0.83299999999999996,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -3760,7 +3760,7 @@
       "category" : "cards",
       "flagged" : false,
       "id" : "cards.holographic",
-      "ink" : 0.8014,
+      "ink" : 0.8165,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -3832,7 +3832,7 @@
       "category" : "cards",
       "flagged" : false,
       "id" : "cards.parallax-layers",
-      "ink" : 0.71860000000000002,
+      "ink" : 0.72550000000000003,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -3840,7 +3840,7 @@
       "category" : "cards",
       "flagged" : false,
       "id" : "cards.parallax-layers",
-      "ink" : 0.71919999999999995,
+      "ink" : 0.72360000000000002,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -3864,7 +3864,7 @@
       "category" : "cards",
       "flagged" : false,
       "id" : "cards.rim-light",
-      "ink" : 0.50390000000000001,
+      "ink" : 0.4824,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -3872,7 +3872,7 @@
       "category" : "cards",
       "flagged" : false,
       "id" : "cards.rim-light",
-      "ink" : 0.79930000000000001,
+      "ink" : 0.48309999999999997,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4184,7 +4184,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.wave",
-      "ink" : 0.74509999999999998,
+      "ink" : 0.74109999999999998,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -4192,7 +4192,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.wave",
-      "ink" : 0.82240000000000002,
+      "ink" : 0.88380000000000003,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4248,7 +4248,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.shimmer",
-      "ink" : 0.29870000000000002,
+      "ink" : 0.29830000000000001,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -4256,7 +4256,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.shimmer",
-      "ink" : 0.2296,
+      "ink" : 0.2072,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4328,7 +4328,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.marquee",
-      "ink" : 0.7339,
+      "ink" : 0.62119999999999997,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -4336,7 +4336,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.marquee",
-      "ink" : 0.42099999999999999,
+      "ink" : 0.40050000000000002,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4344,7 +4344,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.synced-lyrics",
-      "ink" : 0.30399999999999999,
+      "ink" : 0.30430000000000001,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -4392,7 +4392,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.variable-weight",
-      "ink" : 0.84950000000000003,
+      "ink" : 0.69079999999999997,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -4400,7 +4400,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.variable-weight",
-      "ink" : 0.79190000000000005,
+      "ink" : 0.72470000000000001,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4536,7 +4536,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.squash-hop",
-      "ink" : 0.90200000000000002,
+      "ink" : 0.92700000000000005,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -4544,7 +4544,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.squash-hop",
-      "ink" : 0.90600000000000003,
+      "ink" : 0.89739999999999998,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4560,7 +4560,7 @@
       "category" : "text",
       "flagged" : false,
       "id" : "text.scribble-circle",
-      "ink" : 0.85340000000000005,
+      "ink" : 0.75180000000000002,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4808,7 +4808,7 @@
       "category" : "icons",
       "flagged" : false,
       "id" : "icons.weather",
-      "ink" : 0.64890000000000003,
+      "ink" : 0.65139999999999998,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -4816,7 +4816,7 @@
       "category" : "icons",
       "flagged" : false,
       "id" : "icons.weather",
-      "ink" : 0.64949999999999997,
+      "ink" : 0.65049999999999997,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4904,7 +4904,7 @@
       "category" : "icons",
       "flagged" : false,
       "id" : "icons.radar-ping",
-      "ink" : 0.56699999999999995,
+      "ink" : 0.56000000000000005,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -4912,7 +4912,7 @@
       "category" : "icons",
       "flagged" : false,
       "id" : "icons.radar-ping",
-      "ink" : 0.60250000000000004,
+      "ink" : 0.55410000000000004,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -4920,7 +4920,7 @@
       "category" : "icons",
       "flagged" : false,
       "id" : "icons.ai-sparkle",
-      "ink" : 0.67279999999999995,
+      "ink" : 0.67079999999999995,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -5192,7 +5192,7 @@
       "category" : "gestures",
       "flagged" : false,
       "id" : "gestures.slide-to-confirm",
-      "ink" : 0.57340000000000002,
+      "ink" : 0.5645,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -5384,7 +5384,7 @@
       "category" : "gestures",
       "flagged" : false,
       "id" : "gestures.orbit-slingshot",
-      "ink" : 0.11210000000000001,
+      "ink" : 0.1106,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -5392,7 +5392,7 @@
       "category" : "gestures",
       "flagged" : false,
       "id" : "gestures.orbit-slingshot",
-      "ink" : 0.114,
+      "ink" : 0.11219999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -5600,7 +5600,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.gauge-needle",
-      "ink" : 0.87150000000000005,
+      "ink" : 0.79920000000000002,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -5640,7 +5640,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.heatmap-cascade",
-      "ink" : 0.3286,
+      "ink" : 0.34999999999999998,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -5648,7 +5648,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.heatmap-cascade",
-      "ink" : 0.29949999999999999,
+      "ink" : 0.32090000000000002,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -5672,7 +5672,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.sparkline-stream",
-      "ink" : 0.1799,
+      "ink" : 0.17899999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -5680,7 +5680,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.sparkline-stream",
-      "ink" : 0.18609999999999999,
+      "ink" : 0.1976,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -5736,7 +5736,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.candlestick-live",
-      "ink" : 0.11269999999999999,
+      "ink" : 0.14499999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -5744,7 +5744,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.candlestick-live",
-      "ink" : 0.1095,
+      "ink" : 0.1106,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -5784,7 +5784,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.liquid-bars",
-      "ink" : 0.30320000000000003,
+      "ink" : 0.3039,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -5862,9 +5862,9 @@
     },
     {
       "category" : "charts",
-      "flagged" : true,
+      "flagged" : false,
       "id" : "charts.scatter-histogram",
-      "ink" : 0.077299999999999994,
+      "ink" : 0.087499999999999994,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -5872,7 +5872,7 @@
       "category" : "charts",
       "flagged" : false,
       "id" : "charts.scatter-histogram",
-      "ink" : 0.080100000000000005,
+      "ink" : 0.090300000000000005,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -5992,7 +5992,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.metaballs",
-      "ink" : 0.12,
+      "ink" : 0.1196,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -6000,7 +6000,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.metaballs",
-      "ink" : 0.12,
+      "ink" : 0.1196,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -6008,7 +6008,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.particle-repulsion",
-      "ink" : 0.1197,
+      "ink" : 0.11559999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -6016,7 +6016,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.particle-repulsion",
-      "ink" : 0.11749999999999999,
+      "ink" : 0.11269999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -6056,7 +6056,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.fireflies",
-      "ink" : 0.081799999999999998,
+      "ink" : 0.074300000000000005,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -6064,7 +6064,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.fireflies",
-      "ink" : 0.078600000000000003,
+      "ink" : 0.070199999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -6072,7 +6072,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.halftone-flow",
-      "ink" : 0.2266,
+      "ink" : 0.23449999999999999,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -6080,7 +6080,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.halftone-flow",
-      "ink" : 0.2266,
+      "ink" : 0.23449999999999999,
       "rendered" : true,
       "scheme" : "dark"
     },
@@ -6360,7 +6360,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.flow-field",
-      "ink" : 0.1237,
+      "ink" : 0.1211,
       "rendered" : true,
       "scheme" : "light"
     },
@@ -6368,7 +6368,7 @@
       "category" : "backgrounds",
       "flagged" : false,
       "id" : "backgrounds.flow-field",
-      "ink" : 0.1215,
+      "ink" : 0.12470000000000001,
       "rendered" : true,
       "scheme" : "dark"
     },

@@ -133,7 +133,7 @@ the Compare mode on the family page plays all variations side by side.
    starts itself in `onAppear` must pass `intro: false` so it doesn't play twice. The intro and autoplay must never
    leave the demo pressed/highlighted, and haptics fired after a delay must be guarded with `!ctx.isPreview`.
    The detail page silences `Haptics.*` for 2.5 s after arrival, a variation switch and Reset (`Haptics.quiet(for:)`),
-   so arrival plays never buzz; `.sensoryFeedback` bypasses this, so demos use `Haptics.*` instead.
+   so arrival plays never buzz; the first real touch on the stage ends that silence (`TouchDownObserver` → `Haptics.endQuiet()`), so a user's very first interaction always gets its haptic. `.sensoryFeedback` bypasses all of this, so demos use `Haptics.*` instead.
    When `ctx.isStill` is true a still thumbnail is being rendered: show the finished state (chart drawn, text revealed).
    **`onAppear` runs in stills too.** `ImageRenderer` fires `onAppear` before it draws, so a demo that seeds settled
    data and then resets it to zero in `onAppear` (to replay its entrance) renders as empty axes. Guard such resets

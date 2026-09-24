@@ -334,6 +334,12 @@ enum Haptics {
         quietUntil = Date().addingTimeInterval(seconds)
     }
 
+    /// Ends the arrival silence early: a finger touched the stage, so the next feedback answers it
+    /// (otherwise the first interaction within the quiet window would get no haptic).
+    static func endQuiet() {
+        quietUntil = .distantPast
+    }
+
     private static var isSilent: Bool { isMuted || Date() < quietUntil }
 
     static func tap(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {

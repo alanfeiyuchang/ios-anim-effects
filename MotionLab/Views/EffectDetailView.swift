@@ -273,6 +273,8 @@ struct EffectDetailView: View {
         EffectDemoView(effect: effect, context: DemoContext(params: params, isPreview: false, language: language))
             // Tap-driven demos play once on arrival (and again after Reset, which rebuilds the view).
             .environment(\.demoIntroPlay, true)
+            // The arrival silence only covers plays nobody touched: the first real touch ends it.
+            .gesture(TouchDownObserver { Haptics.endQuiet() })
             .id(resetToken)
             .frame(maxWidth: .infinity)
             .frame(height: height)

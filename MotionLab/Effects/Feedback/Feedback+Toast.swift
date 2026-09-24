@@ -142,7 +142,7 @@ private struct ToastPill: View {
         .padding(.leading, 10)
         .padding(.trailing, 20)
         .padding(.vertical, 9)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay { Capsule().strokeBorder(Palette.stroke) }
         .shadow(color: .black.opacity(0.15), radius: 18, y: 8)
     }

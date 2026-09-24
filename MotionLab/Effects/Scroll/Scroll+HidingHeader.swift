@@ -124,7 +124,7 @@ private struct ScrollHidingHeaderBar: View {
         }
         .padding(.horizontal, 16)
         .frame(maxHeight: .infinity)
-        .background(.regularMaterial)
+        .background { DemoMaterial(Rectangle(), material: .regularMaterial).ignoresSafeArea() }
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(Color.primary.opacity(0.12))
@@ -148,7 +148,7 @@ private struct ScrollHidingTabBar: View {
             }
         }
         .frame(width: 260, height: 58)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay(Capsule().strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
     }

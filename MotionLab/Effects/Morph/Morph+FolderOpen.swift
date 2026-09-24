@@ -131,8 +131,7 @@ private struct FolderOpenDemo: View {
 
     private var folderTile: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
+            DemoMaterial(RoundedRectangle(cornerRadius: 14, style: .continuous), material: .ultraThinMaterial)
                 .matchedGeometryEffect(id: "folder", in: ns)
             VStack(spacing: 4) {
                 ForEach(0..<2, id: \.self) { row in
@@ -162,8 +161,7 @@ private struct FolderOpenDemo: View {
                 .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
             ZStack {
-                RoundedRectangle(cornerRadius: 34, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                DemoMaterial(RoundedRectangle(cornerRadius: 34, style: .continuous), material: .ultraThinMaterial)
                     .matchedGeometryEffect(id: "folder", in: ns)
                 VStack(spacing: 14) {
                     ForEach(0..<2, id: \.self) { row in

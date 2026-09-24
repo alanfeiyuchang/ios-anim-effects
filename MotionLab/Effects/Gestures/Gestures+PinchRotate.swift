@@ -74,7 +74,7 @@ private struct PinchRotateDemo: View {
         .foregroundStyle(.secondary)
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .zIndex(-1)
     }
 

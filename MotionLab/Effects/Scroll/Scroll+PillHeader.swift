@@ -103,7 +103,7 @@ private struct ScrollPillHeaderDemo: View {
         }
         .padding(.horizontal, floating ? 12 : 16)
         .frame(height: floating ? 46 : 64)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: radius, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(Color.primary.opacity(floating ? 0.08 : 0)))
         .shadow(color: .black.opacity(floating ? 0.16 : 0), radius: 16, y: 6)
         .padding(.horizontal, inset)

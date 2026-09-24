@@ -133,7 +133,7 @@ private struct ScrollChapterRail: View {
         }
         .frame(width: 24, height: length, alignment: .top)
         .padding(.vertical, 14)
-        .background(.ultraThinMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .ultraThinMaterial)
     }
 
     private func dot(_ i: Int) -> some View {
@@ -169,7 +169,7 @@ private struct ScrollChapterChip: View {
         .padding(.leading, 5)
         .padding(.trailing, 12)
         .padding(.vertical, 5)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .shadow(color: .black.opacity(0.1), radius: 8, y: 3)
         .animation(.snappy, value: index)
     }

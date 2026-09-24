@@ -135,7 +135,7 @@ private struct PhotoTimeChip: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(.ultraThinMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .ultraThinMaterial, fallback: Color.white.opacity(0.25))
     }
 }
 

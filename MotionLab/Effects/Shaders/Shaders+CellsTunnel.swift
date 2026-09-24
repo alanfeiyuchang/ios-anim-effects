@@ -198,7 +198,7 @@ private struct TunnelSurface: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .demoGlass(Capsule(), material: .ultraThinMaterial)
                     .environment(\.colorScheme, .dark)
                     .padding(.top, 16)
                     .allowsHitTesting(false)

@@ -181,8 +181,7 @@ private struct MiniBar: View {
         .padding(.horizontal, 10)
         .frame(height: 64)
         .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.regularMaterial)
+            DemoMaterial(RoundedRectangle(cornerRadius: 20, style: .continuous), material: .regularMaterial)
                 .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.stroke))
                 .shadow(color: .black.opacity(0.14), radius: 16, y: 8)
                 .matchedGeometryEffect(id: "bg", in: ns)
@@ -234,8 +233,7 @@ private struct FullPlayer: View {
                 .padding(.top, 7)
         }
         .background {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(.regularMaterial)
+            DemoMaterial(RoundedRectangle(cornerRadius: 32, style: .continuous), material: .regularMaterial)
                 .overlay(RoundedRectangle(cornerRadius: 32, style: .continuous).strokeBorder(Palette.stroke))
                 .shadow(color: .black.opacity(0.2), radius: 26, y: 12)
                 .matchedGeometryEffect(id: "bg", in: ns)

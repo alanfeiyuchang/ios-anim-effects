@@ -69,7 +69,7 @@ private struct RippleTabBarDemo: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 28, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
     }

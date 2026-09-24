@@ -60,12 +60,12 @@ private struct SearchTabMorphDemo: View {
         HStack(spacing: 10) {
             tabPill
                 .frame(width: searching ? 56 : 232, height: 56)
-                .background(.regularMaterial, in: Capsule())
+                .demoGlass(Capsule(), material: .regularMaterial)
                 .overlay(Capsule().strokeBorder(Palette.stroke))
                 .clipShape(Capsule())
             searchPill
                 .frame(width: searching ? 232 : 56, height: 56)
-                .background(.regularMaterial, in: Capsule())
+                .demoGlass(Capsule(), material: .regularMaterial)
                 .overlay(Capsule().strokeBorder(Palette.stroke))
                 .clipShape(Capsule())
                 .contentShape(Capsule())

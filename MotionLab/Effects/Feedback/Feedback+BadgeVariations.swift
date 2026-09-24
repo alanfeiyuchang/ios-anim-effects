@@ -465,7 +465,7 @@ private struct FloatingHeartsDemo: View {
                     .font(.system(size: 22))
                     .foregroundStyle(Palette.pink)
                     .frame(width: 46, height: 46)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .demoGlass(Circle(), material: .ultraThinMaterial)
                 Text("\(likes)")
                     .font(.caption2.weight(.bold).monospacedDigit())
                     .foregroundStyle(.white)

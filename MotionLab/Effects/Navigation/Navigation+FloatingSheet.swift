@@ -79,7 +79,7 @@ private struct FloatingSheetDemo: View {
             .frame(width: frameSize.width - margin * 2, height: max(height, 56), alignment: .top)
             .background {
                 ZStack {
-                    shape.fill(.ultraThinMaterial)
+                    DemoMaterial(shape, material: .ultraThinMaterial)
                     shape.fill(Palette.elevated).opacity(solid)
                 }
             }

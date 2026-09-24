@@ -222,7 +222,7 @@ private struct ScrubTooltip: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 10, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Palette.stroke, lineWidth: 1))
         .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
     }

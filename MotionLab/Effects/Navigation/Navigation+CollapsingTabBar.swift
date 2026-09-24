@@ -88,7 +88,7 @@ private struct CollapsingTabBarDemo: View {
             }
             .padding(.horizontal, 6)
             .frame(height: 56)
-            .background(.regularMaterial, in: Capsule())
+            .demoGlass(Capsule(), material: .regularMaterial)
             .overlay(Capsule().strokeBorder(Palette.stroke))
             .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
 
@@ -97,7 +97,7 @@ private struct CollapsingTabBarDemo: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 18, weight: .semibold))
                 .frame(width: 56, height: 56)
-                .background(.regularMaterial, in: Circle())
+                .demoGlass(Circle(), material: .regularMaterial)
                 .overlay(Circle().strokeBorder(Palette.stroke))
                 .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
         }

@@ -156,7 +156,7 @@ private struct TravelCarouselCard: View {
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.white)
                     .frame(width: 32, height: 32)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .demoGlass(Circle(), material: .ultraThinMaterial, fallback: Color.white.opacity(0.25))
                     .padding(12)
             }
             .overlay(alignment: .bottomLeading) { caption }

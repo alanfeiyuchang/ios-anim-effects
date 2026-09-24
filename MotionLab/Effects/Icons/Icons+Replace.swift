@@ -67,7 +67,7 @@ private struct ReplaceDemo: View {
                 }
             }
             .padding(20)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 32, style: .continuous))
+            .demoGlass(RoundedRectangle(cornerRadius: 32, style: .continuous), material: .thinMaterial)
             .overlay(RoundedRectangle(cornerRadius: 32, style: .continuous).strokeBorder(Palette.stroke))
             DemoHint(text: L("Tap the toggles", "点击开关"), ctx: ctx)
         }

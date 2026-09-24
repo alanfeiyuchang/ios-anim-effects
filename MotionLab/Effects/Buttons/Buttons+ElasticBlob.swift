@@ -78,7 +78,7 @@ private struct ButtonElasticBlobDemo: View {
             }
         }
         .frame(width: size.width, height: size.height)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay(Capsule().strokeBorder(Palette.stroke, lineWidth: 1))
         .shadow(color: .black.opacity(0.14), radius: 18, y: 10)
         .contentShape(Capsule())

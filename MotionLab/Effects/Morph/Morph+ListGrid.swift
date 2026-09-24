@@ -78,7 +78,7 @@ private struct ListGridDemo: View {
             .contentTransition(.symbolEffect(.replace))
             .padding(.horizontal, 18)
             .frame(height: 40)
-            .background(.thinMaterial, in: Capsule())
+            .demoGlass(Capsule(), material: .thinMaterial)
             .overlay(Capsule().strokeBorder(Palette.stroke))
         }
         .buttonStyle(.plain)

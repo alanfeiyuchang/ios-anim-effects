@@ -163,7 +163,7 @@ private struct ReactionBar: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay(Capsule().strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
         .onAppear { appeared = true }

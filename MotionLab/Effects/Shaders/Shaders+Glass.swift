@@ -166,7 +166,7 @@ private struct GlassmorphismDemo: View {
         .foregroundStyle(.white)
         .padding(22)
         .frame(width: 250, height: 160)
-        .background(material, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 24, style: .continuous), material: material, fallback: Color.white.opacity(0.22))
         .overlay {
             LinearGradient(
                 colors: [.clear, .white.opacity(0.35), .clear],
@@ -248,7 +248,8 @@ private struct LiquidLensDemo: View {
                     heading: heading,
                     stretch: stretch,
                     ripples: ripples,
-                    enabled: !liquidGlassAvailable
+                    // Stills take the fallback droplet (glass can't be rasterised), so they keep the lens too.
+                    enabled: !liquidGlassAvailable || ctx.isStill
                 ))
             LensDroplet(diameter: diameter, tinted: ctx.bool("tint"))
                 // Stretch along the travel direction: rotate into it, scale, rotate back.
@@ -418,14 +419,20 @@ private struct LensBackdrop: View {
 private struct LensDroplet: View {
     let diameter: CGFloat
     let tinted: Bool
+    @Environment(\.demoIsStill) private var isStill
 
     var body: some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
-            Circle()
-                .fill(Color.clear)
-                .frame(width: diameter, height: diameter)
-                .glassEffect(glass, in: Circle())
+            // Liquid Glass can't be rasterised into a still thumbnail: stills take the clear-bead fallback.
+            if isStill {
+                fallback
+            } else {
+                Circle()
+                    .fill(Color.clear)
+                    .frame(width: diameter, height: diameter)
+                    .glassEffect(glass, in: Circle())
+            }
         } else {
             fallback
         }

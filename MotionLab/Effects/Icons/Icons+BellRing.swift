@@ -56,7 +56,7 @@ private struct BellBanner: View {
         .padding(.leading, 8)
         .padding(.trailing, 14)
         .frame(height: 42)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay(Capsule().strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.1), radius: 12, y: 6)
     }

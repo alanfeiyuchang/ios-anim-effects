@@ -113,7 +113,7 @@ private struct DetentSheetDemo: View {
         }
         .padding(.horizontal, 16)
         .frame(width: size.width, height: size.height)
-        .background(.regularMaterial, in: UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))
+        .demoGlass(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous), material: .regularMaterial)
         .shadow(color: .black.opacity(0.18), radius: 12, y: -2)
     }
 

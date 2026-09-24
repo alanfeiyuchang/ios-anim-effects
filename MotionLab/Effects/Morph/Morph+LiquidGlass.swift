@@ -55,7 +55,12 @@ private struct LiquidGlassDemo: View {
     @ViewBuilder private var toolbar: some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
-            GlassToolbar(expanded: expanded, spacing: ctx.cg("spacing"), gap: ctx.cg("gap"), onToggle: toggle)
+            // Liquid Glass can't be rasterised into a still thumbnail: stills take the metaball fallback.
+            if ctx.isStill {
+                FallbackToolbar(expanded: expanded, spacing: ctx.cg("spacing"), gap: ctx.cg("gap"), onToggle: toggle)
+            } else {
+                GlassToolbar(expanded: expanded, spacing: ctx.cg("spacing"), gap: ctx.cg("gap"), onToggle: toggle)
+            }
         } else {
             FallbackToolbar(expanded: expanded, spacing: ctx.cg("spacing"), gap: ctx.cg("gap"), onToggle: toggle)
         }
@@ -201,7 +206,7 @@ private struct GooeyGlassLayer: View, Animatable {
 
     var body: some View {
         ZStack {
-            Rectangle().fill(.ultraThinMaterial)
+            DemoMaterial(Rectangle(), material: .ultraThinMaterial, fallback: Color.white.opacity(0.3))
             LinearGradient(
                 stops: [
                     .init(color: Palette.indigo.opacity(0.6), location: 0),

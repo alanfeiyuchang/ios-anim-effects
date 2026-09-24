@@ -179,7 +179,7 @@ private struct CardsPeekMenu: View {
             row(L("Delete", "删除"), symbol: "trash", tint: Palette.red)
         }
         .frame(width: 190)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 16, style: .continuous), material: .regularMaterial)
         .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
     }
 

@@ -87,7 +87,7 @@ private struct TabIndicatorDemo: View {
             }
         }
         .padding(6)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay(Capsule().strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
     }

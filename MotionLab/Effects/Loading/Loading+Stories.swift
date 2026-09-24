@@ -190,7 +190,7 @@ private struct StoryChrome: View {
                     .padding(.horizontal, 14)
                     .frame(height: 34)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .demoGlass(Capsule(), material: .ultraThinMaterial, fallback: Color.white.opacity(0.25))
                     .overlay { Capsule().strokeBorder(.white.opacity(0.35)) }
                 Image(systemName: "heart")
                     .font(.headline)

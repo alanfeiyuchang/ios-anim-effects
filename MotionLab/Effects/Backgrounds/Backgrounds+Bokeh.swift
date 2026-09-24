@@ -78,7 +78,7 @@ private struct BokehDemo: View {
         }
         .padding(14)
         .frame(width: 250)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 20, style: .continuous), material: .ultraThinMaterial)
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(.white.opacity(0.15)))
         .environment(\.colorScheme, .dark)
         .allowsHitTesting(false)

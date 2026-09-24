@@ -96,7 +96,7 @@ private struct ScrollProgressHeader: View {
                 .scaleEffect(x: max(progress, 0.001), y: 1, anchor: .leading)
                 .shadow(color: Palette.sky.opacity(0.6), radius: 6)
         }
-        .background(.ultraThinMaterial)
+        .background { DemoMaterial(Rectangle(), material: .ultraThinMaterial).ignoresSafeArea() }
     }
 }
 
@@ -125,7 +125,7 @@ private struct ScrollProgressRing: View {
             }
             .frame(width: 44, height: 44)
             .padding(4)
-            .background(.regularMaterial, in: Circle())
+            .demoGlass(Circle(), material: .regularMaterial)
             .scaleEffect(done ? 1.12 : 1)
             .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
         }

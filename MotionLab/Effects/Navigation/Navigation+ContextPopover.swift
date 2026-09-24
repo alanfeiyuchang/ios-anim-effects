@@ -216,7 +216,7 @@ private struct PopoverMenu: View {
             }
         }
         .padding(.vertical, 6)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 18, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.18), radius: 24, y: 12)
         .onAppear { appeared = true }

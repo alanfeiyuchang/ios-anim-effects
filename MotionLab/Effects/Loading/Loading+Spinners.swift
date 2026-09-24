@@ -396,7 +396,7 @@ private struct PetalsDemo: View {
                             .foregroundStyle(.secondary)
                     }
                     .frame(width: 148, height: 148)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .demoGlass(RoundedRectangle(cornerRadius: 28, style: .continuous), material: .regularMaterial)
                     .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(Palette.stroke))
                     .shadow(color: .black.opacity(0.16), radius: 24, y: 12)
                 }

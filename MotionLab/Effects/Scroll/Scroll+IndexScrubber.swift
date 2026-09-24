@@ -129,7 +129,7 @@ private struct ScrollIndexDemo: View {
             DemoHint(text: L("Slide along the A–Z index", "沿 A–Z 索引滑动"), ctx: ctx)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(.regularMaterial, in: Capsule())
+                .demoGlass(Capsule(), material: .regularMaterial)
                 .padding(.bottom, 12)
                 .opacity(active == nil ? 1 : 0)
                 .animation(.easeOut(duration: 0.2), value: active == nil)

@@ -86,8 +86,7 @@ private struct SearchExpandDemo: View {
             .padding(.horizontal, 22)
             .frame(height: 50)
             .background {
-                Capsule()
-                    .fill(.regularMaterial)
+                DemoMaterial(Capsule(), material: .regularMaterial)
                     .overlay(Capsule().strokeBorder(Palette.stroke))
                     .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
                     .matchedGeometryEffect(id: "bg", in: ns)
@@ -125,8 +124,7 @@ private struct SearchExpandDemo: View {
         .padding(.horizontal, 16)
         .frame(height: 50)
         .background {
-            Capsule()
-                .fill(.regularMaterial)
+            DemoMaterial(Capsule(), material: .regularMaterial)
                 .overlay(Capsule().strokeBorder(Palette.stroke))
                 .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
                 .matchedGeometryEffect(id: "bg", in: ns)
@@ -181,7 +179,7 @@ private struct SearchPanel: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 24, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.1), radius: 18, y: 8)
     }

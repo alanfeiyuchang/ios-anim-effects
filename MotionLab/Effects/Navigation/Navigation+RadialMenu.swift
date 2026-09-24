@@ -121,7 +121,7 @@ private struct RadialMenuDemo: View {
                     .fixedSize()
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(.regularMaterial, in: Capsule())
+                    .demoGlass(Capsule(), material: .regularMaterial)
                     .offset(y: -32)
                     .opacity(isHot ? 1 : 0)
                     .scaleEffect(isHot ? 1 : 0.6, anchor: .bottom)
@@ -159,7 +159,7 @@ private struct RadialMenuDemo: View {
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(.regularMaterial, in: Capsule())
+                .demoGlass(Capsule(), material: .regularMaterial)
                 .padding(.top, 22)
                 .transition(.move(edge: .top).combined(with: .opacity))
         }

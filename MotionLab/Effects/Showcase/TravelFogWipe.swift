@@ -122,8 +122,7 @@ private struct TravelFogDemo: View {
     private var fog: some View {
         // A system material blurs the photo underneath it (true frosted glass), so the wiped holes
         // reveal the sharp photo. Thicker materials read as denser fog.
-        Rectangle()
-            .fill(fogMaterial)
+        DemoMaterial(Rectangle(), material: fogMaterial)
             .environment(\.colorScheme, .light)
             .overlay(Color.white.opacity(0.02 + ctx["frost"] / 300))
             .overlay(

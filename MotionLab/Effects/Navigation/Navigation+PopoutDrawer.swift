@@ -107,7 +107,7 @@ private struct PopoutDrawerDemo: View {
         .padding(.top, 52)
         .padding(.horizontal, 10)
         .frame(width: 190, height: 250, alignment: .topLeading)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 26, style: .continuous), material: .thinMaterial)
         .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Color.white.opacity(0.25)))
         .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
         .scaleEffect(open ? 1 : 0.2, anchor: .topLeading)

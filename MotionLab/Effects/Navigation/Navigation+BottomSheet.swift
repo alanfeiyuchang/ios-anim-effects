@@ -81,7 +81,7 @@ private struct BottomSheetDemo: View {
                 DemoHint(text: L("Drag or flick the sheet", "拖动或轻甩面板"), ctx: ctx)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.thinMaterial, in: Capsule())
+                    .demoGlass(Capsule(), material: .thinMaterial)
                     .padding(.top, 14)
                     .opacity(ctx.isPreview ? 0 : 1 - Double(lift))
             }

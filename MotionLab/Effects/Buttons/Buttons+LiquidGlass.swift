@@ -83,7 +83,12 @@ private struct ButtonLiquidGlassDemo: View {
     @ViewBuilder private var actions: some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
-            ButtonGlassActions(saved: saved, spacing: ctx.cg("spacing"), language: ctx.language, onToggle: toggle)
+            // Liquid Glass can't be rasterised into a still thumbnail: stills take the frosted fallback.
+            if ctx.isStill {
+                ButtonFallbackGlassActions(saved: saved, spacing: ctx.cg("spacing"), language: ctx.language, onToggle: toggle)
+            } else {
+                ButtonGlassActions(saved: saved, spacing: ctx.cg("spacing"), language: ctx.language, onToggle: toggle)
+            }
         } else {
             ButtonFallbackGlassActions(saved: saved, spacing: ctx.cg("spacing"), language: ctx.language, onToggle: toggle)
         }
@@ -170,13 +175,19 @@ private struct ButtonGlassActions: View {
 private struct ButtonGlassHeart: View {
     let liked: Bool
     let action: () -> Void
+    @Environment(\.demoIsStill) private var isStill
 
     var body: some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
-            Button(action: action) { glyph }
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
+            // Liquid Glass can't be rasterised into a still thumbnail: stills take the frosted fallback.
+            if isStill {
+                fallback
+            } else {
+                Button(action: action) { glyph }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+            }
         } else {
             fallback
         }
@@ -212,7 +223,7 @@ private struct ButtonFallbackGlass<S: Shape>: View {
 
     var body: some View {
         ZStack {
-            shape.fill(.ultraThinMaterial)
+            DemoMaterial(shape, material: .ultraThinMaterial, fallback: Color.white.opacity(0.2))
             if let tint {
                 shape.fill(tint.opacity(0.55))
             }

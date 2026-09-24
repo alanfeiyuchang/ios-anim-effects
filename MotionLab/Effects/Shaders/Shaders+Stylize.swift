@@ -599,7 +599,7 @@ private struct PlasmaBadge: View {
         .foregroundStyle(.white)
         .padding(.horizontal, 26)
         .padding(.vertical, 18)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 24, style: .continuous), material: .ultraThinMaterial)
         .environment(\.colorScheme, .dark)
         .allowsHitTesting(false)
     }

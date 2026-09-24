@@ -92,7 +92,7 @@ private struct HingeToastDemo: View {
         }
         .padding(.horizontal, 14)
         .frame(width: 290, height: 64)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 20, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(shown ? 0.18 : 0), radius: 18, y: 10)
     }

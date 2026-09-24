@@ -135,7 +135,7 @@ private struct StepButton: View {
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.primary)
                 .frame(width: 56, height: 56)
-                .background(.regularMaterial, in: Circle())
+                .demoGlass(Circle(), material: .regularMaterial)
                 .overlay(Circle().strokeBorder(Palette.stroke))
         }
         .buttonStyle(.plain)

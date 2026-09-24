@@ -74,7 +74,7 @@ private struct CircularRevealDemo: View {
             DemoHint(text: L("Tap anywhere to switch theme", "点击任意位置切换主题"), ctx: ctx)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(.thinMaterial, in: Capsule())
+                .demoGlass(Capsule(), material: .thinMaterial)
                 .padding(.bottom, 14)
                 .opacity(ctx.isPreview ? 0 : 1)
                 .allowsHitTesting(false)

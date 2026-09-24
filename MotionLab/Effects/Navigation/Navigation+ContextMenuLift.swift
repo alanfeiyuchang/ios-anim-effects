@@ -250,7 +250,7 @@ private struct LiftMenu: View {
             }
         }
         .padding(.vertical, 4)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 16, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.18), radius: 22, y: 10)
         .onAppear { appeared = true }

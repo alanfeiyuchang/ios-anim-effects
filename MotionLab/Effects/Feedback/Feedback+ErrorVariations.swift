@@ -410,7 +410,7 @@ private struct FaceIDFailDemo: View {
         }
         .padding(.vertical, 24)
         .frame(width: 280)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 28, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.12), radius: 20, y: 10)
         .contentShape(Rectangle())

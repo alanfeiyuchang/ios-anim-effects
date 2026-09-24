@@ -220,7 +220,7 @@ private struct ButtonExpandActionsDemo: View {
             .foregroundStyle(.primary)
             .padding(.horizontal, 12)
             .frame(height: 32)
-            .background(.regularMaterial, in: Capsule())
+            .demoGlass(Capsule(), material: .regularMaterial)
             .overlay(Capsule().strokeBorder(Palette.stroke))
             .shadow(color: .black.opacity(0.1), radius: 6, y: 3)
     }

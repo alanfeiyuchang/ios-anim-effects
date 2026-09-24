@@ -119,8 +119,7 @@ private struct ScrollStickyHeader: View {
         // Fixed height: the title condenses inside the bar, so pinning never reflows the rows below.
         .frame(height: 48)
         .background {
-            Rectangle()
-                .fill(.bar)
+            DemoMaterial(Rectangle(), material: .bar)
                 .overlay(alignment: .bottom) {
                     Rectangle().fill(Color.primary.opacity(0.08)).frame(height: 0.5)
                 }

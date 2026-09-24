@@ -72,7 +72,7 @@ private struct HopDotTabDemo: View {
         .padding(.horizontal, 10)
         .padding(.top, 10)
         .padding(.bottom, 16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 26, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
     }

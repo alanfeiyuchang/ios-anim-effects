@@ -82,7 +82,7 @@ private struct HamburgerDemo: View {
                     spin: ctx.bool("spin")
                 )
                 .frame(width: 52, height: 52)
-                .background(.regularMaterial, in: Circle())
+                .demoGlass(Circle(), material: .regularMaterial)
                 .overlay(Circle().strokeBorder(Palette.stroke))
                 .shadow(color: .black.opacity(open ? 0.16 : 0.08), radius: open ? 12 : 8, y: open ? 6 : 4)
             }

@@ -124,8 +124,7 @@ private struct ScrollCollapsingBar: View {
         .frame(height: scrollLerp(150, 60, p), alignment: .top)
         .clipped()
         .background {
-            Rectangle()
-                .fill(.regularMaterial)
+            DemoMaterial(Rectangle(), material: .regularMaterial)
                 .opacity(Double(p))
         }
         .overlay(alignment: .bottom) {

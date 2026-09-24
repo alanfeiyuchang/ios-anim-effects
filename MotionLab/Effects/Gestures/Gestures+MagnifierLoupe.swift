@@ -211,7 +211,7 @@ private struct LoupeView: View, Animatable {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(.regularMaterial, in: Capsule())
+            .demoGlass(Capsule(), material: .regularMaterial)
         }
         .scaleEffect(visible ? 1 : 0.4, anchor: flipped ? .top : .bottom)
         .opacity(visible ? 1 : 0)

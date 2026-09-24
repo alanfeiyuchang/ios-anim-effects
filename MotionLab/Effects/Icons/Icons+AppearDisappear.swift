@@ -73,7 +73,14 @@ private struct AppearDisappearDemo: View {
                 .foregroundStyle(mode ? Color.white : Color.primary)
                 .padding(.horizontal, 18)
                 .frame(height: 34)
-                .background(mode ? AnyShapeStyle(Palette.primary) : AnyShapeStyle(.thinMaterial), in: Capsule())
+                .background {
+                    // A still can't rasterise the material, so it takes `DemoMaterial`'s translucent fill.
+                    if ctx.isStill && !mode {
+                        DemoMaterial(Capsule(), material: .thinMaterial)
+                    } else {
+                        Capsule().fill(mode ? AnyShapeStyle(Palette.primary) : AnyShapeStyle(.thinMaterial))
+                    }
+                }
                 .overlay(Capsule().strokeBorder(Palette.stroke))
                 .contentTransition(.interpolate)
         }
@@ -88,7 +95,7 @@ private struct AppearDisappearDemo: View {
             }
         }
         .padding(8)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay(Capsule().strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.14), radius: 18, y: 10)
     }

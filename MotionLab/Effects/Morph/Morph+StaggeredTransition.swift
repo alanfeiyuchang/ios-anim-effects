@@ -147,7 +147,7 @@ private struct NoticeRow: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 54)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 18, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.06), radius: 8, y: 4)
     }

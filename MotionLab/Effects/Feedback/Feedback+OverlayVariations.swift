@@ -163,7 +163,7 @@ private struct RecedingSheetDemo: View {
             Spacer(minLength: 0)
         }
         .frame(width: 300, height: sheetHeight + 20, alignment: .top)
-        .background(.regularMaterial, in: UnevenRoundedRectangle(topLeadingRadius: 26, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 26, style: .continuous))
+        .demoGlass(UnevenRoundedRectangle(topLeadingRadius: 26, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 26, style: .continuous), material: .regularMaterial)
         .offset(y: 20)
     }
 
@@ -370,7 +370,7 @@ private struct TipPopoverDemo: View {
                 .onTapGesture { if isTarget { toggle() } }
             }
         }
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay { Capsule().strokeBorder(Palette.stroke) }
         .shadow(color: .black.opacity(0.1), radius: 12, y: 6)
     }
@@ -495,7 +495,7 @@ private struct DropAlertDemo: View {
         }
         .padding(20)
         .frame(width: 270)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 24, style: .continuous), material: .regularMaterial)
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.stroke))
         .shadow(color: .black.opacity(0.2), radius: 24, y: 12)
         .keyframeAnimator(initialValue: DropPose(), trigger: drops) { content, pose in

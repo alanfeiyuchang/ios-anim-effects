@@ -156,7 +156,7 @@ private struct ButtonGooeySplitDemo: View {
             .foregroundStyle(.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(.regularMaterial, in: Capsule())
+            .demoGlass(Capsule(), material: .regularMaterial)
             .overlay(Capsule().strokeBorder(Palette.stroke))
             .transition(.move(edge: .top).combined(with: .opacity))
             .id(confirmation.en)

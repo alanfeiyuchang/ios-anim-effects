@@ -64,7 +64,7 @@ private struct ShimmerDemo: View {
         }
         .padding(6)
         .frame(width: 280)
-        .background(.regularMaterial, in: Capsule())
+        .demoGlass(Capsule(), material: .regularMaterial)
         .overlay(Capsule().strokeBorder(Palette.stroke))
     }
 }

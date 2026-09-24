@@ -162,7 +162,7 @@ private struct AlertCardView: View {
             .frame(height: 46)
         }
         .frame(width: 270)
-        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 22, style: .continuous), material: .thickMaterial)
         .shadow(color: .black.opacity(0.22), radius: 30, y: 16)
     }
 

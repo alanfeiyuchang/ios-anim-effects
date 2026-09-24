@@ -224,8 +224,7 @@ private struct DockRow: View {
         let hovered = fingerX.map { Self.nearestIndex(to: $0, canvasWidth: canvas.width) }
 
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(.regularMaterial)
+            DemoMaterial(RoundedRectangle(cornerRadius: 22, style: .continuous), material: .regularMaterial)
                 .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.stroke))
                 .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
                 .frame(width: total + 20, height: Self.base + 20)
@@ -265,7 +264,7 @@ private struct DockIcon: View {
                     .fixedSize()
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
-                    .background(.regularMaterial, in: Capsule())
+                    .demoGlass(Capsule(), material: .regularMaterial)
                     .offset(y: -30)
                     .opacity(showLabel ? 1 : 0)
                     .scaleEffect(showLabel ? 1 : 0.7, anchor: .bottom)
@@ -321,7 +320,7 @@ private struct DockDesktop: View {
         }
         .padding(10)
         .frame(width: 170, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .demoGlass(RoundedRectangle(cornerRadius: 10, style: .continuous), material: .regularMaterial)
         .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
     }
 }

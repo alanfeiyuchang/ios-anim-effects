@@ -1,74 +1,54 @@
 import SwiftUI
 
-/// A pull-to-refresh drag that never traps the detail page's vertical scroll and never leaves a demo stuck mid-pull:
-/// - it is attached *simultaneously*, so the page's scroll view still receives every swipe;
-/// - it only engages when the touch starts within `startZone` pt of the view's top edge and the first
-///   `minimumDistance` of travel is mostly downward. Upward and sideways swipes are rejected for the rest of
-///   that touch and simply scroll the page;
-/// - a `@GestureState` flag also resets on system cancellation (scroll takeover, Control Center pull, multi-touch),
-///   so `onEnded` runs exactly once per engaged pull: with the final value on a normal release, or `nil` when the
-///   system cancelled the drag.
-private struct PageSafePullDownModifier: ViewModifier {
-    let minimumDistance: CGFloat
-    let startZone: CGFloat
-    let onChanged: (DragGesture.Value) -> Void
-    let onEnded: (DragGesture.Value?) -> Void
+/// The list of a pull-to-refresh demo, pulled the native way: when `live`, the rows sit in their own vertical
+/// `ScrollView` that always bounces, and the pull is that scroll view's top overscroll. The inner scroll view owns
+/// the drag, so the detail page doesn't move with it, and the system bounce gives the rubber band and the spring home.
+/// - `onPull(overscroll, byFinger)` reports the overscroll (≥ 0) on every change, with whether a finger is on it;
+/// - `onRelease()` runs once when the finger lifts (or the system cancels the touch);
+/// - `hold` shifts the rows down without touching the scroll view: the scripted pull of previews and the hold
+///   height while refreshing.
+/// Previews and stills (`live == false`) show the plain rows, shifted by `hold`.
+struct FeedbackRefreshList<Content: View>: View {
+    let live: Bool
+    let hold: CGFloat
+    let onPull: (CGFloat, Bool) -> Void
+    let onRelease: () -> Void
+    let content: Content
 
-    private enum Phase {
-        case idle, engaged, rejected
+    @State private var fingerDown = false
+
+    init(
+        live: Bool,
+        hold: CGFloat,
+        onPull: @escaping (CGFloat, Bool) -> Void,
+        onRelease: @escaping () -> Void,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.live = live
+        self.hold = hold
+        self.onPull = onPull
+        self.onRelease = onRelease
+        self.content = content()
     }
 
-    @State private var phase: Phase = .idle
-    @GestureState private var touching = false
-
-    func body(content: Content) -> some View {
-        content
-            .simultaneousGesture(drag)
-            .onChange(of: touching) { _, isTouching in
-                if !isTouching { finish(nil) }
+    var body: some View {
+        if live {
+            ScrollView(.vertical) {
+                content.offset(y: hold)
             }
-    }
-
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: minimumDistance)
-            .updating($touching) { _, state, _ in state = true }
-            .onChanged { value in
-                switch phase {
-                case .rejected:
-                    return
-                case .idle:
-                    let dx: CGFloat = value.translation.width
-                    let dy: CGFloat = value.translation.height
-                    guard value.startLocation.y <= startZone, dy > 0, dy > abs(dx) else {
-                        phase = .rejected
-                        return
-                    }
-                    phase = .engaged
-                case .engaged:
-                    break
-                }
-                onChanged(value)
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.always)
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                max(0, -(geometry.contentOffset.y + geometry.contentInsets.top))
+            } action: { _, overscroll in
+                onPull(overscroll, fingerDown)
             }
-            .onEnded { value in finish(value) }
-    }
-
-    private func finish(_ value: DragGesture.Value?) {
-        let wasEngaged = phase == .engaged
-        phase = .idle
-        if wasEngaged { onEnded(value) }
-    }
-}
-
-extension View {
-    /// Downward-only pull for pull-to-refresh demos: engages on a mostly downward drag that starts within
-    /// `startZone` pt of the top, lets every other swipe scroll the page, and reports cancellation as `onEnded(nil)`.
-    /// Translations are measured from the touch-down point, like a plain `DragGesture`.
-    func pageSafePullDown(
-        minimumDistance: CGFloat = 6,
-        startZone: CGFloat = 120,
-        onChanged: @escaping (DragGesture.Value) -> Void,
-        onEnded: @escaping (DragGesture.Value?) -> Void
-    ) -> some View {
-        modifier(PageSafePullDownModifier(minimumDistance: minimumDistance, startZone: startZone, onChanged: onChanged, onEnded: onEnded))
+            .onScrollPhaseChange { oldPhase, newPhase in
+                fingerDown = newPhase == .tracking || newPhase == .interacting
+                if oldPhase == .interacting && newPhase != .interacting { onRelease() }
+            }
+        } else {
+            content.offset(y: hold)
+        }
     }
 }

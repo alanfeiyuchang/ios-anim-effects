@@ -59,7 +59,9 @@ private struct PhotoViewerDemo: View {
                 .shadow(color: .black.opacity(0.16), radius: 18, y: 10)
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2, coordinateSpace: .local) { location in doubleTap(at: location) }
-                .gesture(dragGesture)
+                // At fit size the pan has nothing to move (zero bounds), so it is switched off and vertical swipes
+                // scroll the page; `.subviews` keeps the double-tap attached above working.
+                .gesture(dragGesture, including: scale > 1.01 ? .all : .subviews)
                 .simultaneousGesture(magnifyGesture)
             DemoHint(text: L("Pinch, pan or double-tap", "捏合、平移或双击"), ctx: ctx)
         }
@@ -192,8 +194,7 @@ private struct PhotoViewerDemo: View {
             .updating($panDown) { _, state, _ in state = true }
             .onChanged { value in
                 if !panning {
-                    // At fit size only horizontal-first drags are claimed, so the page can still scroll.
-                    if scale <= 1.01 && pinch == 1 && abs(value.translation.height) > abs(value.translation.width) { return }
+                    // Only reachable once zoomed (the gesture is masked at fit size).
                     panning = true
                     stopScript()
                 }

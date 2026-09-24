@@ -10,8 +10,8 @@ extension Effect {
         name: L("Progress Fill Button", "进度填充按钮"),
         summary: L("The button's own surface fills left to right, inverting the label as it passes.", "按钮表面自身从左到右填充，经过处的文字随之反色。"),
         prompt: L(
-            "A 250 × 56 pt outlined capsule reads 'Download · 1.2 GB' in indigo on a 10% indigo tint. On tap it presses to 96%, the label cross-fades to 'Downloading 0%', and a solid indigo → violet fill sweeps in from the left edge in irregular chunks (0.45 s smooth each). Where the fill passes, the label turns white — two stacked labels are clipped to either side of the fill edge, so letters split mid-glyph as it crosses. At 100% the capsule crossfades to green, the label rolls to 'Open', and the button bounces 1.0 → 1.05 → 1.0 with a success haptic. Tap again to reset. Honest, legible, compact.",
-            "一枚 250 × 56 pt 的描边胶囊，10% 靛蓝底色上写着靛蓝色的“下载 · 1.2 GB”。点击后按钮压到 96%，文字交叉淡换为“正在下载 0%”，一层靛蓝 → 紫罗兰的实色填充从左边缘分段扫入（每段 0.45 秒平滑曲线）。填充经过处文字变白——上下叠放两层文字，分别裁切在填充边缘两侧，所以边缘经过时一个字母会被一分为二。到达 100% 时胶囊交叉淡变为绿色，文字滚动为“打开”，按钮在 1.0 → 1.05 → 1.0 间弹一下并伴随成功触感。再次点击重置。诚实、清晰、紧凑。"
+            "A 250 × 56 pt outlined capsule reads 'Download · 1.2 GB' in indigo on a 10% indigo tint. On tap it presses to 96%, the label rolls to 'Downloading 0%', and a solid indigo → violet fill sweeps in from the left edge in irregular chunks (0.45 s smooth each). Where the fill passes, the label turns white — two stacked labels are clipped to either side of the fill edge, so letters split mid-glyph as it crosses. At 100% the capsule crossfades to green, the label rolls to 'Open', and the button bounces 1.0 → 1.05 → 1.0 with a success haptic. Tap again to reset. Honest, legible, compact.",
+            "一枚 250 × 56 pt 的描边胶囊，10% 靛蓝底色上写着靛蓝色的“下载 · 1.2 GB”。点击后按钮压到 96%，文字滚动为“正在下载 0%”，一层靛蓝 → 紫罗兰的实色填充从左边缘分段扫入（每段 0.45 秒平滑曲线）。填充经过处文字变白——上下叠放两层文字，分别裁切在填充边缘两侧，所以边缘经过时一个字母会被一分为二。到达 100% 时胶囊交叉淡变为绿色，文字滚动为“打开”，按钮在 1.0 → 1.05 → 1.0 间弹一下并伴随成功触感。再次点击重置。诚实、清晰、紧凑。"
         ),
         implementation: L(
             "A fill rectangle of width progress × 250 sits inside the clipped capsule; a white copy of the label is masked to the same width so it reads inverted over the fill.",

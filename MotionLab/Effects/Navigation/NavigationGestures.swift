@@ -154,7 +154,12 @@ final class PageSafePanCoordinator: NSObject, UIGestureRecognizerDelegate {
         let vertical = abs(d.y) > abs(d.x)
         if directions.contains(.down) && vertical && d.y > 0 { return true }
         if directions.contains(.up) && vertical && d.y < 0 { return true }
-        if directions.contains(.right) && !vertical && d.x > 0 { return true }
+        if directions.contains(.right) && !vertical && d.x > 0 {
+            // A rightward swipe that starts at the window's left edge belongs to the navigation stack's
+            // interactive pop, so leave it to that edge pan.
+            let startX: CGFloat = pan.location(in: nil).x - translation.x
+            return startX > 24
+        }
         if directions.contains(.left) && !vertical && d.x < 0 { return true }
         return false
     }

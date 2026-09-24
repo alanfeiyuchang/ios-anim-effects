@@ -248,6 +248,8 @@ private struct PresencePingDemo: View {
     @State private var touched: [Date?] = [nil, nil, nil, nil, nil]
     /// Bumped on every tap so the ambient loop restarts and waits a full interval before its next change.
     @State private var cycleEpoch = 0
+    /// The shell's preview switch (off for scrolled-away cards, "Animate previews" off, Reduce Motion).
+    @Environment(\.demoAutoplayEnabled) private var autoplayEnabled
 
     private let userHold: TimeInterval = 6
 
@@ -291,7 +293,7 @@ private struct PresencePingDemo: View {
             DemoHint(text: L("Tap an avatar to toggle", "点击头像切换状态"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task(id: [ctx["toggle"], Double(cycleEpoch)]) { await cycle() }
+        .task(id: [ctx["toggle"], Double(cycleEpoch), autoplayEnabled ? 1 : 0]) { await cycle() }
     }
 
     private func avatar(_ index: Int, t: Double) -> some View {
@@ -353,6 +355,8 @@ private struct PresencePingDemo: View {
     }
 
     private func cycle() async {
+        // A preview whose autoplay the shell switched off holds still; the detail stage always cycles.
+        guard autoplayEnabled || !ctx.isPreview else { return }
         var order = 0
         let sequence: [Int] = [1, 4, 2, 1, 4, 2]
         while !Task.isCancelled {

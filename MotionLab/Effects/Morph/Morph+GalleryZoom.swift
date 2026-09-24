@@ -12,7 +12,7 @@ extension Effect {
         ),
         prompt: L(
             "A 3 × 3 grid of rounded photo thumbnails (14 pt corners). Tapping one zooms it out of its cell into a full-bleed viewer on a smooth spring (response ≈0.45 s, damping 0.86) while a black backdrop fades in. The viewer pages like Photos: a sideways swipe drags the whole strip 1:1 with the next photo peeking 16 pt behind a gap, rubber-bands at either end, and past 30% of the width (or a flick) snaps to the neighbour on a critically damped spring with a selection tick. A downward pull locks to dismissal instead (an upward swipe scrolls the page): the photo follows the finger, tilts up to ±6° with the sideways drift and the backdrop fades; past ~90 pt or a flick it flies into its own cell on an under-damped spring (≈0.7) that lands with a small bounce.",
-            "3 × 3 圆角缩略图网格（圆角 14pt）。点击一张，它以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从格子放大为全屏查看器，黑色背景淡入。查看器像“照片”一样分页：横向滑动时整条胶片 1:1 跟手，下一张隔着 16pt 间隙探出，两端带橡皮筋阻尼；拖过宽度的 30% 或快速轻扫，即以临界阻尼弹簧吸附到相邻照片，并伴随一次选择触感。若先向下拖动则锁定为关闭手势（向上滑动交给页面滚动）：照片跟手移动，随横向偏移倾斜最多 ±6°，背景渐隐；超过约 90pt 或快速甩出，它以欠阻尼弹簧（约 0.7）飞回自己的格子，落位时轻轻一弹。"
+            "3 × 3 圆角缩略图网格（圆角 14pt）。点击一张，它以平滑弹簧（响应约 0.45 秒、阻尼 0.86）从格子放大为全屏查看器，黑色背景淡入。查看器像“照片”一样分页：横向滑动时整条胶片 1:1 跟手，下一张隔 16pt 间隙探出，两端带橡皮筋阻尼；拖过宽度的 30% 或快速轻扫，即以临界阻尼弹簧吸附到相邻照片，并伴随一次选择触感。先向下拖则转为关闭（上滑滚动页面）：照片跟手移动，随横向偏移倾斜最多 ±6°，背景渐隐；超过约 90pt 或快速甩出，它以欠阻尼弹簧（约 0.7）飞回自己的格子，落位轻弹。"
         ),
         implementation: L(
             "Grid tiles and the current page share a matchedGeometryEffect id; one down/left/right-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) locks its axis on the first movement: horizontal drives a paging offset whose settle spring swaps the page index in its completion, downward drives the dismiss offset, tilt and backdrop.",
@@ -195,13 +195,15 @@ private struct GalleryZoomDemo: View {
     }
 
     private func viewerDragChanged(_ t: CGSize) {
-        flingTask?.cancel()
-        flingTask = nil
-        flingPending = false
         if axis == nil {
-            // Lock once the finger has travelled a couple of points in the direction the pan began with.
+            // Lock once the finger has travelled a couple of points in the direction the pan began with (until
+            // then a running fling keeps going, so a tiny touch can't strand the photo mid-flight).
             guard max(abs(t.width), abs(t.height)) >= 2 else { return }
-            // A new touch lands a page that is still settling, then locks to the dominant direction.
+            // The finger takes over from a fling, lands a page that is still settling, then locks to the dominant
+            // direction.
+            flingTask?.cancel()
+            flingTask = nil
+            flingPending = false
             commitPendingPage()
             axis = abs(t.width) > abs(t.height) ? .paging : .dismiss
         }

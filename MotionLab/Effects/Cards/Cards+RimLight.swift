@@ -12,8 +12,8 @@ extension Effect {
             "一张250×158 pt的午夜蓝卡片几乎静止地悬浮着，手指就是光源。离光最近的边缘亮起2.5 pt白色轮廓光，外加6 pt模糊光晕，沿边框在±60°内渐隐；一道柔和镜面光带朝反方向扫过卡面，投影则落向背光一侧。卡片本身几乎不转（最多2°），动的只有光：它以厚重的弹簧（响应0.55秒、阻尼0.72）慢半拍地追随手指，松手后再以缓慢弹簧（响应0.9秒）退回到三分之一的位置。未触摸前光源绕卡片缓缓旋转，氛围感十足，宛如产品大片。"
         ),
         implementation: L(
-            "The light position (±1 at the card's edges, up to ±1.3 just outside them, read from a 330×250 pt touch area) sets an AngularGradient stroke whose peak angle is atan2 of the light, an offset specular stripe with plusLighter blending and two rotation3DEffects; a TimelineView orbits the light until the first touch.",
-            "光源位置（卡片边缘为 ±1，可越过边缘到 ±1.3，取自 330×250 pt 的触摸区域）决定 AngularGradient 描边的峰值角度（取 atan2），并驱动以 plusLighter 混合的偏移镜面光带与两个 rotation3DEffect；首次触摸前由 TimelineView 让光源环绕。"
+            "The light position (±1 at the card's edges, up to ±1.24 in a 30 pt margin around it: the card takes a drag at once, the margin only a mostly horizontal one, so vertical swipes still scroll the page) sets an AngularGradient stroke whose peak angle is atan2 of the light, an offset specular stripe with plusLighter blending and two rotation3DEffects; a TimelineView orbits the light until the first touch.",
+            "光源位置（卡片边缘为 ±1，在卡片外 30 pt 边距内可到 ±1.24；卡片上立即跟手，边距内仅响应以水平为主的拖动，竖向滑动仍可滚动页面）决定 AngularGradient 描边的峰值角度（取 atan2），并驱动以 plusLighter 混合的偏移镜面光带与两个 rotation3DEffect；首次触摸前由 TimelineView 让光源环绕。"
         ),
         apis: ["AngularGradient(stops:center:angle:)", "rotation3DEffect", "blendMode(.plusLighter)", "TimelineView", "DragGesture"],
         tags: ["rim light", "glare", "tilt", "specular", "轮廓光", "高光", "倾斜", "光泽"],
@@ -38,8 +38,9 @@ private struct CardsRimLightDemo: View {
 
     /// Half the card size: the card's edges map to ±1.
     private let halfCard = CGSize(width: 125, height: 79)
-    /// Touch area around the card, so the light can be dragged beside it, not just over it.
-    private let area = CGSize(width: 330, height: 250)
+    /// The card plus a 30 pt margin, so the light can be dragged just beside it, not only over it.
+    private let area = CGSize(width: 310, height: 218)
+    private let cardSize = CGSize(width: 250, height: 158)
 
     var body: some View {
         VStack(spacing: 30) {
@@ -53,7 +54,13 @@ private struct CardsRimLightDemo: View {
             }
             .frame(width: area.width, height: area.height)
             .contentShape(Rectangle())
-            .gesture(drag)
+            .overlay { cardHitArea }
+            // Beside the card, only a mostly horizontal drag moves the light, so vertical swipes scroll the page.
+            .pageSafeHorizontalDrag(minimumDistance: 8) { value in
+                moveLight(to: value.location)
+            } onEnded: { _ in
+                release()
+            }
             DemoHint(text: L("Drag around the card to move the light", "在卡片周围拖动以移动光源"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -66,26 +73,43 @@ private struct CardsRimLightDemo: View {
         CGSize(width: cos(t * 0.9), height: sin(t * 0.9) * 0.9)
     }
 
+    /// The card itself claims a drag at once (like its tilt siblings).
+    private var cardHitArea: some View {
+        Color.clear
+            .frame(width: cardSize.width, height: cardSize.height)
+            .contentShape(Rectangle())
+            .gesture(drag)
+    }
+
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
             .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
-                if !touched {
-                    light = idleLight(at: Date().timeIntervalSinceReferenceDate)
-                    touched = true
-                }
-                if !held {
-                    held = true
-                    Haptics.tap(.soft)
-                }
-                // Relative to the card centre: the card's edges are ±1, the light may sit just outside (±1.3).
-                let x: CGFloat = (value.location.x - area.width / 2) / halfCard.width
-                let y: CGFloat = (value.location.y - area.height / 2) / halfCard.height
-                withAnimation(.spring(response: ctx["lag"], dampingFraction: 0.72)) {
-                    light = CGSize(width: x.clamped(to: -1.3...1.3), height: y.clamped(to: -1.3...1.3))
-                }
+                // Card-local → touch-area coordinates (the card is centred in the area).
+                moveLight(to: CGPoint(
+                    x: value.location.x + (area.width - cardSize.width) / 2,
+                    y: value.location.y + (area.height - cardSize.height) / 2
+                ))
             }
             .onEnded { _ in release() }
+    }
+
+    /// `location` is in the touch area's coordinates.
+    private func moveLight(to location: CGPoint) {
+        if !touched {
+            light = idleLight(at: Date().timeIntervalSinceReferenceDate)
+            touched = true
+        }
+        if !held {
+            held = true
+            Haptics.tap(.soft)
+        }
+        // Relative to the card centre: the card's edges are ±1, the light may sit just outside (±1.24).
+        let x: CGFloat = (location.x - area.width / 2) / halfCard.width
+        let y: CGFloat = (location.y - area.height / 2) / halfCard.height
+        withAnimation(.spring(response: ctx["lag"], dampingFraction: 0.72)) {
+            light = CGSize(width: x.clamped(to: -1.3...1.3), height: y.clamped(to: -1.3...1.3))
+        }
     }
 
     /// Single, guarded end of a touch (lift or system cancellation).

@@ -60,12 +60,15 @@ private struct ScrollHidingHeaderDemo: View {
                 .frame(height: headerHeight)
                 .offset(y: hidden ? -headerHeight - 12 : 0)
                 .animation(.spring(response: 0.35, dampingFraction: 0.82), value: hidden)
+                // Decorative: drags on the bar scroll the list.
+                .allowsHitTesting(false)
         }
         .overlay(alignment: .bottom) {
             ScrollHidingTabBar()
                 .padding(.bottom, 14)
                 .offset(y: hidden && ctx.bool("tabBar") ? 90 : 0)
                 .animation(.spring(response: 0.35, dampingFraction: 0.82).delay(0.05), value: hidden)
+                .allowsHitTesting(false)
         }
         .clipped()
         .autoplay(ctx.isPreview, every: 1.4) { autoScroll() }

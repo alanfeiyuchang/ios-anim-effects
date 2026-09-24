@@ -84,7 +84,7 @@ private struct PullRefreshDemo: View {
             DemoHint(text: L("Pull the list down", "向下拖动列表"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .autoplay(ctx.isPreview, every: 3.6, delay: 0.6) { simulate() }
+        .autoplay(ctx.isPreview, every: ctx["duration"] + 2.6, delay: 0.6) { simulate() }
     }
 
     private var list: some View {

@@ -86,6 +86,9 @@ private struct StagedSwipeDemo: View {
     @State private var autoIndex = 0
     /// True while autoplay (or the detail intro) swipes a row, so its stage ticks and release stay silent.
     @State private var scripted = false
+    /// The scripted swipe's release timer and its row, cancelled on the first real touch and on disappear.
+    @State private var script: Task<Void, Never>?
+    @State private var scriptRow: Int?
 
     var body: some View {
         VStack(spacing: 10) {
@@ -100,6 +103,7 @@ private struct StagedSwipeDemo: View {
                     scripted: scripted,
                     onDrag: {
                         guard committed[item.id] == nil else { return }
+                        takeOver(from: item.id)
                         scripted = false
                         offsets[item.id] = $0
                     },
@@ -115,6 +119,7 @@ private struct StagedSwipeDemo: View {
         .frame(width: 300)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.4, delay: 0.5) { autoStep() }
+        .onDisappear { stopScript() }
     }
 
     @ViewBuilder
@@ -176,6 +181,22 @@ private struct StagedSwipeDemo: View {
         }
     }
 
+    /// A real finger stops the scripted swipe; a different half-open scripted row slides back closed.
+    private func takeOver(from id: Int) {
+        guard script != nil else { return }
+        let row = scriptRow
+        stopScript()
+        if let row, row != id, committed[row] == nil {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { offsets[row] = 0 }
+        }
+    }
+
+    private func stopScript() {
+        script?.cancel()
+        script = nil
+        scriptRow = nil
+    }
+
     private func autoStep() {
         guard let target = items.first(where: { committed[$0.id] == nil }) else { return }
         let stageIndex = autoIndex % 3
@@ -185,8 +206,13 @@ private struct StagedSwipeDemo: View {
         let step = ctx.cg("step")
         let distance: CGFloat = first + step * CGFloat(stageIndex) + step * 0.5
         withAnimation(.easeInOut(duration: 0.8)) { offsets[target.id] = -distance }
-        Task { @MainActor in
+        script?.cancel()
+        scriptRow = target.id
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.9))
+            guard !Task.isCancelled else { return }
+            script = nil
+            scriptRow = nil
             release(target.id, haptic: false)
         }
     }

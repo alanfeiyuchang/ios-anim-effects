@@ -343,7 +343,13 @@ private struct FlipTileView: View {
             let axis: (x: CGFloat, y: CGFloat, z: CGFloat) = index % 2 == 0 ? (1, 0, 0) : (0, 1, 0)
             VStack(spacing: 0) {
                 RoundedRectangle(cornerRadius: side * 0.28, style: .continuous)
-                    .fill(color.gradient)
+                    // A centred radial sheen instead of the vertical `color.gradient`: it looks the same after a
+                    // 180° flip on either axis, so the snap back to angle 0 each beat never pops the shading.
+                    .fill(color)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: side * 0.28, style: .continuous)
+                            .fill(RadialGradient(colors: [.white.opacity(0.22), .clear], center: .center, startRadius: 0, endRadius: side * 0.72))
+                    }
                     .overlay { Circle().fill(.white.opacity(0.9)).frame(width: side * 0.22, height: side * 0.22) }
                     .frame(width: side, height: side)
                     .rotation3DEffect(.degrees(angle), axis: axis, perspective: 0.8)

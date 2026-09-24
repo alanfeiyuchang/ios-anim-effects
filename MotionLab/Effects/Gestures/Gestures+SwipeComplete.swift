@@ -46,6 +46,9 @@ private struct SwipeCompleteDemo: View {
     @State private var offsets: [Int: CGFloat] = [:]
     /// True while autoplay (or the detail intro) swipes a task, so its arm click and success stay silent.
     @State private var scripted = false
+    /// The scripted swipe's release timer and its row, cancelled on the first real touch and on disappear.
+    @State private var script: Task<Void, Never>?
+    @State private var scriptRow: Int?
 
     var body: some View {
         let threshold = ctx.cg("threshold")
@@ -58,6 +61,7 @@ private struct SwipeCompleteDemo: View {
                     ctx: ctx,
                     scripted: scripted,
                     onDrag: {
+                        takeOver(from: item.id)
                         scripted = false
                         offsets[item.id] = $0
                     },
@@ -71,6 +75,7 @@ private struct SwipeCompleteDemo: View {
         .frame(width: 300)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) { autoStep() }
+        .onDisappear { stopScript() }
     }
 
     private func finish(_ id: Int, haptic: Bool = true) {
@@ -106,6 +111,22 @@ private struct SwipeCompleteDemo: View {
         }
     }
 
+    /// A real finger stops the scripted swipe; a different half-swiped scripted row slides back.
+    private func takeOver(from id: Int) {
+        guard script != nil else { return }
+        let row = scriptRow
+        stopScript()
+        if let row, row != id {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { offsets[row] = 0 }
+        }
+    }
+
+    private func stopScript() {
+        script?.cancel()
+        script = nil
+        scriptRow = nil
+    }
+
     private func autoStep() {
         guard let next = items.first(where: { !$0.done }) else {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { items = completeSeed }
@@ -113,8 +134,13 @@ private struct SwipeCompleteDemo: View {
         }
         scripted = true
         withAnimation(.easeOut(duration: 0.45)) { offsets[next.id] = ctx.cg("threshold") + 18 }
-        Task { @MainActor in
+        script?.cancel()
+        scriptRow = next.id
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
+            script = nil
+            scriptRow = nil
             finish(next.id, haptic: false)
         }
     }

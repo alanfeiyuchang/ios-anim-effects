@@ -161,8 +161,8 @@ extension Effect {
             "系统级提示：灵动岛横向鼓起播报一条事件，随后自动缩回。"
         ),
         prompt: L(
-            "A plain black 124 × 36 pt capsule sits at the top of a lock screen. When an event arrives (AirPods connected, payment done, timer finished) the island bulges outward like a system alert: it widens to 250 × 44 pt on a lively spring (response 0.45 s, damping 0.62) while the whole pill pumps to 107% in 140 ms and springs back. A tinted glyph bounces in on the left and a short label and value fade in on the right, 100 ms after the growth starts; a success haptic lands with it. After a 1.5 s hold the content fades first and the pill contracts to its resting size on a calm spring (0.4 s, damping 0.85). Glanceable, self-dismissing, never needs a tap.",
-            "锁屏顶部静置着一枚 124 × 36 pt 的纯黑胶囊。每当有事件到来（耳机已连接、支付完成、计时结束），灵动岛就像系统提示那样向外鼓起：以活泼的弹簧（响应 0.45 秒、阻尼 0.62）横向撑到 250 × 44 pt，整体同时在 140 毫秒内鼓到 107% 再弹回。生长开始 100 毫秒后，左侧着色图标弹跳入场，右侧短标签与数值淡入，并伴随成功触感。停留 1.5 秒后内容先淡出，胶囊再以平缓弹簧（0.4 秒、阻尼 0.85）缩回原尺寸。一眼即懂，自动消失，无需点击。"
+            "A plain black 124 × 36 pt capsule sits at the top of a lock screen. When an event arrives (AirPods connected, payment done, timer finished) the island bulges outward like a system alert: it widens to 250 × 44 pt on a lively spring (response 0.45 s, damping 0.62) while the whole pill pumps to 107% in 140 ms and springs back. A tinted glyph bounces in on the left and a short label and value fade in on the right, 100 ms after the growth starts; a success haptic marks the event's arrival. After a 1.5 s hold the content fades first and the pill contracts to its resting size on a calm spring (0.4 s, damping 0.85). Glanceable, self-dismissing, never needs a tap.",
+            "锁屏顶部静置着一枚 124 × 36 pt 的纯黑胶囊。每当有事件到来（耳机已连接、支付完成、计时结束），灵动岛就像系统提示那样向外鼓起：以活泼的弹簧（响应 0.45 秒、阻尼 0.62）横向撑到 250 × 44 pt，整体同时在 140 毫秒内鼓到 107% 再弹回。事件一到即有成功触感；生长开始 100 毫秒后，左侧着色图标弹跳入场，右侧短标签与数值淡入。停留 1.5 秒后内容先淡出，胶囊再以平缓弹簧（0.4 秒、阻尼 0.85）缩回原尺寸。一眼即懂，自动消失，无需点击。"
         ),
         implementation: L(
             "An optional event index drives the capsule's frame on a spring, and a keyframeAnimator keyed on an event counter adds the 107% pump; content uses an asymmetric transition with a delayed insertion, and a tokenized Task collapses it after the hold.",
@@ -312,10 +312,7 @@ private struct IslandAlertPill: View {
 
     private func content(_ activity: IslandActivity) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: activity.symbol)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(activity.tint)
-                .symbolEffect(.bounce, value: pulses)
+            IslandBounceGlyph(symbol: activity.symbol, tint: activity.tint)
             Text(activity.title, language)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white)
@@ -326,5 +323,26 @@ private struct IslandAlertPill: View {
         }
         .padding(.horizontal, 16)
         .frame(width: 250, height: 44)
+    }
+}
+
+/// The alert glyph. The content is re-created for every event (`.id(event)`), so a bounce keyed on the parent's
+/// counter would never see a change; this view bounces itself once it has been inserted, as the 100 ms delayed
+/// insertion lands.
+private struct IslandBounceGlyph: View {
+    let symbol: String
+    let tint: Color
+    @State private var bounces = 0
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(tint)
+            .symbolEffect(.bounce, value: bounces)
+            .task {
+                try? await Task.sleep(for: .seconds(0.1))
+                guard !Task.isCancelled else { return }
+                bounces += 1
+            }
     }
 }

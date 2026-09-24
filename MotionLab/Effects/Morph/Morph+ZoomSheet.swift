@@ -11,14 +11,14 @@ extension Effect {
             "分享按钮生长为悬浮面板，背后页面随之后退。"
         ),
         prompt: L(
-            "A 56 pt circular share button floats in the bottom-right corner above a photo page. Tapping it grows the button itself into a floating bottom sheet inset 8 pt from the screen edges with 32 pt continuous corners: position, size and fill (brand indigo → elevated surface) interpolate on a spring (response ≈0.5 s, damping ≈0.84) and the share glyph glides into the sheet header. The page behind scales to 92% from its top edge and dims under a 25% scrim, echoing the iOS card presentation. Sheet rows (contacts, then actions) rise in with a 50 ms stagger. The sheet can be dragged down 1:1 — the scrim and page scale track the drag — and releasing past ~100 pt collapses it back into the button; dragging up rubber-bands.",
-            "一张照片页面的右下角悬浮着 56pt 的圆形分享按钮。点击后按钮本身生长为一个距屏幕边缘 8pt、圆角 32pt 的悬浮底部面板：位置、尺寸与填充色（品牌靛蓝 → 浮层表面色）在弹簧（响应约 0.5 秒、阻尼约 0.84）中插值，分享图标平滑滑入面板页眉。背后的页面以顶边为锚点缩小到 92%，并覆上 25% 的暗色遮罩，呼应 iOS 卡片式呈现。面板内容（联系人、操作）以 50 毫秒间隔依次浮现。面板可 1:1 向下拖拽，遮罩与页面缩放随拖拽实时变化；松手超过约 100pt 时收回为按钮，向上拖拽则呈橡皮筋阻尼。"
+            "A 56 pt circular share button floats in the bottom-right corner above a photo page. Tapping it grows the button itself into a floating bottom sheet inset 8 pt from the screen edges with 32 pt continuous corners: position, size and fill (brand indigo → elevated surface) interpolate on a spring (response ≈0.5 s, damping ≈0.84) and the share glyph glides into the sheet header. The page behind scales to 92% from its top edge and dims under a 25% scrim, echoing the iOS card presentation. Sheet rows (contacts, then actions) rise in with a 50 ms stagger. The sheet can be dragged down 1:1 — the scrim and page scale track the drag — and releasing past ~100 pt collapses it back into the button; reversing upward rubber-bands.",
+            "一张照片页面的右下角悬浮着 56pt 的圆形分享按钮。点击后按钮本身生长为一个距屏幕边缘 8pt、圆角 32pt 的悬浮底部面板：位置、尺寸与填充色（品牌靛蓝 → 浮层表面色）在弹簧（响应约 0.5 秒、阻尼约 0.84）中插值，分享图标平滑滑入面板页眉。背后的页面以顶边为锚点缩小到 92%，并覆上 25% 的暗色遮罩，呼应 iOS 卡片式呈现。面板内容（联系人、操作）以 50 毫秒间隔依次浮现。面板可 1:1 向下拖拽，遮罩与页面缩放随拖拽实时变化；松手超过约 100pt 时收回为按钮，回拉向上则呈橡皮筋阻尼。"
         ),
         implementation: L(
-            "Button and sheet share matchedGeometryEffect ids for their background and icon; a DragGesture offsets the sheet with rubber-banding and feeds a progress value that un-scales the page and fades the scrim.",
-            "按钮与面板的背景和图标共享 matchedGeometryEffect ID；DragGesture 带橡皮筋地移动面板，并输出进度值用于恢复页面缩放、淡出遮罩。"
+            "Button and sheet share matchedGeometryEffect ids for their background and icon; a down-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) offsets the sheet with rubber-banding and feeds a progress value that un-scales the page and fades the scrim.",
+            "按钮与面板的背景和图标共享 matchedGeometryEffect ID；只接受向下拖动的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable，页面滚动会等它失败）带橡皮筋地移动面板，并输出进度值用于恢复页面缩放、淡出遮罩。"
         ),
-        apis: ["matchedGeometryEffect", "DragGesture", "scaleEffect(_:anchor:)", "rubber-band", "spring(response:dampingFraction:)"],
+        apis: ["matchedGeometryEffect", "UIGestureRecognizerRepresentable", "scaleEffect(_:anchor:)", "rubber-band", "spring(response:dampingFraction:)"],
         tags: ["sheet", "share", "zoom", "modal", "面板", "分享", "弹出", "底部弹窗"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...1.0, default: 0.5, unit: "s"),
@@ -36,8 +36,6 @@ private struct ZoomSheetDemo: View {
     @State private var open = false
     @State private var showContent = false
     @State private var dragY: CGFloat = 0
-    /// Resets on system cancellation too, so a cancelled pull-down never leaves the sheet hanging offset.
-    @GestureState private var dragging = false
     @Environment(\.colorScheme) private var colorScheme
 
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
@@ -54,12 +52,9 @@ private struct ZoomSheetDemo: View {
             if open {
                 ShareSheetPanel(ns: ns, language: ctx.language, showContent: showContent, onClose: close)
                     .offset(y: dragY)
-                    .gesture(dismissDrag)
+                    // Only a mostly downward drag engages (the page scroll waits for it); an upward swipe scrolls the page.
+                    .gesture(PageSafePan(directions: .down, isEnabled: open, onChanged: dismissChanged, onEnded: dismissEnded))
                     .onAppear { showContent = true }
-                    .onChange(of: dragging) { _, active in
-                        // System cancellation skips onEnded: settle the half-dragged sheet back into place.
-                        if !active && dragY != 0 { withAnimation(spring) { dragY = 0 } }
-                    }
             } else {
                 shareButton
             }
@@ -106,20 +101,18 @@ private struct ZoomSheetDemo: View {
         .padding(20)
     }
 
-    private var dismissDrag: some Gesture {
-        DragGesture()
-            .updating($dragging) { _, state, _ in state = true }
-            .onChanged { value in
-                let t = value.translation.height
-                dragY = t > 0 ? t : rubberBand(t, limit: 24)
-            }
-            .onEnded { value in
-                if value.translation.height > 100 || value.predictedEndTranslation.height > 260 {
-                    close()
-                } else {
-                    withAnimation(spring) { dragY = 0 }
-                }
-            }
+    /// Down follows the finger 1:1; pulling back up past the start only rubber-bands.
+    private func dismissChanged(_ t: CGSize) {
+        dragY = t.height > 0 ? t.height : rubberBand(t.height, limit: 24)
+    }
+
+    /// `nil` means the system cancelled the pan: spring back without judging a flick.
+    private func dismissEnded(_ end: PageSafePanEnd?) {
+        if let end, end.translation.height > 100 || end.predictedEndTranslation.height > 260 {
+            close()
+        } else {
+            withAnimation(spring) { dragY = 0 }
+        }
     }
 
     private func present() {

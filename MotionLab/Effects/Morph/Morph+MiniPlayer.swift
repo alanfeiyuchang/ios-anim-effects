@@ -15,10 +15,10 @@ extension Effect {
             "底部上方停着一条 64 pt 的磨砂“正在播放”条：44 pt 封面、歌名、歌手，外加播放与下一首按钮。轻点，播放条自身的材质长成悬浮的完整播放器（32 pt 圆角），封面飞起放大到 132 pt，歌名滑到它下方，所有共享元素同乘一条弹簧（响应 0.5 秒、阻尼 0.82）。身后的曲库缩到 94%、模糊 4 pt 并压暗，进度条和播放控件从模糊中浮现，相隔 60 毫秒。暂停时封面缩到 84%，投影更短更柔；继续播放再弹回原大，正是 Apple Music 的招牌细节。向下拖动播放器会跟手，超过 90 pt 就收回成播放条。"
         ),
         implementation: L(
-            "Bar and full player are exclusive views sharing matchedGeometryEffect ids for the material background, artwork and title (applied before their frames so sizes interpolate); playing state drives the artwork scale and shadow; a DragGesture offsets the player and collapses past a threshold.",
-            "播放条与完整播放器互斥显示，材质背景、封面与标题共享 matchedGeometryEffect ID（放在 frame 之前以便尺寸插值）；播放状态驱动封面缩放与投影；DragGesture 让播放器跟手下移，越过阈值即收起。"
+            "Bar and full player are exclusive views sharing matchedGeometryEffect ids for the material background, artwork and title (applied before their frames so sizes interpolate); playing state drives the artwork scale and shadow; a down-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) offsets the player and collapses it past a threshold.",
+            "播放条与完整播放器互斥显示，材质背景、封面与标题共享 matchedGeometryEffect ID（放在 frame 之前以便尺寸插值）；播放状态驱动封面缩放与投影；只接受向下拖动的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable，页面滚动会等它失败）让播放器跟手下移，越过阈值即收起。"
         ),
-        apis: ["matchedGeometryEffect", "@Namespace", "DragGesture", "contentTransition(.symbolEffect(.replace))", "regularMaterial"],
+        apis: ["matchedGeometryEffect", "@Namespace", "UIGestureRecognizerRepresentable", "contentTransition(.symbolEffect(.replace))", "regularMaterial"],
         tags: ["mini player", "now playing", "music", "expand", "迷你播放器", "正在播放", "音乐", "展开"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.2...1.0, default: 0.5, unit: "s"),
@@ -42,8 +42,6 @@ private struct MiniPlayerDemo: View {
     @State private var playing = true
     @State private var dragY: CGFloat = 0
     @State private var previewStep = 0
-    /// Resets on system cancellation too, so a cancelled pull-down never leaves the player hanging offset.
-    @GestureState private var dragging = false
 
     private var spring: Animation { .spring(response: ctx["response"], dampingFraction: ctx["damping"]) }
 
@@ -57,11 +55,9 @@ private struct MiniPlayerDemo: View {
             if expanded {
                 FullPlayer(ns: ns, playing: playing, shrink: ctx.bool("breathe"), language: ctx.language, onPlay: togglePlay, onCollapse: collapse)
                     .offset(y: dragY)
-                    .gesture(dismissDrag)
+                    // Only a mostly downward drag engages (the page scroll waits for it); an upward swipe scrolls the page.
+                    .gesture(PageSafePan(directions: .down, isEnabled: expanded, onChanged: dismissChanged, onEnded: dismissEnded))
                     .padding(10)
-                    .onChange(of: dragging) { _, active in
-                        if !active && dragY != 0 { withAnimation(spring) { dragY = 0 } }
-                    }
             } else {
                 MiniBar(ns: ns, playing: playing, language: ctx.language, onPlay: togglePlay, onExpand: expand)
                     .padding(12)
@@ -81,20 +77,18 @@ private struct MiniPlayerDemo: View {
         .autoplay(ctx.isPreview, every: 1.5) { previewAdvance() }
     }
 
-    private var dismissDrag: some Gesture {
-        DragGesture()
-            .updating($dragging) { _, state, _ in state = true }
-            .onChanged { value in
-                let t = value.translation.height
-                dragY = t > 0 ? t : rubberBand(t, limit: 20)
-            }
-            .onEnded { value in
-                if value.translation.height > 90 || value.predictedEndTranslation.height > 220 {
-                    collapse()
-                } else {
-                    withAnimation(spring) { dragY = 0 }
-                }
-            }
+    /// Down follows the finger 1:1; pulling back up past the start only rubber-bands.
+    private func dismissChanged(_ t: CGSize) {
+        dragY = t.height > 0 ? t.height : rubberBand(t.height, limit: 20)
+    }
+
+    /// `nil` means the system cancelled the pan: spring back without judging a flick.
+    private func dismissEnded(_ end: PageSafePanEnd?) {
+        if let end, end.translation.height > 90 || end.predictedEndTranslation.height > 220 {
+            collapse()
+        } else {
+            withAnimation(spring) { dragY = 0 }
+        }
     }
 
     private func expand() {

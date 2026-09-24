@@ -13,14 +13,14 @@ extension Effect {
             "删除确认面板升起，页面退向纵深；按钮依次落位，拖动面板可把页面拉回。"
         ),
         prompt: L(
-            "A photo grid with three selected photos and a trash button. On tap the page recedes: it scales to 92%, rounds its corners from 18 to 30 pt, slides down 10 pt and dims under a 25% scrim, while a 200 pt confirmation sheet rises on a spring (response 0.45 s, damping 0.86). Inside, the 'Delete 3 photos?' title, a red 'Delete' button and 'Cancel' cascade in, each rising 18 pt and fading in, staggered 50 ms. Dragging the sheet down tracks 1:1 and scrubs the page back toward 100%; past 60 pt or a flick dismisses, otherwise it springs back. Confirming fires a firm haptic as the sheet leaves and the three photos shrink away. Deliberate, reversible.",
-            "照片网格里选中了三张，右上角有删除按钮。点击后页面退向纵深：缩到 92%，圆角由 18 pt 变 30 pt，下沉 10 pt，并压上 25% 的暗色遮罩；与此同时，一张 200 pt 的确认面板以弹簧（响应 0.45 秒、阻尼 0.86）升起。面板里“删除 3 张照片？”标题、红色“删除”与“取消”按钮依次上浮 18 pt 淡入，间隔 50 毫秒。向下拖动面板 1:1 跟手，页面随之按比例回到 100%；超过 60 pt 或快速下甩即关闭，否则弹回。确认删除时面板退场、给出一记硬朗触感，三张照片缩小消失。郑重，且随时可以反悔。"
+            "A photo grid with three selected photos and a trash button. On tap the page recedes: it scales to 92%, rounds its corners from 18 to 30 pt, slides down 10 pt and dims under a 25% scrim, while a 200 pt confirmation sheet rises from the bottom edge (not grown out of its button) on a spring (response 0.45 s, damping 0.86). Inside, the 'Delete 3 photos?' title, a red 'Delete' button and 'Cancel' cascade in, each rising 18 pt and fading in, staggered 50 ms. Dragging the sheet down tracks 1:1 and scrubs the page back toward 100%; past 60 pt or a flick dismisses, otherwise it springs back. Confirming fires a firm haptic as the sheet leaves and the three photos shrink away. Deliberate, reversible.",
+            "照片网格选中三张，右上角有删除按钮。点击后页面退向纵深：缩到 92%，圆角由 18 pt 变 30 pt，下沉 10 pt，压上 25% 暗色遮罩；同时一张 200 pt 的确认面板从底边（而非由按钮长出）以弹簧（响应 0.45 秒、阻尼 0.86）升起。面板里“删除 3 张照片？”标题、红色“删除”与“取消”按钮依次上浮 18 pt 淡入，间隔 50 毫秒。向下拖动面板 1:1 跟手，页面随之按比例回到 100%；超过 60 pt 或快速下甩即关闭，否则弹回。确认删除时面板退场、给出一记硬朗触感，三张照片缩小消失。郑重且可反悔。"
         ),
         implementation: L(
-            "One presented flag plus a live drag offset feed a single 'openness' value (0…1) that drives the page's scale, corner radius and scrim; the sheet's rows use per-index delayed springs, and a DragGesture with predictedEndTranslation decides dismissal.",
-            "一个展示标志加上实时拖动位移，合成单一的“展开度”（0…1），驱动页面的缩放、圆角与遮罩；面板各行使用按序号递增延迟的弹簧，DragGesture 结合 predictedEndTranslation 判断是否关闭。"
+            "One presented flag plus a live drag offset feed a single 'openness' value (0…1) that drives the page's scale, corner radius and scrim; the sheet's rows use per-index delayed springs, and a down-only UIPanGestureRecognizer (UIGestureRecognizerRepresentable, which the page scroll waits for) with a flick projection decides dismissal.",
+            "一个展示标志加上实时拖动位移，合成单一的“展开度”（0…1），驱动页面的缩放、圆角与遮罩；面板各行使用按序号递增延迟的弹簧，只接受向下拖动的 UIPanGestureRecognizer（UIGestureRecognizerRepresentable，页面滚动会等它失败）结合甩动投影判断是否关闭。"
         ),
-        apis: ["DragGesture", "scaleEffect", "predictedEndTranslation", "spring(response:dampingFraction:)", "animation(_:value:)"],
+        apis: ["UIGestureRecognizerRepresentable", "scaleEffect", "UIPanGestureRecognizer", "spring(response:dampingFraction:)", "animation(_:value:)"],
         tags: ["action sheet", "confirm", "delete", "depth", "确认", "删除", "纵深", "模态"],
         params: [
             .slider("depth", L("Recede scale", "后退缩放"), 0.8...0.98, default: 0.92),
@@ -37,8 +37,6 @@ private struct RecedingSheetDemo: View {
     @State private var presented = false
     @State private var drag: CGFloat = 0
     @State private var deleted = false
-    /// Resets on system cancellation too, so a cancelled drag never leaves the sheet hanging half-dismissed.
-    @GestureState private var dragging = false
 
     private let sheetHeight: CGFloat = 200
     private let tints: [Color] = [Palette.coral, Palette.sky, Palette.mint, Palette.violet, Palette.amber, Palette.pink, Palette.blue, Palette.green, Palette.indigo]
@@ -61,14 +59,11 @@ private struct RecedingSheetDemo: View {
                     .allowsHitTesting(presented)
                 sheet
                     .offset(y: presented ? max(drag, -12) : sheetHeight + 30)
-                    .gesture(sheetDrag)
+                    // Only a mostly downward drag engages (the page scroll waits for it); an upward swipe scrolls the
+                    // page. A system-cancelled pan reports `nil` and springs back, so the sheet never hangs half-dismissed.
+                    .gesture(PageSafePan(directions: .down, isEnabled: presented, onChanged: sheetDragChanged, onEnded: sheetDragEnded))
                     // Hidden below the frame it is only clipped from view, not from touches: keep it inert then.
                     .allowsHitTesting(presented)
-                    .onChange(of: dragging) { _, active in
-                        if !active && drag != 0 {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
-                        }
-                    }
             }
             .frame(width: 300, height: 320)
             .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
@@ -181,20 +176,17 @@ private struct RecedingSheetDemo: View {
         .modifier(RecedingCascade(shown: presented, index: index))
     }
 
-    private var sheetDrag: some Gesture {
-        DragGesture(minimumDistance: 2)
-            .updating($dragging) { _, state, _ in state = true }
-            .onChanged { value in
-                let dy: CGFloat = value.translation.height
-                drag = dy > 0 ? dy : rubberBand(dy, limit: 30)
-            }
-            .onEnded { value in
-                if value.translation.height > 60 || value.predictedEndTranslation.height > 160 {
-                    dismiss()
-                } else {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
-                }
-            }
+    private func sheetDragChanged(_ t: CGSize) {
+        let dy: CGFloat = t.height
+        drag = dy > 0 ? dy : rubberBand(dy, limit: 30)
+    }
+
+    private func sheetDragEnded(_ end: PageSafePanEnd?) {
+        if let end, end.translation.height > 60 || end.predictedEndTranslation.height > 160 {
+            dismiss()
+        } else {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
+        }
     }
 
     private func trashTapped() {

@@ -31,6 +31,8 @@ private struct ButtonPressScaleDemo: View {
     let ctx: DemoContext
     @State private var autoPressed = false
     @State private var releases = 0
+    /// Counts real taps, so a tap whose press the button never saw still plays a full press.
+    @State private var taps = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -85,6 +87,7 @@ private struct ButtonPressScaleDemo: View {
     private var button: some View {
         Button {
             Haptics.tap()
+            taps += 1
             releases += 1
         } label: {
             HStack(spacing: 8) {
@@ -117,7 +120,8 @@ private struct ButtonPressScaleDemo: View {
                 scale: ctx.cg("scale"),
                 response: ctx["response"],
                 damping: ctx["damping"],
-                forcePressed: autoPressed
+                forcePressed: autoPressed,
+                taps: taps
             )
         )
     }
@@ -128,17 +132,20 @@ private struct ButtonPressScaleStyle: ButtonStyle {
     let response: Double
     let damping: Double
     let forcePressed: Bool
+    let taps: Int
 
     func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed || forcePressed
-        return configuration.label
-            .brightness(pressed ? -0.06 : 0)
-            .shadow(
-                color: Palette.indigo.opacity(pressed ? 0.22 : 0.4),
-                radius: pressed ? 6 : 16,
-                y: pressed ? 3 : 10
-            )
-            .scaleEffect(pressed ? scale : 1)
-            .animation(.spring(response: response, dampingFraction: damping), value: pressed)
+        // Latched so a quick tap inside the detail page's scroll view still visibly sinks.
+        LatchedPress(isPressed: configuration.isPressed, taps: taps, forced: forcePressed) { pressed in
+            configuration.label
+                .brightness(pressed ? -0.06 : 0)
+                .shadow(
+                    color: Palette.indigo.opacity(pressed ? 0.22 : 0.4),
+                    radius: pressed ? 6 : 16,
+                    y: pressed ? 3 : 10
+                )
+                .scaleEffect(pressed ? scale : 1)
+                .animation(.spring(response: response, dampingFraction: damping), value: pressed)
+        }
     }
 }

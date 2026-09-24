@@ -8,8 +8,8 @@ extension Effect {
         name: L("Layered Stack Press", "叠层按压"),
         summary: L("A brutalist button of offset layers that collapse on press and fan back out.", "由错位叠层组成的粗野风按钮，按下时层层塌缩，松手后依次弹开。"),
         prompt: L(
-            "A bold neo-brutalist 220 × 60 pt button built from three identical rounded slabs with 2 pt ink outlines: a pink back slab offset 12 pt down-right, a coral middle slab offset 6 pt, and an amber face on top with the label \"Publish\". On touch-down the slabs collapse into one — the face travels first, the middle slab 40 ms later — each on a stiff spring (response 0.22 s), so the stack visibly telescopes shut. On release they fan back out in the same order: the face pops up first and the lower layers trail behind with the 40 ms stagger on a looser spring (response 0.3 s) with a lively bounce (damping 0.55), like a deck of cards springing open. A rigid haptic confirms the press. Graphic, loud and satisfyingly mechanical.",
-            "一枚 220 × 60pt 的新粗野主义按钮，由三块带 2pt 墨色描边的相同圆角板叠成：粉色底板向右下偏移 12pt，珊瑚色中板偏移 6pt，最上面是写着“发布”的琥珀色面板。按下时三层塌成一层——面板先动，中板晚 40 毫秒——各走一段偏硬的弹簧（响应 0.22 秒），像望远镜层层收拢。松手后按同样顺序展开：面板先弹起，下层错开 40 毫秒跟上，以更松的弹簧（响应 0.3 秒）带活泼回弹（阻尼 0.55），像一叠卡片被弹开。按下时一次清脆的硬触感，机械感十足。"
+            "A bold neo-brutalist 220 × 60 pt button built from three identical rounded slabs with 2 pt ink outlines: a pink back slab offset 12 pt down-right, a coral middle slab offset 6 pt, and an amber face on top with the label \"Publish\". On touch-down the slabs collapse into one — the face travels first, the middle slab 40 ms later — each on a stiff spring (response 0.22 s), so the stack visibly telescopes shut. On release they fan back out in the same order: the face pops up first and the lower layers trail behind with the 40 ms stagger on a looser spring (response 0.3 s) with a lively bounce (damping 0.55), like a deck of cards springing open. A rigid haptic lands as the stack bottoms out, and a light tick as the face springs back. Graphic, loud and satisfyingly mechanical.",
+            "一枚 220 × 60pt 的新粗野主义按钮，由三块带 2pt 墨色描边的相同圆角板叠成：粉色底板向右下偏移 12pt，珊瑚色中板偏移 6pt，最上面是写着“发布”的琥珀色面板。按下时三层塌成一层——面板先动，中板晚 40 毫秒——各走一段偏硬的弹簧（响应 0.22 秒），像望远镜层层收拢。松手后按同样顺序展开：面板先弹起，下层错开 40 毫秒跟上，以更松的弹簧（响应 0.3 秒）带活泼回弹（阻尼 0.55），像一叠卡片被弹开。叠层压到底时一次清脆的硬触感，面板弹起时再一下轻触感，机械感十足。"
         ),
         implementation: L(
             "A ButtonStyle draws the three slabs itself: each rests at its own depth and, while pressed, travels to the back slab's depth; every layer carries its own delayed spring keyed on the pressed state, so upper layers lead and lower ones trail.",
@@ -30,6 +30,8 @@ extension Effect {
 private struct ButtonStackPressDemo: View {
     let ctx: DemoContext
     @State private var autoPressed = false
+    /// Counts real taps, so a tap whose press the button never saw still plays a full press.
+    @State private var taps = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,7 +46,8 @@ private struct ButtonStackPressDemo: View {
                         .foregroundStyle(.primary)
                 }
                 Button {
-                    Haptics.tap(.rigid)
+                    // Haptics follow the slabs (see ButtonStackStyle), not the release.
+                    taps += 1
                 } label: {
                     HStack(spacing: 8) {
                         Text(ctx.language == .zh ? "发布" : "Publish")
@@ -58,7 +61,9 @@ private struct ButtonStackPressDemo: View {
                         gap: ctx.cg("gap"),
                         stagger: ctx["stagger"],
                         damping: ctx["damping"],
-                        forcePressed: autoPressed
+                        forcePressed: autoPressed,
+                        taps: taps,
+                        haptics: !ctx.isPreview
                     )
                 )
             }
@@ -87,17 +92,31 @@ private struct ButtonStackStyle: ButtonStyle {
     let stagger: Double
     let damping: Double
     let forcePressed: Bool
+    let taps: Int
+    let haptics: Bool
 
     private static let fills: [Color] = [Palette.pink, Palette.coral, Palette.amber]
 
     func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed || forcePressed
-        return ZStack(alignment: .topLeading) {
-            slab(0, pressed: pressed) { EmptyView() }
-            slab(1, pressed: pressed) { EmptyView() }
-            slab(2, pressed: pressed) { configuration.label }
+        // Latched so a quick tap inside the detail page's scroll view still collapses the stack. The
+        // back slab never moves, so the stack is shut once the face (~120 ms on its stiff spring) and the
+        // middle slab (one stagger later, ~100 ms) have landed: the rigid haptic lands then, and a light
+        // tick follows as the face (the first layer to move) springs back up.
+        LatchedPress(
+            isPressed: configuration.isPressed,
+            taps: taps,
+            forced: forcePressed,
+            pressDelay: max(0.12, stagger + 0.1),
+            onPress: haptics ? { Haptics.tap(.rigid) } : nil,
+            onRelease: haptics ? { Haptics.tap(.light) } : nil
+        ) { pressed in
+            ZStack(alignment: .topLeading) {
+                slab(0, pressed: pressed) { EmptyView() }
+                slab(1, pressed: pressed) { EmptyView() }
+                slab(2, pressed: pressed) { configuration.label }
+            }
+            .frame(width: 220 + gap * 2, height: 60 + gap * 2, alignment: .topLeading)
         }
-        .frame(width: 220 + gap * 2, height: 60 + gap * 2, alignment: .topLeading)
     }
 
     /// Layer 0 is the back slab (deepest), layer 2 the face.

@@ -91,7 +91,12 @@ private struct ContextMenuLiftDemo: View {
         .autoplay(ctx.isPreview, every: 1.8) {
             if lifted == nil { autoPress() } else { close() }
         }
-        .onDisappear { autoTask?.cancel() }
+        .onDisappear {
+            autoTask?.cancel()
+            autoTask = nil
+            // A cancelled simulated hold must not block the next autoPress().
+            pressing = nil
+        }
     }
 
     private var list: some View {

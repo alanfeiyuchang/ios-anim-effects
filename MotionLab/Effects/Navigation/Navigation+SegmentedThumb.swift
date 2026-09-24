@@ -15,10 +15,10 @@ extension Effect {
             "一个四段控件（日 / 周 / 月 / 年），浅灰色轨道，连续圆角 14pt；选中段上方是一块带柔和阴影、微微凸起的白色滑块。点击某段时，滑块以弹簧（响应约 0.35 秒、阻尼约 0.8）滑到该位置。按住并拖动时滑块被「拿起」：像被挤压的凝胶一样宽度变为 106%、高度压扁到 92%，以轻盈的交互式弹簧跟手移动，每跨过一个分段触发一次选择触觉。文字颜色由滑块本身作为遮罩决定，滑块边缘经过之处，文字精确地从次级灰变为加粗主色。松手后吸附到最近的分段并恢复形状；上方的数值以数字滚动过渡更新。"
         ),
         implementation: L(
-            "A DragGesture(minimumDistance: 0) maps the finger to a thumb offset; a second, bold copy of the labels is masked by a rectangle at the same offset, and the thumb's scale reads a dragging flag.",
-            "DragGesture(minimumDistance: 0) 将手指位置映射为滑块偏移；另一份加粗的文字副本以相同偏移的矩形作为遮罩，滑块的缩放读取拖拽状态。"
+            "A horizontal-intent DragGesture maps the finger to a thumb offset and a SpatialTapGesture picks the tapped segment; a second, bold copy of the labels is masked by a rectangle at the same offset, and the thumb's scale reads a dragging flag.",
+            "横向拖拽的 DragGesture 将手指位置映射为滑块偏移，SpatialTapGesture 选中被点击的分段；另一份加粗的文字副本以相同偏移的矩形作为遮罩，滑块的缩放读取拖拽状态。"
         ),
-        apis: ["DragGesture", "mask(alignment:_:)", "interactiveSpring", "contentTransition(.numericText(value:))"],
+        apis: ["DragGesture", "SpatialTapGesture", "mask(alignment:_:)", "interactiveSpring", "contentTransition(.numericText(value:))"],
         tags: ["segmented control", "picker", "thumb", "drag", "分段控件", "选择器", "滑块", "拖拽"],
         params: [
             .slider("response", L("Spring response", "弹簧响应"), 0.15...0.8, default: 0.35, unit: "s"),
@@ -39,8 +39,6 @@ private struct SegmentedThumbDemo: View {
     @State private var dragX: CGFloat?
     @State private var hovered = 0
     @State private var token = 0
-    /// Resets on system cancellation too, so a cancelled drag never leaves the thumb lifted off-segment.
-    @GestureState private var touching = false
 
     private let width: CGFloat = 300
     private let inset: CGFloat = 4
@@ -88,10 +86,17 @@ private struct SegmentedThumbDemo: View {
         .frame(width: width, height: 44)
         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .contentShape(Rectangle())
-        .gesture(drag)
-        .onChange(of: touching) { _, active in
-            if !active { settleCancelled() }
-        }
+        // Horizontal-intent and simultaneous, so a vertical swipe on the control scrolls the page;
+        // a system cancellation arrives as `nil` and drops the thumb into the segment under it.
+        .pageSafeHorizontalDrag(minimumDistance: 6, onChanged: { value in
+            dragChanged(value.location.x)
+        }, onEnded: { value in
+            if let value { dragEnded(value.location.x) } else { settleCancelled() }
+        })
+        .simultaneousGesture(
+            SpatialTapGesture()
+                .onEnded { value in tapSelect(at: value.location.x) }
+        )
     }
 
     private func labels(bold: Bool) -> some View {
@@ -105,31 +110,42 @@ private struct SegmentedThumbDemo: View {
         }
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .updating($touching) { _, state, _ in state = true }
-            .onChanged { value in
-                let x = (value.location.x - inset - segmentWidth / 2).clamped(to: 0...maxX)
-                if dragX == nil {
-                    token += 1 // a real finger cancels a simulated drag
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { dragX = x }
-                } else {
-                    withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.86)) { dragX = x }
-                }
-                let index = Int((x / segmentWidth).rounded())
-                if index != hovered {
-                    hovered = index
-                    if !ctx.isPreview { Haptics.selection() }
-                }
-            }
-            .onEnded { value in
-                let x = (value.location.x - inset - segmentWidth / 2).clamped(to: 0...maxX)
-                let index = Int((x / segmentWidth).rounded()).clamped(to: 0...(segmentTitles.count - 1))
-                withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
-                    selected = index
-                    dragX = nil
-                }
-            }
+    private func dragChanged(_ locationX: CGFloat) {
+        let x = (locationX - inset - segmentWidth / 2).clamped(to: 0...maxX)
+        if dragX == nil {
+            token += 1 // a real finger cancels a simulated drag
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { dragX = x }
+        } else {
+            withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.86)) { dragX = x }
+        }
+        let index = Int((x / segmentWidth).rounded())
+        if index != hovered {
+            hovered = index
+            if !ctx.isPreview { Haptics.selection() }
+        }
+    }
+
+    private func dragEnded(_ locationX: CGFloat) {
+        let x = (locationX - inset - segmentWidth / 2).clamped(to: 0...maxX)
+        let index = Int((x / segmentWidth).rounded()).clamped(to: 0...(segmentTitles.count - 1))
+        hovered = index
+        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+            selected = index
+            dragX = nil
+        }
+    }
+
+    /// Tap-to-select: the segment under the finger, with the same settle spring.
+    private func tapSelect(at locationX: CGFloat) {
+        let raw: CGFloat = ((locationX - inset) / segmentWidth).rounded(.down)
+        let index: Int = Int(raw).clamped(to: 0...(segmentTitles.count - 1))
+        token += 1 // a real finger cancels a simulated drag
+        if index != selected && !ctx.isPreview { Haptics.selection() }
+        hovered = index
+        withAnimation(.spring(response: ctx["response"], dampingFraction: ctx["damping"])) {
+            selected = index
+            dragX = nil
+        }
     }
 
     /// System cancellation skips `onEnded`: drop the lifted thumb into the segment under it.

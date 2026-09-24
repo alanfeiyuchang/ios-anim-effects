@@ -173,8 +173,9 @@ private struct GlassmorphismDemo: View {
                 startPoint: sheenStart,
                 endPoint: sheenEnd
             )
-            .blendMode(.plusLighter)
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .compositingGroup()
+            .blendMode(.plusLighter)
             .allowsHitTesting(false)
         }
         .overlay(

@@ -224,8 +224,10 @@ private struct BoardSheen: View {
             .offset(x: shift)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .blendMode(.plusLighter)
+        // Clip before blending: a blended layer ignores a clip applied after it.
         .clipShape(Capsule())
+        .compositingGroup()
+        .blendMode(.plusLighter)
         .allowsHitTesting(false)
     }
 }

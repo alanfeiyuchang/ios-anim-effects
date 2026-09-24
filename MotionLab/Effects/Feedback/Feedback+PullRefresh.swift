@@ -53,8 +53,6 @@ private struct PullRefreshDemo: View {
     @State private var userDriven = false
     /// True while a real finger is pulling; the single end/cancel path clears it.
     @State private var tracking = false
-    /// Resets on system cancellation too (Control Center pull, scroll takeover), which skips `onEnded`.
-    @GestureState private var touching = false
 
     private let threshold: CGFloat = 72
     private let holdHeight: CGFloat = 60
@@ -79,10 +77,8 @@ private struct PullRefreshDemo: View {
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .demoCard(cornerRadius: 22)
             .contentShape(Rectangle())
-            .gesture(drag)
-            .onChange(of: touching) { _, active in
-                if !active { endPull() }
-            }
+            // Simultaneous and downward-only from the top of the list, so other swipes scroll the page.
+            .pageSafePullDown(startZone: 120, onChanged: pullChanged, onEnded: { _ in endPull() })
             DemoHint(text: L("Pull the list down", "向下拖动列表"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -106,18 +102,14 @@ private struct PullRefreshDemo: View {
         .background(Palette.elevated)
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 4)
-            .updating($touching) { _, state, _ in state = true }
-            .onChanged { value in
-                guard !refreshing else { return }
-                userDriven = true
-                tracking = true
-                let resisted = rubberBand(max(0, value.translation.height), limit: 240, coefficient: ctx.cg("resistance"))
-                updateArmed(resisted)
-                pull = resisted
-            }
-            .onEnded { _ in endPull() }
+    /// Called only for an engaged downward pull (see `pageSafePullDown`); release and cancellation go to `endPull()`.
+    private func pullChanged(_ value: DragGesture.Value) {
+        guard !refreshing else { return }
+        userDriven = true
+        tracking = true
+        let resisted = rubberBand(max(0, value.translation.height), limit: 240, coefficient: ctx.cg("resistance"))
+        updateArmed(resisted)
+        pull = resisted
     }
 
     /// Normal release or system cancellation, once per pull: refresh if armed, otherwise spring home.

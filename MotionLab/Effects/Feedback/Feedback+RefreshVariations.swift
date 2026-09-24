@@ -50,8 +50,6 @@ private struct RefreshVarHost<Indicator: View>: View {
     @State private var userDriven = false
     /// True while a real finger is pulling; the single end/cancel path clears it.
     @State private var tracking = false
-    /// Resets on system cancellation too (Control Center pull, scroll takeover), which skips `onEnded`.
-    @GestureState private var touching = false
 
     init(ctx: DemoContext, threshold: CGFloat = 80, holdHeight: CGFloat = 70, @ViewBuilder indicator: @escaping (CGFloat, CGFloat, Bool) -> Indicator) {
         self.ctx = ctx
@@ -77,10 +75,8 @@ private struct RefreshVarHost<Indicator: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .demoCard(cornerRadius: 22)
             .contentShape(Rectangle())
-            .gesture(drag)
-            .onChange(of: touching) { _, active in
-                if !active { endPull() }
-            }
+            // Simultaneous and downward-only from the top of the list, so other swipes scroll the page.
+            .pageSafePullDown(startZone: 120, onChanged: pullChanged, onEnded: { _ in endPull() })
             DemoHint(text: L("Pull the list down", "向下拖动列表"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -104,18 +100,14 @@ private struct RefreshVarHost<Indicator: View>: View {
         .background(Palette.elevated)
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 4)
-            .updating($touching) { _, state, _ in state = true }
-            .onChanged { value in
-                guard !refreshing else { return }
-                userDriven = true
-                tracking = true
-                let resisted: CGFloat = rubberBand(max(0, value.translation.height), limit: 260, coefficient: 0.8)
-                updateArmed(resisted)
-                pull = resisted
-            }
-            .onEnded { _ in endPull() }
+    /// Called only for an engaged downward pull (see `pageSafePullDown`); release and cancellation go to `endPull()`.
+    private func pullChanged(_ value: DragGesture.Value) {
+        guard !refreshing else { return }
+        userDriven = true
+        tracking = true
+        let resisted: CGFloat = rubberBand(max(0, value.translation.height), limit: 260, coefficient: 0.8)
+        updateArmed(resisted)
+        pull = resisted
     }
 
     /// Normal release or system cancellation, once per pull: refresh if armed, otherwise spring home.

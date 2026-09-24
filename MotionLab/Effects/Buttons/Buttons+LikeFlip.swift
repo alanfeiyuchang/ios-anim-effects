@@ -189,9 +189,11 @@ private struct ButtonCoinGlint: View {
             .frame(width: 26)
             .rotationEffect(.degrees(20))
             .offset(x: position * 70)
-            .blendMode(.plusLighter)
             .frame(width: 92, height: 92)
+            // Clip before blending: a blended layer ignores a clip applied after it.
             .clipShape(Circle())
+            .compositingGroup()
+            .blendMode(.plusLighter)
             .allowsHitTesting(false)
     }
 }

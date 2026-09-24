@@ -122,7 +122,7 @@ private struct ScatterHistogramDemo: View {
         VStack(spacing: 0) {
             ForEach(0..<4, id: \.self) { _ in
                 Rectangle()
-                    .fill(Color.primary.opacity(0.08))
+                    .fill(Color.primary.opacity(0.12))
                     .frame(height: 1)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
@@ -169,7 +169,7 @@ private struct DotView: View {
         Circle()
             .fill(color)
             .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1))
-            .frame(width: 9, height: 9)
+            .frame(width: 10, height: 10)
             .position(target)
             .animation(.spring(response: 0.6, dampingFraction: damping).delay(delay), value: binned)
     }

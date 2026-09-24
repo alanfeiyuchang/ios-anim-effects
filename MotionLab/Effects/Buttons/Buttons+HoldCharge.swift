@@ -36,6 +36,9 @@ private struct ButtonLaunchFrame {
 private struct ButtonHoldChargeDemo: View {
     let ctx: DemoContext
     @State private var holdStart: Date?
+    /// The scripted hold (preview loop / detail intro); cancelled by the first real press and on disappear, so it
+    /// can never complete a hold the user let go of early.
+    @State private var scriptTask: Task<Void, Never>?
     @State private var squeezed = false
     @State private var launches = 0
     @State private var launching = false
@@ -57,6 +60,12 @@ private struct ButtonHoldChargeDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["duration"] + 2.2, delay: 0.4) { simulate() }
+        .onDisappear {
+            // Leaving mid-script: drop the scripted completion and drain the half-held control.
+            guard scriptTask != nil else { return }
+            cancelScript()
+            cancel()
+        }
     }
 
     private var key: some View {
@@ -76,6 +85,7 @@ private struct ButtonHoldChargeDemo: View {
         .onLongPressGesture(minimumDuration: ctx["duration"], maximumDistance: 50) {
             launch()
         } onPressingChanged: { isPressing in
+            cancelScript()
             if isPressing { begin() } else { cancel() }
         }
         .accessibilityAddTraits(.isButton)
@@ -116,12 +126,20 @@ private struct ButtonHoldChargeDemo: View {
         }
     }
 
+    private func cancelScript() {
+        scriptTask?.cancel()
+        scriptTask = nil
+    }
+
     private func simulate() {
         guard !launching else { return }
         begin()
         let hold = ctx["duration"]
-        Task { @MainActor in
+        scriptTask?.cancel()
+        scriptTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(hold))
+            guard !Task.isCancelled else { return }
+            scriptTask = nil
             Haptics.isMuted = true
             launch()
             Haptics.isMuted = false

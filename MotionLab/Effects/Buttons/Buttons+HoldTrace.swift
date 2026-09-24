@@ -46,6 +46,9 @@ private struct ButtonTopCenterCapsule: Shape {
 private struct ButtonHoldTraceDemo: View {
     let ctx: DemoContext
     @State private var progress: CGFloat = 0
+    /// The scripted hold (preview loop / detail intro); cancelled by the first real press and on disappear, so it
+    /// can never complete a hold the user let go of early.
+    @State private var scriptTask: Task<Void, Never>?
     @State private var pressing = false
     @State private var sent = false
 
@@ -64,6 +67,12 @@ private struct ButtonHoldTraceDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["duration"] + 2.4, delay: 0.4) { simulate() }
+        .onDisappear {
+            // Leaving mid-script: drop the scripted completion and drain the half-held control.
+            guard scriptTask != nil else { return }
+            cancelScript()
+            end()
+        }
     }
 
     private var message: some View {
@@ -100,6 +109,7 @@ private struct ButtonHoldTraceDemo: View {
         .onLongPressGesture(minimumDuration: ctx["duration"], maximumDistance: 40) {
             complete()
         } onPressingChanged: { isPressing in
+            cancelScript()
             if isPressing { begin() } else { end() }
         }
         .accessibilityAddTraits(.isButton)
@@ -159,12 +169,20 @@ private struct ButtonHoldTraceDemo: View {
         }
     }
 
+    private func cancelScript() {
+        scriptTask?.cancel()
+        scriptTask = nil
+    }
+
     private func simulate() {
         guard !sent else { return }
         begin()
         let hold = ctx["duration"]
-        Task { @MainActor in
+        scriptTask?.cancel()
+        scriptTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(hold))
+            guard !Task.isCancelled else { return }
+            scriptTask = nil
             Haptics.isMuted = true
             complete()
             Haptics.isMuted = false

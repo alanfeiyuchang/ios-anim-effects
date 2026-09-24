@@ -36,6 +36,11 @@ private struct ThermostatDialDemo: View {
     @State private var beadTemperature: Double = 21.5
     @State private var releases = 0
     @State private var step = 0
+    /// Arc angle (0…270°) of the previous drag sample: keeps the setpoint continuous, so a finger that drifts
+    /// through the bottom dead zone pins to the nearer end instead of flipping 10 ↔ 30 °C.
+    @State private var lastAngle: Double?
+    /// Resets on system cancellation too (page scroll takeover, Control Center pull), where `onEnded` never runs.
+    @GestureState private var dialTouching = false
 
     private let size: CGFloat = 230
     private let range: ClosedRange<Double> = 10...30
@@ -73,6 +78,9 @@ private struct ThermostatDialDemo: View {
         .frame(width: size + 40, height: size + 40)
         .contentShape(Circle())
         .gesture(drag)
+        .onChange(of: dialTouching) { _, down in
+            if !down { endDrag() }
+        }
     }
 
     private var glow: some View {
@@ -163,6 +171,7 @@ private struct ThermostatDialDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($dialTouching) { _, state, _ in state = true }
             .onChanged { value in
                 let center: CGFloat = (size + 40) / 2
                 let dx = Double(value.location.x - center)
@@ -170,7 +179,17 @@ private struct ThermostatDialDemo: View {
                 guard hypot(dx, dy) > 30 else { return }
                 var angle: Double = atan2(dy, dx) * 180 / .pi - 135
                 while angle < 0 { angle += 360 }
-                if angle > 270 { angle = angle > 315 ? 0 : 270 }
+                if angle > 270 {
+                    // Dead zone: stay at the end the finger came from (a first touch splits it down the middle).
+                    if let last = lastAngle {
+                        angle = last > 135 ? 270 : 0
+                    } else {
+                        angle = angle > 315 ? 0 : 270
+                    }
+                }
+                // Continuity: a jump of more than half the arc is the finger crossing the gap, not a turn.
+                if let last = lastAngle, abs(angle - last) > 180 { return }
+                lastAngle = angle
                 let raw: Double = range.lowerBound + angle / 270 * (range.upperBound - range.lowerBound)
                 let snapped: Double = (raw / increment).rounded() * increment
                 let newValue = snapped.clamped(to: range)
@@ -179,7 +198,14 @@ private struct ThermostatDialDemo: View {
                 withAnimation(.interactiveSpring(response: 0.15, dampingFraction: 0.85)) { temperature = newValue }
                 withAnimation(leash) { beadTemperature = newValue }
             }
-            .onEnded { _ in releases += 1 }
+            .onEnded { _ in endDrag() }
+    }
+
+    /// Single cleanup for a lifted or system-cancelled drag: clears the continuity anchor, plays the tick ripple.
+    private func endDrag() {
+        guard lastAngle != nil else { return }
+        lastAngle = nil
+        releases += 1
     }
 
     private func previewTick() {

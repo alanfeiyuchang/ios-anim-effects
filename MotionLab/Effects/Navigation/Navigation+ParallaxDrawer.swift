@@ -7,21 +7,22 @@ extension Effect {
         interaction: .gesture,
         name: L("Parallax Under-Drawer", "视差底层抽屉"),
         summary: L(
-            "The page slides away to uncover a menu underneath that drifts in at a slower speed, its rows cascading in.",
-            "页面滑开，露出下层菜单：菜单以更慢的速度漂入，各行依次滑入。"
+            "The page slides away to uncover a menu underneath that drifts in at a slower speed and rises out of the dark, its rows cascading in.",
+            "页面滑开，露出下层菜单：菜单以更慢的速度漂入、从暗处浮起，各行依次滑入。"
         ),
         prompt: L(
-            "A phone-sized frame shows a feed page resting on top of a dark navigation layer. Dragging right (or tapping the menu button) slides the page 170 pt to the right, 1:1 with the finger, casting a growing shadow and rounding its corners to 22 pt. Beneath it the menu doesn't just sit still: it starts 35% of the travel to the left and moves at 35% of the page's speed, a parallax that makes the layers feel stacked. The five menu rows cascade in from −30 pt, each lagging ≈7% of the progress behind the one above, and the same mapping plays in reverse while closing. Release springs to open or closed (response ≈0.45 s) based on the projected end position.",
-            "一个手机大小的画框里，信息流页面叠在深色的导航层上。向右拖动（或点击菜单按钮）时，页面随手指 1:1 右移 170pt，投影逐渐加深，圆角增加到 22pt。下层菜单并非静止：它从左侧 35% 行程处出发，以页面 35% 的速度移动，形成视差，让两层有叠放的纵深感。五个菜单行从 −30pt 依次滑入，每一行比上一行落后约 7% 的进度；关闭时按同样的映射反向播放。松手后依据预测终点以弹簧（响应约 0.45 秒）打开或关闭。"
+            "A phone-sized frame shows a feed page resting on top of a dark navigation layer. Dragging right (or tapping the menu button) slides the page 170 pt to the right, 1:1 with the finger, casting a growing shadow and rounding its corners to 22 pt. Beneath it, a dark teal menu layer doesn't just sit still: it starts 35% of the travel to the left and moves at 35% of the page's speed, while it dollies up from 90% scale (anchored at its leading edge) and brightens out of a 50% black dim, so it rises out of depth rather than turning in 3D. The five menu rows cascade in from −30 pt, each lagging ≈7% of the progress behind the one above, and the same mapping plays in reverse while closing. Release springs to open or closed (response ≈0.45 s) based on the projected end position.",
+            "一个手机大小的画框里，信息流页面叠在深色的导航层上。向右拖动（或点击菜单按钮）时，页面随手指 1:1 右移 170pt，投影逐渐加深，圆角增加到 22pt。下层深青色菜单并非静止：它从左侧 35% 行程处出发，以页面 35% 的速度移动形成视差，同时以左缘为锚从 90% 放大到 100%，并从 50% 的暗色中逐渐提亮，像从纵深处浮上来，而不是三维转动。五个菜单行从 −30pt 依次滑入，每一行比上一行落后约 7% 的进度；关闭时按同样的映射反向播放。松手后依据预测终点以弹簧（响应约 0.45 秒）打开或关闭。"
         ),
         implementation: L(
-            "One progress value (drag translation ÷ drawer width, rubber-banded beyond the ends) drives everything; the menu is an Animatable view that maps the interpolated progress to each row's staggered local progress, so the cascade also plays during springs, not only while dragging.",
-            "所有效果由同一个进度值驱动（拖拽位移 ÷ 抽屉宽度，超出两端时加橡皮筋阻尼）；菜单是一个 Animatable 视图，把插值中的进度映射为每行错峰的局部进度，因此弹簧动画期间同样会出现依次滑入，而不仅仅是拖动时。"
+            "One progress value (drag translation ÷ drawer width, rubber-banded beyond the ends) drives everything; the menu is an Animatable view that maps the interpolated progress to its parallax offset, depth scale, dimming and each row's staggered local progress, so the cascade also plays during springs, not only while dragging.",
+            "所有效果由同一个进度值驱动（拖拽位移 ÷ 抽屉宽度，超出两端时加橡皮筋阻尼）；菜单是一个 Animatable 视图，把插值中的进度映射为视差位移、纵深缩放、暗度以及每行错峰的局部进度，因此弹簧动画期间同样会出现依次滑入，而不仅仅是拖动时。"
         ),
         apis: ["DragGesture", "Animatable", "predictedEndTranslation", "offset(x:)", "rubberBand"],
         tags: ["drawer", "parallax", "side menu", "stagger", "抽屉", "视差", "侧边菜单", "错峰"],
         params: [
             .slider("parallax", L("Menu parallax", "菜单视差"), 0.0...1.0, default: 0.35),
+            .slider("depth", L("Menu start scale", "菜单起始缩放"), 0.8...1.0, default: 0.9),
             .slider("stagger", L("Row stagger", "行错峰"), 0.0...0.15, default: 0.07),
             .slider("response", L("Spring response", "弹簧响应"), 0.25...0.8, default: 0.45, unit: "s"),
         ]
@@ -51,6 +52,7 @@ private struct ParallaxDrawerDemo: View {
                 ParallaxMenuLayer(
                     progress: progress,
                     parallax: ctx.cg("parallax"),
+                    depth: ctx.cg("depth"),
                     stagger: ctx["stagger"],
                     travel: travel,
                     language: ctx.language
@@ -138,6 +140,8 @@ private struct ParallaxDrawerDemo: View {
 private struct ParallaxMenuLayer: View, Animatable {
     var progress: CGFloat
     let parallax: CGFloat
+    /// Menu scale when closed; it dollies up to 1 as the page slides away.
+    let depth: CGFloat
     let stagger: Double
     let travel: CGFloat
     let language: AppLanguage
@@ -150,8 +154,9 @@ private struct ParallaxMenuLayer: View, Animatable {
     var body: some View {
         let p: CGFloat = min(max(progress, 0), 1)
         let layerOffset: CGFloat = -travel * parallax * (1 - p)
+        let scale: CGFloat = depth + (1 - depth) * p
         return ZStack(alignment: .topLeading) {
-            LinearGradient(colors: [Color(hex: 0x1D2250), Color(hex: 0x10122B)], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [Color(hex: 0x0F3A3C), Color(hex: 0x071B20)], startPoint: .top, endPoint: .bottom)
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     Circle()
@@ -174,7 +179,12 @@ private struct ParallaxMenuLayer: View, Animatable {
             .foregroundStyle(.white)
             .padding(.top, 28)
             .padding(.leading, 20)
+            .scaleEffect(scale, anchor: .leading)
             .offset(x: layerOffset)
+            // Brightens out of the dark as it rises toward the viewer.
+            Color.black
+                .opacity(0.5 * Double(1 - p))
+                .allowsHitTesting(false)
         }
     }
 

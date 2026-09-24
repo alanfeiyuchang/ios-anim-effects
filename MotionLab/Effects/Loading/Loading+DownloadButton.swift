@@ -71,7 +71,18 @@ private struct DownloadButtonDemo: View {
         .autoplay(ctx.isPreview, every: 2.4, delay: 0.6) {
             if phase == .idle || phase == .done { tap() }
         }
-        .onDisappear { task?.cancel() }
+        .onDisappear {
+            // @State survives navigation: never come back to a pill stuck waiting or frozen mid-download.
+            token += 1
+            task?.cancel()
+            task = nil
+            var reset = Transaction()
+            reset.disablesAnimations = true
+            withTransaction(reset) {
+                phase = .idle
+                progress = 0
+            }
+        }
     }
 
     private var appIcon: some View {

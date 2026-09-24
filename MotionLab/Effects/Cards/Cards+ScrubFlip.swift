@@ -33,6 +33,10 @@ private struct CardsScrubFlipDemo: View {
     @State private var pitch: Double = 0
     @State private var base: Double?
     @State private var direction: Double = 1
+    /// The scripted (preview / intro) spin, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the card edge-on.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 30) {
@@ -43,13 +47,22 @@ private struct CardsScrubFlipDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 2.2) { autoSpin() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 2)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                if base == nil {
+                    base = angle
+                    script?.cancel()
+                    script = nil
+                }
                 let start = base ?? angle
-                if base == nil { base = angle }
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
@@ -58,12 +71,19 @@ private struct CardsScrubFlipDemo: View {
                 }
             }
             .onEnded { value in
-                let start = base ?? angle
+                guard let start = base else { return }
                 base = nil
                 let extra = Double(value.predictedEndTranslation.width - value.translation.width) * ctx["momentum"]
                 let projected = angle + extra * ctx["sensitivity"]
                 land(on: projected, from: start)
             }
+    }
+
+    /// System cancellation (no `onEnded`): clear the anchor and settle on the closest face.
+    private func endHold() {
+        guard let start = base else { return }
+        base = nil
+        land(on: angle, from: start, haptic: false)
     }
 
     /// Rounds to the nearest face, at most three half-turns away from where the drag began.
@@ -78,6 +98,7 @@ private struct CardsScrubFlipDemo: View {
     }
 
     private func autoSpin() {
+        guard base == nil else { return }
         direction = -direction
         let start = angle
         let dir = direction
@@ -86,7 +107,10 @@ private struct CardsScrubFlipDemo: View {
             angle = start + 55 * dir
             pitch = 8
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+        script?.cancel()
+        script = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.45))
+            guard !Task.isCancelled else { return }
             land(on: start + 470 * dir, from: start, haptic: !muted)
         }
     }

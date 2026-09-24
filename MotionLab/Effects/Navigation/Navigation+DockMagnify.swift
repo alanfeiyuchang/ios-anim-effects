@@ -98,7 +98,14 @@ private struct DockMagnifyDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(false, every: 1, intro: true) { sweep() }
-        .onDisappear { sweepTask?.cancel() }
+        .onDisappear {
+            // @State survives navigation: drop the intro sweep's anchors so the row comes back at rest.
+            sweepTask?.cancel()
+            sweepTask = nil
+            sweepStart = nil
+            fingerX = nil
+            hovered = nil
+        }
     }
 
     /// The real finger, or the intro's simulated one while it sweeps.

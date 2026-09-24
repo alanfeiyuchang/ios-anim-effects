@@ -35,6 +35,12 @@ private struct CardsPressTiltDemo: View {
     /// Dent center in unit coordinates (0…1).
     @State private var dent = UnitPoint(x: 0.5, y: 0.5)
     @State private var step = 0
+    /// True while a real finger presses the card.
+    @State private var held = false
+    /// The scripted press-and-release, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the card dented.
+    @GestureState private var pressing = false
 
     private let size = CGSize(width: 250, height: 158)
     private static let previewPoints: [CGPoint] = [
@@ -49,6 +55,10 @@ private struct CardsPressTiltDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.5) { autoPress() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var card: some View {
@@ -73,13 +83,26 @@ private struct CardsPressTiltDemo: View {
 
     private var pressGesture: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 let x = (value.location.x / size.width - 0.5) * 2
                 let y = (value.location.y / size.height - 0.5) * 2
-                if !pressed { Haptics.tap(.soft) }
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                    Haptics.tap(.soft)
+                }
                 pressDown(at: CGPoint(x: x.clamped(to: -1...1), y: y.clamped(to: -1...1)))
             }
-            .onEnded { _ in release() }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: the card springs back flat.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        release()
     }
 
     private func pressDown(at point: CGPoint) {
@@ -98,10 +121,14 @@ private struct CardsPressTiltDemo: View {
     }
 
     private func autoPress() {
+        guard !held else { return }
         let point = Self.previewPoints[step % Self.previewPoints.count]
         step += 1
         pressDown(at: point)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        script?.cancel()
+        script = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.3))
+            guard !Task.isCancelled else { return }
             release()
         }
     }

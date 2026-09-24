@@ -181,6 +181,10 @@ private struct TravelFlipDigit: View {
     @State private var previous: String
     @State private var phase: Double = 0
     @State private var target: Double = 0
+    /// Latest value waiting to flip in; a flip always finishes before the next starts, so a quick second change
+    /// never snaps a half-folded flap back.
+    @State private var pending: String?
+    @State private var worker: Task<Void, Never>?
 
     init(value: String, duration: Double, delay: Double, bounce: Double, depth: CGFloat) {
         self.value = value
@@ -195,13 +199,21 @@ private struct TravelFlipDigit: View {
     var body: some View {
         TravelFlipCard(phase: phase, target: target, current: current, previous: previous, bounce: bounce, depth: depth)
             .onChange(of: value) { _, newValue in
-                Task { @MainActor in
+                pending = newValue
+                guard worker == nil else { return }
+                worker = Task { @MainActor in
                     if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
-                    guard newValue != current else { return }
-                    previous = current
-                    current = newValue
-                    target += 1
-                    withAnimation(.linear(duration: duration)) { phase += 1 }
+                    // Flips queue: each runs to completion, then the newest pending value (if any) flips in.
+                    while let next = pending {
+                        pending = nil
+                        guard next != current else { continue }
+                        previous = current
+                        current = next
+                        target += 1
+                        withAnimation(.linear(duration: duration)) { phase += 1 }
+                        try? await Task.sleep(for: .seconds(duration))
+                    }
+                    worker = nil
                 }
             }
     }

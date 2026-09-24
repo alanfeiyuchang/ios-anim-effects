@@ -66,6 +66,10 @@ private struct ScrollMinimapDemo: View {
     @State private var idleTask: Task<Void, Never>?
     @State private var lastJump = -1
     @State private var down = false
+    /// True while a real finger drags on the minimap.
+    @State private var held = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the lens lit.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -83,6 +87,10 @@ private struct ScrollMinimapDemo: View {
                 position.scrollTo(edge: down ? .bottom : .top)
             }
         }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { idleTask?.cancel() }
     }
 
     private var page: some View {
@@ -137,7 +145,9 @@ private struct ScrollMinimapDemo: View {
 
     private func scrub(scale: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                held = true
                 let maxOffset = max(metrics.content - metrics.viewport, 0)
                 let target = (value.location.y / max(scale, 0.01) - metrics.viewport / 2).clamped(to: 0...maxOffset)
                 let bucket = Int(target / 80)
@@ -149,10 +159,15 @@ private struct ScrollMinimapDemo: View {
                 idleTask?.cancel()
                 active = true
             }
-            .onEnded { _ in
-                lastJump = -1
-                scheduleIdle()
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: forget the last jump and let the lens dim.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        lastJump = -1
+        scheduleIdle()
     }
 
     private func scheduleIdle() {

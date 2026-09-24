@@ -62,6 +62,8 @@ private struct RecedingSheetDemo: View {
                 sheet
                     .offset(y: presented ? max(drag, -12) : sheetHeight + 30)
                     .gesture(sheetDrag)
+                    // Hidden below the frame it is only clipped from view, not from touches: keep it inert then.
+                    .allowsHitTesting(presented)
                     .onChange(of: dragging) { _, active in
                         if !active && drag != 0 {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }

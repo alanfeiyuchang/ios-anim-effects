@@ -37,6 +37,10 @@ private struct CardsDetentDemo: View {
     @State private var step = 0
     /// True while the autoplay script drives the card, so simulated snaps never buzz.
     @State private var scripted = false
+    /// The scripted overshoot-and-snap, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the card between detents.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 14) {
@@ -49,6 +53,10 @@ private struct CardsDetentDemo: View {
             if !ctx.isPreview && !scripted { Haptics.tap(.rigid) }
         }
         .autoplay(ctx.isPreview, every: 1.4) { autoStep() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var card: some View {
@@ -86,18 +94,30 @@ private struct CardsDetentDemo: View {
 
     private var drag: some Gesture {
         DragGesture()
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                if startHeight == nil {
+                    startHeight = height
+                    script?.cancel()
+                    script = nil
+                }
                 let start = startHeight ?? height
-                if startHeight == nil { startHeight = height }
                 scripted = false
                 height = resisted(start + value.translation.height)
             }
             .onEnded { value in
-                let start = startHeight ?? height
+                guard let start = startHeight else { return }
                 startHeight = nil
                 let projected = start + value.predictedEndTranslation.height
                 snap(to: nearestDetent(projected))
             }
+    }
+
+    /// System cancellation (no `onEnded`): clear the anchor and snap to the closest detent.
+    private func endHold() {
+        guard startHeight != nil else { return }
+        startHeight = nil
+        snap(to: nearestDetent(height))
     }
 
     private func resisted(_ raw: CGFloat) -> CGFloat {
@@ -125,6 +145,7 @@ private struct CardsDetentDemo: View {
     }
 
     private func autoStep() {
+        guard startHeight == nil else { return }
         let sequence = [1, 2, 0, 2, 1, 0]
         let next = sequence[step % sequence.count]
         step += 1
@@ -135,7 +156,10 @@ private struct CardsDetentDemo: View {
         withAnimation(.easeOut(duration: 0.3)) {
             height = resisted(target + overshoot)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+        script?.cancel()
+        script = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.32))
+            guard !Task.isCancelled else { return }
             snap(to: next)
         }
     }

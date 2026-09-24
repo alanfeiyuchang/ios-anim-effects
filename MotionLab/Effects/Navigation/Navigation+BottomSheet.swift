@@ -86,6 +86,9 @@ private struct BottomSheetDemo: View {
                     .opacity(ctx.isPreview ? 0 : 1 - Double(lift))
             }
             .clipped()
+            // clipped() only affects drawing: limit hits to the stage too, so the part of the sheet hanging below
+            // it never catches a page swipe.
+            .contentShape(Rectangle())
             .autoplay(ctx.isPreview, every: 1.5) {
             let order = [1, 2, 1, 0]
             snap(to: order[autoStep % order.count])
@@ -121,7 +124,8 @@ private struct BottomSheetDemo: View {
             .fill(Palette.elevated)
             .shadow(color: .black.opacity(0.18), radius: 20, y: -4)
         }
-        .contentShape(Rectangle())
+        // Only the on-stage part of the sheet (its top `currentHeight` points) takes touches.
+        .contentShape(BottomSheetHitShape(visibleHeight: max(currentHeight, 0)))
         .gesture(dragGesture)
         .onChange(of: dragging) { _, active in
             if !active { settle(projected: nil) }
@@ -230,5 +234,14 @@ private struct MapCanvas: View {
                 .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
                 .offset(x: 30, y: -60)
         }
+    }
+}
+
+/// The top `visibleHeight` points of the sheet's frame: the part that sits inside the stage.
+private struct BottomSheetHitShape: Shape {
+    let visibleHeight: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: min(visibleHeight, rect.height)))
     }
 }

@@ -33,6 +33,10 @@ private struct CardsHoloDemo: View {
     @State private var point: CGSize = .zero
     /// Until the first touch the card sways on its own so the foil is alive on arrival.
     @State private var touched = false
+    /// True while a real finger holds the card.
+    @State private var held = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the card tilted.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 22) {
@@ -52,6 +56,9 @@ private struct CardsHoloDemo: View {
             DemoHint(text: L("Drag to tilt the foil", "拖动让镭射流动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     /// Idle figure-of-eight sway (full swing in previews, gentler on the detail stage).
@@ -62,7 +69,9 @@ private struct CardsHoloDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                held = true
                 if !touched {
                     // Continue from wherever the idle sway left the card.
                     point = sway(at: Date().timeIntervalSinceReferenceDate)
@@ -75,12 +84,16 @@ private struct CardsHoloDemo: View {
                     point = CGSize(width: x.clamped(to: -1...1), height: y.clamped(to: -1...1))
                 }
             }
-            .onEnded { _ in
-                // Heavy, under-damped release: the card visibly overshoots and rocks once before settling.
-                withAnimation(.spring(response: ctx["release"], dampingFraction: 0.5)) {
-                    point = .zero
-                }
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation. Heavy, under-damped: the card overshoots and rocks once before settling.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        withAnimation(.spring(response: ctx["release"], dampingFraction: 0.5)) {
+            point = .zero
+        }
     }
 }
 

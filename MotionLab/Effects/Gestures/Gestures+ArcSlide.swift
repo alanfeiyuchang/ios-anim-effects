@@ -55,6 +55,10 @@ private struct ArcSlideDemo: View {
     @State private var dragging = false
     @State private var pulse = false
     @State private var dragStart: CGFloat?
+    /// The scripted slide, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the knob mid-arc.
+    @GestureState private var pressing = false
 
     var body: some View {
         let detents = max(ctx.int("detents"), 2)
@@ -88,6 +92,10 @@ private struct ArcSlideDemo: View {
                 .padding(.bottom, 4)
         }
         .autoplay(ctx.isPreview, every: 3.6, delay: 0.6) { simulate() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var fillStyle: AnyShapeStyle {
@@ -125,12 +133,15 @@ private struct ArcSlideDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 guard !unlocked else { return }
-                if !dragging {
+                if dragStart == nil {
+                    dragStart = progress
+                    script?.cancel()
+                    script = nil
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = true }
                 }
-                if dragStart == nil { dragStart = progress }
                 let startRadians = (arcStart + arcSweep * Double(dragStart ?? progress)) * .pi / 180
                 let dx = Double(arcRadius) * cos(startRadians) + Double(value.translation.width)
                 let dy = Double(arcRadius) * sin(startRadians) + Double(value.translation.height)
@@ -145,12 +156,16 @@ private struct ArcSlideDemo: View {
                 progress = next
                 if next >= 0.995 { unlock(haptic: true) }
             }
-            .onEnded { _ in
-                dragStart = nil
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = false }
-                guard !unlocked else { return }
-                withAnimation(.spring(response: 0.6, dampingFraction: ctx["damping"])) { progress = 0 }
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: drop the anchor and, unless unlocked, spring the knob home.
+    private func endHold() {
+        guard dragStart != nil else { return }
+        dragStart = nil
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { dragging = false }
+        guard !unlocked else { return }
+        withAnimation(.spring(response: 0.6, dampingFraction: ctx["damping"])) { progress = 0 }
     }
 
     private func tick(from old: CGFloat, to new: CGFloat) {
@@ -180,13 +195,15 @@ private struct ArcSlideDemo: View {
     }
 
     private func simulate() {
-        guard !unlocked else { return }
+        guard !unlocked, dragStart == nil else { return }
         withAnimation(.easeInOut(duration: 1.1)) {
             progress = 0.96
             dragging = true
         }
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.15))
+            guard !Task.isCancelled else { return }
             unlock(haptic: false)
         }
     }

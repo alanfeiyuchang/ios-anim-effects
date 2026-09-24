@@ -133,15 +133,20 @@ private struct IconsPlaneDemo: View {
 
     private func send() {
         launches += 1
+        // `launches` doubles as a token: a newer send makes the earlier flight's callbacks stale.
+        let token = launches
         if !ctx.isPreview { Haptics.tap(.medium) }
+        if sent { withAnimation(.snappy) { sent = false } }
         // Captured now: the landing haptic runs after autoplay (or the detail intro) has unmuted Haptics.
         let muted = Haptics.isMuted || ctx.isPreview
         let away = 0.14 + ctx["duration"] * 0.8
         DispatchQueue.main.asyncAfter(deadline: .now() + away) {
+            guard token == launches else { return }
             withAnimation(.snappy) { sent = true }
             if !muted { Haptics.success() }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + away + 1.2) {
+            guard token == launches else { return }
             withAnimation(.snappy) { sent = false }
         }
     }

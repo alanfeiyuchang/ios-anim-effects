@@ -30,6 +30,9 @@ extension Effect {
 private struct ButtonHoldToConfirmDemo: View {
     let ctx: DemoContext
     @State private var progress: CGFloat = 0
+    /// The scripted hold (preview loop / detail intro); cancelled by the first real press and on disappear, so it
+    /// can never complete a hold the user let go of early.
+    @State private var scriptTask: Task<Void, Never>?
     @State private var pressing = false
     @State private var confirmed = false
 
@@ -48,6 +51,12 @@ private struct ButtonHoldToConfirmDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["duration"] + 2.4, delay: 0.4) { simulateHold() }
+        .onDisappear {
+            // Leaving mid-script: drop the scripted completion and drain the half-held control.
+            guard scriptTask != nil else { return }
+            cancelScript()
+            endHold()
+        }
     }
 
     /// The item being deleted: it leans back while you hold and dissolves when the hold completes.
@@ -112,6 +121,7 @@ private struct ButtonHoldToConfirmDemo: View {
         .onLongPressGesture(minimumDuration: ctx["duration"], maximumDistance: 40) {
             confirm()
         } onPressingChanged: { isPressing in
+            cancelScript()
             if isPressing { beginHold() } else { endHold() }
         }
     }
@@ -146,14 +156,22 @@ private struct ButtonHoldToConfirmDemo: View {
         }
     }
 
+    private func cancelScript() {
+        scriptTask?.cancel()
+        scriptTask = nil
+    }
+
     private func simulateHold() {
         guard !confirmed else { return }
         // Captured now: autoplay mutes haptics only for the synchronous part of the action.
         let muted = Haptics.isMuted
         beginHold()
         let hold = ctx["duration"]
-        Task {
+        scriptTask?.cancel()
+        scriptTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(hold))
+            guard !Task.isCancelled else { return }
+            scriptTask = nil
             confirm(silent: muted)
         }
     }

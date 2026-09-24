@@ -65,7 +65,17 @@ private struct FillButtonDemo: View {
         .autoplay(ctx.isPreview, every: 1.0, delay: 0.5) {
             if state == .idle { tap() }
         }
-        .onDisappear { task?.cancel() }
+        .onDisappear {
+            // @State survives navigation: never come back to a half-filled, frozen button.
+            task?.cancel()
+            task = nil
+            var reset = Transaction()
+            reset.disablesAnimations = true
+            withTransaction(reset) {
+                state = .idle
+                progress = 0
+            }
+        }
     }
 
     private var title: String {

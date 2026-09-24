@@ -36,6 +36,12 @@ private struct CardsTurnSwipeDemo: View {
     /// Starting turn of the card that has just become the top one.
     @State private var incoming: Double = 0
     @State private var autoDirection: CGFloat = 1
+    /// True while a real finger holds the top card.
+    @State private var held = false
+    /// The scripted swipe, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the card turned.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -49,6 +55,10 @@ private struct CardsTurnSwipeDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.7) { autoSwipe() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private func card(_ id: Int) -> some View {
@@ -77,12 +87,19 @@ private struct CardsTurnSwipeDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture()
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 guard thrown == nil else { return }
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 drag = value.translation.width
             }
             .onEnded { value in
-                guard thrown == nil else { return }
+                guard held, thrown == nil else { return }
+                held = false
                 let threshold = ctx.cg("threshold")
                 let predicted = value.predictedEndTranslation.width
                 if abs(value.translation.width) > threshold || abs(predicted) > threshold * 2 {
@@ -91,6 +108,14 @@ private struct CardsTurnSwipeDemo: View {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { drag = 0 }
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): the card turns back to face the viewer.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        guard thrown == nil else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { drag = 0 }
     }
 
     private func throwCard(direction: CGFloat, haptic: Bool = true) {
@@ -116,13 +141,17 @@ private struct CardsTurnSwipeDemo: View {
     }
 
     private func autoSwipe() {
+        guard !held, thrown == nil else { return }
         autoDirection = -autoDirection
         let direction = autoDirection
         let muted = Haptics.isMuted || ctx.isPreview
         withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
             drag = direction * 70
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+        script?.cancel()
+        script = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.55))
+            guard !Task.isCancelled else { return }
             throwCard(direction: direction, haptic: !muted)
         }
     }

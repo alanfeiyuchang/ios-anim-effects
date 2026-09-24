@@ -31,6 +31,12 @@ private struct CardsTearOffDemo: View {
     @State private var day = 23
     @State private var pull: CGFloat = 0
     @State private var falling = false
+    /// True while a real finger holds the sheet.
+    @State private var held = false
+    /// The scripted pull-and-tear, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the sheet bent.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 22) {
@@ -39,6 +45,10 @@ private struct CardsTearOffDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.8) { autoTear() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var pad: some View {
@@ -67,18 +77,33 @@ private struct CardsTearOffDemo: View {
 
     private var drag: some Gesture {
         DragGesture()
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 guard !falling else { return }
+                if !held {
+                    held = true
+                    script?.cancel()
+                    script = nil
+                }
                 pull = max(value.translation.height, 0)
             }
             .onEnded { _ in
-                guard !falling else { return }
+                guard held, !falling else { return }
+                held = false
                 if pull > ctx.cg("threshold") {
                     tear()
                 } else {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { pull = 0 }
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): the sheet springs back up unless it is already falling.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        guard !falling else { return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { pull = 0 }
     }
 
     private func tear(haptic: Bool = true) {
@@ -96,10 +121,15 @@ private struct CardsTearOffDemo: View {
     }
 
     private func autoTear() {
-        guard !falling else { return }
+        guard !falling, !held else { return }
         let muted = Haptics.isMuted || ctx.isPreview
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { pull = 120 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { tear(haptic: !muted) }
+        script?.cancel()
+        script = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.6))
+            guard !Task.isCancelled else { return }
+            tear(haptic: !muted)
+        }
     }
 }
 

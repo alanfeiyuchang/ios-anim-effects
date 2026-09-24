@@ -76,6 +76,10 @@ private struct ScrollIndexDemo: View {
     @State private var demoing = false
     /// The running intro scrub, cancelled if the demo leaves the screen.
     @State private var introTask: Task<Void, Never>?
+    /// True while a real finger scrubs the index.
+    @State private var held = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the bubble up.
+    @GestureState private var pressing = false
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -109,6 +113,9 @@ private struct ScrollIndexDemo: View {
                 if !ctx.isPreview && !demoing && newValue != nil { Haptics.selection() }
             }
             .autoplay(ctx.isPreview, every: 0.32, delay: 0.5) { autoScrub(proxy) }
+            .onChange(of: pressing) { _, isPressing in
+                if !isPressing { endHold() }
+            }
             .onDisappear {
                 introTask?.cancel()
                 introTask = nil
@@ -132,13 +139,25 @@ private struct ScrollIndexDemo: View {
 
     private func scrub(_ proxy: ScrollViewProxy) -> some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                if !held {
+                    held = true
+                    introTask?.cancel()
+                    introTask = nil
+                    demoing = false
+                }
                 let raw = Int(((value.location.y - ScrollIndexMetrics.inset) / ScrollIndexMetrics.letterHeight).rounded(.down))
                 select(raw.clamped(to: 0...(scrollIndexLetters.count - 1)), proxy)
             }
-            .onEnded { _ in
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { active = nil }
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: the bubble and fisheye fold away.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { active = nil }
     }
 
     private func select(_ index: Int, _ proxy: ScrollViewProxy) {
@@ -171,7 +190,7 @@ private struct ScrollIndexDemo: View {
 
     /// Detail stage, once on arrival: a quick sweep down and back, then release and return to the top.
     private func introScrub(_ proxy: ScrollViewProxy) {
-        guard !demoing, active == nil else { return }
+        guard !demoing, !held, active == nil else { return }
         demoing = true
         introTask = Task { @MainActor in
             defer { demoing = false }

@@ -35,6 +35,8 @@ private struct CardsTiltDemo: View {
     @State private var touching = false
     /// Until the first touch the card drifts through a slow idle tilt, so the stage is alive on arrival.
     @State private var touched = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the card lifted.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 28) {
@@ -51,6 +53,9 @@ private struct CardsTiltDemo: View {
             DemoHint(text: L("Drag across the card", "在卡片上拖动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     /// Idle Lissajous drift: full swing in previews, a gentle ~45% sway on the detail stage.
@@ -61,6 +66,7 @@ private struct CardsTiltDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if !touched {
                     // Pick up from the idle pose instead of jumping.
@@ -76,12 +82,16 @@ private struct CardsTiltDemo: View {
                     touching = true
                 }
             }
-            .onEnded { _ in
-                withAnimation(.spring(response: ctx["response"], dampingFraction: 0.6)) {
-                    tilt = .zero
-                    touching = false
-                }
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: the card drops back flat.
+    private func endHold() {
+        guard touching else { return }
+        withAnimation(.spring(response: ctx["response"], dampingFraction: 0.6)) {
+            tilt = .zero
+            touching = false
+        }
     }
 }
 

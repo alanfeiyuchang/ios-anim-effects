@@ -10,12 +10,12 @@ extension Effect {
         name: L("ECG Heartbeat", "心电脉冲"),
         summary: L("A monitor-style trace redraws itself as a write head sweeps, and the heart beats on every spike.", "监护仪式的波形随扫描头重绘，每个尖峰都让心形跳动一次。"),
         prompt: L(
-            "A 'Measuring heart rate' card holds a 260 × 90 pt strip over a faint 13 pt grid. A write head sweeps left to right, redrawing a PQRST trace — small P bump, sharp R spike that nearly touches the top of the strip, S dip and rounded T wave — at 72 BPM, 2.5 beats per strip width. The line behind the head fades from 100% to 0% over one full sweep, and a small gap ahead of the head erases the old trace, exactly like a bedside monitor. A red heart pops 1.0 → 1.25 → 1.0 in 0.3 s each time the head crosses an R peak, and the BPM readout sits beside it. Clinical, rhythmic, alive.",
-            "一张“正在测量心率”卡片中是一条 260 × 90 pt 的波形带，底部铺着 13 pt 的淡色网格。扫描头从左向右移动，以 72 BPM 重绘 PQRST 波形——小小的 P 波、几乎触到波形带顶部的尖锐 R 峰、S 谷与圆润的 T 波——每个带宽容纳 2.5 拍。扫描头身后的线条在一整次扫描内从 100% 渐隐到 0%，扫描头前方留出一小段空隙抹掉旧波形，与床旁监护仪一模一样。每当扫描头越过 R 峰，红色心形在 0.3 秒内 1.0 → 1.25 → 1.0 跳动一次，旁边是 BPM 读数。专业、有节律、充满生命感。"
+            "A 'Measuring heart rate' card holds a 260 × 90 pt strip over a faint 13 pt grid. A write head sweeps left to right, redrawing a PQRST trace — small P bump, sharp R spike that nearly touches the top of the strip, S dip and rounded T wave — at 72 BPM, 2.5 beats per strip width, the rhythm carrying on across each wrap so every R–R interval stays even. The line behind the head fades from 100% to 0% over one full sweep, and a small gap ahead of the head erases the old trace, exactly like a bedside monitor. A red heart pops 1.0 → 1.25 → 1.0 in 0.3 s each time the head crosses an R peak, and the BPM readout sits beside it. Clinical, rhythmic, alive.",
+            "“正在测量心率”卡片中是 260 × 90 pt 的波形带，底部铺着 13 pt 的淡色网格。扫描头从左向右移动，以 72 BPM 重绘 PQRST 波形——小小的 P 波、几乎触到波形带顶部的尖锐 R 峰、S 谷与圆润的 T 波——每个带宽容纳 2.5 拍，节律跨越换行连续，R–R 间期始终均匀。扫描头身后的线条在一整次扫描内从 100% 渐隐到 0%，扫描头前方留出一小段空隙抹掉旧波形，与床旁监护仪一模一样。每当扫描头越过 R 峰，红色心形在 0.3 秒内 1.0 → 1.25 → 1.0 跳动一次，旁边是 BPM 读数。专业而富有节律。"
         ),
         implementation: L(
-            "A TimelineView drives a Canvas that walks the strip in 2 pt steps, evaluating a piecewise PQRST function and stroking short segments whose opacity depends on their age behind the head.",
-            "TimelineView 驱动 Canvas 以 2 pt 步长遍历波形带，计算分段 PQRST 函数，并按距扫描头的“年龄”设置每一小段描边的透明度。"
+            "A TimelineView drives a Canvas that walks the strip in 2 pt steps, evaluating a piecewise PQRST function at each pixel's write time (so the rhythm never restarts at the wrap) and stroking short segments whose opacity depends on their age behind the head.",
+            "TimelineView 驱动 Canvas 以 2 pt 步长遍历波形带，按每个像素的写入时间计算分段 PQRST 函数（换行时节律不会重置），并按距扫描头的“年龄”设置每一小段描边的透明度。"
         ),
         apis: ["TimelineView", "Canvas", "GraphicsContext.stroke", "scaleEffect"],
         tags: ["ecg", "heartbeat", "pulse", "health", "心电图", "心跳", "脉搏", "健康"],
@@ -56,13 +56,15 @@ private struct HeartbeatDemo: View {
         let beatTime: Double = 60 / bpm
         let sweep: Double = beatTime * beats
         TimelineView(.animation(minimumInterval: MotionFrameRate.interval(preview: ctx.isPreview))) { timeline in
-            let head: Double = clock.phase(at: timeline.date, rate: 1 / sweep).truncatingRemainder(dividingBy: 1)
+            // Cumulative sweeps (not wrapped): the trace is sampled by write time, so the rhythm carries across
+            // the wrap and every R–R interval stays one beat even when a strip holds a fractional beat count.
+            let written: Double = clock.phase(at: timeline.date, rate: 1 / sweep)
             // Beat phase under the write head, so the heart pops exactly when the head crosses an R peak.
-            let headBeat: Double = (head * beats).truncatingRemainder(dividingBy: 1)
+            let headBeat: Double = ECGStrip.fract(written * beats)
             let sinceR: Double = (headBeat - 0.32 + 1).truncatingRemainder(dividingBy: 1) * beatTime
             VStack(alignment: .leading, spacing: 14) {
                 header(zh: zh, bpm: bpm, sinceR: max(sinceR, 0))
-                ECGStrip(head: head, beats: beats, grid: ctx.bool("grid"))
+                ECGStrip(written: written, beats: beats, grid: ctx.bool("grid"))
                     .frame(width: 260, height: 90)
                 Text(zh ? "请保持手指贴合传感器" : "Keep your finger on the sensor")
                     .font(.caption)
@@ -97,9 +99,21 @@ private struct HeartbeatDemo: View {
 }
 
 private struct ECGStrip: View {
-    let head: Double
+    /// Cumulative sweep phase in strips; its fractional part is the write head's position.
+    let written: Double
     let beats: Double
     let grid: Bool
+
+    private var head: Double { Self.fract(written) }
+
+    static func fract(_ x: Double) -> Double { x - floor(x) }
+
+    /// When (in strips) the pixel at `x` was last written: this sweep if the head has passed it, else the last one.
+    private func writeTime(x: CGFloat, width: CGFloat) -> Double {
+        let fx: Double = Double(x / width)
+        let sweepStart: Double = floor(written)
+        return fx <= head ? sweepStart + fx : sweepStart - 1 + fx
+    }
 
     var body: some View {
         Canvas { context, size in
@@ -110,7 +124,7 @@ private struct ECGStrip: View {
             var previous: CGPoint?
             for i in 0...count {
                 let x: CGFloat = CGFloat(i) * step
-                let y: CGFloat = ECGStrip.y(x: x, size: size, beats: beats)
+                let y: CGFloat = ECGStrip.y(time: writeTime(x: x, width: size.width), size: size, beats: beats)
                 let point = CGPoint(x: x, y: y)
                 var behind: CGFloat = headX - x
                 if behind < 0 { behind += size.width }
@@ -123,7 +137,7 @@ private struct ECGStrip: View {
                 }
                 previous = point
             }
-            let headY: CGFloat = ECGStrip.y(x: headX, size: size, beats: beats)
+            let headY: CGFloat = ECGStrip.y(time: written, size: size, beats: beats)
             let dot = CGRect(x: headX - 3.5, y: headY - 3.5, width: 7, height: 7)
             context.fill(Path(ellipseIn: dot.insetBy(dx: -4, dy: -4)), with: .color(Palette.red.opacity(0.2)))
             context.fill(Path(ellipseIn: dot), with: .color(Palette.red))
@@ -147,8 +161,9 @@ private struct ECGStrip: View {
         context.stroke(path, with: .color(.primary.opacity(0.06)), lineWidth: 0.5)
     }
 
-    static func y(x: CGFloat, size: CGSize, beats: Double) -> CGFloat {
-        let raw: Double = Double(x / size.width) * beats
+    /// Trace height for a sample written at `time` (in strips): the beat phase follows the write clock, not x.
+    static func y(time: Double, size: CGSize, beats: Double) -> CGFloat {
+        let raw: Double = time * beats
         let u: Double = raw - floor(raw)
         let value: Double = pqrst(u)
         let baseline: CGFloat = size.height * 0.68

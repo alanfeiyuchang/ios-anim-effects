@@ -36,6 +36,12 @@ private struct ChargeBurstDemo: View {
     @State private var burstCount = 0
     /// True during a scripted charge (previews, arrival intro), whose delayed haptics must stay silent.
     @State private var simulated = false
+    /// True while a real finger holds the core.
+    @State private var held = false
+    /// The scripted charge-and-release, cancelled on the first real touch.
+    @State private var script: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves the ring primed.
+    @GestureState private var pressing = false
 
     private var quiet: Bool { ctx.isPreview || simulated }
 
@@ -55,6 +61,10 @@ private struct ChargeBurstDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: ctx["duration"] + 1.6, delay: 0.4) { autoCharge() }
+        .onChange(of: pressing) { _, isDown in
+            if !isDown { endHold() }
+        }
+        .onDisappear { script?.cancel() }
     }
 
     private var core: some View {
@@ -68,14 +78,34 @@ private struct ChargeBurstDemo: View {
         }
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($pressing) { _, state, _ in state = true }
                 .onChanged { _ in
-                    if !isPressing {
-                        simulated = false
-                        beginPress()
-                    }
+                    guard !held else { return }
+                    held = true
+                    // A real press takes over from a scripted charge and starts a fresh one.
+                    script?.cancel()
+                    script = nil
+                    isPressing = false
+                    isFull = false
+                    simulated = false
+                    beginPress()
                 }
-                .onEnded { _ in endPress() }
+                .onEnded { _ in
+                    guard held else { return }
+                    held = false
+                    endPress()
+                }
         )
+    }
+
+    /// System cancellation (no `onEnded`): an early release that drains the ring without a burst.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        guard isPressing else { return }
+        isPressing = false
+        isFull = false
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { charge = 0 }
     }
 
     private func beginPress() {
@@ -109,12 +139,14 @@ private struct ChargeBurstDemo: View {
     }
 
     private func autoCharge() {
-        guard !isPressing else { return }
+        guard !isPressing, !held else { return }
         simulated = true
         beginPress()
         let hold = ctx["duration"] + 0.35
-        Task { @MainActor in
+        script?.cancel()
+        script = Task { @MainActor in
             try? await Task.sleep(for: .seconds(hold))
+            guard !Task.isCancelled else { return }
             endPress()
         }
     }

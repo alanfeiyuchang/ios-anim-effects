@@ -32,6 +32,10 @@ private struct CardsParallaxDemo: View {
     @State private var point: CGSize = .zero
     /// Until the first touch the layers drift on their own so the depth reads on arrival.
     @State private var touched = false
+    /// True while a real finger holds the card.
+    @State private var held = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the card tilted.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -48,6 +52,9 @@ private struct CardsParallaxDemo: View {
             DemoHint(text: L("Drag the card", "拖动卡片"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     /// Idle drift: full swing in previews, a gentler sway on the detail stage.
@@ -58,7 +65,9 @@ private struct CardsParallaxDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
+                held = true
                 if !touched {
                     point = sway(at: Date().timeIntervalSinceReferenceDate)
                     touched = true
@@ -69,11 +78,16 @@ private struct CardsParallaxDemo: View {
                     point = CGSize(width: x.clamped(to: -1...1), height: y.clamped(to: -1...1))
                 }
             }
-            .onEnded { _ in
-                withAnimation(.spring(response: ctx["response"], dampingFraction: 0.7)) {
-                    point = .zero
-                }
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: the layers spring back to flat.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        withAnimation(.spring(response: ctx["response"], dampingFraction: 0.7)) {
+            point = .zero
+        }
     }
 }
 

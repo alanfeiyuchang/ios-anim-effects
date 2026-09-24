@@ -12,8 +12,8 @@ extension Effect {
             "深色“最佳路线”卡片：淡淡的山脊、虚线下滑路线，下方是细长海拔剖面。出现时，橙到红的渐变轨迹约 2.4 秒（缓入缓出）沿 S 形曲线从山顶滑到谷底，带 8pt 橙色辉光；白色光晕标记贴在前端，标签海拔从 2,256 米递减到 860 米；空心“PB”幽灵标记慢 15% 同线竞速。剖面随游标填橙，距离增至 1.4 公里。拖动时标记点以弹簧（响应 0.3 秒、阻尼 0.75）沿路线追随手指，幽灵以更松的弹簧（0.6 秒）落后跟随。点击重播，终点触发成功触觉，竞技感十足。"
         ),
         implementation: L(
-            "An Animatable view gets the interpolated (run, ghost) progress pair each frame, trims the route with trimmedPath(from:to:) and reads currentPoint to place both markers and derive elevation and distance; the profile is a pre-sampled area Path masked to the progress. Scrubbing springs both values toward the sampled fraction nearest the finger.",
-            "自定义 Animatable 视图逐帧获得插值后的（本次、幽灵）进度对，用 trimmedPath(from:to:) 截取路线，读取 currentPoint 放置两个标记点并换算海拔与距离；海拔剖面是预采样的面积 Path，按进度遮罩。拖动时两个进度以弹簧奔向手指下方最近的采样比例。"
+            "An Animatable view gets the interpolated (run, ghost) progress pair each frame, trims the route with trimmedPath(from:to:) and reads currentPoint to place both markers and derive elevation and distance; the profile is a pre-sampled area Path masked to the progress. Scrubbing (a horizontal-first simultaneous drag) springs both values toward the sampled fraction nearest the finger.",
+            "自定义 Animatable 视图逐帧获得插值后的（本次、幽灵）进度对，用 trimmedPath(from:to:) 截取路线，读取 currentPoint 放置两个标记点并换算海拔与距离；海拔剖面是预采样的面积 Path，按进度遮罩。横向优先的同时拖动手势让两个进度以弹簧奔向手指下方最近的采样比例。"
         ),
         apis: ["Animatable", "AnimatablePair", "Path.trimmedPath(from:to:)", "Path.currentPoint", "spring(response:dampingFraction:)"],
         tags: ["path animation", "route", "ghost", "elevation", "路径动画", "路线", "幽灵对比", "海拔"],
@@ -85,6 +85,8 @@ private struct SportBestLineDemo: View {
     /// Last season's best run, racing the same line a little slower.
     @State private var ghost: CGFloat = 0
     @State private var runID = 0
+    /// Bumped by every scrub sample: a run the user took over drops its pending finish haptic.
+    @State private var scrubEpoch = 0
     @GestureState private var pressed = false
 
     init(ctx: DemoContext) {
@@ -110,7 +112,8 @@ private struct SportBestLineDemo: View {
                 .signatureCard()
                 .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                 .onTapGesture { runID += 1 }
-                .gesture(scrubGesture)
+                // Horizontal-first and simultaneous: a vertical swipe on the card still scrolls the page.
+                .pageSafeHorizontalDrag(minimumDistance: 6, onChanged: scrub, onEnded: { _ in })
                 .simultaneousGesture(pressGesture)
                 // Touch-down sink like the category's other cards; applied outside the gestures so
                 // the scrub still maps the finger in unscaled card coordinates.
@@ -137,20 +140,19 @@ private struct SportBestLineDemo: View {
             }
     }
 
-    private var scrubGesture: some Gesture {
-        DragGesture()
-            .onChanged { value in
-                // Card content is inset 20 pt; map the finger's x to the route point directly beneath it.
-                let x = (value.location.x - 20).clamped(to: 0...BestLineRoute.size.width)
-                let target = BestLineRoute.fraction(nearestX: x)
-                // Spring-loaded: the marker chases the finger along the route, the ghost trails on a looser spring.
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { progress = target }
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) { ghost = target }
-            }
+    private func scrub(_ value: DragGesture.Value) {
+        scrubEpoch += 1
+        // Card content is inset 20 pt; map the finger's x to the route point directly beneath it.
+        let x = (value.location.x - 20).clamped(to: 0...BestLineRoute.size.width)
+        let target = BestLineRoute.fraction(nearestX: x)
+        // Spring-loaded: the marker chases the finger along the route, the ghost trails on a looser spring.
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { progress = target }
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) { ghost = target }
     }
 
     private func play() async {
         let silent = ctx.isPreview || runID == 0
+        let epoch = scrubEpoch
         var reset = Transaction()
         reset.disablesAnimations = true
         withTransaction(reset) {
@@ -165,7 +167,8 @@ private struct SportBestLineDemo: View {
         withAnimation(.easeInOut(duration: ghostDuration)) { ghost = 1 }
         try? await Task.sleep(for: .seconds(ctx["duration"]))
         guard !Task.isCancelled else { return }
-        if !silent { Haptics.success() }
+        // A scrub took over mid-run: the finish never happened, so no success haptic.
+        if !silent && epoch == scrubEpoch { Haptics.success() }
     }
 }
 

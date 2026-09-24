@@ -47,6 +47,8 @@ private struct CardsScratchDemo: View {
     @State private var startedRevealed = false
     /// The intro swoosh, cancelled if the demo leaves the screen.
     @State private var introTask: Task<Void, Never>?
+    /// Resets on system cancellation too, so a stolen touch never leaves a stroke open.
+    @GestureState private var pressing = false
 
     var body: some View {
         VStack(spacing: 22) {
@@ -56,6 +58,9 @@ private struct CardsScratchDemo: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: ticks) { Haptics.selection() }
         .autoplay(ctx.isPreview, every: 0.05, delay: 0.3) { autoScratch() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold(completed: false) }
+        }
         .onDisappear {
             introTask?.cancel()
             introTask = nil
@@ -99,9 +104,12 @@ private struct CardsScratchDemo: View {
 
     private var scratch: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 if !dragging {
                     dragging = true
+                    introTask?.cancel()
+                    introTask = nil
                     startedRevealed = revealed
                     if !revealed { strokes.append([]) }
                 }
@@ -109,11 +117,16 @@ private struct CardsScratchDemo: View {
                 strokes[strokes.count - 1].append(value.location)
                 mark(value.location)
             }
-            .onEnded { _ in
-                dragging = false
-                // A touch that begins on an already revealed card deals a fresh one.
-                if startedRevealed { reset() }
-            }
+            .onEnded { _ in endHold(completed: true) }
+    }
+
+    /// Closes the stroke. A completed touch that began on an already revealed card deals a fresh one;
+    /// a system-cancelled one (the page scrolled) only ends the stroke.
+    private func endHold(completed: Bool) {
+        guard dragging else { return }
+        dragging = false
+        if completed && startedRevealed { reset() }
+        startedRevealed = false
     }
 
     /// Records grid cells under the brush and fires the reveal once enough foil is gone.

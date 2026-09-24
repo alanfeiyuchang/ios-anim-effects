@@ -76,6 +76,8 @@ private struct TextVariableWeightDemo: View {
     @State private var lastX: CGFloat = 0.5
     /// When the finger last went down or up; drives the wave ↔ finger cross-fade.
     @State private var touchChanged = Date.distantPast
+    /// Resets on system cancellation too, so a stolen touch never freezes the wave under a ghost finger.
+    @GestureState private var pressing = false
 
     private let word = Array("MOTION")
     private let fontSize: CGFloat = 60
@@ -96,6 +98,9 @@ private struct TextVariableWeightDemo: View {
             DemoHint(text: L("Drag across the word", "在单词上拖动"), ctx: ctx)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     private func letters(_ weights: [Double]) -> some View {
@@ -158,6 +163,7 @@ private struct TextVariableWeightDemo: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($pressing) { _, state, _ in state = true }
             .onChanged { value in
                 let x = (value.location.x / touchWidth).clamped(to: 0...1)
                 if touchX == nil {
@@ -167,9 +173,13 @@ private struct TextVariableWeightDemo: View {
                 touchX = x
                 lastX = x
             }
-            .onEnded { _ in
-                touchX = nil
-                touchChanged = Date()
-            }
+            .onEnded { _ in endHold() }
+    }
+
+    /// Release or system cancellation: hand the letters back to the travelling wave.
+    private func endHold() {
+        guard touchX != nil else { return }
+        touchX = nil
+        touchChanged = Date()
     }
 }

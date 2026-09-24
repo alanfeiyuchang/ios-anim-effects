@@ -12,8 +12,8 @@ extension Effect {
             "渐变胶囊按钮周围有一个半径约 120pt 的磁场，没有生硬边界：吸力从边缘到约 55% 半径处按 smoothstep 渐强、之后保持，按钮被拉向触点，最多移动距离的三分之一，并按吸力比例放大到 106%、加深彩色投影；文字比本体多移一点，形成细微视差。每次位移都由柔和弹簧（响应 0.42 秒、阻尼 0.55）追随。手指抬起或移出时，按钮带轻微过冲回到中心，进出磁场各有一次柔和触觉。若在按钮上松手，则会按下：缩到 94% 再弹性回弹，伴随中等触感。灵动而有吸引力。"
         ),
         implementation: L(
-            "A zero-distance DragGesture over the whole stage measures the finger's offset from the button center; a smoothstep falloff of that distance weights the pull, scale and shadow, all applied through a spring. Lifting inside the capsule bumps a counter that drives a keyframeAnimator press.",
-            "覆盖整个舞台的零距离 DragGesture 计算手指相对按钮中心的偏移；按距离做 smoothstep 衰减得到吸力权重，同时驱动位移、缩放与投影，并通过弹簧应用。在胶囊内松手会递增计数，触发 keyframeAnimator 按压。"
+            "A zero-distance DragGesture, attached simultaneously and hit-tested only inside the field circle, measures the finger's offset from the button center; a smoothstep falloff of that distance weights the pull, scale and shadow, all applied through a spring. Lifting inside the capsule bumps a counter that drives a keyframeAnimator press.",
+            "仅在磁场圆内命中、以 simultaneousGesture 挂载的零距离 DragGesture 计算手指相对按钮中心的偏移；按距离做 smoothstep 衰减得到吸力权重，同时驱动位移、缩放与投影，并通过弹簧应用。在胶囊内松手会递增计数，触发 keyframeAnimator 按压。"
         ),
         apis: ["DragGesture", "offset", "spring(response:dampingFraction:)", "onGeometryChange"],
         tags: ["magnetic", "attract", "hover", "磁吸", "吸附", "跟随", "cursor", "悬停"],
@@ -91,13 +91,15 @@ private struct ButtonMagneticDemo: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
+        // Only the field itself takes touches, and simultaneously: a swipe anywhere else on the stage (or a
+        // vertical one that the page claims) still scrolls the page; a cancelled touch releases through `touching`.
+        .contentShape(ButtonMagneticFieldShape(radius: max(radius + 8, 100)))
         .onGeometryChange(for: CGSize.self) { proxy in
             proxy.size
         } action: { newSize in
             stageSize = newSize
         }
-        .gesture(dragGesture)
+        .simultaneousGesture(dragGesture)
         .onChange(of: touching) { _, isTouching in
             if !isTouching { release() }
         }
@@ -200,6 +202,15 @@ private struct ButtonMagneticDemo: View {
         step += 1
         let point = CGPoint(x: stageSize.width / 2 + offset.width, y: stageSize.height / 2 + offset.height)
         track(point, animateFinger: true)
+    }
+}
+
+/// A circle of `radius` centred in the stage: the magnetic field's hit area.
+private struct ButtonMagneticFieldShape: Shape {
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(ellipseIn: CGRect(x: rect.midX - radius, y: rect.midY - radius, width: radius * 2, height: radius * 2))
     }
 }
 

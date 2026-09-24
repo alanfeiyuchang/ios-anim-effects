@@ -36,6 +36,8 @@ private struct SportSlideDemo: View {
     @State private var lastTick = 0
     /// Scripted drag (preview loop / detail intro); cancelled by the first real touch.
     @State private var simTask: Task<Void, Never>?
+    /// Knob offset when the current drag began, so a new drag continues from where the knob sits.
+    @State private var dragStart: CGFloat?
     @GestureState private var dragging = false
 
     private let trackWidth: CGFloat = 272
@@ -108,6 +110,17 @@ private struct SportSlideDemo: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: dragging)
             .offset(x: inset + dragX)
             .gesture(dragGesture)
+            .onChange(of: dragging) { _, down in
+                if !down { endDrag() }
+            }
+    }
+
+    /// Runs after every drag, including one the system cancelled (scroll takeover, Control Center pull), where
+    /// `onEnded` never fires: clears the drag anchor and springs a knob left mid-track back home.
+    private func endDrag() {
+        dragStart = nil
+        guard !completed && !expanded && dragX != 0 else { return }
+        springBack()
     }
 
     private var dragGesture: some Gesture {
@@ -117,7 +130,9 @@ private struct SportSlideDemo: View {
                 // A real finger takes over from the scripted intro immediately.
                 cancelSimulation()
                 guard !completed else { return }
-                let raw = value.translation.width
+                let start = dragStart ?? dragX.clamped(to: 0...maxX)
+                if dragStart == nil { dragStart = start }
+                let raw = start + value.translation.width
                 if raw < 0 {
                     dragX = rubberBand(raw, limit: 24)
                 } else if raw > maxX {
@@ -132,6 +147,7 @@ private struct SportSlideDemo: View {
                 }
             }
             .onEnded { value in
+                dragStart = nil
                 if expanded {
                     if abs(value.translation.width) < 10 { reset() }
                     return

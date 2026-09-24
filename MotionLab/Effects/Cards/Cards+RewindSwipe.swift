@@ -38,6 +38,10 @@ private struct CardsRewindDemo: View {
     @State private var drag: CGSize = .zero
     @State private var rewinds = 0
     @State private var step = 0
+    /// True while a real finger holds the top card.
+    @State private var held = false
+    /// Resets on system cancellation too, so a stolen touch never leaves the card half-swiped.
+    @GestureState private var pressing = false
 
     private var deck: [Int] { cardsRewindIDs.filter { (exits[$0] ?? 0) == 0 } }
 
@@ -54,6 +58,9 @@ private struct CardsRewindDemo: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .autoplay(ctx.isPreview, every: 1.1) { autoStep() }
+        .onChange(of: pressing) { _, isPressing in
+            if !isPressing { endHold() }
+        }
     }
 
     private func card(_ id: Int) -> some View {
@@ -95,8 +102,14 @@ private struct CardsRewindDemo: View {
 
     private var dragGesture: some Gesture {
         DragGesture()
-            .onChanged { value in drag = value.translation }
+            .updating($pressing) { _, state, _ in state = true }
+            .onChanged { value in
+                held = true
+                drag = value.translation
+            }
             .onEnded { value in
+                guard held else { return }
+                held = false
                 let predicted = value.predictedEndTranslation.width
                 if abs(value.translation.width) > 100 || abs(predicted) > 200 {
                     fling(direction: predicted >= 0 ? 1 : -1)
@@ -104,6 +117,13 @@ private struct CardsRewindDemo: View {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) { drag = .zero }
                 }
             }
+    }
+
+    /// System cancellation (no `onEnded`): spring the top card back to the deck.
+    private func endHold() {
+        guard held else { return }
+        held = false
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) { drag = .zero }
     }
 
     private func fling(direction: CGFloat) {
@@ -148,7 +168,7 @@ private struct CardsRewindDemo: View {
         let pattern: [Int] = [1, -1, 0, 1, -1, 1, -1, 1]
         let move = pattern[step % pattern.count]
         step += 1
-        if deck.isEmpty {
+        if held || deck.isEmpty {
             return
         } else if move == 0 {
             rewind()

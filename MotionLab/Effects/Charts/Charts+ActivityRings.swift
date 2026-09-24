@@ -66,6 +66,7 @@ private struct ActivityRingsDemo: View {
                     RingLegend(value: progress[index], style: ringStyles[index], language: ctx.language)
                 }
             }
+            DemoHint(text: L("Tap to replay", "点击重播"), ctx: ctx)
         }
         .contentShape(Rectangle())
         .onTapGesture { play() }

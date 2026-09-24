@@ -64,8 +64,10 @@ private final class MeshModel {
         center += (target - center) * clock.follow(rate: 6)
 
         let a = amplitude
-        let cx = center.x + a * 0.8 * sin(t * 1.13)
-        let cy = center.y + a * 0.8 * cos(t * 0.87)
+        // Clamp after drift so a finger at the stage edge can't push the center past the edge row/column
+        // (which would fold the mesh into a crease).
+        let cx = (center.x + a * 0.8 * sin(t * 1.13)).clamped(to: 0.12...0.88)
+        let cy = (center.y + a * 0.8 * cos(t * 0.87)).clamped(to: 0.12...0.88)
         return [
             Self.point(0, 0), Self.point(0.5 + a * sin(t * 0.91), 0), Self.point(1, 0),
             Self.point(0, 0.5 + a * cos(t * 0.73 + 1.2)), Self.point(cx, cy), Self.point(1, 0.5 + a * sin(t * 0.79 + 2.4)),

@@ -18,7 +18,7 @@ extension Effect {
         apis: ["animation(_:value:)", "Animation.delay", "Grid", "contentTransition(.numericText)", "Task.sleep"],
         tags: ["heatmap", "contribution", "ripple", "cascade", "热力图", "贡献图", "涟漪", "网格"],
         params: [
-            .slider("stagger", L("Ripple speed", "涟漪间隔"), 0.01...0.08, default: 0.035, unit: "s"),
+            .slider("stagger", L("Ripple stagger", "涟漪逐格延迟"), 0.01...0.08, default: 0.035, unit: "s"),
             .slider("damping", L("Damping", "阻尼"), 0.4...1.0, default: 0.6),
             .slider("response", L("Spring response", "弹簧响应"), 0.25...0.9, default: 0.45, unit: "s"),
             .choice("shape", L("Cell shape", "格子形状"), [L("Square", "方形"), L("Circle", "圆形")]),

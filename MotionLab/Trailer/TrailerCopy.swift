@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Every piece of authored on-screen text in the trailer, grouped by scene.
+/// Every piece of authored text in the trailer, grouped by scene, plus the voice-over script.
 ///
 /// Defaults live here; `trailer/copy.json` at the repo root mirrors them key for key, and
 /// `tools/trailer-editor.html` edits that file. `scripts/record-trailer.sh --copy <file>` copies the JSON into
@@ -8,15 +8,22 @@ import SwiftUI
 /// the first time the trailer touches its copy (during the white slate). The JSON may be partial: every
 /// missing key, and every value of the wrong type, falls back to its default here.
 ///
-/// Placeholders, expanded from the live catalog in every string: `{effects}` (effects), `{categories}`
-/// (categories), `{families}` (effect families). `chat.bubbleTitle` also takes `{name}`, the prompt
-/// effect's Chinese name.
+/// Placeholders, expanded from the live catalog in every string (voice-over included): `{effects}` (effects),
+/// `{categories}` (categories), `{families}` (effect families). `chat.bubbleTitle` also takes `{name}`, the
+/// prompt effect's Chinese name.
 ///
-/// Effect names, prompts and parameter values shown in tiles and on the phone come from the real catalog.
-/// `prompt.effectID` / `prompt.textZh` / `prompt.textEn` optionally override the prompt card (empty = catalog).
+/// `voiceover` is never drawn: the app writes the resolved copy (placeholders expanded) to
+/// `Documents/trailer-resolved.json`, and the record script turns its voice-over lines into
+/// `voiceover.srt` / `voiceover.txt` next to the video.
+///
+/// Effect names, prompts, parameter values and every string inside the embedded app screens come from the
+/// real catalog and the app's own localisation. `prompt.effectID` / `prompt.textZh` / `prompt.textEn`
+/// optionally override the prompt card (empty = catalog).
 struct TrailerCopy: Codable, Equatable {
     var hook = Hook()
     var pain = Pain()
+    var unknown = Unknown()
+    var intro = Intro()
     var search = Search()
     var phone = Phone()
     var tune = Tune()
@@ -25,8 +32,9 @@ struct TrailerCopy: Codable, Equatable {
     var web = Web()
     var end = End()
     var touch = Touch()
+    var voiceover: [VoiceLine] = TrailerCopy.defaultVoiceover
 
-    /// 0–5 s: the counting number, the line under it and the two stat chips.
+    /// 0–6 s: the number tumbling in on prism digits, the line under it and the two stat chips.
     struct Hook: Codable, Equatable {
         /// Under the big effect count.
         var subtitle = "个 iOS 高级动效"
@@ -36,32 +44,44 @@ struct TrailerCopy: Codable, Equatable {
         var familiesLabel = "个动效家族"
     }
 
-    /// 5–11 s: the question and the vague words drifting around it.
+    /// 6–16 s: problem 1, the effect you can't describe, with vague words drifting around it.
     struct Pain: Codable, Equatable {
         var titleLine1 = "想要的动效，"
-        var titleLine2 = "说不出名字？"
+        var titleLine2 = "说不出来"
         /// The huge faint glyph behind the scene.
         var backdropMark = "？"
         /// Up to 12 words (the first 7 have hand-placed spots).
         var words = ["弹一下？", "顺滑一点？", "像果冻？", "有点高级感？", "duang 一下？", "要回弹吗？", "丝滑？"]
     }
 
-    /// 10–21 s: search field, filter chips and results.
-    struct Search: Codable, Equatable {
-        var title = "一搜即达"
-        var subtitle = "{effects} 个动效秒速定位"
-        var placeholder = "搜索动效、控件、手势…"
-        /// Typed into the field and really searched in the catalog.
-        var query = "卡片"
-        var resultSuffix = "个结果"
-        /// Filter chips; the finger taps the second one (it filters to the Cards category).
-        var chips = ["全部", "卡片", "质感交互", "按钮"]
+    /// 16–24 s: problem 2, a grid of blurred unknown effects.
+    struct Unknown: Codable, Equatable {
+        var titleLine1 = "iOS 能做到什么？"
+        var titleLine2 = "不知道"
+        /// The mark on every blurred tile.
+        var tileMark = "?"
     }
 
-    /// 21–36 s: the app's detail page on an iPhone.
+    /// 24–30 s: the brand reveal and the four pillars.
+    struct Intro: Codable, Equatable {
+        var title = "Motionary"
+        var subtitle = "动效词典"
+        /// Up to four chips under the name (2 × 2).
+        var pillars = ["找灵感", "上手感受", "实时可调", "一键复制提示词"]
+    }
+
+    /// 30–44 s: the real Browse and Search screens on the phone.
+    struct Search: Codable, Equatable {
+        var title = "找灵感 · 一搜即达"
+        var subtitle = "{effects} 个动效 · {categories} 大分类 · {families} 个家族"
+        /// Typed into the app's real search field and really searched in the catalog.
+        var query = "卡片"
+    }
+
+    /// 44–60 s: the app's detail page on the phone, several demos played by the finger.
     struct Phone: Codable, Equatable {
         var title = "真实上手体验"
-        var subtitle = "每一下都有触感"
+        var subtitle = "每一下都有触感反馈"
         var statusTime = "9:41"
         /// Hint pill under the stage, per interaction type of the demo shown.
         var hintTap = "点一下试试"
@@ -75,7 +95,7 @@ struct TrailerCopy: Codable, Equatable {
         var noParams = "无可调参数"
     }
 
-    /// 36–44 s: the spring lab on the phone and its sliders.
+    /// 60–70 s: the spring lab on the phone and its sliders.
     struct Tune: Codable, Equatable {
         var title = "参数实时可调"
         var subtitle = "弹簧 · 阻尼 · 响应，随手试"
@@ -89,23 +109,23 @@ struct TrailerCopy: Codable, Equatable {
         var targetLabel = "目标"
     }
 
-    /// 44–50 s: the prompt card.
+    /// 70–77 s: the prompt card.
     struct Prompt: Codable, Equatable {
-        var title = "专业中英提示词"
-        var subtitle = "一键复制给 AI"
+        var title = "一键复制提示词"
+        var subtitle = "中英双语 · 直接发给 AI"
         var cardTitle = "专业提示词"
         var languageZh = "中"
         var languageEn = "EN"
         var copyButton = "一键复制"
         var copiedButton = "已复制"
-        /// Optional: effect whose name and prompt are shown (empty = the searched hero, cards.flip).
+        /// Optional: effect whose name and prompt are shown (empty = the first demo played on the phone).
         var effectID = ""
         /// Optional: replaces the catalog's Chinese / English prompt text (empty = catalog).
         var textZh = ""
         var textEn = ""
     }
 
-    /// 49–52 s: the AI chat the prompt is pasted into.
+    /// 76–80 s: the AI chat the prompt is pasted into.
     struct Chat: Codable, Equatable {
         var assistantName = "AI 助手"
         var status = "在线"
@@ -114,18 +134,21 @@ struct TrailerCopy: Codable, Equatable {
         var reply = "收到！这就用 SwiftUI 实现："
     }
 
-    /// 52–57 s: the browser window with the documentation site.
+    /// 80–87 s: the documentation site in a browser beside the phone.
     struct Web: Codable, Equatable {
-        var title = "网页版全部动效"
-        var subtitle = "录像一览，随时查看"
+        var title = "网页随时看 · App 感受手感"
+        var subtitle = ""
         /// Typed into the address bar.
         var url = "alanfeiyuchang.github.io/ios-anim-effects"
         var siteName = "Motionary"
-        var siteTagline = "全部动效录像一览"
+        var siteTagline = "全部动效录像"
         var countBadge = "{effects} 个"
+        /// Captions under the browser and under the phone.
+        var webLabel = "网页 · 快速浏览全部录像"
+        var appLabel = "App · 亲手感受手感"
     }
 
-    /// 57–60 s: the end card under the app icon.
+    /// 87–90 s: the end card under the app icon.
     struct End: Codable, Equatable {
         var title = "Motionary"
         var subtitle = "动效词典 · iOS Motion Dictionary"
@@ -136,6 +159,25 @@ struct TrailerCopy: Codable, Equatable {
     struct Touch: Codable, Equatable {
         var hapticBadge = "触感"
     }
+
+    /// One voice-over line, `start` … `end` in seconds of the cut. Not drawn on screen.
+    struct VoiceLine: Codable, Equatable {
+        var start: Double = 0
+        var end: Double = 0
+        var text: String = ""
+    }
+
+    static let defaultVoiceover: [VoiceLine] = [
+        VoiceLine(start: 0, end: 6, text: "做 App 的时候，你一定遇到过这种情况——"),
+        VoiceLine(start: 6, end: 16, text: "脑子里有感觉，却说不清：是弹簧还是缓动？回弹多少？跟设计师、跟 AI 都讲不明白。"),
+        VoiceLine(start: 16, end: 24, text: "更难的是，你根本不知道 iOS 原生能做出哪些效果。"),
+        VoiceLine(start: 24, end: 30, text: "所以我做了 Motionary，一本可以上手玩的 iOS 动效词典。"),
+        VoiceLine(start: 30, end: 44, text: "{effects} 个动效，按 {categories} 个分类、{families} 个家族整理。输入关键词就能搜到，点「质感交互」，看最精致的那一批。"),
+        VoiceLine(start: 44, end: 60, text: "每个动效都是真实运行的 SwiftUI，不是视频。用手指去按、去拖，配合 Taptic Engine 的触感反馈，手感好不好，一摸就知道。"),
+        VoiceLine(start: 60, end: 70, text: "弹簧的响应时间、阻尼比，拖一下马上看到变化。阻尼越小回弹越多，系统默认的弹簧大约是响应 0.55 秒、阻尼 0.825。"),
+        VoiceLine(start: 70, end: 80, text: "每个动效都配有中英双语的专业提示词，写清时长、曲线和弹簧参数，一键复制给 AI 或设计师，直接复现。"),
+        VoiceLine(start: 80, end: 90, text: "想快速浏览，打开网页就能看全部录像；想感受手感，就在 App 里亲手试试。Motionary，让动效说得清、看得见、摸得着。"),
+    ]
 }
 
 // MARK: - Lenient decoding (partial JSON: missing or mistyped keys keep their defaults)
@@ -153,6 +195,8 @@ extension TrailerCopy {
         let d = TrailerCopy()
         hook = c.trailerCopyValue(.hook, d.hook)
         pain = c.trailerCopyValue(.pain, d.pain)
+        unknown = c.trailerCopyValue(.unknown, d.unknown)
+        intro = c.trailerCopyValue(.intro, d.intro)
         search = c.trailerCopyValue(.search, d.search)
         phone = c.trailerCopyValue(.phone, d.phone)
         tune = c.trailerCopyValue(.tune, d.tune)
@@ -161,6 +205,7 @@ extension TrailerCopy {
         web = c.trailerCopyValue(.web, d.web)
         end = c.trailerCopyValue(.end, d.end)
         touch = c.trailerCopyValue(.touch, d.touch)
+        voiceover = c.trailerCopyValue(.voiceover, d.voiceover)
     }
 }
 
@@ -185,16 +230,33 @@ extension TrailerCopy.Pain {
     }
 }
 
+extension TrailerCopy.Unknown {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = Self()
+        titleLine1 = c.trailerCopyValue(.titleLine1, d.titleLine1)
+        titleLine2 = c.trailerCopyValue(.titleLine2, d.titleLine2)
+        tileMark = c.trailerCopyValue(.tileMark, d.tileMark)
+    }
+}
+
+extension TrailerCopy.Intro {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = Self()
+        title = c.trailerCopyValue(.title, d.title)
+        subtitle = c.trailerCopyValue(.subtitle, d.subtitle)
+        pillars = c.trailerCopyValue(.pillars, d.pillars)
+    }
+}
+
 extension TrailerCopy.Search {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = Self()
         title = c.trailerCopyValue(.title, d.title)
         subtitle = c.trailerCopyValue(.subtitle, d.subtitle)
-        placeholder = c.trailerCopyValue(.placeholder, d.placeholder)
         query = c.trailerCopyValue(.query, d.query)
-        resultSuffix = c.trailerCopyValue(.resultSuffix, d.resultSuffix)
-        chips = c.trailerCopyValue(.chips, d.chips)
     }
 }
 
@@ -269,6 +331,8 @@ extension TrailerCopy.Web {
         siteName = c.trailerCopyValue(.siteName, d.siteName)
         siteTagline = c.trailerCopyValue(.siteTagline, d.siteTagline)
         countBadge = c.trailerCopyValue(.countBadge, d.countBadge)
+        webLabel = c.trailerCopyValue(.webLabel, d.webLabel)
+        appLabel = c.trailerCopyValue(.appLabel, d.appLabel)
     }
 }
 
@@ -290,11 +354,25 @@ extension TrailerCopy.Touch {
     }
 }
 
+extension TrailerCopy.VoiceLine {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let start: Double = c.trailerCopyValue(.start, 0)
+        let end: Double = c.trailerCopyValue(.end, start)
+        self.start = start
+        self.end = end
+        text = c.trailerCopyValue(.text, "")
+    }
+}
+
 // MARK: - Loading
 
 extension TrailerCopy {
     /// File name inside the app's Documents folder (written there by `scripts/record-trailer.sh`).
     static let fileName = "trailer-copy.json"
+    /// The copy as shown (placeholders expanded) plus the catalog counts, written at start for the record
+    /// script (it builds the voice-over subtitles from it).
+    static let resolvedFileName = "trailer-resolved.json"
 
     /// The copy the trailer shows: `Documents/trailer-copy.json` if present (partial allowed), else the
     /// defaults; placeholders expanded. Loaded once, on first use (`TrailerData.warmUp`, during the slate).
@@ -302,7 +380,8 @@ extension TrailerCopy {
 
     static func load() -> TrailerCopy {
         var copy = TrailerCopy()
-        if let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+        let folder: URL? = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        if let folder {
             let url = folder.appendingPathComponent(fileName)
             if let data = try? Data(contentsOf: url) {
                 do {
@@ -316,7 +395,31 @@ extension TrailerCopy {
         let effects: Int = EffectLibrary.all.count
         let categories: Int = EffectCategory.allCases.count
         let families: Int = EffectFamilies.all.count
-        return copy.sanitized().expanding(effects: effects, categories: categories, families: families)
+        let resolved: TrailerCopy = copy.sanitized().expanding(effects: effects, categories: categories, families: families)
+        if let folder {
+            resolved.writeResolved(to: folder.appendingPathComponent(resolvedFileName), effects: effects, categories: categories, families: families)
+        }
+        return resolved
+    }
+
+    /// `{ "counts": { effects, categories, families }, "duration": …, "copy": { …resolved copy… } }`.
+    private func writeResolved(to url: URL, effects: Int, categories: Int, families: Int) {
+        guard let data = try? JSONEncoder().encode(self),
+              let object = try? JSONSerialization.jsonObject(with: data)
+        else { return }
+        let counts: [String: Int] = ["effects": effects, "categories": categories, "families": families]
+        let root: [String: Any] = [
+            "counts": counts,
+            "duration": TrailerCanvas.duration,
+            "copy": object,
+        ]
+        guard let output = try? JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys]) else { return }
+        do {
+            try output.write(to: url, options: .atomic)
+            print("trailer: resolved copy written to \(url.path)")
+        } catch {
+            print("trailer: could not write \(url.path): \(error)")
+        }
     }
 
     /// Guards the few values the choreography depends on.
@@ -326,19 +429,25 @@ extension TrailerCopy {
         if copy.search.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             copy.search.query = defaults.search.query
         }
-        // The finger taps the second chip, so there must be at least two.
-        if copy.search.chips.count < 2 {
-            copy.search.chips = defaults.search.chips
-        }
-        copy.search.chips = Array(copy.search.chips.prefix(6))
         copy.pain.words = Array(copy.pain.words.filter { !$0.isEmpty }.prefix(TrailerCopy.maxWords))
+        copy.intro.pillars = Array(copy.intro.pillars.filter { !$0.isEmpty }.prefix(TrailerCopy.maxPillars))
         if copy.web.url.isEmpty {
             copy.web.url = defaults.web.url
         }
+        let lines: [VoiceLine] = copy.voiceover.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        copy.voiceover = lines
+            .map { line -> VoiceLine in
+                var fixed = line
+                fixed.start = max(line.start, 0)
+                fixed.end = max(line.end, fixed.start)
+                return fixed
+            }
+            .sorted { $0.start < $1.start }
         return copy
     }
 
     static let maxWords: Int = 12
+    static let maxPillars: Int = 4
 
     /// Replaces `{effects}`, `{categories}` and `{families}` in every string (a JSON round trip, so no field
     /// can be missed).

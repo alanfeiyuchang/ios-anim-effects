@@ -36,8 +36,8 @@ enum TrailerCanvas {
     }
     /// Page ink of the dark app shell; also the letterbox around the canvas.
     static let ink = Color(hex: 0x0B0B0D)
-    /// Length of the cut (the last frame holds after it).
-    static let duration: Double = 60
+    /// Length of the cut (the last frame holds after it). `scripts/record-trailer.sh` uses the same value.
+    static let duration: Double = 90
     /// A white slate fills the screen for this long before t = 0. `scripts/record-trailer.sh`
     /// detects where the white ends and trims the recording there, so the cut starts exactly at t = 0.
     static let leadIn: Double = 2.5
@@ -309,8 +309,8 @@ struct TrailerBackdrop: View {
     /// Where the light gathers: behind whatever the scene is about (3:4 y, 9:16 y).
     private static let focusKeys: [(time: Double, x: Double, y: Double)] = {
         let keys: [(Double, Double, Double)] = [
-            (0, 190, 262), (5, 210, 290), (10.5, 250, 330), (12, 150, 230), (20.5, 280, 360),
-            (36, 250, 350), (44, 240, 350), (52, 250, 350), (57, 190, 270), (60, 190, 270),
+            (0, 190, 262), (5.5, 210, 300), (15, 250, 330), (17, 250, 360), (23.5, 200, 280),
+            (29.5, 250, 350), (69.5, 240, 350), (79.5, 250, 370), (86.5, 190, 270), (90, 190, 270),
         ]
         return keys.map { key in (time: key.0, x: 195, y: TrailerCanvas.isTall ? key.2 : key.1) }
     }()
@@ -331,10 +331,11 @@ struct TrailerBackdrop: View {
 
     /// Glow intensity: a swell as the number lands and a bloom behind the closing icon.
     private static func glow(_ t: Double) -> Double {
-        let base = 0.75 + 0.25 * sin(t * 0.8)
-        let hook = 0.6 * TrailerMath.progress(t, 1.2, 1.6) * (1 - TrailerMath.progress(t, 4.6, 1.0))
-        let end = 0.8 * TrailerMath.easeOut(TrailerMath.progress(t, 57.2, 1.4))
-        return base + hook + end
+        let base: Double = 0.75 + 0.25 * sin(t * 0.8)
+        let hook: Double = 0.6 * TrailerMath.progress(t, 1.0, 1.6) * (1 - TrailerMath.progress(t, 5.0, 1.0))
+        let intro: Double = 0.5 * TrailerMath.progress(t, 24.0, 1.0) * (1 - TrailerMath.progress(t, 29.0, 1.0))
+        let end: Double = 0.8 * TrailerMath.easeOut(TrailerMath.progress(t, 87.0, 1.4))
+        return base + hook + intro + end
     }
 
     private static func points(_ t: Double, focus: CGPoint) -> [SIMD2<Float>] {

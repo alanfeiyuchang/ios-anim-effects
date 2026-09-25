@@ -184,11 +184,18 @@ private struct TumblingPrismDemo: View {
 
 /// One prism. `roll` animates through quarter turns: face k sits at θ = (k − roll) × 90°, so the current face tips
 /// up and away while the next one rises from below. Only those two faces are ever visible.
-private struct TumblingPrismDigit: View, Animatable {
+/// Internal (not private) so the promo trailer's hook (`MotionLab/Trailer`) can reuse the exact prism.
+struct TumblingPrismDigit: View, Animatable {
     var roll: Double
     let face: CGSize
     /// Frame-to-frame spin speed, for the motion blur.
     @State private var speed = PrismSpinSpeed()
+
+    /// Explicit, so the private `speed` state never narrows the initializer's access.
+    init(roll: Double, face: CGSize) {
+        self.roll = roll
+        self.face = face
+    }
 
     var animatableData: Double {
         get { roll }

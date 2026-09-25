@@ -33,9 +33,11 @@ struct PreviewStage: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
     @Environment(\.urgentSnapshots) private var urgent
+    @Environment(\.previewsForcedOnScreen) private var forcedOnScreen
     /// Starts off: lazy grids build cells slightly outside the viewport, and those must not mount
     /// their live demo. `onScrollVisibilityChange` reports `true` on first layout for visible cells.
-    @State private var isOnScreen = false
+    @State private var scrolledOnScreen = false
+    private var isOnScreen: Bool { scrolledOnScreen || forcedOnScreen }
     /// Last snapshot this view rendered (kept so an NSCache eviction never blanks a visible card).
     @State private var snapshot: UIImage?
     @State private var snapshotKey: String?
@@ -85,7 +87,7 @@ struct PreviewStage: View {
         .overlay(StageRim(cornerRadius: cornerRadius))
         .animation(.easeInOut(duration: 0.25), value: isOnScreen)
         .onScrollVisibilityChange(threshold: 0.01) { visible in
-            if isOnScreen != visible { isOnScreen = visible }
+            if scrolledOnScreen != visible { scrolledOnScreen = visible }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -200,6 +202,18 @@ extension EnvironmentValues {
         get { self[UrgentSnapshotsKey.self] }
         set { self[UrgentSnapshotsKey.self] = newValue }
     }
+
+    /// Thumbnails inside skip the scroll-visibility gate and count as on screen. Set by the trailer, whose
+    /// scaled, embedded screens never report scroll visibility; the screens there are short, so the few
+    /// cells a lazy stack builds past the viewport cost little.
+    var previewsForcedOnScreen: Bool {
+        get { self[PreviewsForcedOnScreenKey.self] }
+        set { self[PreviewsForcedOnScreenKey.self] = newValue }
+    }
+}
+
+private struct PreviewsForcedOnScreenKey: EnvironmentKey {
+    static let defaultValue = false
 }
 
 /// Parallax for thumbnails in a horizontal carousel: the demo is scaled up slightly and slides

@@ -401,9 +401,12 @@ struct FamilyPreviewStrip: View {
     let effects: [Effect]
     var slots = 3
     @Environment(\.previewMotionEnabled) private var motionEnabled
+    @Environment(\.previewsForcedOnScreen) private var forcedOnScreen
     @State private var spotlight = 0
-    @State private var isVisible = false
+    @State private var scrolledOnScreen = false
     @Namespace private var ring
+
+    private var isVisible: Bool { scrolledOnScreen || forcedOnScreen }
 
     private static let dwell: Double = 3.2
 
@@ -445,7 +448,7 @@ struct FamilyPreviewStrip: View {
         }
         .accessibilityHidden(true)
         .onScrollVisibilityChange(threshold: 0.2) { visible in
-            if isVisible != visible { isVisible = visible }
+            if scrolledOnScreen != visible { scrolledOnScreen = visible }
         }
         .task(id: live && isVisible && shown.count > 1) {
             guard live && isVisible && shown.count > 1 else { return }

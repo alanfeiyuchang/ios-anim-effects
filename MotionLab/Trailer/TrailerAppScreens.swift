@@ -61,6 +61,9 @@ struct TrailerAppScreen: View, Equatable {
         .environment(\.colorScheme, .dark)
         .environment(\.appLanguage, .zh)
         .environment(\.locale, AppLanguage.zh.locale)
+        // Scaled into the drawn phone, the screens never report scroll visibility, so thumbnails would
+        // stay blank; count them all as on screen.
+        .environment(\.previewsForcedOnScreen, true)
         .allowsHitTesting(false)
     }
 }

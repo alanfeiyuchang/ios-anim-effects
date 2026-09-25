@@ -63,14 +63,12 @@ struct TrailerTap {
     let point: CGPoint
     /// How long the finger stays down.
     var hold: Double = 0.14
-    /// Small detent ticks (slider) get a ring pulse but no badge.
+    /// Small detent ticks (slider) get a small ring pulse and no buzz.
     var isTick = false
     /// A drag: the finger slides from `point` to `to` while it is down.
     var to: CGPoint? = nil
-    /// No ripple and no badge (a scroll flick, which has no haptic).
+    /// No ripple and no buzz (a scroll flick, which has no haptic).
     var silent = false
-    /// Whether the "触感" badge pops (off for the first tap of a double tap).
-    var badge = true
 
     /// Where the finger is when it lifts.
     var endPoint: CGPoint { to ?? point }
@@ -86,20 +84,23 @@ struct TrailerFingerState {
 
 /// The scripted finger: when it is on screen, where it goes and every tap it makes.
 enum TrailerScript {
-    /// Windows in which the finger is visible (the tune drag window is driven by `TrailerTune`).
+    /// Windows in which the finger is visible (source time, see `TrailerEdit`).
     static let segments: [ClosedRange<Double>] = [
         30.55...35.45, 37.0...38.1, 41.6...42.65,
-        43.25...47.5, 47.85...49.0, 51.35...54.0, 54.75...58.25,
-        60.4...69.3,
+        43.25...47.5, 47.75...50.3, 51.0...52.35,
+        53.25...57.55, 58.15...61.1,
         72.9...76.3,
-        82.55...86.1,
+        82.55...84.0,
     ]
-    static let tuneSegment: ClosedRange<Double> = 60.4...69.3
 
     /// A point of a demo's 340 × 340 canvas on the phone's detail stage.
     private static func stage(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
         TrailerLayout.demoPoint(x, y)
     }
+
+    /// Centre line of the day/night switch on its 340 pt canvas (a 76 pt switch, 22 pt gap and the
+    /// 浅色/深色 label, centred as a group).
+    static let dayNightY: CGFloat = 149
 
     /// A device point of the embedded app screens.
     private static func app(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
@@ -125,15 +126,18 @@ enum TrailerScript {
             TrailerTap(time: TrailerFind.searchTap, point: TrailerFind.canvasPoint(TrailerFind.searchButton)),
             TrailerTap(time: TrailerFind.chipTap, point: TrailerFind.canvasPoint(TrailerFind.showcaseChip)),
             TrailerTap(time: TrailerFind.cardTap, point: TrailerFind.canvasPoint(TrailerFind.resultStage(TrailerData.heroResultIndex))),
-            // Feel: photo-play (play, pause), summit-badge, save-burst (double tap, bookmark), board-card (two flips).
+            // Feel: photo-play (play, pause), save-burst (double tap, bookmark), board-card (a flip).
             TrailerTap(time: 43.8, point: TrailerScript.stage(170, 150)),
             TrailerTap(time: 47.0, point: TrailerScript.stage(170, 150)),
-            TrailerTap(time: 48.4, point: TrailerScript.stage(170, 150), hold: 0.2),
-            TrailerTap(time: 51.88, point: TrailerScript.stage(170, 133), hold: 0.06, badge: false),
-            TrailerTap(time: 52.0, point: TrailerScript.stage(170, 133), hold: 0.1),
-            TrailerTap(time: 53.5, point: TrailerScript.stage(272, 265)),
-            TrailerTap(time: 55.3, point: TrailerScript.stage(170, 160)),
-            TrailerTap(time: 57.7, point: TrailerScript.stage(170, 160)),
+            TrailerTap(time: 48.18, point: TrailerScript.stage(170, 133), hold: 0.06),
+            TrailerTap(time: 48.3, point: TrailerScript.stage(170, 133), hold: 0.1),
+            TrailerTap(time: 49.8, point: TrailerScript.stage(272, 265)),
+            TrailerTap(time: 51.6, point: TrailerScript.stage(170, 160)),
+            // Favourites: the day/night switch's knob where it sits (sun on the left, moon on the right), then
+            // the gear rows still to pack (the goggles, row 2, start packed).
+            TrailerTap(time: 53.8, point: TrailerScript.stage(118, TrailerScript.dayNightY)),
+            TrailerTap(time: 55.4, point: TrailerScript.stage(222, TrailerScript.dayNightY)),
+            TrailerTap(time: 57.0, point: TrailerScript.stage(118, TrailerScript.dayNightY)),
             // Prompt: EN, back to 中, copy.
             TrailerTap(time: 73.4, point: TrailerLayout.segmentEn),
             TrailerTap(time: 74.9, point: TrailerLayout.segmentZh),
@@ -143,11 +147,8 @@ enum TrailerScript {
         for time in TrailerOutroScene.phoneTapTimes {
             list.append(TrailerTap(time: time, point: TrailerOutroScene.phoneTapPoint))
         }
-        for press in TrailerTune.presses {
-            list.append(TrailerTap(time: press.start, point: TrailerTune.knobPoint(row: press.row, t: press.start), hold: press.end - press.start))
-        }
-        for tick in TrailerTune.ticks {
-            list.append(TrailerTap(time: tick.time, point: tick.point, isTick: true))
+        for (index, row) in [0, 2, 3, 4].enumerated() {
+            list.append(TrailerTap(time: 58.6 + Double(index) * 0.66, point: TrailerScript.stage(200, 121 + CGFloat(row) * 40), hold: 0.1))
         }
         return list.sorted { $0.time < $1.time }
     }()
@@ -163,9 +164,6 @@ enum TrailerScript {
         let fadeIn = TrailerMath.progress(t, segment.lowerBound, 0.3)
         let fadeOut = 1 - TrailerMath.progress(t, segment.upperBound - 0.3, 0.3)
         let opacity = min(fadeIn, fadeOut)
-        if segment == tuneSegment {
-            return TrailerFingerState(point: TrailerTune.fingerPoint(t), opacity: opacity, pressed: TrailerTune.pressed(t))
-        }
         let list = tapsBySegment[segmentIndex]
         let previous = list.last(where: { $0.time <= t })
         let next = list.first(where: { $0.time > t })
@@ -201,7 +199,7 @@ enum TrailerScript {
     }
 
     /// Device shake: the sum of every recent tap's decaying buzz inside `window`.
-    static func buzz(_ t: Double, window: ClosedRange<Double> = 34.5...69.5) -> Double {
+    static func buzz(_ t: Double, window: ClosedRange<Double> = 34.5...62.5) -> Double {
         var total: Double = 0
         for tap in taps where !tap.isTick && !tap.silent && window.contains(tap.time) {
             total += TrailerMath.buzz(t - tap.time)
@@ -210,10 +208,10 @@ enum TrailerScript {
     }
 }
 
-// MARK: - Finger, ripples and the haptic badge
+// MARK: - Finger and ripples
 
-/// Draws the finger indicator plus, for every tap in the last second, concentric ripple rings and
-/// a "触感" pulse badge with a little waveform: the trailer's way of showing a haptic.
+/// Draws the finger indicator plus, for every tap in the last second, concentric ripple rings. The haptic
+/// itself shows as the phone's small shake (`TrailerScript.buzz`), not as a badge.
 struct TrailerTouchLayer: View {
     let t: Double
 
@@ -230,12 +228,6 @@ struct TrailerTouchLayer: View {
                 TrailerRipple(point: tap.point, elapsed: t - tap.time, small: tap.isTick)
             }
             TrailerFinger(state: finger)
-            ForEach(active, id: \.self) { index in
-                let tap = TrailerScript.taps[index]
-                if !tap.isTick && tap.badge {
-                    TrailerHapticBadge(point: tap.point, elapsed: t - tap.time)
-                }
-            }
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
         .allowsHitTesting(false)
@@ -295,50 +287,5 @@ private struct TrailerRipple: View {
             }
         }
         .position(point)
-    }
-}
-
-private struct TrailerHapticBadge: View {
-    let point: CGPoint
-    let elapsed: Double
-
-    var body: some View {
-        let pop = TrailerMath.spring(elapsed, response: 0.42, damping: 0.58)
-        let out = TrailerMath.progress(elapsed, 0.72, 0.3)
-        let x = min(max(point.x + 30, 56), TrailerCanvas.width - 56)
-        let y = max(point.y - 46, 22)
-        HStack(spacing: 5) {
-            TrailerWaveform(elapsed: elapsed)
-            Text(verbatim: TrailerCopy.current.touch.hapticBadge)
-                .font(.system(size: 12, weight: .heavy))
-                .lineLimit(1)
-        }
-        .foregroundStyle(Palette.onAccent)
-        .padding(.horizontal, 9)
-        .padding(.vertical, 5)
-        .background(Palette.accentFill, in: Capsule())
-        .overlay(Capsule().strokeBorder(Color.white.opacity(0.35), lineWidth: 0.6))
-        .shadow(color: Palette.accentGlow, radius: 10, x: 0, y: 4)
-        .scaleEffect(CGFloat(0.4 + 0.6 * pop))
-        .opacity(min(1, pop * 2) * (1 - out))
-        .offset(y: -CGFloat(out) * 10)
-        .position(x: x, y: y)
-    }
-}
-
-/// Five bars pulsing like a haptic waveform, decaying after the tap.
-private struct TrailerWaveform: View {
-    let elapsed: Double
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 1.5) {
-            ForEach(0..<5, id: \.self) { bar in
-                let energy = exp(-elapsed * 2.6)
-                let wave = abs(sin(elapsed * 24 + Double(bar) * 1.3))
-                Capsule()
-                    .frame(width: 2, height: CGFloat(3 + 9 * wave * energy + (bar == 2 ? 2 : 0)))
-            }
-        }
-        .frame(height: 14)
     }
 }

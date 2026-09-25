@@ -381,7 +381,7 @@ private struct TrailerChatPanel: View {
 }
 
 
-// MARK: - 80–87 s · Outro: the web page and the phone, side by side
+// MARK: - 79–88 s (source) · Outro: the web page and the phone, then the repository on GitHub
 
 /// "网页随时看 · App 感受手感": the documentation site in a browser (its address typed in) beside the
 /// phone playing a demo under the finger. Both then condense into the app icon of the end card: the window's
@@ -391,7 +391,9 @@ struct TrailerOutroScene: View {
     let origin: Date
 
     static let enter: Double = 79.3
-    static let condenseStart: Double = 86.35
+    /// The phone leaves and the browser takes the stage for GitHub ("整个项目已经开源").
+    static let githubStart: Double = 85.3
+    static let condenseStart: Double = 88.3
 
     /// Browser window (left) and phone (right), per aspect.
     static let windowSize: CGSize = TrailerCanvas.isTall ? CGSize(width: 212, height: 300) : CGSize(width: 214, height: 250)
@@ -406,11 +408,27 @@ struct TrailerOutroScene: View {
         return CGPoint(x: x, y: TrailerOutroScene.windowCenter.y)
     }()
     static let labelY: CGFloat = windowCenter.y + TrailerCanvas.pick(143, 172)
+    /// The browser on GitHub: centred, as large as the content area allows.
+    static let githubSize: CGSize = TrailerCanvas.isTall ? CGSize(width: 312, height: 388) : CGSize(width: 312, height: 300)
+    static let githubCenter = CGPoint(x: 195, y: TrailerCanvas.pick(262, 372))
+    /// Halfway across the gap between the window and the phone: each label stays on its own side of it.
+    private static let labelDivider: CGFloat = {
+        let windowRight: CGFloat = windowCenter.x + windowSize.width / 2
+        let phoneLeft: CGFloat = phoneCenter.x - TrailerPhone.bodySize.width * phoneScale / 2
+        return (windowRight + phoneLeft) / 2
+    }()
 
-    /// The demo on the phone (board-card: delay 0.8, every 2.4 → flips at 83.2 and 85.6).
+    /// Widest a label centred at `x` may be: 190 pt, narrower when that would cross the divider or leave
+    /// less than 12 pt to the canvas edge (the text shrinks to fit).
+    static func labelMaxWidth(centeredAt x: CGFloat) -> CGFloat {
+        let reach: CGFloat = min(x - 12, TrailerCanvas.width - 12 - x, abs(labelDivider - x) - 4)
+        return min(190, max(reach, 40) * 2)
+    }
+
+    /// The demo on the phone (board-card: delay 0.8, every 2.4 → flips at 83.2).
     static let phoneEffectID = "showcase.board-card"
     static let phoneEpochOffset: Double = 82.4
-    static let phoneTapTimes: [Double] = [83.2, 85.6]
+    static let phoneTapTimes: [Double] = [83.2]
     /// The finger's spot on the phone's stage (the board, 170 × 160 on the demo's 340 pt canvas).
     static let phoneTapPoint: CGPoint = {
         let stage = TrailerPhone.stageRect
@@ -434,26 +452,43 @@ struct TrailerOutroScene: View {
         let phoneIn: Double = M.spring(t, at: Self.enter + 0.3, response: 0.8, damping: 0.84)
         let condense: Double = Self.condense(t)
         let morph: Double = M.clamp(condense)
-        let labelsExit: Double = M.easeIn(M.progress(t, Self.condenseStart - 0.2, 0.4))
+        let github: Double = M.spring(t, at: Self.githubStart, response: 0.75, damping: 0.86)
+        let phoneOut: Double = M.easeIn(M.progress(t, Self.githubStart - 0.05, 0.45))
+        let labelsExit: Double = M.easeIn(M.progress(t, Self.githubStart - 0.2, 0.4))
         let windowSlide = CGFloat(1 - windowIn) * -60
-        let phoneSlide = CGFloat(1 - phoneIn) * 70
-        let windowPath: CGPoint = M.mix(Self.windowCenter, TrailerEndScene.iconCenter, condense)
+        let phoneSlide = CGFloat(1 - phoneIn) * 70 + CGFloat(phoneOut) * 90
+        let windowHome: CGPoint = M.mix(Self.windowCenter, Self.githubCenter, github)
+        let windowSize = CGSize(
+            width: M.mix(Self.windowSize.width, Self.githubSize.width, CGFloat(github)),
+            height: M.mix(Self.windowSize.height, Self.githubSize.height, CGFloat(github))
+        )
+        let windowPath: CGPoint = M.mix(windowHome, TrailerEndScene.iconCenter, condense)
         let phonePath: CGPoint = M.mix(Self.phoneCenter, TrailerEndScene.iconCenter, condense)
         let phoneShrink = CGFloat(1 - 0.75 * morph)
         let phoneFade: Double = 1 - M.progress(condense, 0.15, 0.4)
         let buzz = CGFloat(TrailerScript.buzz(t, window: 82.0...87.0) * 1.6)
         let settleBlur: CGFloat = CGFloat(1 - M.clamp(phoneIn)) * 8
-        let phoneBlur: CGFloat = settleBlur + CGFloat(morph) * 6
+        let phoneBlur: CGFloat = settleBlur + CGFloat(morph) * 6 + CGFloat(phoneOut) * 8
         ZStack {
             TrailerHeadline(
                 title: copy.title,
                 subtitle: TrailerCopy.optional(copy.subtitle),
                 titleSize: TrailerCanvas.pick(28, 32),
                 reveal: M.progress(t, 80.1, 0.9),
-                exit: M.easeIn(M.progress(t, 86.1, 0.5))
+                exit: M.easeIn(M.progress(t, Self.githubStart - 0.1, 0.5))
             )
             .position(x: 195, y: TrailerLayout.headlineY)
-            TrailerBrowserWindow(t: t, size: Self.windowSize, morph: morph, contentOpacity: 1 - M.clamp(condense * 2.2))
+            if t > Self.githubStart {
+                TrailerHeadline(
+                    title: TrailerCopy.current.openSource.title,
+                    subtitle: TrailerCopy.optional(TrailerCopy.current.openSource.subtitle),
+                    titleSize: TrailerCanvas.pick(28, 32),
+                    reveal: M.progress(t, Self.githubStart + 0.35, 0.9),
+                    exit: M.easeIn(M.progress(t, Self.condenseStart - 0.1, 0.5))
+                )
+                .position(x: 195, y: TrailerLayout.headlineY)
+            }
+            TrailerBrowserWindow(t: t, size: windowSize, morph: morph, contentOpacity: 1 - M.clamp(condense * 2.2))
                 .scaleEffect(CGFloat(1.12 - 0.12 * windowIn))
                 .blur(radius: CGFloat(1 - M.clamp(windowIn)) * 8)
                 .opacity(M.clamp(windowIn * 2) * (1 - M.progress(condense, 0.45, 0.35)))
@@ -467,7 +502,7 @@ struct TrailerOutroScene: View {
             .scaleEffect(Self.phoneScale * phoneShrink)
             .offset(x: buzz)
             .blur(radius: phoneBlur)
-            .opacity(M.clamp(phoneIn * 2) * phoneFade)
+            .opacity(M.clamp(phoneIn * 2) * phoneFade * (1 - phoneOut))
             .position(x: phonePath.x + phoneSlide, y: phonePath.y)
             label(copy.webLabel, x: Self.windowCenter.x, appear: M.progress(t, 81.0, 0.6), exit: labelsExit)
             label(copy.appLabel, x: Self.phoneCenter.x, appear: M.progress(t, 81.3, 0.6), exit: labelsExit)
@@ -484,7 +519,7 @@ struct TrailerOutroScene: View {
             .minimumScaleFactor(0.6)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .frame(maxWidth: 190)
+            .frame(maxWidth: Self.labelMaxWidth(centeredAt: x))
             .background(TrailerGlass(shape: Capsule(), frosted: true, shadowOpacity: 0.25))
             .offset(y: CGFloat(1 - eased) * 10)
             .opacity(eased)
@@ -583,7 +618,19 @@ private struct TrailerBrowserWindow: View {
         return min(max(natural, 0.4), 1.4)
     }()
 
+    /// The address is retyped to the GitHub repository, the page loads (a thin progress bar), then scrolls.
+    static let githubTypeStart: Double = TrailerOutroScene.githubStart + 0.3
+    static let githubTypeDuration: Double = {
+        let natural: Double = Double(TrailerCopy.current.openSource.url.count) * 0.022
+        return min(max(natural, 0.4), 1.4)
+    }()
+    static let githubLoadStart: Double = githubTypeStart + githubTypeDuration + 0.05
+    static let githubShown: Double = githubLoadStart + 0.3
+
     private var isCompact: Bool { size.width < 300 }
+    /// 0 in the small window, 1 once it has grown for GitHub: the traffic lights and the reload glyph
+    /// slide in with the width instead of popping.
+    private var chrome: Double { M.clamp(Double((size.width - 240) / 60)) }
 
     var body: some View {
         let side = TrailerEndScene.iconSide
@@ -598,9 +645,17 @@ private struct TrailerBrowserWindow: View {
                 .frame(height: 0.5)
             // The page is taller than the window: pin it under the toolbar and clip the bottom, so its
             // height never pushes the toolbar (and the URL) out of the top of the window.
-            TrailerWebPage(t: t, columns: isCompact ? 3 : 4)
-                .frame(width: size.width, height: size.height - 38.5, alignment: .top)
-                .clipped()
+            ZStack(alignment: .top) {
+                TrailerWebPage(t: t, columns: 3)
+                    .opacity(1 - M.progress(t, Self.githubLoadStart + 0.15, 0.25))
+                if t > Self.githubLoadStart {
+                    TrailerGitHubPage(t: t, width: size.width, shownAt: Self.githubShown)
+                        .opacity(M.progress(t, Self.githubLoadStart + 0.15, 0.25))
+                }
+                loadingBar
+            }
+            .frame(width: size.width, height: size.height - 38.5, alignment: .top)
+            .clipped()
         }
         .opacity(contentOpacity)
         .frame(width: size.width, height: size.height, alignment: .top)
@@ -611,22 +666,39 @@ private struct TrailerBrowserWindow: View {
         .overlay(shape.strokeBorder(TrailerStyle.rim, lineWidth: 0.75))
     }
 
+    /// A thin ember bar under the address while GitHub loads.
+    private var loadingBar: some View {
+        let p: Double = M.easeOut(M.progress(t, Self.githubLoadStart, 0.3))
+        let fade: Double = 1 - M.progress(t, Self.githubShown, 0.2)
+        return Rectangle()
+            .fill(Palette.accentFill)
+            .frame(width: size.width * CGFloat(p), height: 2)
+            .frame(width: size.width, alignment: .leading)
+            .opacity(t > Self.githubLoadStart ? fade : 0)
+    }
+
     private var toolbar: some View {
-        let url = TrailerCopy.current.web.url
-        let start = Self.typingStart
-        let typingEnd: Double = start + Self.typingDuration
-        let typed = Int((Double(url.count) * M.progress(t, start, Self.typingDuration)).rounded(.down))
+        let onGitHub: Bool = t >= Self.githubTypeStart
+        let url: String = onGitHub ? TrailerCopy.current.openSource.url : TrailerCopy.current.web.url
+        let start: Double = onGitHub ? Self.githubTypeStart : Self.typingStart
+        let duration: Double = onGitHub ? Self.githubTypeDuration : Self.typingDuration
+        let typingEnd: Double = start + duration
+        let typed = Int((Double(url.count) * M.progress(t, start, duration)).rounded(.down))
         let text = String(url.prefix(typed))
         let caretOn: Bool = t < typingEnd || sin(t * 2 * Double.pi * 1.4) > -0.2
-        let focus: Double = M.progress(t, start - 0.2, 0.3) * (1 - M.progress(t, typingEnd + 0.5, 0.5))
-        return HStack(spacing: 10) {
-            if !isCompact {
-                HStack(spacing: 6) {
-                    Circle().fill(Color(hex: 0xFF5F57)).frame(width: 9, height: 9)
-                    Circle().fill(Color(hex: 0xFEBC2E)).frame(width: 9, height: 9)
-                    Circle().fill(Color(hex: 0x28C840)).frame(width: 9, height: 9)
-                }
+        let focus: Double = onGitHub
+            ? M.progress(t, start - 0.2, 0.2) * (1 - M.progress(t, typingEnd + 0.4, 0.4))
+            : M.progress(t, Self.typingStart - 0.2, 0.3) * (1 - M.progress(t, typingEnd + 0.5, 0.5))
+        let chrome = self.chrome
+        return HStack(spacing: 10 * CGFloat(chrome)) {
+            HStack(spacing: 6) {
+                Circle().fill(Color(hex: 0xFF5F57)).frame(width: 9, height: 9)
+                Circle().fill(Color(hex: 0xFEBC2E)).frame(width: 9, height: 9)
+                Circle().fill(Color(hex: 0x28C840)).frame(width: 9, height: 9)
             }
+            .frame(width: 39 * CGFloat(chrome), alignment: .leading)
+            .clipped()
+            .opacity(chrome)
             HStack(spacing: 4) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 8, weight: .bold))
@@ -642,11 +714,10 @@ private struct TrailerBrowserWindow: View {
                     .frame(width: 1.5, height: 12)
                     .opacity(caretOn && t > start - 0.2 ? 1 : 0)
                 Spacer(minLength: 0)
-                if !isCompact {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(Color.white.opacity(0.4))
-                }
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.4))
+                    .opacity(chrome)
             }
             .padding(.horizontal, isCompact ? 8 : 10)
             .frame(height: 24)
@@ -654,9 +725,55 @@ private struct TrailerBrowserWindow: View {
             .overlay(Capsule().strokeBorder(Palette.ember.opacity(0.55 * focus), lineWidth: 1))
             .trailerGlint(M.progress(t, typingEnd + 0.15, 0.7), strength: 0.5)
         }
-        .padding(.horizontal, isCompact ? 8 : 14)
+        .padding(.horizontal, 8 + 6 * CGFloat(chrome))
         .frame(height: 38)
     }
+}
+
+/// The repository on GitHub: a screenshot of the page (mobile layout, dark), scrolled from the repository
+/// header down to the README's title and its live-preview link. The screenshot is `trailer/github.jpg`,
+/// copied into the app's Documents by the record script; without it a plain stand-in is drawn.
+private struct TrailerGitHubPage: View {
+    let t: Double
+    let width: CGFloat
+    let shownAt: Double
+
+    /// Where the scroll stops, as a fraction of the screenshot's height: the README's icon, title and the
+    /// preview badge fill the window (the screenshot is 393 pt wide and 1610 pt tall; the icon starts
+    /// ~860 pt down, the badge sits at ~1175 pt).
+    static let stopFraction: CGFloat = 0.53
+
+    var body: some View {
+        if let image = TrailerGitHubShot.image {
+            let height: CGFloat = width * image.size.height / max(image.size.width, 1)
+            let p: Double = M.easeInOut(M.progress(t, shownAt + 0.25, TrailerOutroScene.condenseStart - shownAt - 0.65))
+            Image(uiImage: image)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: width, height: height)
+                .offset(y: -height * Self.stopFraction * CGFloat(p))
+                .frame(width: width, alignment: .top)
+        } else {
+            VStack(spacing: 10) {
+                Text(verbatim: "alanfeiyuchang / ios-anim-effects")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(hex: 0x4493F8))
+                Text(verbatim: "Motionary · 动效词典")
+                    .font(.system(size: 20, weight: .heavy))
+                    .foregroundStyle(Color.white)
+            }
+            .padding(.top, 40)
+            .frame(width: width)
+        }
+    }
+}
+
+/// The GitHub screenshot from `Documents/trailer-github.jpg` (see `scripts/record-trailer.sh`), loaded once.
+enum TrailerGitHubShot {
+    static let image: UIImage? = {
+        guard let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        return UIImage(contentsOfFile: folder.appendingPathComponent("trailer-github.jpg").path)
+    }()
 }
 
 /// The documentation site: a header and a grid of recorded effects that keeps scrolling.
@@ -752,7 +869,7 @@ private struct TrailerWebPage: View {
     }
 }
 
-// MARK: - 87–90 s · End card: app icon + Motionary – 动效词典
+// MARK: - 88–93 s (source) · End card: app icon + Motionary – 动效词典
 
 struct TrailerEndScene: View {
     let t: Double
@@ -763,12 +880,13 @@ struct TrailerEndScene: View {
     var body: some View {
         let condense: Double = TrailerOutroScene.condense(t)
         let side = Self.iconSide
-        let float = CGFloat(2 * sin((t - 88.5) * 1.3) * M.progress(t, 88.5, 0.8))
+        let start: Double = TrailerOutroScene.condenseStart
+        let float = CGFloat(2 * sin((t - start - 2.15) * 1.3) * M.progress(t, start + 2.15, 0.8))
         let iconIn: Double = M.progress(condense, 0.3, 0.35)
-        let path: CGPoint = M.mix(TrailerOutroScene.windowCenter, Self.iconCenter, condense)
+        let path: CGPoint = M.mix(TrailerOutroScene.githubCenter, Self.iconCenter, condense)
         ZStack {
             // Always a true square: it only grows uniformly while cross-fading over the morphing window.
-            TrailerAppIcon(t: t, side: side, popAt: 86.95, glintAt: 87.85)
+            TrailerAppIcon(t: t, side: side, popAt: start + 0.6, glintAt: start + 1.5)
                 .scaleEffect(CGFloat(0.86 + 0.14 * M.easeOut(iconIn)))
                 .shadow(color: Palette.ember.opacity(0.45 * M.clamp(condense)), radius: 34, x: 0, y: 10)
                 .opacity(iconIn)
@@ -778,7 +896,7 @@ struct TrailerEndScene: View {
                 .foregroundStyle(Color.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.45)
-                .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 87.25, 0.8)))
+                .textRenderer(GlyphBlurRenderer(progress: M.progress(t, start + 0.9, 0.8)))
                 .frame(width: 360)
                 .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 4)
                 .position(x: 195, y: TrailerCanvas.pick(300, 394))
@@ -788,7 +906,7 @@ struct TrailerEndScene: View {
                 .foregroundStyle(TrailerStyle.emberText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 87.55, 0.8)))
+                .textRenderer(GlyphBlurRenderer(progress: M.progress(t, start + 1.2, 0.8)))
                 .frame(width: 360)
                 .position(x: 195, y: TrailerCanvas.pick(344, 444))
             Text(verbatim: TrailerCopy.current.end.tagline)
@@ -797,9 +915,29 @@ struct TrailerEndScene: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
                 .frame(width: 360)
-                .opacity(M.easeOut(M.progress(t, 87.9, 0.7)))
-                .offset(y: CGFloat(1 - M.easeOut(M.progress(t, 87.9, 0.7))) * 8)
+                .opacity(M.easeOut(M.progress(t, start + 1.55, 0.7)))
+                .offset(y: CGFloat(1 - M.easeOut(M.progress(t, start + 1.55, 0.7))) * 8)
                 .position(x: 195, y: TrailerCanvas.pick(382, 486))
+            if let upcoming = TrailerCopy.optional(TrailerCopy.current.end.upcoming) {
+                let pop: Double = M.spring(t, at: start + 2.0, response: 0.5, damping: 0.72)
+                HStack(spacing: 5) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(verbatim: upcoming)
+                        .font(.system(size: TrailerCanvas.pick(12, 13), weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                .foregroundStyle(Palette.accent)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Palette.ember.opacity(0.14), in: Capsule())
+                .overlay(Capsule().strokeBorder(Palette.ember.opacity(0.45), lineWidth: 0.75))
+                .frame(maxWidth: 300)
+                .scaleEffect(CGFloat(0.85 + 0.15 * pop))
+                .opacity(M.clamp(pop * 1.6))
+                .position(x: 195, y: TrailerCanvas.pick(414, 524))
+            }
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
     }

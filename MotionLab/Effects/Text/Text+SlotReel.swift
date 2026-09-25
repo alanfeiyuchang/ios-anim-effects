@@ -188,13 +188,16 @@ private struct TumblingPrismDemo: View {
 struct TumblingPrismDigit: View, Animatable {
     var roll: Double
     let face: CGSize
+    /// Face colour: the app's violet, or the trailer's ember.
+    var fill = AnyShapeStyle(Palette.primaryStrong)
     /// Frame-to-frame spin speed, for the motion blur.
     @State private var speed = PrismSpinSpeed()
 
     /// Explicit, so the private `speed` state never narrows the initializer's access.
-    init(roll: Double, face: CGSize) {
+    init(roll: Double, face: CGSize, fill: AnyShapeStyle = AnyShapeStyle(Palette.primaryStrong)) {
         self.roll = roll
         self.face = face
+        self.fill = fill
     }
 
     var animatableData: Double {
@@ -227,7 +230,7 @@ struct TumblingPrismDigit: View, Animatable {
         // Upward-tilted faces (s < 0) catch the top light; downward ones fall into shade.
         let shade: Double = s > 0 ? 0.65 * Double(s) : 0.2 * Double(1 - c)
         let glint: Double = s < 0 ? 0.18 * Double(-s) : 0
-        return TumblingPrismFace(digit: digit, size: face, shade: shade, glint: glint)
+        return TumblingPrismFace(digit: digit, size: face, fill: fill, shade: shade, glint: glint)
             .scaleEffect(x: 1 - 0.1 * (1 - c), y: max(c, 0.001), anchor: .center)
             .offset(y: s * face.height / 2)
             .opacity(c > 0.02 ? 1 : 0)
@@ -259,6 +262,7 @@ private final class PrismSpinSpeed {
 private struct TumblingPrismFace: View {
     let digit: Int
     let size: CGSize
+    let fill: AnyShapeStyle
     let shade: Double
     let glint: Double
 
@@ -270,7 +274,7 @@ private struct TumblingPrismFace: View {
             .monospacedDigit()
             .foregroundStyle(.white)
             .frame(width: size.width, height: size.height)
-            .background(Palette.primaryStrong, in: shape)
+            .background(fill, in: shape)
             .overlay {
                 shape.fill(Color.black.opacity(shade))
             }

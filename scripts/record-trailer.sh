@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Records the 90 s promotional trailer (`-ML_trailer YES`, MotionLab/Trailer/) on an iPhone Pro simulator,
+# Records the 75 s promotional trailer (`-ML_trailer YES`, MotionLab/Trailer/) on an iPhone Pro simulator,
 # once per canvas aspect (`-ML_trailerAspect 9x16|3x4`), and renders it for Xiaohongshu at 60 fps.
 # Works on your own Mac (see docs/TRAILER.md) and in CI (.github/workflows/trailer.yml).
 #
@@ -12,12 +12,12 @@
 #   --voiceover-only     Only (re)write voiceover.srt / voiceover.txt in <out>/<aspect>/ from the copy file
 #                        (no Xcode needed; numbers from the trailer-resolved.json of an earlier take).
 #   -h, --help           Show this help.
-# Environment (still honoured): TRAILER_ASPECTS (same as --aspects), TRAILER_SECONDS (cut length, 90).
+# Environment (still honoured): TRAILER_ASPECTS (same as --aspects), TRAILER_SECONDS (cut length, 75.4).
 #
 # Output, per aspect:
-#   <out>/9x16/trailer.mp4            1080×1920, 60 fps, H.264 CRF 18, ~90 s (full-screen video; recommended)
+#   <out>/9x16/trailer.mp4            1080×1920, 60 fps, H.264 CRF 18, 75.4 s (full-screen video; recommended)
 #   <out>/9x16/trailer-preview.mp4    540×960, 30 fps, CRF 28
-#   <out>/9x16/frames/frame-01…18.png 18 evenly spaced keyframes (every 5 s, starting at 2.5 s)
+#   <out>/9x16/frames/frame-01…15.png 15 evenly spaced keyframes (every 5 s, starting at 2.5 s)
 #   <out>/9x16/voiceover.srt          voice-over subtitles, UTF-8, ≤ 18 characters per cue (import into 剪映)
 #   <out>/9x16/voiceover.txt          the voice-over script, one line per entry (for recording or TTS)
 #   <out>/9x16/trailer-resolved.json  the copy as the app showed it ({effects}… expanded) + catalog counts
@@ -103,12 +103,12 @@ else
 fi
 
 BUNDLE_ID="com.motionlexicon.MotionLab"
-DURATION="${TRAILER_SECONDS:-90}"
+DURATION="${TRAILER_SECONDS:-75.4}"
 LEAD_IN=2.5
 mkdir -p "$OUT"
 
 # --- Voice-over subtitles ---------------------------------------------------------------------------
-# One keyframe every 5 s (18 for the 90 s cut).
+# One keyframe every 5 s (15 for the 75.4 s cut).
 KEYFRAMES=$(python3 -c "print(max(1, round($DURATION / 5)))")
 
 # voiceover_files <dir> [resolved json]: writes <dir>/voiceover.srt and <dir>/voiceover.txt. Lines come from the
@@ -283,7 +283,7 @@ def stamp(seconds):
     return "%02d:%02d:%02d,%03d" % (hours, minutes, secs, millis)
 
 
-duration = float(os.environ.get("DURATION") or 90)
+duration = float(os.environ.get("DURATION") or 75.4)
 cues, script = [], []
 for start, end, text in sorted(counts_and_lines(), key=lambda item: item[0]):
     text = text.strip()
@@ -423,6 +423,12 @@ install_copy() {
     cp "$COPY" "$DATA/Documents/trailer-copy.json"
   else
     rm -f "$DATA/Documents/trailer-copy.json"
+  fi
+  # The repository page shown in the open-source beat (a screenshot of github.com, mobile layout, dark).
+  if [ -f "$ROOT/trailer/github.jpg" ]; then
+    cp "$ROOT/trailer/github.jpg" "$DATA/Documents/trailer-github.jpg"
+  else
+    rm -f "$DATA/Documents/trailer-github.jpg"
   fi
 }
 

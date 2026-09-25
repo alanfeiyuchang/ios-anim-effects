@@ -26,12 +26,12 @@ struct TrailerCopy: Codable, Equatable {
     var intro = Intro()
     var search = Search()
     var phone = Phone()
-    var tune = Tune()
+    var favorites = Favorites()
     var prompt = Prompt()
     var chat = Chat()
     var web = Web()
+    var openSource = OpenSource()
     var end = End()
-    var touch = Touch()
     var voiceover: [VoiceLine] = TrailerCopy.defaultVoiceover
 
     /// 0–6 s: the number tumbling in on prism digits, the line under it and the two stat chips.
@@ -51,7 +51,7 @@ struct TrailerCopy: Codable, Equatable {
         /// The huge faint glyph behind the scene.
         var backdropMark = "？"
         /// Up to 12 words (the first 7 have hand-placed spots).
-        var words = ["弹一下？", "顺滑一点？", "像果冻？", "有点高级感？", "duang 一下？", "要回弹吗？", "丝滑？"]
+        var words = ["弹一下？", "顺滑一点？", "像果冻？", "来点高级感？", "duang 一下？", "要回弹吗？", "丝滑？"]
     }
 
     /// 16–24 s: problem 2, a grid of blurred unknown effects.
@@ -67,7 +67,7 @@ struct TrailerCopy: Codable, Equatable {
         var title = "Motionary"
         var subtitle = "动效词典"
         /// Up to four chips under the name (2 × 2).
-        var pillars = ["找灵感", "上手感受", "实时可调", "一键复制提示词"]
+        var pillars = ["找灵感", "上手体验", "一键复制提示词", "完全开源"]
     }
 
     /// 30–44 s: the real Browse and Search screens on the phone.
@@ -95,18 +95,10 @@ struct TrailerCopy: Codable, Equatable {
         var noParams = "无可调参数"
     }
 
-    /// 60–70 s: the spring lab on the phone and its sliders.
-    struct Tune: Codable, Equatable {
-        var title = "参数实时可调"
-        var subtitle = "弹簧 · 阻尼 · 响应，随手试"
-        /// Nav title, tag and hint of the lab page.
-        var pageTitle = "弹簧参数"
-        var pageTag = "实时预览"
-        var hint = "拖动滑块，实时预览"
-        var dampingLabel = "阻尼"
-        var responseLabel = "响应"
-        /// Label on the dashed target line of the curve.
-        var targetLabel = "目标"
+    /// The author's two favourite demos on the phone (the day/night switch, then the gear checklist); the
+    /// second line of the headline is the demo's name from the catalog.
+    struct Favorites: Codable, Equatable {
+        var title = "我最喜欢的"
     }
 
     /// 70–77 s: the prompt card.
@@ -148,16 +140,21 @@ struct TrailerCopy: Codable, Equatable {
         var appLabel = "App · 亲手感受手感"
     }
 
+    /// The browser leaves the site for the repository on GitHub.
+    struct OpenSource: Codable, Equatable {
+        var title = "完全开源"
+        var subtitle = "欢迎 Star · 一起补充动效"
+        /// Typed into the address bar.
+        var url = "github.com/alanfeiyuchang/ios-anim-effects"
+    }
+
     /// 87–90 s: the end card under the app icon.
     struct End: Codable, Equatable {
         var title = "Motionary"
         var subtitle = "动效词典 · iOS Motion Dictionary"
-        var tagline = "{effects} 个可上手玩的 iOS 高级动效"
-    }
-
-    /// Shown on every simulated tap, whole trailer.
-    struct Touch: Codable, Equatable {
-        var hapticBadge = "触感"
+        var tagline = "让动效说得清 · 看得见 · 摸得着"
+        /// A small ember pill under the tagline; "" hides it.
+        var upcoming = "更多动效后续加入"
     }
 
     /// One voice-over line, `start` … `end` in seconds of the cut. Not drawn on screen.
@@ -168,15 +165,36 @@ struct TrailerCopy: Codable, Equatable {
     }
 
     static let defaultVoiceover: [VoiceLine] = [
-        VoiceLine(start: 0, end: 6, text: "做 App 的时候，你一定遇到过这种情况——"),
-        VoiceLine(start: 6, end: 16, text: "脑子里有感觉，却说不清：是弹簧还是缓动？回弹多少？跟设计师、跟 AI 都讲不明白。"),
-        VoiceLine(start: 16, end: 24, text: "更难的是，你根本不知道 iOS 原生能做出哪些效果。"),
-        VoiceLine(start: 24, end: 30, text: "所以我做了 Motionary，一本可以上手玩的 iOS 动效词典。"),
-        VoiceLine(start: 30, end: 44, text: "{effects} 个动效，按 {categories} 个分类、{families} 个家族整理。输入关键词就能搜到，点「质感交互」，看最精致的那一批。"),
-        VoiceLine(start: 44, end: 60, text: "每个动效都是真实运行的 SwiftUI，不是视频。用手指去按、去拖，配合 Taptic Engine 的触感反馈，手感好不好，一摸就知道。"),
-        VoiceLine(start: 60, end: 70, text: "弹簧的响应时间、阻尼比，拖一下马上看到变化。阻尼越小回弹越多，系统默认的弹簧大约是响应 0.55 秒、阻尼 0.825。"),
-        VoiceLine(start: 70, end: 80, text: "每个动效都配有中英双语的专业提示词，写清时长、曲线和弹簧参数，一键复制给 AI 或设计师，直接复现。"),
-        VoiceLine(start: 80, end: 90, text: "想快速浏览，打开网页就能看全部录像；想感受手感，就在 App 里亲手试试。Motionary，让动效说得清、看得见、摸得着。"),
+        VoiceLine(start: 0.0, end: 2.033, text: "400多个iOS动效"),
+        VoiceLine(start: 2.033, end: 4.3, text: "帮你找到适合的丝滑效果"),
+        VoiceLine(start: 4.3, end: 6.833, text: "做 app的时候你一定遇到过这种情况"),
+        VoiceLine(start: 6.833, end: 9.0, text: "脑子里有感觉 却说不清"),
+        VoiceLine(start: 9.0, end: 10.933, text: "只会说来点高级感"),
+        VoiceLine(start: 10.933, end: 13.766, text: "跟设计师、跟 AI 都讲不明白"),
+        VoiceLine(start: 13.766, end: 15.166, text: "更难的是"),
+        VoiceLine(start: 15.166, end: 18.6, text: "你根本不知道 iOS 原生能做出哪些效果"),
+        VoiceLine(start: 18.6, end: 20.6, text: "所以我做了 Motionary"),
+        VoiceLine(start: 20.6, end: 23.8, text: "一本可以上手体验的 iOS 动效词典"),
+        VoiceLine(start: 23.8, end: 26.466, text: "{effects} 个动效 按 {categories} 个分类"),
+        VoiceLine(start: 26.466, end: 28.266, text: "{families} 个家族整理"),
+        VoiceLine(start: 28.266, end: 30.5, text: "输入关键词就能搜到"),
+        VoiceLine(start: 30.5, end: 33.166, text: "点「质感交互」 看最精致的那一批"),
+        VoiceLine(start: 33.166, end: 36.166, text: "每个动效都是真实运行的 SwiftUI"),
+        VoiceLine(start: 36.166, end: 38.4, text: "用手指去按、去拖"),
+        VoiceLine(start: 38.4, end: 40.9, text: "配合 Taptic Engine 的触感反馈"),
+        VoiceLine(start: 40.9, end: 43.066, text: "手感好不好 一试就知道"),
+        VoiceLine(start: 43.066, end: 46.066, text: "其中我最喜欢的有昼夜切换开关"),
+        VoiceLine(start: 46.066, end: 48.233, text: "能看到丝滑的转换效果"),
+        VoiceLine(start: 48.233, end: 50.033, text: "还有这个装备清单"),
+        VoiceLine(start: 50.033, end: 52.433, text: "装备齐全后的成就感满满"),
+        VoiceLine(start: 52.433, end: 55.7, text: "每个动效都配有中英双语的专业提示词"),
+        VoiceLine(start: 55.7, end: 58.833, text: "写清时长、曲线和弹簧参数"),
+        VoiceLine(start: 58.833, end: 61.933, text: "一键复制给 AI 或设计师 直接复现"),
+        VoiceLine(start: 61.933, end: 65.2, text: "想快速浏览 打开网页就能看全部录像"),
+        VoiceLine(start: 65.2, end: 68.033, text: "想感受手感 就在 App 里亲手试试"),
+        VoiceLine(start: 68.033, end: 71.033, text: "整个项目已经开源，欢迎查看"),
+        VoiceLine(start: 71.033, end: 73.266, text: "Motionary 让动效说得清"),
+        VoiceLine(start: 73.266, end: 75.4, text: "看得见、摸得着"),
     ]
 }
 
@@ -199,12 +217,12 @@ extension TrailerCopy {
         intro = c.trailerCopyValue(.intro, d.intro)
         search = c.trailerCopyValue(.search, d.search)
         phone = c.trailerCopyValue(.phone, d.phone)
-        tune = c.trailerCopyValue(.tune, d.tune)
+        favorites = c.trailerCopyValue(.favorites, d.favorites)
         prompt = c.trailerCopyValue(.prompt, d.prompt)
         chat = c.trailerCopyValue(.chat, d.chat)
         web = c.trailerCopyValue(.web, d.web)
+        openSource = c.trailerCopyValue(.openSource, d.openSource)
         end = c.trailerCopyValue(.end, d.end)
-        touch = c.trailerCopyValue(.touch, d.touch)
         voiceover = c.trailerCopyValue(.voiceover, d.voiceover)
     }
 }
@@ -278,18 +296,11 @@ extension TrailerCopy.Phone {
     }
 }
 
-extension TrailerCopy.Tune {
+extension TrailerCopy.Favorites {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = Self()
         title = c.trailerCopyValue(.title, d.title)
-        subtitle = c.trailerCopyValue(.subtitle, d.subtitle)
-        pageTitle = c.trailerCopyValue(.pageTitle, d.pageTitle)
-        pageTag = c.trailerCopyValue(.pageTag, d.pageTag)
-        hint = c.trailerCopyValue(.hint, d.hint)
-        dampingLabel = c.trailerCopyValue(.dampingLabel, d.dampingLabel)
-        responseLabel = c.trailerCopyValue(.responseLabel, d.responseLabel)
-        targetLabel = c.trailerCopyValue(.targetLabel, d.targetLabel)
     }
 }
 
@@ -336,6 +347,17 @@ extension TrailerCopy.Web {
     }
 }
 
+extension TrailerCopy.OpenSource {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = Self()
+        title = c.trailerCopyValue(.title, d.title)
+        subtitle = c.trailerCopyValue(.subtitle, d.subtitle)
+        let address: String = c.trailerCopyValue(.url, d.url)
+        url = address.isEmpty ? d.url : address
+    }
+}
+
 extension TrailerCopy.End {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -343,14 +365,7 @@ extension TrailerCopy.End {
         title = c.trailerCopyValue(.title, d.title)
         subtitle = c.trailerCopyValue(.subtitle, d.subtitle)
         tagline = c.trailerCopyValue(.tagline, d.tagline)
-    }
-}
-
-extension TrailerCopy.Touch {
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        let d = Self()
-        hapticBadge = c.trailerCopyValue(.hapticBadge, d.hapticBadge)
+        upcoming = c.trailerCopyValue(.upcoming, d.upcoming)
     }
 }
 

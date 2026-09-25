@@ -46,9 +46,14 @@ enum TrailerData {
 struct TrailerLiveDemo: View, Equatable {
     let effectID: String
     var epoch: Date? = nil
+    /// `demoAutoplayIntervalScale` for this demo (1 = the app's own pace).
+    var intervalScale: Double = 1
+    /// Off stops the autoplay loop where it is (a routine that would start over stays finished).
+    var autoplay = true
 
     static func == (lhs: TrailerLiveDemo, rhs: TrailerLiveDemo) -> Bool {
-        lhs.effectID == rhs.effectID && lhs.epoch == rhs.epoch
+        lhs.effectID == rhs.effectID && lhs.epoch == rhs.epoch && lhs.intervalScale == rhs.intervalScale
+            && lhs.autoplay == rhs.autoplay
     }
 
     var body: some View {
@@ -56,8 +61,9 @@ struct TrailerLiveDemo: View, Equatable {
         if let effect = EffectLibrary.effect(id: effectID) {
             EffectDemoView(effect: effect, context: DemoContext(params: effect.defaultParams, isPreview: true, language: .zh))
                 .frame(width: side, height: side)
-                .environment(\.demoAutoplayEnabled, true)
+                .environment(\.demoAutoplayEnabled, autoplay)
                 .environment(\.demoSyncEpoch, epoch)
+                .environment(\.demoAutoplayIntervalScale, intervalScale)
                 .environment(\.appLanguage, .zh)
         }
     }
@@ -67,6 +73,8 @@ struct TrailerLiveDemo: View, Equatable {
 struct TrailerStageTile: View {
     let effectID: String
     var epoch: Date? = nil
+    var intervalScale: Double = 1
+    var autoplay = true
     let side: CGFloat
     var cornerRadius: CGFloat = 16
     var backgroundOpacity: Double = 1
@@ -77,7 +85,7 @@ struct TrailerStageTile: View {
         ZStack {
             StageBackground()
                 .opacity(backgroundOpacity)
-            TrailerLiveDemo(effectID: effectID, epoch: epoch)
+            TrailerLiveDemo(effectID: effectID, epoch: epoch, intervalScale: intervalScale, autoplay: autoplay)
                 .equatable()
                 .scaleEffect(side / canvas)
                 .frame(width: side, height: side)

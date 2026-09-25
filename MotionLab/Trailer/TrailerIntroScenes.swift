@@ -45,6 +45,12 @@ private enum HookLayout {
     /// One prism face of the real effect (52 × 68 pt); the whole number is scaled up uniformly.
     static let face = CGSize(width: 52, height: 68)
     static let spacing: CGFloat = 8
+    /// Ember faces (the effect's own are violet), deep enough at the bottom for the white digits.
+    static let faceFill = AnyShapeStyle(LinearGradient(
+        colors: [Color(hex: 0xFF8A2E), Palette.ember, Color(hex: 0xD6470F)],
+        startPoint: .top,
+        endPoint: .bottom
+    ))
 
     /// The digits of the live effect count, most significant first.
     static let digits: [Int] = {
@@ -118,7 +124,7 @@ private struct HookPrismNumber: View {
         let scale: CGFloat = HookLayout.scale * CGFloat((0.9 + 0.1 * appear) * (1 + pop))
         HStack(spacing: HookLayout.spacing) {
             ForEach(HookLayout.digits.indices, id: \.self) { index in
-                TumblingPrismDigit(roll: HookLayout.roll(index, t: t), face: HookLayout.face)
+                TumblingPrismDigit(roll: HookLayout.roll(index, t: t), face: HookLayout.face, fill: HookLayout.faceFill)
             }
         }
         .trailerGlint(M.progress(t, HookLayout.lastLanding + 0.35, 0.75), strength: 0.55)

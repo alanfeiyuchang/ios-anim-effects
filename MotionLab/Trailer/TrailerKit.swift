@@ -273,11 +273,14 @@ struct TrailerLineReveal: TextRenderer {
 /// Near-black ink with a drifting ember mesh glow (after `HeroMeshBackground`), a focus glow that
 /// follows the action, slow ember motes, and a gentle darkening over the caption band.
 struct TrailerBackdrop: View {
+    /// Cut time: the ambient drift never jumps or races when `TrailerEdit` fast-forwards a hold.
     let t: Double
+    /// Source time: where the light gathers and when it swells follow the scenes.
+    let cue: Double
 
     var body: some View {
-        let focus = Self.focus(t)
-        let glow = Self.glow(t)
+        let focus = Self.focus(cue)
+        let glow = Self.glow(t, cue: cue)
         ZStack {
             TrailerCanvas.ink
             MeshGradient(width: 3, height: 3, points: Self.points(t, focus: focus), colors: Self.colors)
@@ -310,7 +313,8 @@ struct TrailerBackdrop: View {
     private static let focusKeys: [(time: Double, x: Double, y: Double)] = {
         let keys: [(Double, Double, Double)] = [
             (0, 190, 262), (5.5, 210, 300), (15, 250, 330), (17, 250, 360), (23.5, 200, 280),
-            (29.5, 250, 350), (69.5, 240, 350), (79.5, 250, 370), (86.5, 190, 270), (90, 190, 270),
+            (29.5, 250, 350), (69.5, 240, 350), (79.5, 250, 370), (85.4, 250, 370), (86.6, 200, 330),
+            (TrailerOutroScene.condenseStart + 0.15, 190, 270), (TrailerOutroScene.condenseStart + 4, 190, 270),
         ]
         return keys.map { key in (time: key.0, x: 195, y: TrailerCanvas.isTall ? key.2 : key.1) }
     }()
@@ -330,11 +334,11 @@ struct TrailerBackdrop: View {
     }
 
     /// Glow intensity: a swell as the number lands and a bloom behind the closing icon.
-    private static func glow(_ t: Double) -> Double {
+    private static func glow(_ t: Double, cue: Double) -> Double {
         let base: Double = 0.75 + 0.25 * sin(t * 0.8)
-        let hook: Double = 0.6 * TrailerMath.progress(t, 1.0, 1.6) * (1 - TrailerMath.progress(t, 5.0, 1.0))
-        let intro: Double = 0.5 * TrailerMath.progress(t, 24.0, 1.0) * (1 - TrailerMath.progress(t, 29.0, 1.0))
-        let end: Double = 0.8 * TrailerMath.easeOut(TrailerMath.progress(t, 87.0, 1.4))
+        let hook: Double = 0.6 * TrailerMath.progress(cue, 1.0, 1.6) * (1 - TrailerMath.progress(cue, 5.0, 1.0))
+        let intro: Double = 0.5 * TrailerMath.progress(cue, 24.0, 1.0) * (1 - TrailerMath.progress(cue, 29.0, 1.0))
+        let end: Double = 0.8 * TrailerMath.easeOut(TrailerMath.progress(cue, TrailerOutroScene.condenseStart + 0.65, 1.4))
         return base + hook + intro + end
     }
 

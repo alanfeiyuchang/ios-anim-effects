@@ -33,6 +33,7 @@ struct PreviewStage: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
     @Environment(\.urgentSnapshots) private var urgent
+    @Environment(\.previewsAlwaysOnScreen) private var alwaysOnScreen
     /// Starts off: lazy grids build cells slightly outside the viewport, and those must not mount
     /// their live demo. `onScrollVisibilityChange` reports `true` on first layout for visible cells.
     @State private var isOnScreen = false
@@ -43,6 +44,7 @@ struct PreviewStage: View {
     @State private var failedKey: String?
 
     var body: some View {
+        let isOnScreen = self.isOnScreen || alwaysOnScreen
         GeometryReader { proxy in
             let side = StageMetrics.previewCanvas
             let scale = proxy.size.width / side
@@ -85,7 +87,7 @@ struct PreviewStage: View {
         .overlay(StageRim(cornerRadius: cornerRadius))
         .animation(.easeInOut(duration: 0.25), value: isOnScreen)
         .onScrollVisibilityChange(threshold: 0.01) { visible in
-            if isOnScreen != visible { isOnScreen = visible }
+            if self.isOnScreen != visible { self.isOnScreen = visible }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -192,6 +194,10 @@ private struct UrgentSnapshotsKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+private struct PreviewsAlwaysOnScreenKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
     /// Thumbnails inside mark their still frames as urgent: they render ahead of every other queued
     /// still (see `SnapshotGate.waitForTurn(urgent:)`). Set on the first cards of a page and on the
@@ -199,6 +205,14 @@ extension EnvironmentValues {
     var urgentSnapshots: Bool {
         get { self[UrgentSnapshotsKey.self] }
         set { self[UrgentSnapshotsKey.self] = newValue }
+    }
+
+    /// Thumbnails inside treat themselves as on screen without waiting for `onScrollVisibilityChange`.
+    /// Set by the trailer's embedded app screens: they are laid out at device size and scaled into a drawn
+    /// phone, and under that scale scroll visibility only reports the cards in the top-left corner.
+    var previewsAlwaysOnScreen: Bool {
+        get { self[PreviewsAlwaysOnScreenKey.self] }
+        set { self[PreviewsAlwaysOnScreenKey.self] = newValue }
     }
 }
 

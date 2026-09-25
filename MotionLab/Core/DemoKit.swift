@@ -147,6 +147,10 @@ private struct DemoSyncEpochKey: EnvironmentKey {
     static let defaultValue: Date? = nil
 }
 
+private struct DemoAutoplayIntervalScaleKey: EnvironmentKey {
+    static let defaultValue: Double = 1
+}
+
 extension EnvironmentValues {
     /// Master switch for `.autoplay`. The app shell turns it off for grid thumbnails when
     /// Reduce Motion is on, when "Animate previews" is disabled, or when a card scrolls away.
@@ -168,6 +172,13 @@ extension EnvironmentValues {
     var demoSyncEpoch: Date? {
         get { self[DemoSyncEpochKey.self] }
         set { self[DemoSyncEpochKey.self] = newValue }
+    }
+
+    /// Multiplies every `.autoplay` interval (not the first delay). Only the promo trailer changes it, to fit
+    /// a demo's whole routine into its beat; the app always runs at 1.
+    var demoAutoplayIntervalScale: Double {
+        get { self[DemoAutoplayIntervalScaleKey.self] }
+        set { self[DemoAutoplayIntervalScaleKey.self] = newValue }
     }
 
     /// `true` while the demo is rasterised into a still thumbnail with `ImageRenderer` (set by the
@@ -241,6 +252,7 @@ private struct AutoplayModifier: ViewModifier {
     @Environment(\.demoAutoplayEnabled) private var enabled
     @Environment(\.demoIntroPlay) private var introPlay
     @Environment(\.demoSyncEpoch) private var syncEpoch
+    @Environment(\.demoAutoplayIntervalScale) private var intervalScale
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private enum Mode: Hashable {
@@ -250,7 +262,7 @@ private struct AutoplayModifier: ViewModifier {
     }
 
     private var mode: Mode {
-        if active { return enabled ? .loop(interval: interval, epoch: syncEpoch) : .idle }
+        if active { return enabled ? .loop(interval: interval * intervalScale, epoch: syncEpoch) : .idle }
         return intro && introPlay && !reduceMotion ? .intro : .idle
     }
 

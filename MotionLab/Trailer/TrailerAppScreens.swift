@@ -61,6 +61,9 @@ struct TrailerAppScreen: View, Equatable {
         .environment(\.colorScheme, .dark)
         .environment(\.appLanguage, .zh)
         .environment(\.locale, AppLanguage.zh.locale)
+        // Scaled into the drawn phone, scroll visibility misses most cards; the lazy stacks still only
+        // build the cells near the viewport, so this mounts a screenful of live demos, not the catalog.
+        .environment(\.previewsAlwaysOnScreen, true)
         .allowsHitTesting(false)
     }
 }

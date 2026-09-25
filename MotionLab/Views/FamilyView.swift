@@ -401,6 +401,7 @@ struct FamilyPreviewStrip: View {
     let effects: [Effect]
     var slots = 3
     @Environment(\.previewMotionEnabled) private var motionEnabled
+    @Environment(\.previewsAlwaysOnScreen) private var alwaysOnScreen
     @State private var spotlight = 0
     @State private var isVisible = false
     @Namespace private var ring
@@ -420,6 +421,7 @@ struct FamilyPreviewStrip: View {
         let empty = max(slots - shown.count, 0)
         let live = motionEnabled
         let lit = shown.isEmpty ? 0 : spotlight % shown.count
+        let isVisible = self.isVisible || alwaysOnScreen
         HStack(spacing: 8) {
             ForEach(Array(shown.enumerated()), id: \.element.id) { index, effect in
                 // Nothing goes live until the strip is actually on screen (lazy stacks build cards early).
@@ -445,7 +447,7 @@ struct FamilyPreviewStrip: View {
         }
         .accessibilityHidden(true)
         .onScrollVisibilityChange(threshold: 0.2) { visible in
-            if isVisible != visible { isVisible = visible }
+            if self.isVisible != visible { self.isVisible = visible }
         }
         .task(id: live && isVisible && shown.count > 1) {
             guard live && isVisible && shown.count > 1 else { return }

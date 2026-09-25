@@ -1,6 +1,6 @@
 name: Trailer
 
-# Records the 90 s promotional trailer (MotionLab/Trailer, `-ML_trailer YES`) on an iPhone Pro simulator in both
+# Records the 75 s promotional trailer (MotionLab/Trailer, `-ML_trailer YES`) on an iPhone Pro simulator in both
 # canvas aspects and renders it for Xiaohongshu with scripts/record-trailer.sh:
 #   9:16 (1080×1920, full-screen video; recommended) and 3:4 (1080×1440), 60 fps.
 # Trigger: "[trailer]" in a commit message, or run manually from the Actions tab.

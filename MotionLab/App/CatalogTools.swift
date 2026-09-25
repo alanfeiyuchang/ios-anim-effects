@@ -98,11 +98,15 @@ enum CatalogTools {
             "unit": spec.unit,
         ]
         switch spec.kind {
-        case .slider(let range, _):
+        case .slider(let range, let step):
             json["kind"] = "slider"
             json["min"] = rounded(range.lowerBound, spec.decimals)
             json["max"] = rounded(range.upperBound, spec.decimals)
             json["default"] = rounded(spec.defaultValue, spec.decimals)
+            json["decimals"] = spec.decimals
+            if let step {
+                json["step"] = step
+            }
         case .toggle:
             json["kind"] = "toggle"
             json["default"] = spec.defaultValue > 0.5

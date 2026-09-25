@@ -10,8 +10,8 @@ struct TrailerPromptScene: View {
     var body: some View {
         ZStack {
             TrailerHeadline(
-                title: "专业中英提示词",
-                subtitle: "一键复制给 AI",
+                title: TrailerCopy.current.prompt.title,
+                subtitle: TrailerCopy.optional(TrailerCopy.current.prompt.subtitle),
                 reveal: M.progress(t, 44.4, 0.9),
                 exit: M.easeIn(M.progress(t, 51.55, 0.5))
             )
@@ -28,9 +28,26 @@ struct TrailerPromptScene: View {
 }
 
 private enum PromptSource {
-    static var effect: Effect? { EffectLibrary.effect(id: TrailerData.heroID) }
-    static var zh: String { effect?.prompt.zh ?? "" }
-    static var en: String { effect?.prompt.en ?? "" }
+    /// `TrailerCopy.prompt.effectID` if it names a real effect, else the searched hero.
+    static let effect: Effect? = {
+        let override = TrailerCopy.current.prompt.effectID
+        if !override.isEmpty, let chosen = EffectLibrary.effect(id: override) {
+            return chosen
+        }
+        return EffectLibrary.effect(id: TrailerData.heroID)
+    }()
+    static var zh: String {
+        let override = TrailerCopy.current.prompt.textZh
+        return override.isEmpty ? (effect?.prompt.zh ?? "") : override
+    }
+    static var en: String {
+        let override = TrailerCopy.current.prompt.textEn
+        return override.isEmpty ? (effect?.prompt.en ?? "") : override
+    }
+    /// The chat bubble's title (`{name}` = the effect's Chinese name).
+    static var bubbleTitle: String {
+        TrailerCopy.current.chat.bubbleTitle.replacingOccurrences(of: "{name}", with: effect?.name.zh ?? "")
+    }
     static var title: String {
         guard let effect else { return "" }
         return "\(effect.name.zh) · \(effect.name.en)"
@@ -101,9 +118,11 @@ private struct TrailerPromptCard: View {
             Image(systemName: "text.quote")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(Palette.accentFill)
-            Text(verbatim: "专业提示词")
+            Text(verbatim: TrailerCopy.current.prompt.cardTitle)
                 .font(.system(size: 15, weight: .heavy))
                 .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Spacer(minLength: 0)
             languageToggle
         }
@@ -123,8 +142,8 @@ private struct TrailerPromptCard: View {
                 .shadow(color: Palette.accentGlow, radius: 6, x: 0, y: 2)
                 .offset(x: M.mix(CGFloat(-20), CGFloat(20), pill))
             HStack(spacing: 0) {
-                toggleLabel("中", selected: 1 - onEnglish)
-                toggleLabel("EN", selected: onEnglish)
+                toggleLabel(TrailerCopy.current.prompt.languageZh, selected: 1 - onEnglish)
+                toggleLabel(TrailerCopy.current.prompt.languageEn, selected: onEnglish)
             }
         }
         .frame(width: 84, height: 28)
@@ -140,6 +159,9 @@ private struct TrailerPromptCard: View {
                 .opacity(selected)
         }
         .font(.system(size: 12, weight: .heavy))
+        .lineLimit(1)
+        .minimumScaleFactor(0.5)
+        .frame(width: 38)
         .frame(width: 42)
     }
 
@@ -197,14 +219,14 @@ private struct TrailerPromptCard: View {
             Capsule().fill(Palette.successStrong)
                 .opacity(copied)
             ZStack {
-                label("一键复制", symbol: "doc.on.doc", color: Palette.onAccent)
+                label(TrailerCopy.current.prompt.copyButton, symbol: "doc.on.doc", color: Palette.onAccent)
                     .opacity(1 - copied)
-                label("已复制", symbol: "checkmark", color: Color.white)
+                label(TrailerCopy.current.prompt.copiedButton, symbol: "checkmark", color: Color.white)
                     .opacity(copied)
                     .scaleEffect(CGFloat(0.7 + 0.3 * pop))
             }
         }
-        .frame(width: 104, height: 32)
+        .frame(width: TrailerLayout.copyButtonWidth, height: 32)
         .shadow(color: Palette.accentGlow, radius: 10, x: 0, y: 4)
         .scaleEffect(CGFloat(1 - 0.08 * dip))
     }
@@ -215,8 +237,11 @@ private struct TrailerPromptCard: View {
                 .font(.system(size: 12, weight: .bold))
             Text(verbatim: text)
                 .font(.system(size: 13, weight: .heavy))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
         .foregroundStyle(color)
+        .padding(.horizontal, 10)
     }
 }
 
@@ -258,13 +283,16 @@ private struct TrailerChatPanel: View {
                 .frame(width: 28, height: 28)
                 .background(Palette.accentFill, in: Circle())
             VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: "AI 助手")
+                Text(verbatim: TrailerCopy.current.chat.assistantName)
                     .font(.system(size: 14, weight: .heavy))
                     .foregroundStyle(Color.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 HStack(spacing: 4) {
                     Circle().fill(Palette.green).frame(width: 5, height: 5)
-                    Text(verbatim: "在线")
+                    Text(verbatim: TrailerCopy.current.chat.status)
                         .font(.system(size: 10, weight: .medium))
+                        .lineLimit(1)
                         .foregroundStyle(Color.white.opacity(0.5))
                 }
             }
@@ -280,8 +308,10 @@ private struct TrailerChatPanel: View {
                 HStack(spacing: 5) {
                     Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 11, weight: .bold))
-                    Text(verbatim: "\(PromptSource.effect?.name.zh ?? "") · 提示词")
+                    Text(verbatim: PromptSource.bubbleTitle)
                         .font(.system(size: 12, weight: .heavy))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 Text(verbatim: PromptSource.zh)
                     .font(.system(size: 10.5, weight: .medium))
@@ -331,9 +361,12 @@ private struct TrailerChatPanel: View {
             (150, Palette.ember), (112, Palette.sky), (176, Palette.violet), (92, Palette.mint),
         ]
         return VStack(alignment: .leading, spacing: 6) {
-            Text(verbatim: "收到！这就用 SwiftUI 实现：")
+            Text(verbatim: TrailerCopy.current.chat.reply)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.9))
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
             ForEach(lines.indices, id: \.self) { index in
                 let reveal = M.easeOut(M.progress(t, 51.1 + Double(index) * 0.09, 0.3))
                 Capsule()
@@ -350,7 +383,15 @@ private struct TrailerChatPanel: View {
 struct TrailerWebScene: View {
     let t: Double
 
-    static let url = "alanfeiyuchang.github.io/ios-anim-effects"
+    /// Typed into the address bar (`TrailerCopy.web.url`).
+    static var url: String { TrailerCopy.current.web.url }
+    static let typingStart: Double = 52.2
+    /// Typing time grows with the address: 22 ms per character (0.9 s for the default 41), 0.4 … 1.4 s.
+    static let typingDuration: Double = {
+        let perCharacter: Double = 0.022
+        let natural: Double = Double(TrailerWebScene.url.count) * perCharacter
+        return min(max(natural, 0.4), 1.4)
+    }()
     static let windowCenter = TrailerLayout.promptCenter
     static let windowSize = CGSize(width: 350, height: TrailerCanvas.pick(294, 360))
 
@@ -359,8 +400,8 @@ struct TrailerWebScene: View {
         let condense = TrailerEndScene.condense(t)
         ZStack {
             TrailerHeadline(
-                title: "网页版全部动效",
-                subtitle: "录像一览，随时查看",
+                title: TrailerCopy.current.web.title,
+                subtitle: TrailerCopy.optional(TrailerCopy.current.web.subtitle),
                 reveal: M.progress(t, 52.3, 0.9),
                 exit: M.easeIn(M.progress(t, 56.75, 0.5))
             )
@@ -411,9 +452,11 @@ private struct TrailerBrowserWindow: View {
     }
 
     private var toolbar: some View {
-        let typed = Int((Double(TrailerWebScene.url.count) * M.progress(t, 52.2, 0.9)).rounded(.down))
-        let text = String(TrailerWebScene.url.prefix(typed))
-        let caretOn = t < 53.1 || sin(t * 2 * Double.pi * 1.4) > -0.2
+        let url = TrailerWebScene.url
+        let typingEnd: Double = TrailerWebScene.typingStart + TrailerWebScene.typingDuration
+        let typed = Int((Double(url.count) * M.progress(t, TrailerWebScene.typingStart, TrailerWebScene.typingDuration)).rounded(.down))
+        let text = String(url.prefix(typed))
+        let caretOn = t < typingEnd || sin(t * 2 * Double.pi * 1.4) > -0.2
         return HStack(spacing: 10) {
             HStack(spacing: 6) {
                 Circle().fill(Color(hex: 0xFF5F57)).frame(width: 9, height: 9)
@@ -428,7 +471,8 @@ private struct TrailerBrowserWindow: View {
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.92))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.6)
+                    .truncationMode(.head)
                 Rectangle()
                     .fill(Palette.ember)
                     .frame(width: 1.5, height: 12)
@@ -442,7 +486,7 @@ private struct TrailerBrowserWindow: View {
             .frame(height: 24)
             .background(Color.white.opacity(0.07), in: Capsule())
             .overlay(Capsule().strokeBorder(Palette.ember.opacity(0.55 * M.progress(t, 52.1, 0.3) * (1 - M.progress(t, 53.6, 0.5))), lineWidth: 1))
-            .trailerGlint(M.progress(t, 53.25, 0.7), strength: 0.5)
+            .trailerGlint(M.progress(t, typingEnd + 0.15, 0.7), strength: 0.5)
         }
         .padding(.horizontal, 14)
         .frame(height: 38)
@@ -465,15 +509,21 @@ private struct TrailerWebPage: View {
         let scroll = CGFloat(26 * (local - (1 - exp(-2 * local)) / 2))
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Text(verbatim: "Motionary")
+                Text(verbatim: TrailerCopy.current.web.siteName)
                     .font(.system(size: 13, weight: .heavy, design: .rounded))
                     .foregroundStyle(Color.white)
-                Text(verbatim: "全部动效录像一览")
+                    .lineLimit(1)
+                    .layoutPriority(1)
+                Text(verbatim: TrailerCopy.current.web.siteTagline)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.55))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Spacer(minLength: 0)
-                Text(verbatim: "\(TrailerData.effectCount) 个")
+                Text(verbatim: TrailerCopy.current.web.countBadge)
                     .font(.system(size: 10.5, weight: .heavy).monospacedDigit())
+                    .lineLimit(1)
+                    .fixedSize()
                     .foregroundStyle(Palette.onAccent)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
@@ -558,21 +608,30 @@ struct TrailerEndScene: View {
                 .shadow(color: Palette.ember.opacity(0.45 * M.clamp(condense)), radius: 34, x: 0, y: 10)
                 .opacity(iconIn)
                 .position(x: path.x, y: path.y + float)
-            Text(verbatim: "Motionary")
+            Text(verbatim: TrailerCopy.current.end.title)
                 .font(.system(size: TrailerCanvas.pick(44, 50), weight: .heavy, design: .rounded))
                 .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.45)
                 .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 57.75, 0.8)))
+                .frame(width: 360)
                 .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 4)
                 .position(x: 195, y: TrailerCanvas.pick(300, 394))
-            Text(verbatim: "动效词典 · iOS Motion Dictionary")
+            Text(verbatim: TrailerCopy.current.end.subtitle)
                 .font(.system(size: TrailerCanvas.pick(17, 18), weight: .semibold))
                 .tracking(1)
                 .foregroundStyle(TrailerStyle.emberText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 58.05, 0.8)))
+                .frame(width: 360)
                 .position(x: 195, y: TrailerCanvas.pick(344, 444))
-            Text(verbatim: "\(TrailerData.effectCount) 个可上手玩的 iOS 高级动效")
+            Text(verbatim: TrailerCopy.current.end.tagline)
                 .font(.system(size: TrailerCanvas.pick(13, 14), weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.55))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .frame(width: 360)
                 .opacity(M.easeOut(M.progress(t, 58.4, 0.7)))
                 .offset(y: CGFloat(1 - M.easeOut(M.progress(t, 58.4, 0.7))) * 8)
                 .position(x: 195, y: TrailerCanvas.pick(382, 486))

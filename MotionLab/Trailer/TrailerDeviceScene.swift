@@ -91,8 +91,8 @@ struct TrailerPhoneScene: View {
         let subtitleSize = TrailerCanvas.pick(17, 21)
         ZStack {
             TrailerHeadline(
-                title: "在手机上直接玩",
-                subtitle: "每一下都有触感",
+                title: TrailerCopy.current.phone.title,
+                subtitle: TrailerCopy.optional(TrailerCopy.current.phone.subtitle),
                 titleSize: titleSize,
                 subtitleSize: subtitleSize,
                 reveal: M.progress(t, 21.3, 0.9),
@@ -101,8 +101,8 @@ struct TrailerPhoneScene: View {
             .position(x: 195, y: TrailerLayout.phoneHeadlineY)
             if t > 35.8 {
                 TrailerHeadline(
-                    title: "参数实时可调",
-                    subtitle: "弹簧 · 阻尼 · 响应，随手试",
+                    title: TrailerCopy.current.tune.title,
+                    subtitle: TrailerCopy.optional(TrailerCopy.current.tune.subtitle),
                     titleSize: titleSize,
                     subtitleSize: subtitleSize,
                     reveal: M.progress(t, 36.0, 0.9),
@@ -305,8 +305,23 @@ private struct PhonePage {
         page(25.45, "showcase.board-card"),
         page(29.3, "buttons.depth-press"),
         page(32.9, "inputs.squash-toggle"),
-        PhonePage(start: 35.75, name: "弹簧参数", tag: "实时预览", hint: "拖动滑块，实时预览", symbol: "slider.horizontal.3", params: [], isLab: true),
+        PhonePage(
+            start: 35.75,
+            name: TrailerCopy.current.tune.pageTitle,
+            tag: TrailerCopy.current.tune.pageTag,
+            hint: TrailerCopy.current.tune.hint,
+            symbol: "slider.horizontal.3",
+            params: [],
+            isLab: true
+        ),
     ]
+
+    /// Width of the hint pill: 120 pt, wider (up to 170) when a hint in `TrailerCopy` needs it.
+    static let hintPillWidth: CGFloat = {
+        let widest: CGFloat = PhonePage.all.map { TrailerCopy.estimatedWidth($0.hint, size: 8) }.max() ?? 0
+        let natural: CGFloat = widest + 7 + 7 + 8 + 16
+        return min(max(120, natural), 170)
+    }()
 
     private static func page(_ start: Double, _ id: String) -> PhonePage {
         guard let effect = EffectLibrary.effect(id: id) else {
@@ -332,12 +347,13 @@ private struct PhonePage {
     }
 
     private static func hint(_ interaction: EffectInteraction) -> String {
+        let copy = TrailerCopy.current.phone
         switch interaction {
-        case .tap: return "点一下试试"
-        case .gesture: return "按住拖动试试"
-        case .scroll: return "上下滑动试试"
-        case .loop: return "自动循环播放"
-        case .state: return "点一下切换状态"
+        case .tap: return copy.hintTap
+        case .gesture: return copy.hintGesture
+        case .scroll: return copy.hintScroll
+        case .loop: return copy.hintLoop
+        case .state: return copy.hintState
         }
     }
 }
@@ -393,9 +409,12 @@ private struct PhoneScreen: View {
     private var statusBar: some View {
         let y = TrailerPhone.statusY
         return ZStack {
-            Text(verbatim: "9:41")
+            Text(verbatim: TrailerCopy.current.phone.statusTime)
                 .font(.system(size: 8, weight: .semibold))
                 .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: 40)
                 .position(x: 29, y: y)
             HStack(spacing: 2.5) {
                 Image(systemName: "cellularbars")
@@ -465,7 +484,7 @@ private struct PhoneScreen: View {
             Capsule()
                 .fill(Color.white.opacity(0.06))
                 .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5))
-                .frame(width: 120, height: 17)
+                .frame(width: PhonePage.hintPillWidth, height: 17)
             ForEach(PhonePage.all.indices, id: \.self) { index in
                 let page = PhonePage.all[index]
                 let shown = visibility(index)
@@ -476,6 +495,7 @@ private struct PhoneScreen: View {
                     Text(verbatim: page.hint)
                         .font(.system(size: 8, weight: .semibold))
                         .foregroundStyle(Color.white.opacity(0.72))
+                        .minimumScaleFactor(0.6)
                     Image(systemName: "waveform")
                         .font(.system(size: 7, weight: .bold))
                         .foregroundStyle(Palette.accentFill)
@@ -483,6 +503,7 @@ private struct PhoneScreen: View {
                         .opacity(0.4 + 0.6 * pulse)
                 }
                 .lineLimit(1)
+                .frame(maxWidth: PhonePage.hintPillWidth - 10)
                 .offset(y: shown.offset * 0.5)
                 .opacity(shown.opacity)
             }
@@ -498,15 +519,20 @@ private struct PhoneScreen: View {
             TrailerGlass(shape: shape, glow: 0.55 * tune, shadowOpacity: 0.2)
                 .frame(width: card.width, height: card.height)
                 .position(x: card.midX, y: card.midY)
-            Text(verbatim: "参数")
+            Text(verbatim: TrailerCopy.current.phone.paramsHeader)
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(Color.white.opacity(0.55))
-                .frame(width: 60, alignment: .leading)
-                .position(x: card.minX + 10 + 30, y: TrailerPhone.cardHeaderY)
-            Text(verbatim: "重置")
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: 96, alignment: .leading)
+                .position(x: card.minX + 10 + 48, y: TrailerPhone.cardHeaderY)
+            Text(verbatim: TrailerCopy.current.phone.reset)
                 .font(.system(size: 8, weight: .semibold))
                 .foregroundStyle(Palette.accent.opacity(0.8))
-                .position(x: card.maxX - 18, y: TrailerPhone.cardHeaderY)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: 50, alignment: .trailing)
+                .position(x: card.maxX - 10 - 25, y: TrailerPhone.cardHeaderY)
             ForEach(PhonePage.all.indices, id: \.self) { index in
                 pageParams(index)
             }
@@ -518,12 +544,15 @@ private struct PhoneScreen: View {
         let shown = visibility(index)
         return ZStack {
             if page.isLab {
-                PhoneParamRow(title: "阻尼", value: String(format: "%.2f", TrailerTune.damping(t)), fraction: TrailerTune.normalized(row: 0, t: t), y: TrailerPhone.rowY[0], active: TrailerTune.isDragging(row: 0, t: t))
-                PhoneParamRow(title: "响应", value: String(format: "%.2f", TrailerTune.response(t)), fraction: TrailerTune.normalized(row: 1, t: t), y: TrailerPhone.rowY[1], active: TrailerTune.isDragging(row: 1, t: t))
+                PhoneParamRow(title: TrailerCopy.current.tune.dampingLabel, value: String(format: "%.2f", TrailerTune.damping(t)), fraction: TrailerTune.normalized(row: 0, t: t), y: TrailerPhone.rowY[0], active: TrailerTune.isDragging(row: 0, t: t))
+                PhoneParamRow(title: TrailerCopy.current.tune.responseLabel, value: String(format: "%.2f", TrailerTune.response(t)), fraction: TrailerTune.normalized(row: 1, t: t), y: TrailerPhone.rowY[1], active: TrailerTune.isDragging(row: 1, t: t))
             } else if page.params.isEmpty {
-                Text(verbatim: "无可调参数")
+                Text(verbatim: TrailerCopy.current.phone.noParams)
                     .font(.system(size: 8.5, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.4))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: TrailerPhone.cardRect.width - 20)
                     .position(x: TrailerPhone.cardRect.midX, y: (TrailerPhone.rowY[0] + TrailerPhone.rowY[1]) / 2)
             } else {
                 ForEach(page.params.indices, id: \.self) { row in
@@ -785,10 +814,14 @@ private struct TrailerSpringLab: View {
                 .frame(width: 7, height: 7)
                 .shadow(color: Palette.ember, radius: 6, x: 0, y: 0)
                 .offset(x: headX - 3.5, y: headY - 3.5)
-            Text(verbatim: "目标")
+            // Right-aligned to where the default two-character label ended, whatever its length.
+            Text(verbatim: TrailerCopy.current.tune.targetLabel)
                 .font(.system(size: labelSize, weight: .bold))
                 .foregroundStyle(Color.white.opacity(0.45))
-                .offset(x: left + width - labelSize * 2.2, y: target - labelSize * 1.6)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: width * 0.6, alignment: .trailing)
+                .offset(x: left + width * 0.4 - labelSize * 0.2, y: target - labelSize * 1.6)
         }
     }
 }

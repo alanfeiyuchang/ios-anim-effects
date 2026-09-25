@@ -4,6 +4,7 @@ name: Trailer
 # canvas aspects and renders it for Xiaohongshu with scripts/record-trailer.sh:
 #   9:16 (1080×1920, full-screen video; recommended) and 3:4 (1080×1440), 60 fps.
 # Trigger: "[trailer]" in a commit message, or run manually from the Actions tab.
+# The trailer's text is read from trailer/copy.json (see docs/TRAILER.md).
 # The result is uploaded as the "trailer" artifact and committed to docs/trailer/9x16/ and docs/trailer/3x4/
 # on the same branch.
 
@@ -35,9 +36,11 @@ jobs:
       - name: Install ffmpeg
         run: brew install ffmpeg >/dev/null
 
+      # On-screen text comes from trailer/copy.json (edit it with tools/trailer-editor.html); the script
+      # picks it up automatically and falls back to the built-in defaults if it is missing.
       - name: Record trailer (9:16 and 3:4)
         timeout-minutes: 75
-        run: scripts/record-trailer.sh out
+        run: scripts/record-trailer.sh --out out --aspects "9x16 3x4"
 
       - uses: actions/upload-artifact@v4
         if: always()

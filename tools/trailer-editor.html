@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>预告片文案编辑器</title>
+<style>
+:root {
+  --ink: #0B0B0D;
+  --panel: #141417;
+  --panel-2: #1B1B20;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #F4F2F0;
+  --muted: rgba(244, 242, 240, 0.58);
+  --faint: rgba(244, 242, 240, 0.38);
+  --accent: #FF7A1A;
+  --accent-soft: rgba(255, 122, 26, 0.14);
+  --accent-ring: rgba(255, 122, 26, 0.45);
+  --warn: #FFB020;
+  --danger: #FF5E3A;
+  --ok: #3DD68C;
+  --radius: 14px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--text); }
+body {
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 480px at 85% -10%, rgba(255, 122, 26, 0.13), transparent 60%),
+    radial-gradient(700px 420px at -10% 0%, rgba(106, 42, 8, 0.25), transparent 60%),
+    var(--ink);
+  background-attachment: fixed;
+}
+button, input, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 16px 96px; }
+
+/* Header */
+header.top {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(11, 11, 13, 0.82);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  border-bottom: 1px solid var(--line);
+}
+.top-inner { max-width: 920px; margin: 0 auto; padding: 14px 16px 10px; }
+.title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 260px; }
+.logo {
+  width: 34px; height: 34px; border-radius: 9px; flex: none; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #E2692A, #9C4216 40%, #42190B 75%, #130E0E);
+  box-shadow: 0 0 0 0.5px rgba(255,255,255,0.2) inset, 0 6px 18px rgba(255, 122, 26, 0.25);
+}
+.logo i { position: absolute; border-radius: 50%; background: #FFF6EC; }
+.logo i:nth-child(1) { width: 7px; height: 7px; left: 6px; top: 17px; opacity: .5; }
+.logo i:nth-child(2) { width: 9px; height: 9px; left: 12px; top: 12px; opacity: .78; }
+.logo i:nth-child(3) { width: 12px; height: 12px; left: 18px; top: 6px; }
+h1 { font-size: 18px; margin: 0; letter-spacing: 0.2px; white-space: nowrap; }
+.sub { font-size: 12.5px; color: var(--muted); margin: 0; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  appearance: none; border: 1px solid var(--line-strong); background: var(--panel-2);
+  padding: 8px 14px; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.btn:hover { border-color: rgba(255,255,255,0.3); }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #1A0C02; box-shadow: 0 6px 20px rgba(255, 122, 26, 0.3); }
+.btn.primary:hover { background: #FF8A33; }
+.btn:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 2px; }
+.nav { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a {
+  flex: none; font-size: 12.5px; color: var(--muted); text-decoration: none;
+  padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.03);
+}
+.nav a:hover { color: var(--text); border-color: var(--accent-ring); }
+.nav a .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: 5px; vertical-align: middle; }
+
+/* Intro */
+.intro {
+  margin: 20px 0 8px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: rgba(20, 20, 23, 0.7); font-size: 13.5px; color: var(--muted);
+}
+.intro b { color: var(--text); font-weight: 600; }
+.intro code, .hint code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px;
+  background: var(--accent-soft); color: #FFB36B; padding: 1px 5px; border-radius: 5px;
+}
+.intro ol { margin: 6px 0 0; padding-left: 20px; }
+.status { font-size: 12.5px; color: var(--faint); margin-top: 8px; min-height: 18px; }
+.status.ok { color: var(--ok); }
+.status.err { color: var(--danger); }
+
+/* Sections */
+section.scene {
+  margin-top: 18px; border: 1px solid var(--line); border-radius: 18px;
+  background: linear-gradient(180deg, rgba(34, 34, 40, 0.55), rgba(19, 19, 22, 0.75));
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  scroll-margin-top: 120px;
+}
+.scene-head {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 14px 18px 12px; border-bottom: 1px solid var(--line);
+}
+.scene-head h2 { font-size: 16.5px; margin: 0; }
+.time {
+  font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft);
+  padding: 2px 8px; border-radius: 999px; font-variant-numeric: tabular-nums;
+}
+.scene-head p { margin: 0; flex-basis: 100%; font-size: 12.5px; color: var(--muted); }
+.scene-head .reset-scene { margin-left: auto; font-size: 12px; padding: 4px 10px; }
+.fields { padding: 6px 18px 14px; }
+.field { padding: 12px 0; border-bottom: 1px dashed var(--line); }
+.field:last-child { border-bottom: 0; }
+.field-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.field label { font-weight: 650; font-size: 14px; }
+.key { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; color: var(--faint); }
+.changed { font-size: 11px; color: var(--accent); border: 1px solid var(--accent-ring); border-radius: 999px; padding: 0 7px; }
+.field-top .spacer { flex: 1; }
+.linkbtn {
+  appearance: none; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 6px;
+}
+.linkbtn:hover { color: var(--accent); }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+.input-row { display: flex; align-items: flex-start; gap: 8px; }
+input[type="text"], textarea {
+  width: 100%; min-width: 0; background: #0F0F12; border: 1px solid var(--line-strong); border-radius: 10px;
+  padding: 9px 12px; font-size: 15px; transition: border-color .15s, box-shadow .15s;
+}
+textarea { min-height: 96px; resize: vertical; line-height: 1.55; }
+input[type="text"]:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+input::placeholder, textarea::placeholder { color: var(--faint); }
+.counter { font-size: 12px; color: var(--faint); margin-top: 4px; font-variant-numeric: tabular-nums; text-align: right; }
+.counter.over { color: var(--warn); }
+.counter.way-over { color: var(--danger); }
+.list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.list-row .idx { width: 22px; flex: none; text-align: right; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.list-row .row-input { flex: 1; min-width: 0; }
+.list-row .counter { margin: 0; flex: none; width: 56px; }
+.icon-btn {
+  flex: none; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--panel-2);
+  cursor: pointer; display: grid; place-items: center; color: var(--muted); font-size: 18px; line-height: 1;
+}
+.icon-btn:hover { color: var(--danger); border-color: rgba(255, 94, 58, 0.5); }
+.icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+.add-btn { font-size: 13px; padding: 6px 12px; }
+.warn-line { font-size: 12.5px; color: var(--warn); margin-top: 6px; }
+footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: center; }
+
+@media (max-width: 560px) {
+  .top-inner { padding: 12px 16px 8px; }
+  h1 { font-size: 16.5px; }
+  .actions { width: 100%; }
+  .actions .btn { flex: 1 1 auto; justify-content: center; padding: 8px 10px; font-size: 13.5px; }
+  .scene-head, .fields { padding-left: 14px; padding-right: 14px; }
+  .list-row .counter { width: 46px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="title-row">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div>
+          <h1>预告片文案编辑器</h1>
+          <p class="sub">Motionary 60 秒宣传片 · 屏幕上的全部文字</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btn-import" type="button">导入 JSON</button>
+        <button class="btn" id="btn-reset" type="button">恢复默认</button>
+        <button class="btn primary" id="btn-export" type="button">导出 copy.json</button>
+        <input type="file" id="file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <nav class="nav" id="nav" aria-label="场景"></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="intro">
+    <b>用法：</b>
+    <ol>
+      <li>逐项修改下面的文字（修改会自动保存在本机浏览器里）。</li>
+      <li>点击右上角 <b>导出 copy.json</b>，把下载的文件放到仓库的 <code>trailer/copy.json</code>（覆盖原文件）。</li>
+      <li>在终端运行 <code>scripts/record-trailer.sh --aspects 9x16</code> 录制。详见 <code>docs/TRAILER.md</code>。</li>
+    </ol>
+    <div style="margin-top:8px">
+      占位符会在录制时替换成实时数字：<code>{effects}</code> 动效总数、<code>{categories}</code> 分类数、<code>{families}</code> 动效家族数；
+      <code>{name}</code> 仅用于「聊天气泡标题」，替换为提示词对应的动效名。
+      字数统计里中文算 1、英文/数字算 0.5；超过建议长度不会出错，但文字会自动缩小。
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </div>
+  <div id="sections"></div>
+  <footer>离线工具 · 不联网 · 数据只保存在本机浏览器</footer>
+</main>
+
+<script type="application/json" id="default-copy">
+{
+  "hook": {
+    "subtitle": "个 iOS 高级动效",
+    "categoriesLabel": "大分类",
+    "familiesLabel": "个动效家族"
+  },
+  "pain": {
+    "titleLine1": "想要的动效，",
+    "titleLine2": "说不出名字？",
+    "backdropMark": "？",
+    "words": [
+      "弹一下？",
+      "顺滑一点？",
+      "像果冻？",
+      "有点高级感？",
+      "duang 一下？",
+      "要回弹吗？",
+      "丝滑？"
+    ]
+  },
+  "search": {
+    "title": "一搜即达",
+    "subtitle": "{effects} 个动效秒速定位",
+    "placeholder": "搜索动效、控件、手势…",
+    "query": "卡片",
+    "resultSuffix": "个结果",
+    "chips": [
+      "全部",
+      "卡片",
+      "质感交互",
+      "按钮"
+    ]
+  },
+  "phone": {
+    "title": "真实上手体验",
+    "subtitle": "每一下都有触感",
+    "statusTime": "9:41",
+    "hintTap": "点一下试试",
+    "hintGesture": "按住拖动试试",
+    "hintScroll": "上下滑动试试",
+    "hintLoop": "自动循环播放",
+    "hintState": "点一下切换状态",
+    "paramsHeader": "参数",
+    "reset": "重置",
+    "noParams": "无可调参数"
+  },
+  "tune": {
+    "title": "参数实时可调",
+    "subtitle": "弹簧 · 阻尼 · 响应，随手试",
+    "pageTitle": "弹簧参数",
+    "pageTag": "实时预览",
+    "hint": "拖动滑块，实时预览",
+    "dampingLabel": "阻尼",
+    "responseLabel": "响应",
+    "targetLabel": "目标"
+  },
+  "prompt": {
+    "title": "专业中英提示词",
+    "subtitle": "一键复制给 AI",
+    "cardTitle": "专业提示词",
+    "languageZh": "中",
+    "languageEn": "EN",
+    "copyButton": "一键复制",
+    "copiedButton": "已复制",
+    "effectID": "",
+    "textZh": "",
+    "textEn": ""
+  },
+  "chat": {
+    "assistantName": "AI 助手",
+    "status": "在线",
+    "bubbleTitle": "{name} · 提示词",
+    "reply": "收到！这就用 SwiftUI 实现："
+  },
+  "web": {
+    "title": "网页版全部动效",
+    "subtitle": "录像一览，随时查看",
+    "url": "alanfeiyuchang.github.io/ios-anim-effects",
+    "siteName": "Motionary",
+    "siteTagline": "全部动效录像一览",
+    "countBadge": "{effects} 个"
+  },
+  "end": {
+    "title": "Motionary",
+    "subtitle": "动效词典 · iOS Motion Dictionary",
+    "tagline": "{effects} 个可上手玩的 iOS 高级动效"
+  },
+  "touch": {
+    "hapticBadge": "触感"
+  }
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "motionary.trailer-copy.v1";
+  var DEFAULTS = JSON.parse(document.getElementById("default-copy").textContent);
+
+  // Scene schema: section titles, time ranges, one entry per key of TrailerCopy (Swift).
+  // type: "text" (one line), "multi" (several lines), "list" (array of strings).
+  var SCHEMA = [
+    { id: "hook", title: "开场 · 数字冲击", time: "0–5 s",
+      about: "光点汇聚成跳动的动效总数（数字本身来自实时目录，不可改）。",
+      fields: [
+        { key: "subtitle", label: "数字下方的标题", hint: "紧跟在大数字下面，例如「个 iOS 高级动效」。", max: 10 },
+        { key: "categoriesLabel", label: "统计胶囊 1（分类）", hint: "显示在分类数量后面：「15 大分类」。", max: 5 },
+        { key: "familiesLabel", label: "统计胶囊 2（家族）", hint: "显示在家族数量后面：「85 个动效家族」。", max: 6 }
+      ] },
+    { id: "pain", title: "痛点 · 说不出名字", time: "5–11 s",
+      about: "两行大标题，周围漂浮着模糊的描述词，最后全部吸进搜索框。",
+      fields: [
+        { key: "titleLine1", label: "大标题第 1 行（白色）", hint: "", max: 8 },
+        { key: "titleLine2", label: "大标题第 2 行（橙色渐变）", hint: "", max: 8 },
+        { key: "backdropMark", label: "背景巨型符号", hint: "画面背后半透明的超大字符，通常是一个「？」。", max: 1 },
+        { key: "words", label: "漂浮的模糊词", hint: "最多 12 个；前 7 个有精心摆放的位置，之后的自动排布。", max: 7, type: "list", minItems: 0, maxItems: 12 }
+      ] },
+    { id: "search", title: "搜索 · 一搜即达", time: "10–21 s",
+      about: "搜索框输入关键词，出现结果，手指点第 2 个筛选胶囊，再打开第一个结果。",
+      fields: [
+        { key: "title", label: "标题", hint: "", max: 8 },
+        { key: "subtitle", label: "副标题", hint: "可用 {effects}。留空则不显示副标题。", max: 12 },
+        { key: "placeholder", label: "搜索框占位文字", hint: "输入前显示的灰色提示。", max: 14 },
+        { key: "query", label: "输入的搜索词", hint: "逐字打出，并在目录里真实搜索（结果数也是真的）。越长打字越快。", max: 6 },
+        { key: "resultSuffix", label: "结果数后缀", hint: "搜索框右侧「12 个结果」里的文字。", max: 4 },
+        { key: "chips", label: "筛选胶囊", hint: "2–6 个；手指会点第 2 个（它筛选的是「卡片」分类）。", max: 5, type: "list", minItems: 2, maxItems: 6 }
+      ] },
+    { id: "phone", title: "真机体验 · 上手玩", time: "21–36 s",
+      about: "iPhone 里的动效详情页，依次演示几个真实动效，手指点击带触感反馈。",
+      fields: [
+        { key: "title", label: "标题", hint: "", max: 9 },
+        { key: "subtitle", label: "副标题", hint: "留空则不显示。", max: 12 },
+        { key: "statusTime", label: "状态栏时间", hint: "手机屏幕左上角的时间。", max: 5 },
+        { key: "hintTap", label: "提示胶囊 · 点击类", hint: "舞台下方的小胶囊，按当前动效的交互类型显示。", max: 9 },
+        { key: "hintGesture", label: "提示胶囊 · 手势类", hint: "", max: 9 },
+        { key: "hintScroll", label: "提示胶囊 · 滚动类", hint: "", max: 9 },
+        { key: "hintLoop", label: "提示胶囊 · 自动循环", hint: "", max: 9 },
+        { key: "hintState", label: "提示胶囊 · 状态切换", hint: "", max: 9 },
+        { key: "paramsHeader", label: "参数卡片标题", hint: "参数区左上角。", max: 4 },
+        { key: "reset", label: "参数卡片「重置」", hint: "参数区右上角的小字。", max: 3 },
+        { key: "noParams", label: "无参数时的文字", hint: "动效没有可调参数时显示。", max: 7 }
+      ] },
+    { id: "tune", title: "调参 · 实时可调", time: "36–44 s",
+      about: "手机舞台换成弹簧实验，手指拖动阻尼、响应两个滑块。",
+      fields: [
+        { key: "title", label: "标题", hint: "", max: 9 },
+        { key: "subtitle", label: "副标题", hint: "留空则不显示。", max: 14 },
+        { key: "pageTitle", label: "页面标题", hint: "手机导航栏里的标题。", max: 7 },
+        { key: "pageTag", label: "页面标签", hint: "标题右边的橙色小标签。", max: 5 },
+        { key: "hint", label: "提示胶囊", hint: "", max: 10 },
+        { key: "dampingLabel", label: "滑块 1 名称", hint: "", max: 3 },
+        { key: "responseLabel", label: "滑块 2 名称", hint: "", max: 3 },
+        { key: "targetLabel", label: "曲线目标线标注", hint: "弹簧曲线虚线旁的小字。", max: 3 }
+      ] },
+    { id: "prompt", title: "提示词卡片", time: "44–50 s",
+      about: "提示词卡片展开，中/英切换，点击复制后飞进 AI 对话。",
+      fields: [
+        { key: "title", label: "标题", hint: "", max: 9 },
+        { key: "subtitle", label: "副标题", hint: "留空则不显示。", max: 12 },
+        { key: "cardTitle", label: "卡片标题", hint: "卡片左上角。", max: 7 },
+        { key: "languageZh", label: "语言切换 · 中文", hint: "", max: 2 },
+        { key: "languageEn", label: "语言切换 · 英文", hint: "", max: 3 },
+        { key: "copyButton", label: "复制按钮", hint: "按钮会随文字变宽（最多约 7 个字）。", max: 5 },
+        { key: "copiedButton", label: "复制后按钮", hint: "", max: 5 },
+        { key: "effectID", label: "（可选）换一个动效的提示词", hint: "填动效 id，例如 <code>buttons.depth-press</code>；留空 = 搜索打开的 cards.flip。", max: 40, placeholder: "留空 = 默认" },
+        { key: "textZh", label: "（可选）自定义中文提示词", hint: "留空 = 使用目录里的真实提示词。最多显示约 6–7 行。", max: 160, type: "multi", placeholder: "留空 = 使用目录里的提示词" },
+        { key: "textEn", label: "（可选）自定义英文提示词", hint: "留空 = 使用目录里的真实提示词。", max: 400, type: "multi", placeholder: "Empty = catalog prompt" }
+      ] },
+    { id: "chat", title: "AI 对话", time: "49–52 s",
+      about: "提示词粘贴进 AI 对话，AI 回复一行代码预告。",
+      fields: [
+        { key: "assistantName", label: "AI 名称", hint: "", max: 8 },
+        { key: "status", label: "在线状态", hint: "", max: 4 },
+        { key: "bubbleTitle", label: "聊天气泡标题", hint: "可用 {name}（动效名）。", max: 14 },
+        { key: "reply", label: "AI 回复", hint: "最多两行。", max: 30, type: "multi" }
+      ] },
+    { id: "web", title: "网页版", time: "52–57 s",
+      about: "浏览器窗口，地址栏逐字输入网址，页面展示全部动效录像。",
+      fields: [
+        { key: "title", label: "标题", hint: "", max: 9 },
+        { key: "subtitle", label: "副标题", hint: "留空则不显示。", max: 12 },
+        { key: "url", label: "网址", hint: "地址栏逐字打出；打字时长随长度变化（0.4–1.4 秒）。不要写 https://。", max: 45 },
+        { key: "siteName", label: "网站名", hint: "网页左上角。", max: 12 },
+        { key: "siteTagline", label: "网站标语", hint: "网站名右边的灰字。", max: 10 },
+        { key: "countBadge", label: "数量徽章", hint: "网页右上角橙色胶囊，可用 {effects}。", max: 6 }
+      ] },
+    { id: "end", title: "片尾", time: "57–60 s",
+      about: "网页窗口收缩成 App 图标，下方三行文字。",
+      fields: [
+        { key: "title", label: "主标题", hint: "图标下方的大字。", max: 12 },
+        { key: "subtitle", label: "副标题", hint: "橙色渐变的一行。", max: 28 },
+        { key: "tagline", label: "标语", hint: "最下方的灰色小字，可用 {effects}。", max: 24 }
+      ] },
+    { id: "touch", title: "点击标记", time: "全片",
+      about: "每次模拟点击时出现在手指旁的橙色小胶囊。",
+      fields: [
+        { key: "hapticBadge", label: "触感徽章", hint: "", max: 3 }
+      ] }
+  ];
+
+  var state = clone(DEFAULTS);
+  var statusEl = document.getElementById("status");
+  var saveTimer = null;
+
+  function clone(value) { return JSON.parse(JSON.stringify(value)); }
+
+  function isObject(value) { return value !== null && typeof value === "object" && !Array.isArray(value); }
+
+  // Imported/stored values over the defaults, per key; wrong types keep the default (like the app does).
+  function merge(base, incoming) {
+    var out = clone(base);
+    if (!isObject(incoming)) { return out; }
+    Object.keys(incoming).forEach(function (key) {
+      var value = incoming[key];
+      if (!(key in out)) { out[key] = clone(value); return; }
+      if (isObject(out[key])) {
+        out[key] = merge(out[key], value);
+      } else if (Array.isArray(out[key])) {
+        if (Array.isArray(value)) { out[key] = value.filter(function (v) { return typeof v === "string"; }); }
+      } else if (typeof value === typeof out[key]) {
+        out[key] = value;
+      }
+    });
+    return out;
+  }
+
+  // Display width: CJK counts 1, ASCII 0.5, a placeholder about as wide as a 3-digit number.
+  function weight(text) {
+    var expanded = String(text).replace(/\{(effects|categories|families)\}/g, "000").replace(/\{name\}/g, "卡片翻转");
+    var total = 0;
+    Array.from(expanded).forEach(function (ch) { total += ch.charCodeAt(0) < 128 ? 0.5 : 1; });
+    return Math.round(total * 10) / 10;
+  }
+
+  function setStatus(message, kind) {
+    statusEl.textContent = message;
+    statusEl.className = "status" + (kind ? " " + kind : "");
+  }
+
+  // quiet: keep the current status message (e.g. right after an import).
+  function save(quiet) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        if (!quiet) { setStatus("已自动保存到本机浏览器 · " + new Date().toLocaleTimeString(), ""); }
+      } catch (error) {
+        setStatus("浏览器不允许本地保存（隐私模式？），记得导出 copy.json。", "err");
+      }
+    }, 250);
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        state = merge(DEFAULTS, JSON.parse(raw));
+        setStatus("已恢复上次在本机的编辑。", "");
+      }
+    } catch (error) {
+      state = clone(DEFAULTS);
+    }
+  }
+
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (name) {
+      if (name === "text") { node.textContent = attrs[name]; }
+      else if (name === "html") { node.innerHTML = attrs[name]; }
+      else if (name.indexOf("on") === 0) { node.addEventListener(name.slice(2), attrs[name]); }
+      else { node.setAttribute(name, attrs[name]); }
+    });
+    (children || []).forEach(function (child) { if (child) { node.appendChild(child); } });
+    return node;
+  }
+
+  function counterText(text, max) {
+    return weight(text) + " / " + max;
+  }
+
+  function updateCounter(node, text, max) {
+    var w = weight(text);
+    node.textContent = counterText(text, max);
+    node.className = "counter" + (w > max * 1.5 ? " way-over" : (w > max ? " over" : ""));
+    node.title = w > max ? "超出建议长度：录制时文字会自动缩小" : "建议不超过 " + max;
+  }
+
+  function sameValue(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+
+  function textInput(field, value, onChange) {
+    var input = field.type === "multi"
+      ? el("textarea", { rows: field.max > 100 ? "5" : "2" })
+      : el("input", { type: "text", autocomplete: "off", spellcheck: "false" });
+    input.value = value;
+    if (field.placeholder) { input.placeholder = field.placeholder; }
+    input.addEventListener("input", function () { onChange(input.value); });
+    return input;
+  }
+
+  function renderField(scene, field) {
+    var id = scene.id + "." + field.key;
+    var wrap = el("div", { class: "field", id: "f-" + id });
+    var changedTag = el("span", { class: "changed", text: "已修改" });
+    var resetBtn = el("button", { class: "linkbtn", type: "button", text: "恢复此项" });
+    var top = el("div", { class: "field-top" }, [
+      el("label", { for: "in-" + id, text: field.label }),
+      el("span", { class: "key", text: id }),
+      changedTag,
+      el("span", { class: "spacer" }),
+      resetBtn
+    ]);
+    wrap.appendChild(top);
+    if (field.hint) { wrap.appendChild(el("p", { class: "hint", html: field.hint })); }
+    var body = el("div");
+    wrap.appendChild(body);
+
+    function refreshChanged() {
+      var changed = !sameValue(state[scene.id][field.key], DEFAULTS[scene.id][field.key]);
+      changedTag.style.display = changed ? "" : "none";
+      resetBtn.style.display = changed ? "" : "none";
+      updateNav();
+    }
+
+    function draw() {
+      body.innerHTML = "";
+      if (field.type === "list") { drawList(); } else { drawText(); }
+      refreshChanged();
+    }
+
+    function drawText() {
+      var counter = el("div", { class: "counter" });
+      var input = textInput(field, state[scene.id][field.key], function (value) {
+        state[scene.id][field.key] = value;
+        updateCounter(counter, value, field.max);
+        refreshChanged();
+        save();
+      });
+      input.id = "in-" + id;
+      updateCounter(counter, input.value, field.max);
+      body.appendChild(input);
+      body.appendChild(counter);
+    }
+
+    function drawList() {
+      var list = state[scene.id][field.key];
+      var warn = el("div", { class: "warn-line" });
+      function checkCount() {
+        if (list.length < field.minItems) {
+          warn.textContent = "至少需要 " + field.minItems + " 项，否则录制时会改用默认值。";
+        } else if (list.length > field.maxItems) {
+          warn.textContent = "最多 " + field.maxItems + " 项，多出的不会显示。";
+        } else { warn.textContent = ""; }
+      }
+      list.forEach(function (value, index) {
+        var counter = el("div", { class: "counter" });
+        var input = textInput(field, value, function (text) {
+          list[index] = text;
+          updateCounter(counter, text, field.max);
+          refreshChanged();
+          save();
+        });
+        input.classList.add("row-input");
+        if (index === 0) { input.id = "in-" + id; }
+        input.setAttribute("aria-label", field.label + " " + (index + 1));
+        updateCounter(counter, value, field.max);
+        var remove = el("button", {
+          class: "icon-btn", type: "button", title: "删除这一项", "aria-label": "删除第 " + (index + 1) + " 项", text: "×",
+          onclick: function () { list.splice(index, 1); save(); draw(); }
+        });
+        if (list.length <= field.minItems) { remove.disabled = true; }
+        body.appendChild(el("div", { class: "list-row" }, [el("span", { class: "idx", text: String(index + 1) }), input, counter, remove]));
+      });
+      var add = el("button", {
+        class: "btn add-btn", type: "button", text: "＋ 添加一项",
+        onclick: function () {
+          list.push("");
+          save();
+          draw();
+          var inputs = body.querySelectorAll("input");
+          if (inputs.length) { inputs[inputs.length - 1].focus(); }
+        }
+      });
+      if (list.length >= field.maxItems) { add.disabled = true; add.style.opacity = "0.4"; }
+      body.appendChild(add);
+      checkCount();
+      body.appendChild(warn);
+    }
+
+    resetBtn.addEventListener("click", function () {
+      state[scene.id][field.key] = clone(DEFAULTS[scene.id][field.key]);
+      save();
+      draw();
+    });
+
+    draw();
+    return wrap;
+  }
+
+  function render() {
+    var root = document.getElementById("sections");
+    var nav = document.getElementById("nav");
+    root.innerHTML = "";
+    nav.innerHTML = "";
+    SCHEMA.forEach(function (scene) {
+      if (!isObject(state[scene.id])) { state[scene.id] = clone(DEFAULTS[scene.id]); }
+      var resetScene = el("button", {
+        class: "btn reset-scene", type: "button", text: "恢复本节",
+        onclick: function () {
+          state[scene.id] = clone(DEFAULTS[scene.id]);
+          save();
+          render();
+        }
+      });
+      var head = el("div", { class: "scene-head" }, [
+        el("h2", { text: scene.title }),
+        el("span", { class: "time", text: scene.time }),
+        resetScene,
+        el("p", { text: scene.about })
+      ]);
+      var fields = el("div", { class: "fields" });
+      scene.fields.forEach(function (field) { fields.appendChild(renderField(scene, field)); });
+      root.appendChild(el("section", { class: "scene", id: "s-" + scene.id }, [head, fields]));
+      nav.appendChild(el("a", { href: "#s-" + scene.id, "data-scene": scene.id, text: scene.title.split(" · ")[0] }));
+    });
+    updateNav();
+  }
+
+  // A dot on the nav chip of every scene with edits.
+  function updateNav() {
+    var links = document.querySelectorAll("#nav a");
+    Array.prototype.forEach.call(links, function (link) {
+      var id = link.getAttribute("data-scene");
+      var changed = !sameValue(state[id], DEFAULTS[id]);
+      var dot = link.querySelector(".dot");
+      if (changed && !dot) { link.appendChild(el("span", { class: "dot", title: "有修改" })); }
+      if (!changed && dot) { dot.remove(); }
+    });
+  }
+
+  function exportJSON() {
+    var text = JSON.stringify(state, null, 2) + "\n";
+    try {
+      var blob = new Blob([text], { type: "application/json;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var link = el("a", { href: url, download: "copy.json" });
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      setStatus("已导出 copy.json：放到仓库的 trailer/copy.json 后运行录制脚本。", "ok");
+    } catch (error) {
+      setStatus("导出失败：" + error.message, "err");
+    }
+  }
+
+  function importFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(String(reader.result).replace(/^﻿/, ""));
+        if (!isObject(parsed)) { throw new Error("顶层必须是一个对象 { … }"); }
+        state = merge(DEFAULTS, parsed);
+        save(true);
+        render();
+        setStatus("已导入 " + file.name + "（缺少的项使用默认值）。", "ok");
+      } catch (error) {
+        setStatus("导入失败：" + file.name + " 不是合法的 JSON（" + error.message + "）", "err");
+      }
+    };
+    reader.onerror = function () { setStatus("读取文件失败。", "err"); };
+    reader.readAsText(file, "utf-8");
+  }
+
+  document.getElementById("btn-export").addEventListener("click", exportJSON);
+  var fileInput = document.getElementById("file");
+  document.getElementById("btn-import").addEventListener("click", function () { fileInput.click(); });
+  fileInput.addEventListener("change", function () {
+    if (fileInput.files && fileInput.files[0]) { importFile(fileInput.files[0]); }
+    fileInput.value = "";
+  });
+  document.getElementById("btn-reset").addEventListener("click", function () {
+    if (!window.confirm("把所有文案恢复为默认值？当前修改会丢失（可先导出备份）。")) { return; }
+    state = clone(DEFAULTS);
+    try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* storage unavailable */ }
+    render();
+    setStatus("已恢复全部默认文案。", "ok");
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>

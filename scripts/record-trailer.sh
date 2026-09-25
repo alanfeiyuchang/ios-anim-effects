@@ -1,14 +1,27 @@
 #!/usr/bin/env bash
 # Records the 60 s promotional trailer (`-ML_trailer YES`, MotionLab/Trailer/) on an iPhone Pro simulator,
 # once per canvas aspect (`-ML_trailerAspect 9x16|3x4`), and renders it for Xiaohongshu at 60 fps.
+# Works on your own Mac (see docs/TRAILER.md) and in CI (.github/workflows/trailer.yml).
 #
-# Usage: scripts/record-trailer.sh [out-dir]        (default: out)
-#        TRAILER_ASPECTS="9x16" scripts/record-trailer.sh   (record a subset; default "9x16 3x4")
+# Usage: scripts/record-trailer.sh [options] [out-dir]
+#   --copy <file>        Trailer copy JSON (TrailerCopy; edit with tools/trailer-editor.html).
+#                        Default: trailer/copy.json if it exists, else the built-in defaults.
+#   --aspects "<list>"   Aspects to record, space-separated: "9x16 3x4" (default), "9x16", "3x4".
+#   --out <dir>          Output folder (default: out). A bare positional argument means the same.
+#   --device "<name>"    Simulator to use, e.g. "iPhone 17 Pro" (default: newest iPhone Pro available).
+#   -h, --help           Show this help.
+# Environment (still honoured): TRAILER_ASPECTS (same as --aspects), TRAILER_SECONDS (cut length, 60).
+#
 # Output, per aspect:
 #   <out>/9x16/trailer.mp4            1080×1920, 60 fps, H.264 CRF 18, ~60 s (full-screen video; recommended)
 #   <out>/9x16/trailer-preview.mp4    540×960, 30 fps, CRF 28
 #   <out>/9x16/frames/frame-01…12.png 12 evenly spaced keyframes (every 5 s, starting at 2.5 s)
 #   <out>/3x4/…                       the same at 1080×1440 / 540×720
+#
+# Copy: after installing the app, the copy JSON is placed in the app's data container as
+# Documents/trailer-copy.json before every launch (`xcrun simctl get_app_container <udid> <bundle> data`);
+# the trailer reads it at start (missing keys fall back to the defaults). Without a copy file, any stale
+# Documents/trailer-copy.json is removed so the defaults are used.
 #
 # Timing: the app shows a pure-white slate for 2.5 s (TrailerCanvas.leadIn) before t = 0. The recorder is
 # started before the app is launched; afterwards ffmpeg finds where the white ends (negate + blackdetect)
@@ -25,33 +38,139 @@
 # crop_w/crop_h are rounded to even numbers for yuv420p; the canvas edges are #0B0B0D-dark, so the ≤1 px
 # chroma alignment ffmpeg may apply to crop_y is invisible.
 set -euo pipefail
-OUT="${1:-out}"
+
+usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; }
+die() { echo "错误 / error: $*" >&2; exit 1; }
+
+OUT=""
+COPY=""
+COPY_SET=0
+ASPECTS="${TRAILER_ASPECTS:-9x16 3x4}"
+DEVICE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --copy) [ $# -ge 2 ] || die "--copy 需要一个文件路径"; COPY="$2"; COPY_SET=1; shift 2 ;;
+    --copy=*) COPY="${1#*=}"; COPY_SET=1; shift ;;
+    --aspects) [ $# -ge 2 ] || die "--aspects 需要一个列表，例如 \"9x16 3x4\""; ASPECTS="$2"; shift 2 ;;
+    --aspects=*) ASPECTS="${1#*=}"; shift ;;
+    --out) [ $# -ge 2 ] || die "--out 需要一个目录"; OUT="$2"; shift 2 ;;
+    --out=*) OUT="${1#*=}"; shift ;;
+    --device) [ $# -ge 2 ] || die "--device 需要模拟器名称，例如 \"iPhone 17 Pro\""; DEVICE="$2"; shift 2 ;;
+    --device=*) DEVICE="${1#*=}"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    -*) die "未知参数 $1（用 --help 查看用法）" ;;
+    *) [ -z "$OUT" ] || die "多余的参数 $1"; OUT="$1"; shift ;;
+  esac
+done
+OUT="${OUT:-out}"
+ASPECTS="$(printf '%s' "$ASPECTS" | tr ',' ' ' | xargs)"
+for ASPECT in $ASPECTS; do
+  case "$ASPECT" in 9x16|3x4) ;; *) die "未知画幅 '$ASPECT'（只能是 9x16 或 3x4）" ;; esac
+done
+[ -n "$ASPECTS" ] || die "--aspects 为空"
+
+# Absolute paths for what the caller named relative to their shell, then work from the repo root.
+abs_path() { case "$1" in /*) printf '%s\n' "$1" ;; *) printf '%s\n' "$PWD/$1" ;; esac; }
+OUT="$(abs_path "$OUT")"
+[ -z "$COPY" ] || COPY="$(abs_path "$COPY")"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+# --- Prerequisites ------------------------------------------------------------------------------------
+MISSING=0
+need() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "缺少 / missing: $1 — $2" >&2
+    MISSING=1
+  fi
+}
+need xcodebuild "请安装 Xcode 26（或 16）并运行一次；然后执行 sudo xcode-select -s /Applications/Xcode.app"
+need xcrun "请安装 Xcode 与命令行工具：xcode-select --install"
+need ffmpeg "请安装：brew install ffmpeg（没有 Homebrew？见 https://brew.sh）"
+need ffprobe "随 ffmpeg 一起安装：brew install ffmpeg"
+need python3 "macOS 自带；或 brew install python"
+need perl "macOS 自带"
+[ "$MISSING" -eq 0 ] || exit 1
+if ! xcrun simctl help >/dev/null 2>&1; then
+  die "xcrun simctl 不可用：请在 Xcode › Settings › Components 安装 iOS 模拟器，并确认 xcode-select -p 指向 Xcode.app（而不是 CommandLineTools）"
+fi
+[ -d MotionLab.xcodeproj ] || die "找不到 MotionLab.xcodeproj（脚本应位于仓库的 scripts/ 目录）"
+
+# --- Copy (on-screen text) ----------------------------------------------------------------------------
+if [ "$COPY_SET" -eq 0 ] && [ -f "$ROOT/trailer/copy.json" ]; then
+  COPY="$ROOT/trailer/copy.json"
+fi
+if [ -n "$COPY" ]; then
+  [ -f "$COPY" ] || die "找不到文案文件 $COPY"
+  python3 -c 'import json,sys; json.load(open(sys.argv[1], encoding="utf-8"))' "$COPY" 2>/dev/null \
+    || die "文案文件不是合法的 JSON：$COPY（可用 tools/trailer-editor.html 导入检查后重新导出）"
+  echo "Copy: $COPY"
+else
+  echo "Copy: built-in defaults (no trailer/copy.json)"
+fi
+
 BUNDLE_ID="com.motionlexicon.MotionLab"
 DURATION="${TRAILER_SECONDS:-60}"
-ASPECTS="${TRAILER_ASPECTS:-9x16 3x4}"
 LEAD_IN=2.5
 mkdir -p "$OUT"
 
 # Runs a command with a time limit (macOS has no GNU timeout); a hung simctl/ffmpeg call must not stall CI.
 limit() { local secs="$1"; shift; perl -e 'alarm shift; exec @ARGV' "$secs" "$@"; }
 
-UDID=$(xcrun simctl list devices available -j | python3 -c '
-import json,sys
-d=json.load(sys.stdin)["devices"]
-c=[x for rt,xs in d.items() if "iOS" in rt for x in xs if x["name"].startswith("iPhone") and "Pro" in x["name"] and "Max" not in x["name"]]
-c=c or [x for rt,xs in d.items() if "iOS" in rt for x in xs if x["name"].startswith("iPhone")]
-print(c[-1]["udid"])')
-echo "Simulator: $UDID"
-xcrun simctl boot "$UDID" || true
+# --- Simulator ----------------------------------------------------------------------------------------
+# Default: the newest iPhone Pro (not Max) on the newest iOS runtime; --device picks one by name
+# (on the newest runtime that has it).
+UDID=$(xcrun simctl list devices available -j | DEVICE="$DEVICE" python3 -c '
+import json, os, re, sys
+devices = json.load(sys.stdin)["devices"]
+wanted = os.environ.get("DEVICE", "").strip()
+def runtime_version(key):
+    m = re.search(r"iOS-(\d+)(?:-(\d+))?", key)
+    return (int(m.group(1)), int(m.group(2) or 0)) if m else (0, 0)
+def model(name):
+    m = re.search(r"iPhone (\d+)", name)
+    return int(m.group(1)) if m else 0
+phones = [(runtime_version(rt), d) for rt, ds in devices.items() if "iOS" in rt for d in ds if d["name"].startswith("iPhone")]
+if wanted:
+    pool = [p for p in phones if p[1]["name"].lower() == wanted.lower()]
+else:
+    pool = [p for p in phones if "Pro" in p[1]["name"] and "Max" not in p[1]["name"]] or phones
+if not pool:
+    names = sorted({d["name"] for _, d in phones})
+    sys.stderr.write("可用的 iPhone 模拟器 / available: " + (", ".join(names) or "（无 / none）") + "\n")
+    sys.exit(1)
+pool.sort(key=lambda p: (p[0], model(p[1]["name"])))
+print(pool[-1][1]["udid"])') || {
+  if [ -n "$DEVICE" ]; then
+    die "找不到模拟器 \"$DEVICE\"。用上面列出的名称之一，或在 Xcode › Window › Devices and Simulators 新建"
+  fi
+  die "没有可用的 iPhone 模拟器：请在 Xcode › Settings › Components 安装 iOS 运行时"
+}
+echo "Simulator: $(xcrun simctl list devices | grep "$UDID" | sed 's/^ *//' | head -n 1)"
+xcrun simctl boot "$UDID" 2>/dev/null || true
 limit 300 xcrun simctl bootstatus "$UDID" -b
 xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 || true
 xcrun simctl ui "$UDID" appearance dark || true
 
+# --- Build & install ----------------------------------------------------------------------------------
 # Release: the trailer is a continuous 60 fps take, so it gets the optimised build.
+echo "Building (Release)… the first build can take several minutes; log: $ROOT/build.log"
 xcodebuild -project MotionLab.xcodeproj -scheme MotionLab -configuration Release -sdk iphonesimulator \
   -destination "id=$UDID" -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > build.log 2>&1 \
-  || { grep -E "error:" build.log | sort -u; exit 1; }
+  || { grep -E "error:" build.log | sort -u; die "构建失败，详见 $ROOT/build.log"; }
 xcrun simctl install "$UDID" build/Build/Products/Release-iphonesimulator/MotionLab.app
+
+# Puts the copy JSON into the app's Documents (or removes a stale one), right before a launch.
+install_copy() {
+  local DATA
+  DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data) || die "取不到 App 数据容器（App 是否已安装？）"
+  mkdir -p "$DATA/Documents"
+  if [ -n "$COPY" ]; then
+    cp "$COPY" "$DATA/Documents/trailer-copy.json"
+  else
+    rm -f "$DATA/Documents/trailer-copy.json"
+  fi
+}
 
 BASE_ARGS=(-ML_trailer YES -ML_noIntro YES -app.language zh -app.appearance 2)
 
@@ -68,7 +187,9 @@ stop_app() {
 
 # Warm-up run: first launch compiles shaders and fills caches; let first-boot banners expire meanwhile.
 # The first launch after install can be slow, so it gets a generous limit.
-limit 180 xcrun simctl launch "$UDID" "$BUNDLE_ID" "${BASE_ARGS[@]}" -ML_trailerAspect 9x16 >/dev/null || true
+FIRST_ASPECT="${ASPECTS%% *}"
+install_copy
+limit 180 xcrun simctl launch "$UDID" "$BUNDLE_ID" "${BASE_ARGS[@]}" -ML_trailerAspect "$FIRST_ASPECT" >/dev/null || true
 sleep 20
 stop_app
 sleep 8
@@ -85,22 +206,24 @@ record_aspect() {
   # Record: start the recorder, launch, let slate + trailer play, stop.
   local RECORD_SECONDS
   RECORD_SECONDS=$(python3 -c "print(int($LEAD_IN + $DURATION + 7))")
+  install_copy
   xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$RAW" >/dev/null 2>&1 &
   local REC=$!
   sleep 2
   # --terminate-running-process guarantees a fresh process, so the trailer clock starts at this launch.
   limit 120 xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE_ID" "${BASE_ARGS[@]}" -ML_trailerAspect "$ASPECT" >/dev/null
+  echo "Recording $ASPECT for ${RECORD_SECONDS}s…"
   sleep "$RECORD_SECONDS"
   kill -INT "$REC" 2>/dev/null || true
   local WAITED=0
   while kill -0 "$REC" 2>/dev/null && [ "$WAITED" -lt 40 ]; do sleep 0.5; WAITED=$((WAITED + 1)); done
   if kill -0 "$REC" 2>/dev/null; then
     kill -9 "$REC" 2>/dev/null || true
-    echo "error: recorder hung ($ASPECT)"; exit 1
+    die "recorder hung ($ASPECT)"
   fi
   wait "$REC" 2>/dev/null || true
   stop_app
-  [ -s "$RAW" ] || { echo "error: empty recording ($ASPECT)"; exit 1; }
+  [ -s "$RAW" ] || die "empty recording ($ASPECT)"
 
   # Crop rectangle from the recorded pixel size (see the header).
   local IW IH CROP
@@ -125,9 +248,8 @@ print(ends[0] if ends else '')")
   if [ -z "$START" ]; then
     # Without the slate the take didn't start at this launch (e.g. a stale instance); a guessed cut would
     # silently publish a wrong video, so fail instead.
-    echo "error: white slate not found in the $ASPECT recording; the trailer did not start with this launch"
     limit 60 ffmpeg -hide_banner -loglevel error -y -ss 5 -i "$RAW" -frames:v 1 -vf "crop=$CROP" "$DIR/debug-first-frame.png" || true
-    exit 1
+    die "white slate not found in the $ASPECT recording; the trailer did not start with this launch (see $DIR/debug-first-frame.png; docs/TRAILER.md › 常见问题)"
   fi
   echo "Trailer ($ASPECT) starts at ${START}s in the raw recording"
 
@@ -155,7 +277,19 @@ for ASPECT in $ASPECTS; do
   case "$ASPECT" in
     9x16) record_aspect 9x16 16 9 1080 1920 540 960 ;;
     3x4)  record_aspect 3x4 4 3 1080 1440 540 720 ;;
-    *)    echo "error: unknown aspect '$ASPECT' (use 9x16 or 3x4)"; exit 1 ;;
   esac
   sleep 5
 done
+
+echo
+echo "完成 / Done. 输出 / Output:"
+for ASPECT in $ASPECTS; do
+  echo "  $OUT/$ASPECT/trailer.mp4           (成片 / final)"
+  echo "  $OUT/$ASPECT/trailer-preview.mp4   (预览 / preview)"
+  echo "  $OUT/$ASPECT/frames/               (12 张关键帧 / keyframes)"
+done
+
+# Show the folder when a person ran this on their Mac (never in CI).
+if [ -z "${CI:-}" ] && [ -t 1 ] && [ "$(uname -s)" = "Darwin" ] && command -v open >/dev/null 2>&1; then
+  open "$OUT" || true
+fi

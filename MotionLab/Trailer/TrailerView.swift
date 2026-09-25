@@ -13,6 +13,9 @@ import SwiftUI
 /// can be cropped exactly (see the script for the crop math). The bottom 18 % of the canvas is a clean
 /// caption band (`TrailerCanvas.contentBottom`).
 ///
+/// Every authored line of on-screen text comes from `TrailerCopy` (defaults in code, overridable with
+/// `Documents/trailer-copy.json`, which the record script copies from `trailer/copy.json`).
+///
 /// Timeline (s): 0 hook · 5 pain · 10 search · 21 feel it (phone) · 36 tune · 44 prompt · 52 web · 57 end card.
 struct TrailerView: View {
     @State private var start: Date?

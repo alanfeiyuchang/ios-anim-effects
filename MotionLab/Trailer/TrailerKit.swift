@@ -236,8 +236,9 @@ struct TrailerHeadline: View {
                     .textRenderer(GlyphBlurRenderer(progress: TrailerMath.clamp(reveal * 1.35 - 0.35)))
             }
         }
+        // Authored copy (TrailerCopy) can be longer than the defaults: shrink to fit one line, never overflow.
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.45)
         .multilineTextAlignment(.center)
         .frame(width: 360)
         .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 4)

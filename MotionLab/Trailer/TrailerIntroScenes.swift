@@ -17,10 +17,13 @@ struct TrailerHookScene: View {
             HookNumber(t: t)
                 .trailerDepth(numberExit, scale: -0.9, blur: 18)
                 .position(x: 195, y: HookLayout.numberY)
-            Text(verbatim: "个 iOS 高级动效")
+            Text(verbatim: TrailerCopy.current.hook.subtitle)
                 .font(.system(size: TrailerCanvas.pick(30, 34), weight: .heavy))
                 .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 2.75, 0.8)))
+                .frame(width: 360)
                 .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 4)
                 .trailerDepth(subtitleExit, scale: -0.35, blur: 14)
                 .position(x: 195, y: TrailerCanvas.pick(284, 364))
@@ -164,10 +167,12 @@ private struct HookStats: View {
     let t: Double
 
     var body: some View {
+        let copy = TrailerCopy.current.hook
         HStack(spacing: 10) {
-            chip(number: TrailerData.categoryCount, label: "大分类", index: 0)
-            chip(number: TrailerData.familyCount, label: "个动效家族", index: 1)
+            chip(number: TrailerData.categoryCount, label: copy.categoriesLabel, index: 0)
+            chip(number: TrailerData.familyCount, label: copy.familiesLabel, index: 1)
         }
+        .frame(maxWidth: 370)
     }
 
     private func chip(number: Int, label: String, index: Int) -> some View {
@@ -181,6 +186,8 @@ private struct HookStats: View {
             Text(verbatim: label)
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(Color.white.opacity(0.9))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -205,23 +212,57 @@ struct TrailerPainScene: View {
         let depth: Double
     }
 
-    /// (3:4 y, 9:16 y) per word; the 9:16 layout spreads them through the taller frame.
-    private static let words: [Word] = [
-        Word(text: "弹一下？", x: 96, y: TrailerCanvas.pick(262, 334), depth: 0.9),
-        Word(text: "顺滑一点？", x: 288, y: TrailerCanvas.pick(250, 318), depth: 0.6),
-        Word(text: "像果冻？", x: 112, y: TrailerCanvas.pick(338, 424), depth: 0.45),
-        Word(text: "有点高级感？", x: 274, y: TrailerCanvas.pick(322, 406), depth: 0.95),
-        Word(text: "duang 一下？", x: 200, y: TrailerCanvas.pick(390, 494), depth: 0.7),
-        Word(text: "要回弹吗？", x: 94, y: TrailerCanvas.pick(76, 128), depth: 0.2),
-        Word(text: "丝滑？", x: 298, y: TrailerCanvas.pick(92, 152), depth: 0.3),
+    /// Hand-placed spots (x, 3:4 y, 9:16 y, depth) for the first seven words; the 9:16 layout spreads them
+    /// through the taller frame. Words beyond seven get deterministic spots of their own (`extraSpot`).
+    private static let spots: [(x: CGFloat, classicY: CGFloat, tallY: CGFloat, depth: Double)] = [
+        (96, 262, 334, 0.9),
+        (288, 250, 318, 0.6),
+        (112, 338, 424, 0.45),
+        (274, 322, 406, 0.95),
+        (200, 390, 494, 0.7),
+        (94, 76, 128, 0.2),
+        (298, 92, 152, 0.3),
     ]
+
+    /// The words of `TrailerCopy.pain.words`, each on its spot.
+    private static let words: [Word] = TrailerCopy.current.pain.words.enumerated().map { pair -> Word in
+        let index: Int = pair.offset
+        let text: String = pair.element
+        if index < TrailerPainScene.spots.count {
+            let spot = TrailerPainScene.spots[index]
+            return Word(text: text, x: spot.x, y: TrailerCanvas.pick(spot.classicY, spot.tallY), depth: spot.depth)
+        }
+        return TrailerPainScene.extraSpot(index, text: text)
+    }
+
+    /// A spot for word 8 and later: alternating left/right columns, below the headline block.
+    private static func extraSpot(_ index: Int, text: String) -> Word {
+        let column: CGFloat = index % 2 == 0 ? 92 : 296
+        let jitterX: CGFloat = CGFloat(M.hash(index, 21) - 0.5) * 40
+        let top: CGFloat = TrailerCanvas.pick(230, 290)
+        let bottom: CGFloat = TrailerCanvas.contentBottom - 30
+        let fraction: CGFloat = CGFloat(M.hash(index, 22))
+        let y: CGFloat = top + (bottom - top) * fraction
+        let depth: Double = 0.3 + 0.5 * M.hash(index, 23)
+        return Word(text: text, x: column + jitterX, y: y, depth: depth)
+    }
+
+    /// Delay between words popping in: 0.28 s, tighter when there are many so all land before the collapse.
+    private static let stagger: Double = {
+        let count: Int = max(TrailerPainScene.words.count - 1, 1)
+        let fit: Double = 2.3 / Double(count)
+        return min(0.28, fit)
+    }()
 
     var body: some View {
         let exit = M.easeIn(M.progress(t, 9.65, 0.6))
         let enter = M.easeOut(M.progress(t, 5.0, 1.0))
         ZStack {
-            Text(verbatim: "？")
+            Text(verbatim: TrailerCopy.current.pain.backdropMark)
                 .font(.system(size: TrailerCanvas.pick(300, 360), weight: .black))
+                .lineLimit(1)
+                .minimumScaleFactor(0.3)
+                .frame(width: TrailerCanvas.width)
                 .foregroundStyle(Color.white.opacity(0.04))
                 .rotationEffect(.degrees(-8 + 4 * sin(t * 0.5)))
                 .scaleEffect(CGFloat(0.9 + 0.1 * enter))
@@ -231,14 +272,18 @@ struct TrailerPainScene: View {
                 wordView(index)
             }
             VStack(spacing: 6) {
-                Text(verbatim: "想要的动效，")
+                Text(verbatim: TrailerCopy.current.pain.titleLine1)
                     .foregroundStyle(Color.white)
                     .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 5.3, 0.8)))
-                Text(verbatim: "说不出名字？")
+                Text(verbatim: TrailerCopy.current.pain.titleLine2)
                     .foregroundStyle(TrailerStyle.emberText)
                     .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 5.75, 0.8)))
             }
             .font(.system(size: TrailerCanvas.pick(38, 42), weight: .heavy))
+            .lineLimit(1)
+            .minimumScaleFactor(0.45)
+            .multilineTextAlignment(.center)
+            .frame(width: 360)
             .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 4)
             .scaleEffect(CGFloat(1.25 - 0.25 * enter))
             .trailerDepth(exit, scale: 0.12, lift: -36, blur: 14)
@@ -250,7 +295,7 @@ struct TrailerPainScene: View {
     private func wordView(_ index: Int) -> some View {
         let word = Self.words[index]
         let seed = Double(index)
-        let appear = M.spring(t, at: 6.3 + seed * 0.28, response: 0.6, damping: 0.7)
+        let appear = M.spring(t, at: 6.3 + seed * Self.stagger, response: 0.6, damping: 0.7)
         let collapse = M.easeIn(M.progress(t, 9.5 + seed * 0.04, 0.55))
         let driftX = CGFloat(7 * sin(t * 0.7 + seed * 1.9))
         let driftY = CGFloat(5 * cos(t * 0.9 + seed * 2.3)) + CGFloat(1 - M.clamp(appear)) * 18
@@ -262,6 +307,9 @@ struct TrailerPainScene: View {
         return Text(verbatim: word.text)
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(Color.white.opacity(0.88))
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(maxWidth: 200)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(TrailerGlass(shape: Capsule(), frosted: true, shadowOpacity: 0.25))

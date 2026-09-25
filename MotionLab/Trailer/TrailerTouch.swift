@@ -12,7 +12,19 @@ enum TrailerLayout {
     // Search
     static let fieldY: CGFloat = TrailerCanvas.pick(118, 204)
     static let chipY: CGFloat = TrailerCanvas.pick(164, 254)
-    static let chipWidths: [CGFloat] = [58, 58, 82, 58]
+    /// One width per `TrailerCopy.search.chips` label (58 pt minimum, 82 pt for the default "质感交互"),
+    /// scaled down together if the row would not fit the canvas.
+    static let chipWidths: [CGFloat] = {
+        let natural: [CGFloat] = TrailerCopy.current.search.chips.map { title in
+            max(58, TrailerCopy.estimatedWidth(title, size: 14) + 26)
+        }
+        let spacing: CGFloat = TrailerLayout.chipSpacing * CGFloat(max(natural.count - 1, 0))
+        let sum: CGFloat = natural.reduce(0, +)
+        let room: CGFloat = TrailerCanvas.width - 20 - spacing
+        guard sum > room, sum > 0 else { return natural }
+        let factor: CGFloat = room / sum
+        return natural.map { $0 * factor }
+    }()
     static let chipSpacing: CGFloat = 8
 
     static func chipCenter(_ index: Int) -> CGPoint {
@@ -76,8 +88,15 @@ enum TrailerLayout {
     /// The 中/EN toggle (84 × 28, right of the header row, card padding 18).
     static let segmentZh = CGPoint(x: promptTopLeft.x + promptSize.width - 18 - 84 + 21, y: promptTopLeft.y + 18 + 14)
     static let segmentEn = CGPoint(x: segmentZh.x + 42, y: segmentZh.y)
-    /// The copy button (104 × 32, bottom right).
-    static let copyButton = CGPoint(x: promptTopLeft.x + promptSize.width - 18 - 52, y: promptTopLeft.y + promptSize.height - 18 - 16)
+    /// Width of the copy button: 104 pt, wider for longer `TrailerCopy.prompt` button labels (max 160).
+    static let copyButtonWidth: CGFloat = {
+        let copy = TrailerCopy.current.prompt
+        let text: CGFloat = max(TrailerCopy.estimatedWidth(copy.copyButton, size: 13), TrailerCopy.estimatedWidth(copy.copiedButton, size: 13))
+        let natural: CGFloat = text + 12 + 5 + 30
+        return min(max(104, natural), 160)
+    }()
+    /// The copy button (`copyButtonWidth` × 32, bottom right).
+    static let copyButton = CGPoint(x: promptTopLeft.x + promptSize.width - 18 - copyButtonWidth / 2, y: promptTopLeft.y + promptSize.height - 18 - 16)
 }
 
 // MARK: - Script
@@ -285,8 +304,9 @@ private struct TrailerHapticBadge: View {
         let y = max(point.y - 46, 22)
         HStack(spacing: 5) {
             TrailerWaveform(elapsed: elapsed)
-            Text(verbatim: "触感")
+            Text(verbatim: TrailerCopy.current.touch.hapticBadge)
                 .font(.system(size: 12, weight: .heavy))
+                .lineLimit(1)
         }
         .foregroundStyle(Palette.onAccent)
         .padding(.horizontal, 9)

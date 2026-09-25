@@ -1,0 +1,91 @@
+{
+  "hook": {
+    "subtitle": "个 iOS 高级动效",
+    "categoriesLabel": "大分类",
+    "familiesLabel": "个动效家族"
+  },
+  "pain": {
+    "titleLine1": "想要的动效，",
+    "titleLine2": "说不出名字？",
+    "backdropMark": "？",
+    "words": [
+      "弹一下？",
+      "顺滑一点？",
+      "像果冻？",
+      "有点高级感？",
+      "duang 一下？",
+      "要回弹吗？",
+      "丝滑？"
+    ]
+  },
+  "search": {
+    "title": "一搜即达",
+    "subtitle": "{effects} 个动效秒速定位",
+    "placeholder": "搜索动效、控件、手势…",
+    "query": "卡片",
+    "resultSuffix": "个结果",
+    "chips": [
+      "全部",
+      "卡片",
+      "质感交互",
+      "按钮"
+    ]
+  },
+  "phone": {
+    "title": "真实上手体验",
+    "subtitle": "每一下都有触感",
+    "statusTime": "9:41",
+    "hintTap": "点一下试试",
+    "hintGesture": "按住拖动试试",
+    "hintScroll": "上下滑动试试",
+    "hintLoop": "自动循环播放",
+    "hintState": "点一下切换状态",
+    "paramsHeader": "参数",
+    "reset": "重置",
+    "noParams": "无可调参数"
+  },
+  "tune": {
+    "title": "参数实时可调",
+    "subtitle": "弹簧 · 阻尼 · 响应，随手试",
+    "pageTitle": "弹簧参数",
+    "pageTag": "实时预览",
+    "hint": "拖动滑块，实时预览",
+    "dampingLabel": "阻尼",
+    "responseLabel": "响应",
+    "targetLabel": "目标"
+  },
+  "prompt": {
+    "title": "专业中英提示词",
+    "subtitle": "一键复制给 AI",
+    "cardTitle": "专业提示词",
+    "languageZh": "中",
+    "languageEn": "EN",
+    "copyButton": "一键复制",
+    "copiedButton": "已复制",
+    "effectID": "",
+    "textZh": "",
+    "textEn": ""
+  },
+  "chat": {
+    "assistantName": "AI 助手",
+    "status": "在线",
+    "bubbleTitle": "{name} · 提示词",
+    "reply": "收到！这就用 SwiftUI 实现："
+  },
+  "web": {
+    "title": "网页版全部动效",
+    "subtitle": "录像一览，随时查看",
+    "url": "alanfeiyuchang.github.io/ios-anim-effects",
+    "siteName": "Motionary",
+    "siteTagline": "全部动效录像一览",
+    "countBadge": "{effects} 个"
+  },
+  "end": {
+    "title": "Motionary",
+    "subtitle": "动效词典 · iOS Motion Dictionary",
+    "tagline": "{effects} 个可上手玩的 iOS 高级动效"
+  },
+  "touch": {
+    "hapticBadge": "触感"
+  }
+}

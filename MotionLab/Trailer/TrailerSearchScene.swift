@@ -6,7 +6,8 @@ private typealias M = TrailerMath
 
 /// Real catalog numbers and real search results shown in the trailer.
 enum TrailerData {
-    static let query = "卡片"
+    /// Typed into the field and searched for real (`TrailerCopy.search.query`).
+    static var query: String { TrailerCopy.current.search.query }
     /// The result that is opened and played on the phone (it is the first phone demo).
     static let heroID = "cards.flip"
 
@@ -42,6 +43,8 @@ enum TrailerData {
 
     /// Touches every lazily built catalog table so the heavy first access happens during the slate.
     static func warmUp() {
+        // Reads Documents/trailer-copy.json (if any) before anything shows text or searches.
+        _ = TrailerCopy.current
         _ = gridA.count + gridB.count + familyCount + heroSlot
         _ = TrailerScript.taps.count
     }
@@ -106,8 +109,8 @@ struct TrailerSearchScene: View {
         let headlineExit = M.easeIn(M.progress(t, 20.55, 0.55))
         ZStack {
             TrailerHeadline(
-                title: "一搜即达",
-                subtitle: "\(TrailerData.effectCount) 个动效秒速定位",
+                title: TrailerCopy.current.search.title,
+                subtitle: TrailerCopy.optional(TrailerCopy.current.search.subtitle),
                 accentOnTitle: true,
                 titleSize: TrailerCanvas.pick(36, 40),
                 reveal: M.progress(t, 11.25, 0.9),
@@ -129,7 +132,26 @@ struct TrailerSearchScene: View {
 private struct SearchField: View {
     let t: Double
 
-    private static let typedAt: [Double] = [12.0, 12.35]
+    /// When each character of the query lands: 0.35 s apart (the default two characters), tighter for
+    /// longer queries so typing always ends by 12.6 s, just before the results arrive.
+    private static let typedAt: [Double] = {
+        let count: Int = Array(TrailerData.query).count
+        guard count > 1 else { return count == 1 ? [12.0] : [] }
+        let step: Double = min(0.35, 0.6 / Double(count - 1))
+        return (0..<count).map { index in 12.0 + Double(index) * step }
+    }()
+
+    /// Typing ends (the caret starts blinking again) shortly after the last character.
+    private static let typingEnd: Double = (typedAt.last ?? 12.0) + 0.25
+
+    /// The query's font size: 18 pt, shrunk so a long query still fits the field beside the result count.
+    private static let querySize: CGFloat = {
+        let available: CGFloat = 180
+        let natural: CGFloat = TrailerCopy.estimatedWidth(TrailerData.query, size: 18) + CGFloat(Array(TrailerData.query).count)
+        guard natural > available else { return 18 }
+        let fitted: CGFloat = 18 * available / natural
+        return max(fitted, 9)
+    }()
 
     var body: some View {
         let emerge = M.spring(t, at: 10.05, response: 0.55, damping: 0.72)
@@ -145,9 +167,11 @@ private struct SearchField: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(focus > 0.5 ? AnyShapeStyle(Palette.accentFill) : AnyShapeStyle(Color.white.opacity(0.6)))
             ZStack(alignment: .leading) {
-                Text(verbatim: "搜索动效、控件、手势…")
+                Text(verbatim: TrailerCopy.current.search.placeholder)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(Color.white.opacity(0.35))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .opacity(typedCount == 0 ? 1 : 0)
                 HStack(spacing: 1) {
                     ForEach(0..<typedCount, id: \.self) { index in
@@ -174,14 +198,15 @@ private struct SearchField: View {
         let characters = Array(TrailerData.query)
         let pop = M.spring(t, at: Self.typedAt[index], response: 0.35, damping: 0.55)
         return Text(verbatim: String(characters[index]))
-            .font(.system(size: 18, weight: .bold))
+            .font(.system(size: Self.querySize, weight: .bold))
             .foregroundStyle(Color.white)
+            .fixedSize()
             .scaleEffect(CGFloat(0.3 + 0.7 * pop), anchor: .bottom)
             .opacity(M.clamp(pop * 3))
     }
 
     private var caret: some View {
-        let typing = t > 11.8 && t < 12.6
+        let typing = t > 11.8 && t < Self.typingEnd
         let blink = typing || sin(t * 2 * Double.pi * 1.4) > -0.2
         return RoundedRectangle(cornerRadius: 1)
             .fill(Palette.accentFill)
@@ -198,8 +223,9 @@ private struct SearchField: View {
                 .foregroundStyle(TrailerStyle.emberText)
                 .contentTransition(.numericText(value: Double(value)))
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: value)
-            Text(verbatim: "个结果")
+            Text(verbatim: TrailerCopy.current.search.resultSuffix)
                 .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
                 .foregroundStyle(Color.white.opacity(0.55))
         }
         .fixedSize()
@@ -211,7 +237,8 @@ private struct SearchField: View {
 private struct SearchChips: View {
     let t: Double
 
-    private static let titles = ["全部", "卡片", "质感交互", "按钮"]
+    /// `TrailerCopy.search.chips` (at least two; the pill slides from the first to the second).
+    private static var titles: [String] { TrailerCopy.current.search.chips }
 
     var body: some View {
         let slide = M.spring(t, at: 15.9, response: 0.45, damping: 0.72)
@@ -258,6 +285,7 @@ private struct SearchChips: View {
         let center = TrailerLayout.chipCenter(index)
         let pop = appear(index)
         let onPill = M.clamp(1 - Double(abs(pillX - center.x)) / 40)
+        let labelWidth: CGFloat = max(TrailerLayout.chipWidths[index] - 14, 20)
         return ZStack {
             Text(verbatim: Self.titles[index])
                 .foregroundStyle(Color.white.opacity(0.88))
@@ -267,6 +295,9 @@ private struct SearchChips: View {
                 .opacity(onPill)
         }
         .font(.system(size: 14, weight: .bold))
+        .lineLimit(1)
+        .minimumScaleFactor(0.55)
+        .frame(width: labelWidth)
         .scaleEffect(CGFloat(0.6 + 0.4 * pop))
         .opacity(M.clamp(pop * 2))
         .position(x: center.x, y: 15 + CGFloat(1 - M.clamp(pop)) * 10)

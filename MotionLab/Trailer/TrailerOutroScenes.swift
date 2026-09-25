@@ -2,7 +2,7 @@ import SwiftUI
 
 private typealias M = TrailerMath
 
-// MARK: - 44–52 s · Prompt: unfold, 中/EN flip, copy, fly into an AI chat
+// MARK: - 70–80 s · Prompt: unfold, 中/EN flip, copy, fly into an AI chat
 
 struct TrailerPromptScene: View {
     let t: Double
@@ -12,14 +12,14 @@ struct TrailerPromptScene: View {
             TrailerHeadline(
                 title: TrailerCopy.current.prompt.title,
                 subtitle: TrailerCopy.optional(TrailerCopy.current.prompt.subtitle),
-                reveal: M.progress(t, 44.4, 0.9),
-                exit: M.easeIn(M.progress(t, 51.55, 0.5))
+                reveal: M.progress(t, 70.4, 0.9),
+                exit: M.easeIn(M.progress(t, 79.0, 0.5))
             )
             .position(x: 195, y: TrailerLayout.headlineY)
-            if t > 49.1 {
+            if t > 76.0 {
                 TrailerChatPanel(t: t)
             }
-            if t < 50.6 {
+            if t < 77.5 {
                 TrailerPromptCard(t: t)
             }
         }
@@ -28,7 +28,7 @@ struct TrailerPromptScene: View {
 }
 
 private enum PromptSource {
-    /// `TrailerCopy.prompt.effectID` if it names a real effect, else the searched hero.
+    /// `TrailerCopy.prompt.effectID` if it names a real effect, else the first demo played on the phone.
     static let effect: Effect? = {
         let override = TrailerCopy.current.prompt.effectID
         if !override.isEmpty, let chosen = EffectLibrary.effect(id: override) {
@@ -76,9 +76,9 @@ private struct TrailerPromptCard: View {
     static let bubbleCenter = CGPoint(x: 252, y: TrailerLayout.promptCenter.y - 43)
 
     var body: some View {
-        let unfold = M.spring(t, at: 44.05, response: 0.8, damping: 0.82)
+        let unfold = M.spring(t, at: 70.05, response: 0.8, damping: 0.82)
         let settled = M.clamp(unfold)
-        let fly = M.easeInOut(M.progress(t, 49.45, 0.8))
+        let fly = M.easeInOut(M.progress(t, 76.35, 0.8))
         let arc = CGFloat(sin(fly * Double.pi)) * 56
         let path = M.mix(TrailerLayout.promptCenter, Self.bubbleCenter, fly)
         let center = CGPoint(x: path.x, y: path.y - arc)
@@ -104,12 +104,12 @@ private struct TrailerPromptCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
             }
         }
-        .trailerGlint(M.progress(t, 45.1, 0.8), strength: 0.18)
+        .trailerGlint(M.progress(t, 71.1, 0.8), strength: 0.18)
         .scaleEffect(CGFloat(scale))
         .blur(radius: CGFloat(1 - settled) * 8)
         .offset(y: CGFloat(1 - settled) * 28)
         .rotationEffect(.degrees(-6 * sin(fly * Double.pi)))
-        .opacity(M.clamp(unfold * 2) * (1 - M.progress(t, 49.95, 0.35)))
+        .opacity(M.clamp(unfold * 2) * (1 - M.progress(t, 76.85, 0.35)))
         .position(center)
     }
 
@@ -130,7 +130,9 @@ private struct TrailerPromptCard: View {
     }
 
     private var languageToggle: some View {
-        let pill = M.spring(t, at: 46.65, response: 0.45, damping: 0.72) - M.spring(t, at: 48.05, response: 0.45, damping: 0.72)
+        let toEnglish: Double = M.spring(t, at: 73.4, response: 0.45, damping: 0.72)
+        let toChinese: Double = M.spring(t, at: 74.9, response: 0.45, damping: 0.72)
+        let pill: Double = toEnglish - toChinese
         let onEnglish = M.clamp(pill)
         return ZStack {
             Capsule()
@@ -167,7 +169,7 @@ private struct TrailerPromptCard: View {
 
     /// 中 → EN → 中 as a cross-fade with a soft blur and a small slide (never a squashing flip).
     private var promptText: some View {
-        let english = M.easeInOut(M.progress(t, 46.7, 0.5)) - M.easeInOut(M.progress(t, 48.1, 0.5))
+        let english: Double = M.easeInOut(M.progress(t, 73.45, 0.5)) - M.easeInOut(M.progress(t, 74.95, 0.5))
         let slide = CGFloat(english) * 6
         return ZStack(alignment: .topLeading) {
             promptBody(PromptSource.zh, english: false)
@@ -188,7 +190,7 @@ private struct TrailerPromptCard: View {
             .lineSpacing(english ? 3 : 4)
             .foregroundStyle(Color.white.opacity(0.86))
             .lineLimit(TrailerCanvas.isTall ? 7 : 6)
-            .textRenderer(TrailerLineReveal(progress: M.progress(t, 44.7, 1.4)))
+            .textRenderer(TrailerLineReveal(progress: M.progress(t, 70.7, 1.4)))
             .frame(width: TrailerLayout.promptSize.width - 36, height: TrailerLayout.promptSize.height - 142, alignment: .topLeading)
     }
 
@@ -210,9 +212,9 @@ private struct TrailerPromptCard: View {
     }
 
     private var copyButton: some View {
-        let copied = M.progress(t, 48.95, 0.12)
-        let dip = M.progress(t, 48.86, 0.06) * (1 - M.progress(t, 49.0, 0.25))
-        let pop = t > 48.95 ? M.spring(t, at: 48.95, response: 0.4, damping: 0.55) : 1
+        let copied: Double = M.progress(t, 75.85, 0.12)
+        let dip: Double = M.progress(t, 75.76, 0.06) * (1 - M.progress(t, 75.9, 0.25))
+        let pop: Double = t > 75.85 ? M.spring(t, at: 75.85, response: 0.4, damping: 0.55) : 1
         return ZStack {
             Capsule().fill(Palette.accentFill)
                 .opacity(1 - copied)
@@ -250,13 +252,13 @@ private struct TrailerChatPanel: View {
     let t: Double
 
     var body: some View {
-        let appear = M.spring(t, at: 49.25, response: 0.6, damping: 0.82)
-        let exit = M.easeInOut(M.progress(t, 51.55, 0.8))
+        let appear = M.spring(t, at: 76.15, response: 0.6, damping: 0.82)
+        let exit = M.easeInOut(M.progress(t, 79.1, 0.8))
         let size = CGSize(width: 334, height: 276)
         let scaleValue: Double = (0.94 + 0.06 * appear) * (1 - 0.72 * exit)
         let scale = CGFloat(scaleValue)
         let blur = CGFloat(exit) * 6
-        let fadeOut: Double = 1 - M.progress(t, 51.9, 0.45)
+        let fadeOut: Double = 1 - M.progress(t, 79.45, 0.45)
         let opacity: Double = M.clamp(appear * 2) * fadeOut
         let exitCenter = CGPoint(x: 195, y: TrailerLayout.promptCenter.y + 23)
         let center: CGPoint = M.mix(TrailerLayout.promptCenter, exitCenter, exit)
@@ -301,7 +303,7 @@ private struct TrailerChatPanel: View {
     }
 
     private var userBubble: some View {
-        let pop = M.spring(t, at: 50.05, response: 0.5, damping: 0.66)
+        let pop = M.spring(t, at: 76.95, response: 0.5, damping: 0.66)
         return HStack {
             Spacer(minLength: 60)
             VStack(alignment: .leading, spacing: 4) {
@@ -329,8 +331,8 @@ private struct TrailerChatPanel: View {
     }
 
     private var aiBubble: some View {
-        let appear = M.spring(t, at: 50.5, response: 0.5, damping: 0.72)
-        let typing = t < 51.05
+        let appear = M.spring(t, at: 77.4, response: 0.5, damping: 0.72)
+        let typing = t < 78.0
         return HStack {
             ZStack(alignment: .topLeading) {
                 if typing {
@@ -368,7 +370,7 @@ private struct TrailerChatPanel: View {
                 .minimumScaleFactor(0.8)
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(lines.indices, id: \.self) { index in
-                let reveal = M.easeOut(M.progress(t, 51.1 + Double(index) * 0.09, 0.3))
+                let reveal = M.easeOut(M.progress(t, 78.05 + Double(index) * 0.09, 0.3))
                 Capsule()
                     .fill(lines[index].color.opacity(0.75))
                     .frame(width: lines[index].width * CGFloat(reveal), height: 6)
@@ -378,58 +380,216 @@ private struct TrailerChatPanel: View {
     }
 }
 
-// MARK: - 52–58 s · Web: browser window with every recorded effect
 
-struct TrailerWebScene: View {
+// MARK: - 80–87 s · Outro: the web page and the phone, side by side
+
+/// "网页随时看 · App 感受手感": the documentation site in a browser (its address typed in) beside the
+/// phone playing a demo under the finger. Both then condense into the app icon of the end card: the window's
+/// frame morphs into the icon's rounded square, the phone shrinks into it.
+struct TrailerOutroScene: View {
     let t: Double
+    let origin: Date
 
-    /// Typed into the address bar (`TrailerCopy.web.url`).
-    static var url: String { TrailerCopy.current.web.url }
-    static let typingStart: Double = 52.2
-    /// Typing time grows with the address: 22 ms per character (0.9 s for the default 41), 0.4 … 1.4 s.
-    static let typingDuration: Double = {
-        let perCharacter: Double = 0.022
-        let natural: Double = Double(TrailerWebScene.url.count) * perCharacter
-        return min(max(natural, 0.4), 1.4)
+    static let enter: Double = 79.3
+    static let condenseStart: Double = 86.35
+
+    /// Browser window (left) and phone (right), per aspect.
+    static let windowSize: CGSize = TrailerCanvas.isTall ? CGSize(width: 212, height: 300) : CGSize(width: 214, height: 250)
+    static let windowCenter: CGPoint = {
+        let x: CGFloat = 18 + TrailerOutroScene.windowSize.width / 2
+        return CGPoint(x: x, y: TrailerCanvas.pick(250, 362))
     }()
-    static let windowCenter = TrailerLayout.promptCenter
-    static let windowSize = CGSize(width: 350, height: TrailerCanvas.pick(294, 360))
+    static let phoneScale: CGFloat = TrailerCanvas.pick(0.56, 0.64)
+    static let phoneCenter: CGPoint = {
+        let halfWidth: CGFloat = TrailerPhone.bodySize.width * TrailerOutroScene.phoneScale / 2
+        let x: CGFloat = TrailerCanvas.width - 18 - halfWidth
+        return CGPoint(x: x, y: TrailerOutroScene.windowCenter.y)
+    }()
+    static let labelY: CGFloat = windowCenter.y + TrailerCanvas.pick(143, 172)
+
+    /// The demo on the phone (board-card: delay 0.8, every 2.4 → flips at 83.2 and 85.6).
+    static let phoneEffectID = "showcase.board-card"
+    static let phoneEpochOffset: Double = 82.4
+    static let phoneTapTimes: [Double] = [83.2, 85.6]
+    /// The finger's spot on the phone's stage (the board, 170 × 160 on the demo's 340 pt canvas).
+    static let phoneTapPoint: CGPoint = {
+        let stage = TrailerPhone.stageRect
+        let screen = TrailerPhone.screenSize
+        let x: CGFloat = stage.minX + 170 * stage.width / StageMetrics.previewCanvas
+        let y: CGFloat = stage.minY + 160 * stage.height / StageMetrics.previewCanvas
+        let scale: CGFloat = TrailerOutroScene.phoneScale
+        let center: CGPoint = TrailerOutroScene.phoneCenter
+        let dx: CGFloat = (x - screen.width / 2) * scale
+        let dy: CGFloat = (y - screen.height / 2) * scale
+        return CGPoint(x: center.x + dx, y: center.y + dy)
+    }()
+
+    static func condense(_ t: Double) -> Double {
+        M.spring(t, at: condenseStart, response: 0.8, damping: 0.86)
+    }
 
     var body: some View {
-        let enter = M.spring(t, at: 51.65, response: 0.85, damping: 0.88)
-        let condense = TrailerEndScene.condense(t)
+        let copy = TrailerCopy.current.web
+        let windowIn: Double = M.spring(t, at: Self.enter, response: 0.85, damping: 0.86)
+        let phoneIn: Double = M.spring(t, at: Self.enter + 0.3, response: 0.8, damping: 0.84)
+        let condense: Double = Self.condense(t)
+        let morph: Double = M.clamp(condense)
+        let labelsExit: Double = M.easeIn(M.progress(t, Self.condenseStart - 0.2, 0.4))
+        let windowSlide = CGFloat(1 - windowIn) * -60
+        let phoneSlide = CGFloat(1 - phoneIn) * 70
+        let windowPath: CGPoint = M.mix(Self.windowCenter, TrailerEndScene.iconCenter, condense)
+        let phonePath: CGPoint = M.mix(Self.phoneCenter, TrailerEndScene.iconCenter, condense)
+        let phoneShrink = CGFloat(1 - 0.75 * morph)
+        let phoneFade: Double = 1 - M.progress(condense, 0.15, 0.4)
+        let buzz = CGFloat(TrailerScript.buzz(t, window: 82.0...87.0) * 1.6)
+        let settleBlur: CGFloat = CGFloat(1 - M.clamp(phoneIn)) * 8
+        let phoneBlur: CGFloat = settleBlur + CGFloat(morph) * 6
         ZStack {
             TrailerHeadline(
-                title: TrailerCopy.current.web.title,
-                subtitle: TrailerCopy.optional(TrailerCopy.current.web.subtitle),
-                reveal: M.progress(t, 52.3, 0.9),
-                exit: M.easeIn(M.progress(t, 56.75, 0.5))
+                title: copy.title,
+                subtitle: TrailerCopy.optional(copy.subtitle),
+                titleSize: TrailerCanvas.pick(28, 32),
+                reveal: M.progress(t, 80.1, 0.9),
+                exit: M.easeIn(M.progress(t, 86.1, 0.5))
             )
             .position(x: 195, y: TrailerLayout.headlineY)
-            // Condensing into the app icon: the window's frame and corners morph into the icon's rounded
-            // square (content fixed and cropped, never scaled), then the icon cross-fades in over it.
-            TrailerBrowserWindow(t: t, morph: M.clamp(condense), contentOpacity: 1 - M.clamp(condense * 2.2))
-                .scaleEffect(CGFloat(1.45 - 0.45 * enter))
-                .blur(radius: CGFloat(1 - M.clamp(enter)) * 8)
-                .opacity(M.clamp(enter * 2) * (1 - M.progress(condense, 0.45, 0.35)))
-                .position(M.mix(Self.windowCenter, TrailerEndScene.iconCenter, condense))
+            TrailerBrowserWindow(t: t, size: Self.windowSize, morph: morph, contentOpacity: 1 - M.clamp(condense * 2.2))
+                .scaleEffect(CGFloat(1.12 - 0.12 * windowIn))
+                .blur(radius: CGFloat(1 - M.clamp(windowIn)) * 8)
+                .opacity(M.clamp(windowIn * 2) * (1 - M.progress(condense, 0.45, 0.35)))
+                .position(x: windowPath.x + windowSlide, y: windowPath.y)
+            ZStack {
+                TrailerPhoneBody {
+                    TrailerOutroPhoneScreen(t: t, origin: origin)
+                }
+                TrailerPhoneGlass()
+            }
+            .scaleEffect(Self.phoneScale * phoneShrink)
+            .offset(x: buzz)
+            .blur(radius: phoneBlur)
+            .opacity(M.clamp(phoneIn * 2) * phoneFade)
+            .position(x: phonePath.x + phoneSlide, y: phonePath.y)
+            label(copy.webLabel, x: Self.windowCenter.x, appear: M.progress(t, 81.0, 0.6), exit: labelsExit)
+            label(copy.appLabel, x: Self.phoneCenter.x, appear: M.progress(t, 81.3, 0.6), exit: labelsExit)
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
     }
+
+    private func label(_ text: String, x: CGFloat, appear: Double, exit: Double) -> some View {
+        let eased: Double = M.easeOut(appear)
+        return Text(verbatim: text)
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(Color.white.opacity(0.85))
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .frame(maxWidth: 190)
+            .background(TrailerGlass(shape: Capsule(), frosted: true, shadowOpacity: 0.25))
+            .offset(y: CGFloat(1 - eased) * 10)
+            .opacity(eased)
+            .trailerDepth(exit, scale: 0.1, lift: 10, blur: 8)
+            .position(x: x, y: Self.labelY)
+    }
 }
 
+/// The outro phone's display: the detail page of one demo, played live.
+private struct TrailerOutroPhoneScreen: View {
+    let t: Double
+    let origin: Date
+
+    var body: some View {
+        let size = TrailerPhone.screenSize
+        let stage = TrailerPhone.stageRect
+        let card = TrailerPhone.cardRect
+        let effect: Effect? = EffectLibrary.effect(id: TrailerOutroScene.phoneEffectID)
+        ZStack {
+            LinearGradient(
+                colors: [Color(hex: 0x17120F), TrailerCanvas.ink, TrailerCanvas.ink],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            Image(systemName: "chevron.left")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(Palette.accent)
+                .position(x: 15, y: TrailerPhone.navY)
+            HStack(spacing: 4) {
+                Text(verbatim: effect?.name.zh ?? "")
+                    .font(.system(size: 10.5, weight: .heavy))
+                    .foregroundStyle(Color.white)
+                Text(verbatim: effect?.category.title.zh ?? "")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(Palette.accent)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1.5)
+                    .background(Palette.ember.opacity(0.16), in: Capsule())
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .frame(width: 136)
+            .position(x: size.width / 2, y: TrailerPhone.navY)
+            TrailerStageTile(
+                effectID: TrailerOutroScene.phoneEffectID,
+                epoch: origin.addingTimeInterval(TrailerOutroScene.phoneEpochOffset),
+                side: stage.width,
+                cornerRadius: TrailerPhone.stageCorner
+            )
+            .position(x: stage.midX, y: stage.midY)
+            HStack(spacing: 4) {
+                Image(systemName: "hand.tap.fill")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(Palette.accentFill)
+                Text(verbatim: TrailerCopy.current.phone.hintTap)
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.72))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 17)
+            .background(Color.white.opacity(0.06), in: Capsule())
+            .position(x: size.width / 2, y: TrailerPhone.hintY)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(verbatim: effect?.summary.zh ?? "")
+                    .font(.system(size: 8.5, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.7))
+                    .lineSpacing(2)
+                    .lineLimit(4)
+            }
+            .padding(10)
+            .frame(width: card.width, height: card.height, alignment: .topLeading)
+            .background(TrailerGlass(shape: RoundedRectangle(cornerRadius: 14, style: .continuous), shadowOpacity: 0.2))
+            .position(x: card.midX, y: card.midY)
+            TrailerPhoneStatusBar()
+        }
+        .frame(width: size.width, height: size.height)
+        .environment(\.colorScheme, .dark)
+    }
+}
+
+/// A browser window on the documentation site. `morph` 0 = the window, 1 = the app icon's rounded square.
+/// Narrow windows (< 300 pt) drop the traffic lights and the reload glyph so the address stays readable.
 private struct TrailerBrowserWindow: View {
     let t: Double
-    /// 0 = the full window, 1 = the app icon's rounded square.
+    let size: CGSize
     let morph: Double
     let contentOpacity: Double
 
+    static let typingStart: Double = 80.3
+    /// Typing time grows with the address: 22 ms per character (0.9 s for the default 41), 0.4 … 1.4 s.
+    static let typingDuration: Double = {
+        let perCharacter: Double = 0.022
+        let natural: Double = Double(TrailerCopy.current.web.url.count) * perCharacter
+        return min(max(natural, 0.4), 1.4)
+    }()
+
+    private var isCompact: Bool { size.width < 300 }
+
     var body: some View {
-        let size = TrailerWebScene.windowSize
         let side = TrailerEndScene.iconSide
         let width = M.mix(size.width, side, morph)
         let height = M.mix(size.height, side, morph)
-        let corner = M.mix(CGFloat(20), side * 0.225, morph)
+        let corner = M.mix(CGFloat(18), side * 0.225, morph)
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
         VStack(spacing: 0) {
             toolbar
@@ -438,7 +598,7 @@ private struct TrailerBrowserWindow: View {
                 .frame(height: 0.5)
             // The page is taller than the window: pin it under the toolbar and clip the bottom, so its
             // height never pushes the toolbar (and the URL) out of the top of the window.
-            TrailerWebPage(t: t)
+            TrailerWebPage(t: t, columns: isCompact ? 3 : 4)
                 .frame(width: size.width, height: size.height - 38.5, alignment: .top)
                 .clipped()
         }
@@ -452,23 +612,27 @@ private struct TrailerBrowserWindow: View {
     }
 
     private var toolbar: some View {
-        let url = TrailerWebScene.url
-        let typingEnd: Double = TrailerWebScene.typingStart + TrailerWebScene.typingDuration
-        let typed = Int((Double(url.count) * M.progress(t, TrailerWebScene.typingStart, TrailerWebScene.typingDuration)).rounded(.down))
+        let url = TrailerCopy.current.web.url
+        let start = Self.typingStart
+        let typingEnd: Double = start + Self.typingDuration
+        let typed = Int((Double(url.count) * M.progress(t, start, Self.typingDuration)).rounded(.down))
         let text = String(url.prefix(typed))
-        let caretOn = t < typingEnd || sin(t * 2 * Double.pi * 1.4) > -0.2
+        let caretOn: Bool = t < typingEnd || sin(t * 2 * Double.pi * 1.4) > -0.2
+        let focus: Double = M.progress(t, start - 0.2, 0.3) * (1 - M.progress(t, typingEnd + 0.5, 0.5))
         return HStack(spacing: 10) {
-            HStack(spacing: 6) {
-                Circle().fill(Color(hex: 0xFF5F57)).frame(width: 9, height: 9)
-                Circle().fill(Color(hex: 0xFEBC2E)).frame(width: 9, height: 9)
-                Circle().fill(Color(hex: 0x28C840)).frame(width: 9, height: 9)
+            if !isCompact {
+                HStack(spacing: 6) {
+                    Circle().fill(Color(hex: 0xFF5F57)).frame(width: 9, height: 9)
+                    Circle().fill(Color(hex: 0xFEBC2E)).frame(width: 9, height: 9)
+                    Circle().fill(Color(hex: 0x28C840)).frame(width: 9, height: 9)
+                }
             }
-            HStack(spacing: 5) {
+            HStack(spacing: 4) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 8.5, weight: .bold))
+                    .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(Color.white.opacity(0.55))
                 Text(verbatim: text)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: isCompact ? 9.5 : 10, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.92))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
@@ -476,19 +640,21 @@ private struct TrailerBrowserWindow: View {
                 Rectangle()
                     .fill(Palette.ember)
                     .frame(width: 1.5, height: 12)
-                    .opacity(caretOn && t > 52.0 ? 1 : 0)
+                    .opacity(caretOn && t > start - 0.2 ? 1 : 0)
                 Spacer(minLength: 0)
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Color.white.opacity(0.4))
+                if !isCompact {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Color.white.opacity(0.4))
+                }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, isCompact ? 8 : 10)
             .frame(height: 24)
             .background(Color.white.opacity(0.07), in: Capsule())
-            .overlay(Capsule().strokeBorder(Palette.ember.opacity(0.55 * M.progress(t, 52.1, 0.3) * (1 - M.progress(t, 53.6, 0.5))), lineWidth: 1))
+            .overlay(Capsule().strokeBorder(Palette.ember.opacity(0.55 * focus), lineWidth: 1))
             .trailerGlint(M.progress(t, typingEnd + 0.15, 0.7), strength: 0.5)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, isCompact ? 8 : 14)
         .frame(height: 38)
     }
 }
@@ -496,6 +662,7 @@ private struct TrailerBrowserWindow: View {
 /// The documentation site: a header and a grid of recorded effects that keeps scrolling.
 private struct TrailerWebPage: View {
     let t: Double
+    let columns: Int
 
     private static let effects: [Effect] = {
         let all = EffectLibrary.all
@@ -505,27 +672,28 @@ private struct TrailerWebPage: View {
     }()
 
     var body: some View {
-        let local = max(t - 53.2, 0)
-        let scroll = CGFloat(26 * (local - (1 - exp(-2 * local)) / 2))
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
+        let local: Double = max(t - 81.2, 0)
+        let scroll = CGFloat(22 * (local - (1 - exp(-2 * local)) / 2))
+        let compact = columns < 4
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 5) {
                 Text(verbatim: TrailerCopy.current.web.siteName)
-                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .font(.system(size: compact ? 12 : 13, weight: .heavy, design: .rounded))
                     .foregroundStyle(Color.white)
                     .lineLimit(1)
                     .layoutPriority(1)
                 Text(verbatim: TrailerCopy.current.web.siteTagline)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: compact ? 9.5 : 11, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.55))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 Spacer(minLength: 0)
                 Text(verbatim: TrailerCopy.current.web.countBadge)
-                    .font(.system(size: 10.5, weight: .heavy).monospacedDigit())
+                    .font(.system(size: compact ? 9.5 : 10.5, weight: .heavy).monospacedDigit())
                     .lineLimit(1)
                     .fixedSize()
                     .foregroundStyle(Palette.onAccent)
-                    .padding(.horizontal, 7)
+                    .padding(.horizontal, 6)
                     .padding(.vertical, 3)
                     .background(Palette.accentFill, in: Capsule())
             }
@@ -535,14 +703,15 @@ private struct TrailerWebPage: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .clipped()
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
+        .padding(.horizontal, compact ? 10 : 12)
+        .padding(.top, 9)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private var grid: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 4)
-        return LazyVGrid(columns: columns, spacing: 8) {
+        let spacing: CGFloat = columns < 4 ? 7 : 8
+        let items = Array(repeating: GridItem(.flexible(), spacing: spacing), count: max(columns, 1))
+        return LazyVGrid(columns: items, spacing: spacing) {
             ForEach(Self.effects.indices, id: \.self) { index in
                 tile(index)
             }
@@ -552,17 +721,18 @@ private struct TrailerWebPage: View {
 
     private func tile(_ index: Int) -> some View {
         let effect = Self.effects[index]
-        let pop = M.spring(t, at: 52.35 + Double(index) * 0.035, response: 0.5, damping: 0.72)
+        let pop: Double = M.spring(t, at: 80.4 + Double(index) * 0.035, response: 0.5, damping: 0.72)
         let colors = effect.category.gradient
-        return VStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
+        let bob = CGFloat(2 * sin(t * 2.2 + Double(index)))
+        return VStack(spacing: 3) {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
                 .aspectRatio(1, contentMode: .fit)
                 .overlay {
                     Image(systemName: effect.category.symbol)
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Color.white.opacity(0.92))
-                        .offset(y: CGFloat(2 * sin(t * 2.2 + Double(index))))
+                        .offset(y: bob)
                 }
                 .overlay(alignment: .bottomTrailing) {
                     Image(systemName: "play.fill")
@@ -570,10 +740,10 @@ private struct TrailerWebPage: View {
                         .foregroundStyle(Color.white)
                         .frame(width: 14, height: 14)
                         .background(Color.black.opacity(0.35), in: Circle())
-                        .padding(5)
+                        .padding(4)
                 }
             Text(verbatim: effect.name.zh)
-                .font(.system(size: 8.5, weight: .semibold))
+                .font(.system(size: 8, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.7))
                 .lineLimit(1)
         }
@@ -582,7 +752,7 @@ private struct TrailerWebPage: View {
     }
 }
 
-// MARK: - 57–60 s · End card: app icon + Motionary – 动效词典
+// MARK: - 87–90 s · End card: app icon + Motionary – 动效词典
 
 struct TrailerEndScene: View {
     let t: Double
@@ -590,20 +760,15 @@ struct TrailerEndScene: View {
     static let iconSide: CGFloat = TrailerCanvas.pick(132, 150)
     static let iconCenter = TrailerCanvas.point(195, 188, 262)
 
-    /// The browser window condensing into the icon.
-    static func condense(_ t: Double) -> Double {
-        M.spring(t, at: 56.9, response: 0.8, damping: 0.86)
-    }
-
     var body: some View {
-        let condense = Self.condense(t)
+        let condense: Double = TrailerOutroScene.condense(t)
         let side = Self.iconSide
-        let float = CGFloat(2 * sin((t - 58.5) * 1.3) * M.progress(t, 58.5, 0.8))
-        let iconIn = M.progress(condense, 0.3, 0.35)
-        let path = M.mix(TrailerWebScene.windowCenter, Self.iconCenter, condense)
+        let float = CGFloat(2 * sin((t - 88.5) * 1.3) * M.progress(t, 88.5, 0.8))
+        let iconIn: Double = M.progress(condense, 0.3, 0.35)
+        let path: CGPoint = M.mix(TrailerOutroScene.windowCenter, Self.iconCenter, condense)
         ZStack {
             // Always a true square: it only grows uniformly while cross-fading over the morphing window.
-            TrailerAppIcon(t: t, side: side)
+            TrailerAppIcon(t: t, side: side, popAt: 86.95, glintAt: 87.85)
                 .scaleEffect(CGFloat(0.86 + 0.14 * M.easeOut(iconIn)))
                 .shadow(color: Palette.ember.opacity(0.45 * M.clamp(condense)), radius: 34, x: 0, y: 10)
                 .opacity(iconIn)
@@ -613,7 +778,7 @@ struct TrailerEndScene: View {
                 .foregroundStyle(Color.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.45)
-                .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 57.75, 0.8)))
+                .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 87.25, 0.8)))
                 .frame(width: 360)
                 .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 4)
                 .position(x: 195, y: TrailerCanvas.pick(300, 394))
@@ -623,7 +788,7 @@ struct TrailerEndScene: View {
                 .foregroundStyle(TrailerStyle.emberText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 58.05, 0.8)))
+                .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 87.55, 0.8)))
                 .frame(width: 360)
                 .position(x: 195, y: TrailerCanvas.pick(344, 444))
             Text(verbatim: TrailerCopy.current.end.tagline)
@@ -632,66 +797,10 @@ struct TrailerEndScene: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
                 .frame(width: 360)
-                .opacity(M.easeOut(M.progress(t, 58.4, 0.7)))
-                .offset(y: CGFloat(1 - M.easeOut(M.progress(t, 58.4, 0.7))) * 8)
+                .opacity(M.easeOut(M.progress(t, 87.9, 0.7)))
+                .offset(y: CGFloat(1 - M.easeOut(M.progress(t, 87.9, 0.7))) * 8)
                 .position(x: 195, y: TrailerCanvas.pick(382, 486))
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
-    }
-}
-
-/// The app icon, drawn live: an ember gradient that cools to near-black, and three cream motion
-/// dots growing along a diagonal (they pop in one after another), with a glint sweep.
-private struct TrailerAppIcon: View {
-    let t: Double
-    let side: CGFloat
-
-    private static let dots: [(x: CGFloat, y: CGFloat, radius: CGFloat, opacity: Double)] = [
-        (0.293, 0.605, 0.107, 0.5),
-        (0.479, 0.498, 0.137, 0.78),
-        (0.664, 0.391, 0.176, 1),
-    ]
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: side * 0.225, style: .continuous)
-        ZStack(alignment: .topLeading) {
-            LinearGradient(
-                colors: [Color(hex: 0xE2692A), Color(hex: 0x9C4216), Color(hex: 0x42190B), Color(hex: 0x130E0E)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            RadialGradient(
-                colors: [Color(hex: 0xF5832E, opacity: 0.9), Color(hex: 0xF5832E, opacity: 0)],
-                center: UnitPoint(x: 0.47, y: 0),
-                startRadius: 0,
-                endRadius: side * 0.75
-            )
-            RadialGradient(
-                colors: [Color.black.opacity(0), Color.black.opacity(0.35)],
-                center: UnitPoint(x: 0.35, y: 0.35),
-                startRadius: side * 0.3,
-                endRadius: side * 0.95
-            )
-            ForEach(Self.dots.indices, id: \.self) { index in
-                dot(index)
-            }
-        }
-        .frame(width: side, height: side)
-        .clipShape(shape)
-        .overlay(shape.strokeBorder(Color.white.opacity(0.18), lineWidth: 0.75))
-        .trailerGlint(M.progress(t, 58.35, 0.75), strength: 0.55)
-    }
-
-    private func dot(_ index: Int) -> some View {
-        let spec = Self.dots[index]
-        let pop = M.spring(t, at: 57.5 + Double(index) * 0.13, response: 0.45, damping: 0.6)
-        let diameter = spec.radius * 2 * side
-        let travel = CGFloat(1 - M.clamp(pop)) * side * 0.12
-        return Circle()
-            .fill(Color(hex: 0xFFF6EC).opacity(spec.opacity))
-            .frame(width: diameter, height: diameter)
-            .shadow(color: index == 2 ? Color(hex: 0xFFB36B).opacity(0.8) : Color.clear, radius: 10, x: 0, y: 0)
-            .scaleEffect(CGFloat(max(pop, 0)))
-            .offset(x: spec.x * side - diameter / 2 - travel, y: spec.y * side - diameter / 2 + travel)
     }
 }

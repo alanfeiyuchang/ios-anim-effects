@@ -150,6 +150,26 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .icon-btn:disabled { opacity: .35; cursor: not-allowed; }
 .add-btn { font-size: 13px; padding: 6px 12px; }
 .warn-line { font-size: 12.5px; color: var(--warn); margin-top: 6px; }
+.vo-row { padding: 12px 0; border-bottom: 1px dashed var(--line); }
+.vo-row:last-of-type { border-bottom: 0; }
+.vo-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.vo-top .idx { width: 22px; text-align: right; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.vo-time { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+input[type="number"] {
+  width: 76px; background: #0F0F12; border: 1px solid var(--line-strong); border-radius: 10px;
+  padding: 7px 8px; font-size: 14px; font-variant-numeric: tabular-nums; color: var(--text);
+}
+input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+.vo-top .spacer { flex: 1; }
+.vo-rate { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.vo-rate.over { color: var(--warn); }
+.vo-preview { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.vo-preview span {
+  font-size: 12px; color: var(--muted); background: rgba(255,255,255,0.05); border: 1px solid var(--line);
+  border-radius: 8px; padding: 2px 8px;
+}
+.vo-preview span b { color: var(--faint); font-weight: 500; margin-right: 6px; font-variant-numeric: tabular-nums; }
+.vo-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 10px; }
 footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: center; }
 
 @media (max-width: 560px) {
@@ -159,6 +179,7 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
   .actions .btn { flex: 1 1 auto; justify-content: center; padding: 8px 10px; font-size: 13.5px; }
   .scene-head, .fields { padding-left: 14px; padding-right: 14px; }
   .list-row .counter { width: 46px; }
+  input[type="number"] { width: 66px; }
 }
 </style>
 </head>
@@ -170,7 +191,7 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
         <div class="logo" aria-hidden="true"><i></i><i></i><i></i></div>
         <div>
           <h1>预告片文案编辑器</h1>
-          <p class="sub">Motionary 60 秒宣传片 · 屏幕上的全部文字</p>
+          <p class="sub">Motionary 90 秒宣传片 · 屏幕上的全部文字与旁白稿</p>
         </div>
       </div>
       <div class="actions">
@@ -193,9 +214,10 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
       <li>在终端运行 <code>scripts/record-trailer.sh --aspects 9x16</code> 录制。详见 <code>docs/TRAILER.md</code>。</li>
     </ol>
     <div style="margin-top:8px">
-      占位符会在录制时替换成实时数字：<code>{effects}</code> 动效总数、<code>{categories}</code> 分类数、<code>{families}</code> 动效家族数；
+      占位符会在录制时替换成实时数字：<code>{effects}</code> 动效总数、<code>{categories}</code> 分类数、<code>{families}</code> 动效家族数（旁白里也能用）；
       <code>{name}</code> 仅用于「聊天气泡标题」，替换为提示词对应的动效名。
       字数统计里中文算 1、英文/数字算 0.5；超过建议长度不会出错，但文字会自动缩小。
+      最后一节「旁白 · 字幕」不会画在画面上：录制脚本会把它写成 <code>voiceover.srt</code>（可导入剪映）和 <code>voiceover.txt</code>。
     </div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
   </div>
@@ -212,7 +234,7 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
   },
   "pain": {
     "titleLine1": "想要的动效，",
-    "titleLine2": "说不出名字？",
+    "titleLine2": "说不出来",
     "backdropMark": "？",
     "words": [
       "弹一下？",
@@ -224,22 +246,29 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
       "丝滑？"
     ]
   },
-  "search": {
-    "title": "一搜即达",
-    "subtitle": "{effects} 个动效秒速定位",
-    "placeholder": "搜索动效、控件、手势…",
-    "query": "卡片",
-    "resultSuffix": "个结果",
-    "chips": [
-      "全部",
-      "卡片",
-      "质感交互",
-      "按钮"
+  "unknown": {
+    "titleLine1": "iOS 能做到什么？",
+    "titleLine2": "不知道",
+    "tileMark": "?"
+  },
+  "intro": {
+    "title": "Motionary",
+    "subtitle": "动效词典",
+    "pillars": [
+      "找灵感",
+      "上手感受",
+      "实时可调",
+      "一键复制提示词"
     ]
+  },
+  "search": {
+    "title": "找灵感 · 一搜即达",
+    "subtitle": "{effects} 个动效 · {categories} 大分类 · {families} 个家族",
+    "query": "卡片"
   },
   "phone": {
     "title": "真实上手体验",
-    "subtitle": "每一下都有触感",
+    "subtitle": "每一下都有触感反馈",
     "statusTime": "9:41",
     "hintTap": "点一下试试",
     "hintGesture": "按住拖动试试",
@@ -261,8 +290,8 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
     "targetLabel": "目标"
   },
   "prompt": {
-    "title": "专业中英提示词",
-    "subtitle": "一键复制给 AI",
+    "title": "一键复制提示词",
+    "subtitle": "中英双语 · 直接发给 AI",
     "cardTitle": "专业提示词",
     "languageZh": "中",
     "languageEn": "EN",
@@ -279,12 +308,14 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
     "reply": "收到！这就用 SwiftUI 实现："
   },
   "web": {
-    "title": "网页版全部动效",
-    "subtitle": "录像一览，随时查看",
+    "title": "网页随时看 · App 感受手感",
+    "subtitle": "",
     "url": "alanfeiyuchang.github.io/ios-anim-effects",
     "siteName": "Motionary",
-    "siteTagline": "全部动效录像一览",
-    "countBadge": "{effects} 个"
+    "siteTagline": "全部动效录像",
+    "countBadge": "{effects} 个",
+    "webLabel": "网页 · 快速浏览全部录像",
+    "appLabel": "App · 亲手感受手感"
   },
   "end": {
     "title": "Motionary",
@@ -293,7 +324,54 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
   },
   "touch": {
     "hapticBadge": "触感"
-  }
+  },
+  "voiceover": [
+    {
+      "start": 0,
+      "end": 6,
+      "text": "做 App 的时候，你一定遇到过这种情况——"
+    },
+    {
+      "start": 6,
+      "end": 16,
+      "text": "脑子里有感觉，却说不清：是弹簧还是缓动？回弹多少？跟设计师、跟 AI 都讲不明白。"
+    },
+    {
+      "start": 16,
+      "end": 24,
+      "text": "更难的是，你根本不知道 iOS 原生能做出哪些效果。"
+    },
+    {
+      "start": 24,
+      "end": 30,
+      "text": "所以我做了 Motionary，一本可以上手玩的 iOS 动效词典。"
+    },
+    {
+      "start": 30,
+      "end": 44,
+      "text": "{effects} 个动效，按 {categories} 个分类、{families} 个家族整理。输入关键词就能搜到，点「质感交互」，看最精致的那一批。"
+    },
+    {
+      "start": 44,
+      "end": 60,
+      "text": "每个动效都是真实运行的 SwiftUI，不是视频。用手指去按、去拖，配合 Taptic Engine 的触感反馈，手感好不好，一摸就知道。"
+    },
+    {
+      "start": 60,
+      "end": 70,
+      "text": "弹簧的响应时间、阻尼比，拖一下马上看到变化。阻尼越小回弹越多，系统默认的弹簧大约是响应 0.55 秒、阻尼 0.825。"
+    },
+    {
+      "start": 70,
+      "end": 80,
+      "text": "每个动效都配有中英双语的专业提示词，写清时长、曲线和弹簧参数，一键复制给 AI 或设计师，直接复现。"
+    },
+    {
+      "start": 80,
+      "end": 90,
+      "text": "想快速浏览，打开网页就能看全部录像；想感受手感，就在 App 里亲手试试。Motionary，让动效说得清、看得见、摸得着。"
+    }
+  ]
 }
 </script>
 
@@ -301,43 +379,55 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "motionary.trailer-copy.v1";
+  var STORAGE_KEY = "motionary.trailer-copy.v2";
   var DEFAULTS = JSON.parse(document.getElementById("default-copy").textContent);
 
   // Scene schema: section titles, time ranges, one entry per key of TrailerCopy (Swift).
   // type: "text" (one line), "multi" (several lines), "list" (array of strings).
+  // kind "voiceover": the top-level array of { start, end, text } lines (TrailerCopy.voiceover).
   var SCHEMA = [
-    { id: "hook", title: "开场 · 数字冲击", time: "0–5 s",
-      about: "光点汇聚成跳动的动效总数（数字本身来自实时目录，不可改）。",
+    { id: "hook", title: "开场 · 数字翻滚", time: "0–6 s",
+      about: "动效总数用 App 里「翻滚棱柱数字」的真实 3D 棱柱一面面翻滚、从左到右回弹落定（数字本身来自实时目录，不可改）。",
       fields: [
         { key: "subtitle", label: "数字下方的标题", hint: "紧跟在大数字下面，例如「个 iOS 高级动效」。", max: 10 },
         { key: "categoriesLabel", label: "统计胶囊 1（分类）", hint: "显示在分类数量后面：「15 大分类」。", max: 5 },
         { key: "familiesLabel", label: "统计胶囊 2（家族）", hint: "显示在家族数量后面：「85 个动效家族」。", max: 6 }
       ] },
-    { id: "pain", title: "痛点 · 说不出名字", time: "5–11 s",
-      about: "两行大标题，周围漂浮着模糊的描述词，最后全部吸进搜索框。",
+    { id: "pain", title: "痛点 1 · 说不出来", time: "6–16 s",
+      about: "两行大标题，周围漂浮着模糊的描述词，最后全部收拢到画面中央。",
       fields: [
         { key: "titleLine1", label: "大标题第 1 行（白色）", hint: "", max: 8 },
         { key: "titleLine2", label: "大标题第 2 行（橙色渐变）", hint: "", max: 8 },
         { key: "backdropMark", label: "背景巨型符号", hint: "画面背后半透明的超大字符，通常是一个「？」。", max: 1 },
         { key: "words", label: "漂浮的模糊词", hint: "最多 12 个；前 7 个有精心摆放的位置，之后的自动排布。", max: 7, type: "list", minItems: 0, maxItems: 12 }
       ] },
-    { id: "search", title: "搜索 · 一搜即达", time: "10–21 s",
-      about: "搜索框输入关键词，出现结果，手指点第 2 个筛选胶囊，再打开第一个结果。",
+    { id: "unknown", title: "痛点 2 · 不知道能做什么", time: "16–24 s",
+      about: "一格格看不清的未知动效（模糊的色块 + 问号），最后收拢成 App 图标。",
       fields: [
-        { key: "title", label: "标题", hint: "", max: 8 },
-        { key: "subtitle", label: "副标题", hint: "可用 {effects}。留空则不显示副标题。", max: 12 },
-        { key: "placeholder", label: "搜索框占位文字", hint: "输入前显示的灰色提示。", max: 14 },
-        { key: "query", label: "输入的搜索词", hint: "逐字打出，并在目录里真实搜索（结果数也是真的）。越长打字越快。", max: 6 },
-        { key: "resultSuffix", label: "结果数后缀", hint: "搜索框右侧「12 个结果」里的文字。", max: 4 },
-        { key: "chips", label: "筛选胶囊", hint: "2–6 个；手指会点第 2 个（它筛选的是「卡片」分类）。", max: 5, type: "list", minItems: 2, maxItems: 6 }
+        { key: "titleLine1", label: "大标题第 1 行（白色）", hint: "", max: 10 },
+        { key: "titleLine2", label: "大标题第 2 行（橙色渐变）", hint: "留空则只显示一行。", max: 8 },
+        { key: "tileMark", label: "方块上的符号", hint: "每个模糊方块中央的字符。", max: 1 }
       ] },
-    { id: "phone", title: "真机体验 · 上手玩", time: "21–36 s",
-      about: "iPhone 里的动效详情页，依次演示几个真实动效，手指点击带触感反馈。",
+    { id: "intro", title: "登场 · Motionary", time: "24–30 s",
+      about: "App 图标弹出，下方是名字、定位，以及四个卖点胶囊（2 × 2）。",
+      fields: [
+        { key: "title", label: "名字", hint: "图标下方的大字。", max: 12 },
+        { key: "subtitle", label: "定位", hint: "名字下方的橙色一行。", max: 8 },
+        { key: "pillars", label: "卖点胶囊", hint: "最多 4 个，按 2 × 2 排列，依次亮起。", max: 7, type: "list", minItems: 0, maxItems: 4 }
+      ] },
+    { id: "search", title: "找灵感 · 一搜即达", time: "30–44 s",
+      about: "手机里是 App 真实的首页和搜索页（像录屏）：首页上下滑动，点搜索，输入关键词，点「质感交互精选」分类，再打开一个结果。页面里的文字来自 App 本身，不在这里改。",
+      fields: [
+        { key: "title", label: "标题", hint: "手机上方的大字。", max: 12 },
+        { key: "subtitle", label: "副标题", hint: "可用 {effects}、{categories}、{families}。留空则不显示。", max: 22 },
+        { key: "query", label: "输入的搜索词", hint: "逐字打进 App 的真实搜索框，结果也是真的。越长打字越快。", max: 6 }
+      ] },
+    { id: "phone", title: "上手感受", time: "44–60 s",
+      about: "App 的动效详情页，依次演示几个「质感交互」动效，手指点击带触感反馈。",
       fields: [
         { key: "title", label: "标题", hint: "", max: 9 },
         { key: "subtitle", label: "副标题", hint: "留空则不显示。", max: 12 },
-        { key: "statusTime", label: "状态栏时间", hint: "手机屏幕左上角的时间。", max: 5 },
+        { key: "statusTime", label: "状态栏时间", hint: "手机屏幕左上角的时间（整段手机镜头通用）。", max: 5 },
         { key: "hintTap", label: "提示胶囊 · 点击类", hint: "舞台下方的小胶囊，按当前动效的交互类型显示。", max: 9 },
         { key: "hintGesture", label: "提示胶囊 · 手势类", hint: "", max: 9 },
         { key: "hintScroll", label: "提示胶囊 · 滚动类", hint: "", max: 9 },
@@ -347,8 +437,8 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
         { key: "reset", label: "参数卡片「重置」", hint: "参数区右上角的小字。", max: 3 },
         { key: "noParams", label: "无参数时的文字", hint: "动效没有可调参数时显示。", max: 7 }
       ] },
-    { id: "tune", title: "调参 · 实时可调", time: "36–44 s",
-      about: "手机舞台换成弹簧实验，手指拖动阻尼、响应两个滑块。",
+    { id: "tune", title: "实时可调", time: "60–70 s",
+      about: "手机舞台换成弹簧实验，手指拖动阻尼、响应两个滑块，最后停在系统默认弹簧（响应 0.55、阻尼 0.825）。",
       fields: [
         { key: "title", label: "标题", hint: "", max: 9 },
         { key: "subtitle", label: "副标题", hint: "留空则不显示。", max: 14 },
@@ -359,7 +449,7 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
         { key: "responseLabel", label: "滑块 2 名称", hint: "", max: 3 },
         { key: "targetLabel", label: "曲线目标线标注", hint: "弹簧曲线虚线旁的小字。", max: 3 }
       ] },
-    { id: "prompt", title: "提示词卡片", time: "44–50 s",
+    { id: "prompt", title: "一键复制提示词", time: "70–77 s",
       about: "提示词卡片展开，中/英切换，点击复制后飞进 AI 对话。",
       fields: [
         { key: "title", label: "标题", hint: "", max: 9 },
@@ -369,11 +459,11 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
         { key: "languageEn", label: "语言切换 · 英文", hint: "", max: 3 },
         { key: "copyButton", label: "复制按钮", hint: "按钮会随文字变宽（最多约 7 个字）。", max: 5 },
         { key: "copiedButton", label: "复制后按钮", hint: "", max: 5 },
-        { key: "effectID", label: "（可选）换一个动效的提示词", hint: "填动效 id，例如 <code>buttons.depth-press</code>；留空 = 搜索打开的 cards.flip。", max: 40, placeholder: "留空 = 默认" },
+        { key: "effectID", label: "（可选）换一个动效的提示词", hint: "填动效 id，例如 <code>buttons.depth-press</code>；留空 = 手机上演示的第一个动效 <code>showcase.photo-play</code>。", max: 40, placeholder: "留空 = 默认" },
         { key: "textZh", label: "（可选）自定义中文提示词", hint: "留空 = 使用目录里的真实提示词。最多显示约 6–7 行。", max: 160, type: "multi", placeholder: "留空 = 使用目录里的提示词" },
         { key: "textEn", label: "（可选）自定义英文提示词", hint: "留空 = 使用目录里的真实提示词。", max: 400, type: "multi", placeholder: "Empty = catalog prompt" }
       ] },
-    { id: "chat", title: "AI 对话", time: "49–52 s",
+    { id: "chat", title: "AI 对话", time: "76–80 s",
       about: "提示词粘贴进 AI 对话，AI 回复一行代码预告。",
       fields: [
         { key: "assistantName", label: "AI 名称", hint: "", max: 8 },
@@ -381,18 +471,20 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
         { key: "bubbleTitle", label: "聊天气泡标题", hint: "可用 {name}（动效名）。", max: 14 },
         { key: "reply", label: "AI 回复", hint: "最多两行。", max: 30, type: "multi" }
       ] },
-    { id: "web", title: "网页版", time: "52–57 s",
-      about: "浏览器窗口，地址栏逐字输入网址，页面展示全部动效录像。",
+    { id: "web", title: "网页 + App", time: "80–87 s",
+      about: "左边浏览器（地址栏逐字输入网址，页面是全部动效录像），右边手机被手指点着玩；随后两者收拢成片尾图标。",
       fields: [
-        { key: "title", label: "标题", hint: "", max: 9 },
+        { key: "title", label: "标题", hint: "", max: 14 },
         { key: "subtitle", label: "副标题", hint: "留空则不显示。", max: 12 },
         { key: "url", label: "网址", hint: "地址栏逐字打出；打字时长随长度变化（0.4–1.4 秒）。不要写 https://。", max: 45 },
         { key: "siteName", label: "网站名", hint: "网页左上角。", max: 12 },
-        { key: "siteTagline", label: "网站标语", hint: "网站名右边的灰字。", max: 10 },
-        { key: "countBadge", label: "数量徽章", hint: "网页右上角橙色胶囊，可用 {effects}。", max: 6 }
+        { key: "siteTagline", label: "网站标语", hint: "网站名右边的灰字（窗口较窄，宜短）。", max: 7 },
+        { key: "countBadge", label: "数量徽章", hint: "网页右上角橙色胶囊，可用 {effects}。", max: 6 },
+        { key: "webLabel", label: "浏览器下方说明", hint: "", max: 12 },
+        { key: "appLabel", label: "手机下方说明", hint: "", max: 10 }
       ] },
-    { id: "end", title: "片尾", time: "57–60 s",
-      about: "网页窗口收缩成 App 图标，下方三行文字。",
+    { id: "end", title: "片尾", time: "87–90 s",
+      about: "网页和手机收拢成 App 图标，下方三行文字。",
       fields: [
         { key: "title", label: "主标题", hint: "图标下方的大字。", max: 12 },
         { key: "subtitle", label: "副标题", hint: "橙色渐变的一行。", max: 28 },
@@ -402,7 +494,10 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
       about: "每次模拟点击时出现在手指旁的橙色小胶囊。",
       fields: [
         { key: "hapticBadge", label: "触感徽章", hint: "", max: 3 }
-      ] }
+      ] },
+    { id: "voiceover", title: "旁白 · 字幕", time: "0–90 s", kind: "voiceover",
+      about: "不会画在画面上。每行填开始/结束秒数和旁白文字；录制脚本据此写出 voiceover.srt（每条字幕 ≤ 18 字，按句子和标点自动切分、按字数分配时长）与 voiceover.txt。可用 {effects} 等占位符。",
+      fields: [] }
   ];
 
   var state = clone(DEFAULTS);
@@ -413,6 +508,14 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
 
   function isObject(value) { return value !== null && typeof value === "object" && !Array.isArray(value); }
 
+  // One voice-over line, read as leniently as the app does (TrailerCopy.VoiceLine).
+  function voiceLine(value) {
+    var line = isObject(value) ? value : {};
+    var start = typeof line.start === "number" && isFinite(line.start) ? line.start : 0;
+    var end = typeof line.end === "number" && isFinite(line.end) ? line.end : start;
+    return { start: start, end: end, text: typeof line.text === "string" ? line.text : "" };
+  }
+
   // Imported/stored values over the defaults, per key; wrong types keep the default (like the app does).
   function merge(base, incoming) {
     var out = clone(base);
@@ -422,6 +525,8 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
       if (!(key in out)) { out[key] = clone(value); return; }
       if (isObject(out[key])) {
         out[key] = merge(out[key], value);
+      } else if (key === "voiceover" && base === DEFAULTS) {
+        if (Array.isArray(value)) { out[key] = value.map(voiceLine); }
       } else if (Array.isArray(out[key])) {
         if (Array.isArray(value)) { out[key] = value.filter(function (v) { return typeof v === "string"; }); }
       } else if (typeof value === typeof out[key]) {
@@ -603,13 +708,229 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
     return wrap;
   }
 
+  // ---- Voice-over -----------------------------------------------------------------------------------
+  // Mirrors the subtitle splitting of scripts/record-trailer.sh (voiceover_files): sentences, then clauses,
+  // then the fewest cues of ≤ 18 (CJK 1, Latin ½) with the widest cue as narrow as possible.
+
+  var VO_LIMIT = 18;
+  var VO_DURATION = 90;
+  // Preview only: the recording expands placeholders with the live catalog.
+  var VO_COUNTS = { effects: 461, categories: 15, families: 85 };
+  var VO_PUNCT = "(?:[，。！？；：、!?;:—…]|[.,](?!\\d))";
+  var VO_TRAILING = "，。；：、,.;:—… ";
+
+  function voWidth(text) {
+    var total = 0;
+    Array.from(text).forEach(function (ch) { total += ch.codePointAt(0) < 128 ? 0.5 : 1; });
+    return total;
+  }
+
+  function voSentences(text) {
+    return (text.match(/[^。！？；!?;]+[。！？；!?;]*|[。！？；!?;]+/g) || []).filter(function (part) { return part.trim(); });
+  }
+
+  function voClauses(text) {
+    var pattern = new RegExp("(?:(?!" + VO_PUNCT + ").)+(?:" + VO_PUNCT + ")*|(?:" + VO_PUNCT + ")+", "gu");
+    return (text.match(pattern) || []).filter(function (part) { return part.trim(); });
+  }
+
+  function voWordChar(ch) { return /^[A-Za-z0-9.]$/.test(ch || ""); }
+
+  function voHardSplit(text) {
+    var parts = [];
+    var chars = Array.from(text);
+    while (voWidth(chars.join("")) > VO_LIMIT) {
+      var cut = 0, total = 0;
+      for (var i = 0; i < chars.length; i++) {
+        total += chars[i].codePointAt(0) < 128 ? 0.5 : 1;
+        if (total > VO_LIMIT) { break; }
+        cut = i + 1;
+      }
+      var probe = cut;
+      while (probe > 0 && probe < chars.length && voWordChar(chars[probe - 1]) && voWordChar(chars[probe])) { probe--; }
+      if (probe > 0) { cut = probe; }
+      cut = Math.max(cut, 1);
+      parts.push(chars.slice(0, cut).join(""));
+      chars = Array.from(chars.slice(cut).join("").replace(/^\s+/, ""));
+    }
+    if (chars.length) { parts.push(chars.join("")); }
+    return parts;
+  }
+
+  function voSentenceChunks(text) {
+    var pieces = [];
+    voClauses(text.trim()).forEach(function (clause) {
+      if (voWidth(clause) > VO_LIMIT) { pieces = pieces.concat(voHardSplit(clause)); } else { pieces.push(clause); }
+    });
+    if (!pieces.length) { return []; }
+    var widths = pieces.map(voWidth);
+    var count = pieces.length;
+    var lines = 1, current = 0;
+    widths.forEach(function (w) {
+      if (current && current + w > VO_LIMIT) { lines++; current = w; } else { current += w; }
+    });
+    var best = [], cut = [];
+    for (var k = 0; k <= lines; k++) {
+      best.push(new Array(count + 1).fill(Infinity));
+      cut.push(new Array(count + 1).fill(0));
+    }
+    best[0][0] = 0;
+    for (k = 1; k <= lines; k++) {
+      for (var j = 1; j <= count; j++) {
+        for (var i = k - 1; i < j; i++) {
+          var size = 0;
+          for (var m = i; m < j; m++) { size += widths[m]; }
+          if (size > VO_LIMIT || best[k - 1][i] === Infinity) { continue; }
+          var value = Math.max(best[k - 1][i], size);
+          if (value < best[k][j]) { best[k][j] = value; cut[k][j] = i; }
+        }
+      }
+    }
+    if (best[lines][count] === Infinity) { return pieces; }
+    var bounds = [];
+    j = count;
+    for (k = lines; k > 0; k--) {
+      i = cut[k][j];
+      bounds.unshift([i, j]);
+      j = i;
+    }
+    return bounds.map(function (pair) { return pieces.slice(pair[0], pair[1]).join("").trim(); });
+  }
+
+  function voChunks(text) {
+    var result = [];
+    voSentences(text.trim()).forEach(function (sentence) { result = result.concat(voSentenceChunks(sentence)); });
+    return result;
+  }
+
+  function voClean(chunk) {
+    var text = chunk.trim();
+    while (text && VO_TRAILING.indexOf(text.charAt(text.length - 1)) >= 0) { text = text.slice(0, -1); }
+    return text.replace(/[，。；：]/g, " ").replace(/\s{2,}/g, " ").trim();
+  }
+
+  function voExpand(text) {
+    return String(text).replace(/\{(effects|categories|families)\}/g, function (_, key) { return String(VO_COUNTS[key]); });
+  }
+
+  function voFormat(seconds) {
+    var total = Math.max(0, seconds);
+    var minutes = Math.floor(total / 60);
+    var rest = total - minutes * 60;
+    return (minutes < 10 ? "0" : "") + minutes + ":" + (rest < 10 ? "0" : "") + rest.toFixed(1);
+  }
+
+  function renderVoiceover(scene, container) {
+    var lines = state[scene.id];
+
+    function changed() { save(); updateNav(); }
+
+    function draw() {
+      container.innerHTML = "";
+      lines.forEach(function (line, index) { container.appendChild(row(line, index)); });
+      var add = el("button", {
+        class: "btn add-btn", type: "button", text: "＋ 添加一行",
+        onclick: function () {
+          var last = lines.length ? lines[lines.length - 1].end : 0;
+          var start = Math.max(0, Math.min(Math.round(last * 10) / 10, VO_DURATION - 3));
+          lines.push({ start: start, end: Math.min(start + 5, VO_DURATION), text: "" });
+          changed();
+          draw();
+          var areas = container.querySelectorAll("textarea");
+          if (areas.length) { areas[areas.length - 1].focus(); }
+        }
+      });
+      var sort = el("button", {
+        class: "btn add-btn", type: "button", text: "按开始时间排序",
+        onclick: function () {
+          lines.sort(function (a, b) { return a.start - b.start; });
+          changed();
+          draw();
+        }
+      });
+      container.appendChild(el("div", { class: "vo-actions" }, [add, sort]));
+    }
+
+    function numberInput(value, label, onChange) {
+      var input = el("input", { type: "number", min: "0", max: String(VO_DURATION), step: "0.1", "aria-label": label });
+      input.value = String(value);
+      input.addEventListener("input", function () {
+        var parsed = parseFloat(input.value);
+        if (isFinite(parsed)) { onChange(Math.round(parsed * 100) / 100); }
+      });
+      return input;
+    }
+
+    function row(line, index) {
+      var wrap = el("div", { class: "vo-row" });
+      var rate = el("span", { class: "vo-rate" });
+      var warn = el("div", { class: "warn-line" });
+      var preview = el("div", { class: "vo-preview" });
+
+      function refresh() {
+        var text = voExpand(line.text);
+        var span = line.end - line.start;
+        var chars = voWidth(text.replace(/[，。！？；：、,.!?;:—…「」\s]/g, ""));
+        var perSecond = span > 0 ? chars / span : 0;
+        rate.textContent = chars + " 字 · " + (span > 0 ? span.toFixed(1) + " 秒 · " + perSecond.toFixed(1) + " 字/秒" : "时长为 0");
+        rate.className = "vo-rate" + (perSecond > 5 ? " over" : "");
+        var problems = [];
+        if (!(line.end > line.start)) { problems.push("结束时间要晚于开始时间，否则这一行不会输出。"); }
+        if (line.start >= VO_DURATION) { problems.push("开始时间超出片长 " + VO_DURATION + " 秒。"); }
+        else if (line.end > VO_DURATION) { problems.push("结束时间超出片长，字幕会截在 " + VO_DURATION + " 秒。"); }
+        var previous = index > 0 ? lines[index - 1] : null;
+        if (previous && line.start < previous.end - 0.001) { problems.push("和上一行时间重叠。"); }
+        if (perSecond > 5) { problems.push("语速偏快（中文配音约 4–5 字/秒），可延长时长或删减文字。"); }
+        warn.textContent = problems.join(" ");
+        preview.innerHTML = "";
+        var pieces = voChunks(text);
+        var weights = pieces.map(function (piece) { return Math.max(voWidth(piece), 0.5); });
+        var total = weights.reduce(function (a, b) { return a + b; }, 0);
+        var cursor = line.start;
+        pieces.forEach(function (piece, i) {
+          var caption = voClean(piece);
+          var item = el("span", {}, [el("b", { text: voFormat(cursor) }), document.createTextNode(caption)]);
+          if (caption) { preview.appendChild(item); }
+          cursor += total > 0 ? Math.max(span, 0) * weights[i] / total : 0;
+        });
+      }
+
+      var start = numberInput(line.start, "第 " + (index + 1) + " 行开始秒数", function (value) { line.start = value; refresh(); changed(); });
+      var end = numberInput(line.end, "第 " + (index + 1) + " 行结束秒数", function (value) { line.end = value; refresh(); changed(); });
+      var remove = el("button", {
+        class: "icon-btn", type: "button", title: "删除这一行", "aria-label": "删除第 " + (index + 1) + " 行旁白", text: "×",
+        onclick: function () { lines.splice(index, 1); changed(); draw(); }
+      });
+      var top = el("div", { class: "vo-top" }, [
+        el("span", { class: "idx", text: String(index + 1) }),
+        el("span", { class: "vo-time" }, [start, document.createTextNode("–"), end, document.createTextNode("秒")]),
+        el("span", { class: "spacer" }),
+        rate,
+        remove
+      ]);
+      var area = el("textarea", { rows: "2", "aria-label": "第 " + (index + 1) + " 行旁白文字", placeholder: "旁白文字（可用 {effects} 等占位符）" });
+      area.value = line.text;
+      area.addEventListener("input", function () { line.text = area.value; refresh(); changed(); });
+      wrap.appendChild(top);
+      wrap.appendChild(area);
+      wrap.appendChild(preview);
+      wrap.appendChild(warn);
+      refresh();
+      return wrap;
+    }
+
+    draw();
+  }
+
   function render() {
     var root = document.getElementById("sections");
     var nav = document.getElementById("nav");
     root.innerHTML = "";
     nav.innerHTML = "";
     SCHEMA.forEach(function (scene) {
-      if (!isObject(state[scene.id])) { state[scene.id] = clone(DEFAULTS[scene.id]); }
+      if (scene.kind === "voiceover") {
+        if (!Array.isArray(state[scene.id])) { state[scene.id] = clone(DEFAULTS[scene.id]); }
+      } else if (!isObject(state[scene.id])) { state[scene.id] = clone(DEFAULTS[scene.id]); }
       var resetScene = el("button", {
         class: "btn reset-scene", type: "button", text: "恢复本节",
         onclick: function () {
@@ -625,7 +946,11 @@ footer { margin-top: 28px; font-size: 12.5px; color: var(--faint); text-align: c
         el("p", { text: scene.about })
       ]);
       var fields = el("div", { class: "fields" });
-      scene.fields.forEach(function (field) { fields.appendChild(renderField(scene, field)); });
+      if (scene.kind === "voiceover") {
+        renderVoiceover(scene, fields);
+      } else {
+        scene.fields.forEach(function (field) { fields.appendChild(renderField(scene, field)); });
+      }
       root.appendChild(el("section", { class: "scene", id: "s-" + scene.id }, [head, fields]));
       nav.appendChild(el("a", { href: "#s-" + scene.id, "data-scene": scene.id, text: scene.title.split(" · ")[0] }));
     });

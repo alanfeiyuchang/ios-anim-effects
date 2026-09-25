@@ -22,7 +22,8 @@ enum TrailerData {
 
     /// Result card the finger opens: the hero's card when it is in the first two rows, else the first card.
     static let heroResultIndex: Int = {
-        guard let index = showcaseMatches.firstIndex(where: { $0.id == heroID }), index < 4 else { return 0 }
+        let hero: String = TrailerData.heroID
+        guard let index = TrailerData.showcaseMatches.firstIndex(where: { $0.id == hero }), index < 4 else { return 0 }
         return index
     }()
 
@@ -147,9 +148,10 @@ enum TrailerFind {
     /// When each character of the query lands: 0.35 s apart, tighter for longer queries (done by 36.8 s).
     static let typedAt: [Double] = {
         let count: Int = Array(TrailerData.query).count
-        guard count > 1 else { return count == 1 ? [typingStart] : [] }
+        let first: Double = TrailerFind.typingStart
+        guard count > 1 else { return count == 1 ? [first] : [] }
         let step: Double = min(0.35, 1.0 / Double(count - 1))
-        return (0..<count).map { index in typingStart + Double(index) * step }
+        return (0..<count).map { index in first + Double(index) * step }
     }()
 
     static func typedCount(_ t: Double) -> Int {

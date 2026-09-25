@@ -1,22 +1,24 @@
 import SwiftUI
 
-/// 60-second promotional trailer ("one-take" motion graphics), shown instead of the app with
+/// 90-second promotional trailer ("one-take" motion graphics), shown instead of the app with
 /// `-ML_trailer YES` and recorded by `scripts/record-trailer.sh`.
 ///
 /// One clock drives everything: `t` = seconds since the white lead-in slate ended, read from a
 /// `TimelineView(.animation)`. Every scene is a pure function of `t`, so the cut is deterministic;
 /// the embedded real effect demos run their own preview autoplay, phase-locked to the same clock
-/// through `demoSyncEpoch`.
+/// through `demoSyncEpoch`, and the embedded real app screens (Browse, Search) are driven by it too.
 ///
 /// Layout: a fixed canvas 390 pt wide, 9:16 (390 × 693⅓ pt, default) or 3:4 (390 × 520 pt) picked with
 /// `-ML_trailerAspect`, scaled to the screen width and centred vertically on #0B0B0D, so the recording
 /// can be cropped exactly (see the script for the crop math). The bottom 18 % of the canvas is a clean
-/// caption band (`TrailerCanvas.contentBottom`).
+/// caption band (`TrailerCanvas.contentBottom`) for the voice-over subtitles.
 ///
-/// Every authored line of on-screen text comes from `TrailerCopy` (defaults in code, overridable with
-/// `Documents/trailer-copy.json`, which the record script copies from `trailer/copy.json`).
+/// Every authored line of text (and the voice-over script) comes from `TrailerCopy` (defaults in code,
+/// overridable with `Documents/trailer-copy.json`, which the record script copies from `trailer/copy.json`).
 ///
-/// Timeline (s): 0 hook · 5 pain · 10 search · 21 feel it (phone) · 36 tune · 44 prompt · 52 web · 57 end card.
+/// Timeline (s): 0 hook (prism digits) · 6 can't describe it · 16 don't know what's possible · 24 Motionary ·
+/// 30 find it (real Browse + Search) · 44 feel it (detail pages) · 60 tune it · 70 copy the prompt ·
+/// 80 web + app · 87 end card. `-ML_trailerFrom <seconds>` starts at a later point (previews only).
 struct TrailerView: View {
     @State private var start: Date?
 
@@ -27,7 +29,7 @@ struct TrailerView: View {
             ZStack {
                 TrailerCanvas.ink
                 if let start {
-                    let origin = start.addingTimeInterval(TrailerCanvas.leadIn)
+                    let origin = start.addingTimeInterval(TrailerCanvas.leadIn - CatalogTools.trailerStartOffset)
                     TimelineView(.animation) { timeline in
                         let t = timeline.date.timeIntervalSince(origin)
                         ZStack {
@@ -70,29 +72,34 @@ private struct TrailerStage: View {
     var body: some View {
         ZStack {
             TrailerBackdrop(t: max(t, 0))
-            if t < 5.8 {
-                TrailerHookScene(t: max(t, 0))
+            // Two groups keep the builder small (and the type checker fast).
+            Group {
+                if t < 6.3 {
+                    TrailerHookScene(t: max(t, 0))
+                }
+                if t >= 5.6 && t < 16.2 {
+                    TrailerPainScene(t: t)
+                }
+                if t >= 15.4 && t < 24.4 {
+                    TrailerUnknownScene(t: t)
+                }
+                if t >= 23.5 && t < 30.2 {
+                    TrailerIntroScene(t: t)
+                }
             }
-            if t >= 4.9 && t < 10.7 {
-                TrailerPainScene(t: t)
-            }
-            if t >= 9.9 && t < 21.5 {
-                TrailerSearchScene(t: t)
-            }
-            if t >= 20.6 && t < 44.6 {
-                TrailerPhoneScene(t: t, origin: origin)
-            }
-            if t >= 11.4 && t < 26.0 {
-                TrailerHeroLayer(t: t, origin: origin)
-            }
-            if t >= 43.8 && t < 52.6 {
-                TrailerPromptScene(t: t)
-            }
-            if t >= 51.5 && t < 58.3 {
-                TrailerWebScene(t: t)
-            }
-            if t >= 56.8 {
-                TrailerEndScene(t: min(t, 70))
+            Group {
+                if t >= TrailerFind.browseMount && t < 70.6 {
+                    TrailerPhoneScene(t: t, origin: origin)
+                }
+                if t >= 69.9 && t < 80.2 {
+                    TrailerPromptScene(t: t)
+                }
+                if t >= 78.9 && t < 88.8 {
+                    TrailerOutroScene(t: t, origin: origin)
+                }
+                if t >= 86.2 {
+                    TrailerEndScene(t: min(t, 100))
+                }
             }
             TrailerTouchLayer(t: t)
         }

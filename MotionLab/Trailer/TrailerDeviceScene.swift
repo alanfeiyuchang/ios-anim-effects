@@ -9,8 +9,8 @@ private typealias M = TrailerMath
 ///
 /// Real device: 71.5 × 149.6 mm body, 1206 × 2622 px display (aspect 0.46), display corners ≈ 13 % of
 /// its width, Dynamic Island 126 × 37 pt on a 402 pt wide screen, 11 pt from the top.
-/// Everything inside the screen is laid out in screen coordinates (0 … 186 × 0 … 404) and mirrors the
-/// app's detail page: status bar + island, nav title row, the square demo stage, a hint, the parameters.
+/// Everything inside the screen is laid out in screen coordinates (0 … 186 × 0 … 404). The embedded app
+/// screens (`TrailerAppScreen`) are laid out at the real 402 × 874 pt and scaled by `unit`.
 enum TrailerPhone {
     static let screenSize = CGSize(width: 186, height: 404)
     /// Titanium band (2.2 pt) + black glass border.
@@ -22,7 +22,7 @@ enum TrailerPhone {
     /// Body height in the 3:4 cut (the 9:16 cut uses `bodySize.height`, 416 pt).
     static let classicBodyHeight: CGFloat = 336
 
-    /// Pixel-to-point factor of the real screen onto this one (402 pt → 186 pt).
+    /// Point-to-point factor of the real screen onto this one (402 pt → 186 pt).
     static let unit: CGFloat = screenSize.width / 402
     static let islandSize = CGSize(width: 126 * unit, height: 37 * unit)
     static let islandTop: CGFloat = 11 * unit
@@ -41,15 +41,19 @@ enum TrailerPhone {
     static let homeIndicatorY: CGFloat = 398
 }
 
-// MARK: - 21–44 s · Feel it on the phone, then tune it
+// MARK: - 30–70 s · The phone: find it, feel it, tune it
 
-/// The app's detail page on an iPhone. The opened search result (`TrailerHeroLayer`) lands on its stage
-/// card and plays first; then real demos take turns (each swap zooms through depth), a scripted finger
-/// taps them on the beats their own `.autoplay` loops are phase-locked to, and finally a spring lab takes
-/// the stage while the finger scrubs the page's parameter sliders.
+/// One continuous shot of an iPhone. First it shows the app's real Browse and Search screens (see
+/// `TrailerFind`); the finger opens a result and the detail page zooms out of its card. Then real demos take
+/// turns on the detail stage (each swap zooms through depth) while the finger taps them on the beats their
+/// own `.autoplay` loops are phase-locked to; finally a spring lab takes the stage while the finger scrubs
+/// the page's parameter sliders.
 struct TrailerPhoneScene: View {
     let t: Double
     let origin: Date
+
+    static let appear: Double = 29.45
+    static let exitStart: Double = 69.85
 
     /// Outgoing demo: sinks back, blurs and fades.
     static func swapOut(_ t: Double, at start: Double) -> Double {
@@ -61,142 +65,198 @@ struct TrailerPhoneScene: View {
         M.spring(t, at: start, response: 0.55, damping: 0.8)
     }
 
-    /// Demos after the hero, with the times their taps land (see `TrailerScript.taps`).
+    /// Demos on the detail stage, with the times their taps land (see `TrailerScript.taps`).
     /// `epochOffset` = first tap − the demo's autoplay delay, so `demoSyncEpoch` fires it on the tap.
-    private struct Slot {
+    struct Slot {
         let id: String
         let mount: ClosedRange<Double>
         let enter: Double
         let leave: Double
         let epochOffset: Double
+        /// The first page zooms out of the search result the finger tapped.
+        var zoomsFromResult = false
     }
 
-    private static let slots: [Slot] = [
-        // showcase.board-card: delay 0.8, every 2.4 → flips at 26.3 and 28.7.
-        Slot(id: "showcase.board-card", mount: 24.9...29.8, enter: 25.45, leave: 29.1, epochOffset: 25.5),
-        // buttons.depth-press: delay 0.6, toggles every 0.8 → presses at 30.0 and 31.6.
-        Slot(id: "buttons.depth-press", mount: 28.6...33.4, enter: 29.3, leave: 32.75, epochOffset: 29.4),
-        // inputs.squash-toggle: delay 0.4, every 1.3 → taps at 33.5 and 34.8.
-        Slot(id: "inputs.squash-toggle", mount: 32.2...36.4, enter: 32.9, leave: 35.55, epochOffset: 33.1),
+    static let slots: [Slot] = [
+        // showcase.photo-play: delay 0.8, every 3.2 → play at 43.8, pause at 47.0.
+        Slot(id: TrailerData.heroID, mount: 42.15...47.95, enter: TrailerFind.detailOpen, leave: 47.45, epochOffset: 43.0, zoomsFromResult: true),
+        // showcase.summit-badge: delay 0.5, every 4.0 → the badge drops at 48.4.
+        Slot(id: "showcase.summit-badge", mount: 47.0...51.8, enter: 47.6, leave: 51.15, epochOffset: 47.9),
+        // showcase.save-burst: delay 0.4, every 1.5 → double-tap save at 52.0, bookmark off at 53.5.
+        Slot(id: "showcase.save-burst", mount: 50.7...55.0, enter: 51.3, leave: 54.35, epochOffset: 51.6),
+        // showcase.board-card: delay 0.8, every 2.4 → flips at 55.3 and 57.7.
+        Slot(id: "showcase.board-card", mount: 53.9...60.2, enter: 54.5, leave: 59.3, epochOffset: 54.5),
     ]
 
     var body: some View {
-        let appear = M.spring(t, at: 20.85, response: 0.7, damping: 0.85)
-        let exit = M.easeInOut(M.progress(t, 43.85, 0.6))
+        let appear: Double = M.spring(t, at: Self.appear, response: 0.75, damping: 0.84)
+        let exit: Double = M.easeInOut(M.progress(t, Self.exitStart, 0.6))
         let buzz = CGFloat(TrailerScript.buzz(t) * 2.4)
-        let center = TrailerLayout.demoCenter
-        // The phone grows around its stage, so the hero tile landing there never drifts.
-        let anchor = UnitPoint(x: center.x / TrailerCanvas.width, y: center.y / TrailerCanvas.height)
+        let rise = CGFloat(1 - appear) * 150
+        let grow = CGFloat(0.94 + 0.06 * appear)
+        let shrink = CGFloat(1 - 0.1 * exit)
         let titleSize = TrailerCanvas.pick(28, 34)
         let subtitleSize = TrailerCanvas.pick(17, 21)
         ZStack {
-            TrailerHeadline(
-                title: TrailerCopy.current.phone.title,
-                subtitle: TrailerCopy.optional(TrailerCopy.current.phone.subtitle),
-                titleSize: titleSize,
-                subtitleSize: subtitleSize,
-                reveal: M.progress(t, 21.3, 0.9),
-                exit: M.easeIn(M.progress(t, 35.45, 0.5))
-            )
-            .position(x: 195, y: TrailerLayout.phoneHeadlineY)
-            if t > 35.8 {
+            if t < 43.9 {
+                TrailerHeadline(
+                    title: TrailerCopy.current.search.title,
+                    subtitle: TrailerCopy.optional(TrailerCopy.current.search.subtitle),
+                    titleSize: titleSize,
+                    subtitleSize: TrailerCanvas.pick(15, 17),
+                    reveal: M.progress(t, 29.9, 0.9),
+                    exit: M.easeIn(M.progress(t, 43.2, 0.5))
+                )
+                .position(x: 195, y: TrailerLayout.phoneHeadlineY)
+            }
+            if t > 43.4 && t < 59.9 {
+                TrailerHeadline(
+                    title: TrailerCopy.current.phone.title,
+                    subtitle: TrailerCopy.optional(TrailerCopy.current.phone.subtitle),
+                    titleSize: titleSize,
+                    subtitleSize: subtitleSize,
+                    reveal: M.progress(t, 43.7, 0.9),
+                    exit: M.easeIn(M.progress(t, 59.2, 0.5))
+                )
+                .position(x: 195, y: TrailerLayout.phoneHeadlineY)
+            }
+            if t > 59.5 {
                 TrailerHeadline(
                     title: TrailerCopy.current.tune.title,
                     subtitle: TrailerCopy.optional(TrailerCopy.current.tune.subtitle),
                     titleSize: titleSize,
                     subtitleSize: subtitleSize,
-                    reveal: M.progress(t, 36.0, 0.9),
-                    exit: M.easeIn(M.progress(t, 43.7, 0.5))
+                    reveal: M.progress(t, 59.95, 0.9),
+                    exit: M.easeIn(M.progress(t, 69.5, 0.5))
                 )
                 .position(x: 195, y: TrailerLayout.phoneHeadlineY)
             }
             ZStack {
-                PhoneDevice(t: t)
-                    .scaleEffect(TrailerLayout.phoneScale)
-                    .position(TrailerLayout.phoneCenter)
+                TrailerPhoneBody {
+                    PhoneScreen(t: t)
+                }
+                .scaleEffect(TrailerLayout.phoneScale)
+                .position(TrailerLayout.phoneCenter)
                 ForEach(Self.slots.indices, id: \.self) { index in
                     let slot = Self.slots[index]
                     if slot.mount.contains(t) {
                         demo(slot)
                     }
                 }
-                if t > 35.2 {
-                    let labIn = Self.swapIn(t, at: 35.75)
+                if t > 59.2 {
+                    let labIn: Double = Self.swapIn(t, at: TrailerTune.labStart)
                     TrailerSpringLab(t: t, side: TrailerLayout.demoSide)
                         .scaleEffect(CGFloat(0.9 + 0.1 * labIn))
                         .blur(radius: CGFloat(1 - M.clamp(labIn)) * 10)
                         .opacity(M.clamp(labIn * 1.6))
-                        .position(center)
+                        .position(TrailerLayout.demoCenter)
                 }
-                PhoneGlass()
+                TrailerPhoneGlass()
                     .scaleEffect(TrailerLayout.phoneScale)
                     .position(TrailerLayout.phoneCenter)
             }
             .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
-            .scaleEffect(CGFloat(0.9 + 0.1 * appear), anchor: anchor)
+            .offset(y: rise)
+            .scaleEffect(grow)
             .opacity(M.clamp(appear * 1.5))
             .offset(x: buzz)
-            .scaleEffect(CGFloat(1 - 0.1 * exit))
-            .blur(radius: CGFloat(exit) * 12)
+            .scaleEffect(shrink)
+            // Only blurred on the way out (the embedded app screens are long gone by then).
+            .modifier(TrailerExitBlur(radius: CGFloat(exit) * 12))
             .opacity(1 - exit)
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
     }
 
     private func demo(_ slot: Slot) -> some View {
-        let enter = Self.swapIn(t, at: slot.enter)
-        let leave = Self.swapOut(t, at: slot.leave)
-        let scale: Double = (0.9 + 0.1 * enter) * (1 - 0.12 * leave)
-        let blur: Double = (1 - M.clamp(enter)) * 10 + leave * 10
+        let zoom: Double = M.spring(t, at: slot.enter, response: 0.6, damping: 0.86)
+        let enter: Double = slot.zoomsFromResult ? zoom : Self.swapIn(t, at: slot.enter)
+        let leave: Double = Self.swapOut(t, at: slot.leave)
+        // The first page grows out of the tapped result's preview stage, like the app's zoom transition.
+        let fromCenter: CGPoint = TrailerFind.canvasPoint(TrailerFind.resultStage(TrailerData.heroResultIndex))
+        let fromSide: CGFloat = TrailerFind.canvasLength(TrailerFind.resultStageSide)
+        let fromCorner: CGFloat = TrailerFind.canvasLength(CornerRadius.thumbnail)
+        let center: CGPoint = slot.zoomsFromResult ? M.mix(fromCenter, TrailerLayout.demoCenter, zoom) : TrailerLayout.demoCenter
+        let side: CGFloat = slot.zoomsFromResult ? M.mix(fromSide, TrailerLayout.demoSide, zoom) : TrailerLayout.demoSide
+        let corner: CGFloat = slot.zoomsFromResult ? M.mix(fromCorner, TrailerLayout.stageCorner, zoom) : TrailerLayout.stageCorner
+        let grow: Double = slot.zoomsFromResult ? 1 : 0.9 + 0.1 * enter
+        let scale: Double = grow * (1 - 0.12 * leave)
+        let settle: Double = slot.zoomsFromResult ? 0 : (1 - M.clamp(enter)) * 10
+        let blur: Double = settle + leave * 10
+        let fadeIn: Double = slot.zoomsFromResult ? M.clamp(zoom * 4) : M.clamp(enter * 1.6)
         return TrailerStageTile(
             effectID: slot.id,
             epoch: origin.addingTimeInterval(slot.epochOffset),
-            side: TrailerLayout.demoSide,
-            cornerRadius: TrailerLayout.stageCorner
+            side: side,
+            cornerRadius: corner
         )
         .scaleEffect(CGFloat(scale))
         .blur(radius: CGFloat(blur))
-        .opacity(M.clamp(enter * 1.6) * (1 - leave))
-        .position(TrailerLayout.demoCenter)
+        .opacity(fadeIn * (1 - leave))
+        .position(center)
+    }
+}
+
+/// Blur only while `radius` is noticeable, so the phone (and the UIKit-backed app screens inside it) carry
+/// no filter for most of the shot.
+private struct TrailerExitBlur: ViewModifier {
+    let radius: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if radius > 0.01 {
+            content.blur(radius: radius)
+        } else {
+            content
+        }
     }
 }
 
 // MARK: - Device
 
 /// Chassis (graphite titanium band with a rim highlight, black glass border, side buttons, soft
-/// shadows) around the screen, drawn at `TrailerPhone.bodySize`.
-private struct PhoneDevice: View {
-    let t: Double
+/// shadows) around `screen`, drawn at `TrailerPhone.bodySize`; the screen is laid out at
+/// `TrailerPhone.screenSize` and clipped to the display's rounded corners.
+struct TrailerPhoneBody<Screen: View>: View {
+    let screen: Screen
 
-    private static let titanium = LinearGradient(
-        stops: [
-            Gradient.Stop(color: Color(hex: 0x6A6A72), location: 0),
-            Gradient.Stop(color: Color(hex: 0x2C2C32), location: 0.07),
-            Gradient.Stop(color: Color(hex: 0x1B1B1F), location: 0.5),
-            Gradient.Stop(color: Color(hex: 0x2C2C32), location: 0.93),
-            Gradient.Stop(color: Color(hex: 0x55555D), location: 1),
-        ],
-        startPoint: .leading,
-        endPoint: .trailing
-    )
+    init(@ViewBuilder screen: () -> Screen) {
+        self.screen = screen()
+    }
 
-    private static let rimLight = LinearGradient(
-        stops: [
-            Gradient.Stop(color: Color.white.opacity(0.6), location: 0),
-            Gradient.Stop(color: Color.white.opacity(0.14), location: 0.3),
-            Gradient.Stop(color: Color.white.opacity(0.05), location: 0.7),
-            Gradient.Stop(color: Color.white.opacity(0.24), location: 1),
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    private static var titanium: LinearGradient {
+        LinearGradient(
+            stops: [
+                Gradient.Stop(color: Color(hex: 0x6A6A72), location: 0),
+                Gradient.Stop(color: Color(hex: 0x2C2C32), location: 0.07),
+                Gradient.Stop(color: Color(hex: 0x1B1B1F), location: 0.5),
+                Gradient.Stop(color: Color(hex: 0x2C2C32), location: 0.93),
+                Gradient.Stop(color: Color(hex: 0x55555D), location: 1),
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private static var rimLight: LinearGradient {
+        LinearGradient(
+            stops: [
+                Gradient.Stop(color: Color.white.opacity(0.6), location: 0),
+                Gradient.Stop(color: Color.white.opacity(0.14), location: 0.3),
+                Gradient.Stop(color: Color.white.opacity(0.05), location: 0.7),
+                Gradient.Stop(color: Color.white.opacity(0.24), location: 1),
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
 
     var body: some View {
         let size = TrailerPhone.bodySize
         let outer = RoundedRectangle(cornerRadius: TrailerPhone.bodyCorner, style: .continuous)
         let band: CGFloat = 2.2
         let glass = RoundedRectangle(cornerRadius: TrailerPhone.bodyCorner - band, style: .continuous)
-        let screen = RoundedRectangle(cornerRadius: TrailerPhone.screenCorner, style: .continuous)
+        let display = RoundedRectangle(cornerRadius: TrailerPhone.screenCorner, style: .continuous)
         ZStack {
             // Contact shadow under the phone.
             Ellipse()
@@ -218,9 +278,9 @@ private struct PhoneDevice: View {
             .compositingGroup()
             .shadow(color: Color.black.opacity(0.65), radius: 28, x: 0, y: 22)
             .shadow(color: Palette.ember.opacity(0.14), radius: 44, x: 0, y: 0)
-            PhoneScreen(t: t)
+            screen
                 .frame(width: TrailerPhone.screenSize.width, height: TrailerPhone.screenSize.height)
-                .clipShape(screen)
+                .clipShape(display)
         }
         .frame(width: size.width, height: size.height)
     }
@@ -246,19 +306,21 @@ private struct PhoneDevice: View {
 
     private func button(length: CGFloat, sapphire: Bool = false) -> some View {
         let shape = RoundedRectangle(cornerRadius: 1.4, style: .continuous)
+        let metal = LinearGradient(
+            colors: [Color(hex: 0x74747C), Color(hex: 0x2E2E34), Color(hex: 0x5A5A62)],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        let fill: AnyShapeStyle = sapphire ? AnyShapeStyle(Color(hex: 0x16161A)) : AnyShapeStyle(metal)
         return shape
-            .fill(sapphire ? AnyShapeStyle(Color(hex: 0x16161A)) : AnyShapeStyle(LinearGradient(
-                colors: [Color(hex: 0x74747C), Color(hex: 0x2E2E34), Color(hex: 0x5A5A62)],
-                startPoint: .top,
-                endPoint: .bottom
-            )))
+            .fill(fill)
             .overlay(shape.strokeBorder(Color.white.opacity(sapphire ? 0.22 : 0.12), lineWidth: 0.4))
             .frame(width: 3.2, height: length)
     }
 }
 
 /// A faint glass reflection over the screen, drawn above the demos.
-private struct PhoneGlass: View {
+struct TrailerPhoneGlass: View {
     var body: some View {
         let screen = RoundedRectangle(cornerRadius: TrailerPhone.screenCorner, style: .continuous)
         screen
@@ -281,7 +343,51 @@ private struct PhoneGlass: View {
     }
 }
 
-// MARK: - Screen: the app's detail page
+/// Status bar (time, signal, Wi-Fi, battery) and the Dynamic Island, in screen coordinates.
+struct TrailerPhoneStatusBar: View {
+    var body: some View {
+        let size = TrailerPhone.screenSize
+        let island = TrailerPhone.islandSize
+        let y = TrailerPhone.statusY
+        ZStack {
+            Text(verbatim: TrailerCopy.current.phone.statusTime)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: 40)
+                .position(x: 29, y: y)
+            HStack(spacing: 2.5) {
+                Image(systemName: "cellularbars")
+                Image(systemName: "wifi")
+                Image(systemName: "battery.100percent")
+            }
+            .font(.system(size: 6.5, weight: .semibold))
+            .foregroundStyle(Color.white)
+            .position(x: 155, y: y)
+            ZStack {
+                Capsule()
+                    .fill(Color.black)
+                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.05), lineWidth: 0.4))
+                // Front camera behind the glass.
+                Circle()
+                    .fill(RadialGradient(colors: [Color(hex: 0x2A2F45), Color(hex: 0x0A0A10)], center: .topLeading, startRadius: 0, endRadius: 3.2))
+                    .frame(width: 5.4, height: 5.4)
+                    .offset(x: island.width / 2 - island.height / 2)
+            }
+            .frame(width: island.width, height: island.height)
+            .position(x: size.width / 2, y: TrailerPhone.islandTop + island.height / 2)
+            Capsule()
+                .fill(Color.white.opacity(0.55))
+                .frame(width: 134 * TrailerPhone.unit, height: 5 * TrailerPhone.unit)
+                .position(x: size.width / 2, y: TrailerPhone.homeIndicatorY)
+        }
+        .frame(width: size.width, height: size.height)
+        .allowsHitTesting(false)
+    }
+}
+
+// MARK: - Screen: the real app, then the app's detail page
 
 /// One demo's page: its real name, category, how to play it and its first parameters.
 private struct PhonePage {
@@ -300,21 +406,23 @@ private struct PhonePage {
     let params: [Param]
     var isLab = false
 
-    static let all: [PhonePage] = [
-        page(0, TrailerData.heroID),
-        page(25.45, "showcase.board-card"),
-        page(29.3, "buttons.depth-press"),
-        page(32.9, "inputs.squash-toggle"),
-        PhonePage(
-            start: 35.75,
-            name: TrailerCopy.current.tune.pageTitle,
-            tag: TrailerCopy.current.tune.pageTag,
-            hint: TrailerCopy.current.tune.hint,
-            symbol: "slider.horizontal.3",
-            params: [],
-            isLab: true
-        ),
-    ]
+    static let all: [PhonePage] = {
+        var pages: [PhonePage] = TrailerPhoneScene.slots.map { slot in
+            PhonePage.page(slot.enter, slot.id)
+        }
+        pages.append(
+            PhonePage(
+                start: TrailerTune.labStart,
+                name: TrailerCopy.current.tune.pageTitle,
+                tag: TrailerCopy.current.tune.pageTag,
+                hint: TrailerCopy.current.tune.hint,
+                symbol: "slider.horizontal.3",
+                params: [],
+                isLab: true
+            )
+        )
+        return pages
+    }()
 
     /// Width of the hint pill: 120 pt, wider (up to 170) when a hint in `TrailerCopy` needs it.
     static let hintPillWidth: CGFloat = {
@@ -358,23 +466,44 @@ private struct PhonePage {
     }
 }
 
-/// Status bar and Dynamic Island, nav title row, the stage well (the demos are drawn over it by the
-/// scene), a hint pill and the parameter card, all in `TrailerPhone.screenSize` coordinates.
+/// The phone's display. Until the finger opens a result it shows the app's real screens
+/// (`TrailerAppScreen`, scaled uniformly from 402 × 874 pt); then the detail page: nav title row, the stage
+/// well (the demos are drawn over it by the scene), a hint pill and the parameter card. Status bar and
+/// Dynamic Island sit on top throughout.
 private struct PhoneScreen: View {
     let t: Double
 
     var body: some View {
         let size = TrailerPhone.screenSize
-        let stage = TrailerPhone.stageRect
-        let stageShape = RoundedRectangle(cornerRadius: TrailerPhone.stageCorner, style: .continuous)
+        let detail: Double = M.easeOut(M.progress(t, TrailerFind.detailOpen + 0.05, 0.4))
         ZStack {
             LinearGradient(
                 colors: [Color(hex: 0x17120F), TrailerCanvas.ink, TrailerCanvas.ink],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            statusBar
-            island
+            if t < TrailerFind.appUnmount {
+                TrailerAppScreen(state: TrailerFind.frame(t))
+                    .equatable()
+                    .frame(width: TrailerFind.deviceSize.width, height: TrailerFind.deviceSize.height)
+                    .scaleEffect(TrailerPhone.unit, anchor: .topLeading)
+                    .frame(width: size.width, height: size.height, alignment: .topLeading)
+                    .opacity(1 - detail)
+            }
+            if t > TrailerFind.detailOpen {
+                detailPage
+                    .opacity(detail)
+            }
+            TrailerPhoneStatusBar()
+        }
+        .frame(width: size.width, height: size.height)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private var detailPage: some View {
+        let stage = TrailerPhone.stageRect
+        let stageShape = RoundedRectangle(cornerRadius: TrailerPhone.stageCorner, style: .continuous)
+        return ZStack {
             navChrome
             ForEach(PhonePage.all.indices, id: \.self) { index in
                 navRow(index)
@@ -386,13 +515,8 @@ private struct PhoneScreen: View {
                 .position(x: stage.midX, y: stage.midY)
             hintPill
             paramCard
-            Capsule()
-                .fill(Color.white.opacity(0.55))
-                .frame(width: 134 * TrailerPhone.unit, height: 5 * TrailerPhone.unit)
-                .position(x: size.width / 2, y: TrailerPhone.homeIndicatorY)
         }
-        .frame(width: size.width, height: size.height)
-        .environment(\.colorScheme, .dark)
+        .frame(width: TrailerPhone.screenSize.width, height: TrailerPhone.screenSize.height)
     }
 
     /// 0 → 1 → 0 visibility of page `index`, and its slide.
@@ -404,43 +528,6 @@ private struct PhoneScreen: View {
         let leave: Double = M.easeIn(M.progress(t, next - 0.2, 0.3))
         let offset = CGFloat((1 - enter) * 6 - leave * 6)
         return (enter * (1 - leave), offset)
-    }
-
-    private var statusBar: some View {
-        let y = TrailerPhone.statusY
-        return ZStack {
-            Text(verbatim: TrailerCopy.current.phone.statusTime)
-                .font(.system(size: 8, weight: .semibold))
-                .foregroundStyle(Color.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .frame(width: 40)
-                .position(x: 29, y: y)
-            HStack(spacing: 2.5) {
-                Image(systemName: "cellularbars")
-                Image(systemName: "wifi")
-                Image(systemName: "battery.100percent")
-            }
-            .font(.system(size: 6.5, weight: .semibold))
-            .foregroundStyle(Color.white)
-            .position(x: 155, y: y)
-        }
-    }
-
-    private var island: some View {
-        let island = TrailerPhone.islandSize
-        return ZStack {
-            Capsule()
-                .fill(Color.black)
-                .overlay(Capsule().strokeBorder(Color.white.opacity(0.05), lineWidth: 0.4))
-            // Front camera behind the glass.
-            Circle()
-                .fill(RadialGradient(colors: [Color(hex: 0x2A2F45), Color(hex: 0x0A0A10)], center: .topLeading, startRadius: 0, endRadius: 3.2))
-                .frame(width: 5.4, height: 5.4)
-                .offset(x: island.width / 2 - island.height / 2)
-        }
-        .frame(width: island.width, height: island.height)
-        .position(x: TrailerPhone.screenSize.width / 2, y: TrailerPhone.islandTop + island.height / 2)
     }
 
     /// Back chevron and favourite heart, constant across pages.
@@ -464,6 +551,7 @@ private struct PhoneScreen: View {
             Text(verbatim: page.name)
                 .font(.system(size: 10.5, weight: .heavy))
                 .foregroundStyle(Color.white)
+                .layoutPriority(1)
             Text(verbatim: page.tag)
                 .font(.system(size: 7, weight: .bold))
                 .foregroundStyle(Palette.accent)
@@ -472,14 +560,15 @@ private struct PhoneScreen: View {
                 .background(Palette.ember.opacity(0.16), in: Capsule())
         }
         .lineLimit(1)
-        .frame(width: 130)
+        .minimumScaleFactor(0.7)
+        .frame(width: 136)
         .offset(y: shown.offset)
         .opacity(shown.opacity)
         .position(x: TrailerPhone.screenSize.width / 2, y: TrailerPhone.navY)
     }
 
     private var hintPill: some View {
-        let pulse = min(1, abs(TrailerScript.buzz(t)) * 3)
+        let pulse: Double = min(1, abs(TrailerScript.buzz(t)) * 3)
         return ZStack {
             Capsule()
                 .fill(Color.white.opacity(0.06))
@@ -513,7 +602,7 @@ private struct PhoneScreen: View {
 
     private var paramCard: some View {
         let card = TrailerPhone.cardRect
-        let tune = M.progress(t, 36.15, 0.5)
+        let tune: Double = M.progress(t, TrailerTune.labStart + 0.4, 0.5)
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         return ZStack {
             TrailerGlass(shape: shape, glow: 0.55 * tune, shadowOpacity: 0.2)
@@ -542,10 +631,23 @@ private struct PhoneScreen: View {
     private func pageParams(_ index: Int) -> some View {
         let page = PhonePage.all[index]
         let shown = visibility(index)
+        let middleY: CGFloat = (TrailerPhone.rowY[0] + TrailerPhone.rowY[1]) / 2
         return ZStack {
             if page.isLab {
-                PhoneParamRow(title: TrailerCopy.current.tune.dampingLabel, value: String(format: "%.2f", TrailerTune.damping(t)), fraction: TrailerTune.normalized(row: 0, t: t), y: TrailerPhone.rowY[0], active: TrailerTune.isDragging(row: 0, t: t))
-                PhoneParamRow(title: TrailerCopy.current.tune.responseLabel, value: String(format: "%.2f", TrailerTune.response(t)), fraction: TrailerTune.normalized(row: 1, t: t), y: TrailerPhone.rowY[1], active: TrailerTune.isDragging(row: 1, t: t))
+                PhoneParamRow(
+                    title: TrailerCopy.current.tune.dampingLabel,
+                    value: String(format: "%.3f", TrailerTune.damping(t)),
+                    fraction: TrailerTune.normalized(row: 0, t: t),
+                    y: TrailerPhone.rowY[0],
+                    active: TrailerTune.isDragging(row: 0, t: t)
+                )
+                PhoneParamRow(
+                    title: TrailerCopy.current.tune.responseLabel,
+                    value: String(format: "%.2f", TrailerTune.response(t)),
+                    fraction: TrailerTune.normalized(row: 1, t: t),
+                    y: TrailerPhone.rowY[1],
+                    active: TrailerTune.isDragging(row: 1, t: t)
+                )
             } else if page.params.isEmpty {
                 Text(verbatim: TrailerCopy.current.phone.noParams)
                     .font(.system(size: 8.5, weight: .semibold))
@@ -553,7 +655,7 @@ private struct PhoneScreen: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .frame(width: TrailerPhone.cardRect.width - 20)
-                    .position(x: TrailerPhone.cardRect.midX, y: (TrailerPhone.rowY[0] + TrailerPhone.rowY[1]) / 2)
+                    .position(x: TrailerPhone.cardRect.midX, y: middleY)
             } else {
                 ForEach(page.params.indices, id: \.self) { row in
                     let param = page.params[row]
@@ -615,9 +717,11 @@ private struct PhoneParamRow: View {
     }
 }
 
-// MARK: - Tune: spring lab + the page's sliders
+// MARK: - 60–70 s · Tune: spring lab + the page's sliders
 
-/// The scripted slider values and the finger that scrubs them.
+/// The scripted slider values and the finger that scrubs them. The damping goes bouncy (0.2), then flat
+/// (1.0), then settles on SwiftUI's default spring (response 0.55 s, damping 0.825); the response is pulled
+/// down and back up to 0.55.
 enum TrailerTune {
     struct Press {
         let row: Int
@@ -630,11 +734,15 @@ enum TrailerTune {
         let point: CGPoint
     }
 
+    /// The spring lab replaces the last demo on the stage.
+    static let labStart: Double = 59.75
+
     static let presses: [Press] = [
-        Press(row: 0, start: 36.9, end: 38.3),
-        Press(row: 0, start: 38.9, end: 40.35),
-        Press(row: 0, start: 40.85, end: 42.0),
-        Press(row: 1, start: 42.3, end: 43.25),
+        Press(row: 0, start: 61.0, end: 62.4),
+        Press(row: 0, start: 63.0, end: 64.45),
+        Press(row: 0, start: 64.95, end: 66.1),
+        Press(row: 1, start: 66.45, end: 67.4),
+        Press(row: 1, start: 67.85, end: 68.8),
     ]
 
     static let dampingRange: ClosedRange<Double> = 0.1...1.0
@@ -645,15 +753,18 @@ enum TrailerTune {
     static let rowY: [CGFloat] = TrailerPhone.rowY.map { TrailerLayout.screenPoint(0, $0).y }
 
     static func damping(_ t: Double) -> Double {
-        var value = 0.7
-        value = M.mix(value, 0.2, M.easeInOut(M.progress(t, 37.05, 1.1)))
-        value = M.mix(value, 1.0, M.easeInOut(M.progress(t, 39.05, 1.15)))
-        value = M.mix(value, 0.5, M.easeInOut(M.progress(t, 41.0, 0.85)))
+        var value: Double = 0.7
+        value = M.mix(value, 0.2, M.easeInOut(M.progress(t, 61.15, 1.1)))
+        value = M.mix(value, 1.0, M.easeInOut(M.progress(t, 63.15, 1.15)))
+        value = M.mix(value, 0.825, M.easeInOut(M.progress(t, 65.1, 0.85)))
         return value
     }
 
     static func response(_ t: Double) -> Double {
-        M.mix(0.55, 0.3, M.easeInOut(M.progress(t, 42.4, 0.75)))
+        var value: Double = 0.55
+        value = M.mix(value, 0.3, M.easeInOut(M.progress(t, 66.55, 0.75)))
+        value = M.mix(value, 0.55, M.easeInOut(M.progress(t, 67.95, 0.75)))
+        return value
     }
 
     static func normalized(row: Int, t: Double) -> Double {
@@ -667,7 +778,8 @@ enum TrailerTune {
     }
 
     static func knobPoint(row: Int, t: Double) -> CGPoint {
-        CGPoint(x: trackMinX + trackWidth * CGFloat(normalized(row: row, t: t)), y: rowY[min(max(row, 0), 1)])
+        let x: CGFloat = trackMinX + trackWidth * CGFloat(normalized(row: row, t: t))
+        return CGPoint(x: x, y: rowY[min(max(row, 0), 1)])
     }
 
     static func pressed(_ t: Double) -> Double {
@@ -679,24 +791,34 @@ enum TrailerTune {
         return 0
     }
 
+    /// On a knob while pressing, gliding between knobs between presses, flying in before and out after.
     static func fingerPoint(_ t: Double) -> CGPoint {
-        let first = knobPoint(row: 0, t: 36.9)
-        if t < 36.85 {
-            let p = M.easeInOut(M.progress(t, 36.4, 0.45))
-            return M.mix(CGPoint(x: first.x + 70, y: first.y + 50), first, p)
-        }
+        guard let first = presses.first, let last = presses.last else { return CGPoint(x: 195, y: 260) }
         let hover = CGFloat(1 - pressed(t)) * 6
-        if t < 42.05 {
-            let knob = knobPoint(row: 0, t: t)
-            return CGPoint(x: knob.x, y: knob.y + hover)
+        let firstKnob = knobPoint(row: first.row, t: first.start)
+        if t < first.start - 0.05 {
+            let p: Double = M.easeInOut(M.progress(t, first.start - 0.6, 0.55))
+            let from = CGPoint(x: firstKnob.x + 70, y: firstKnob.y + 50)
+            let point = M.mix(from, firstKnob, p)
+            return CGPoint(x: point.x, y: point.y + hover)
         }
-        if t < 42.3 {
-            let p = M.easeInOut(M.progress(t, 42.05, 0.22))
-            return M.mix(knobPoint(row: 0, t: t), knobPoint(row: 1, t: t), p)
+        for index in presses.indices {
+            let press = presses[index]
+            guard t <= press.end + 0.05 else { continue }
+            if t >= press.start - 0.05 || index == 0 {
+                let knob = knobPoint(row: press.row, t: t)
+                return CGPoint(x: knob.x, y: knob.y + hover)
+            }
+            let previous = presses[index - 1]
+            let from = knobPoint(row: previous.row, t: previous.end)
+            let to = knobPoint(row: press.row, t: press.start)
+            let span: Double = max(press.start - previous.end - 0.1, 0.05)
+            let p: Double = M.easeInOut(M.progress(t, previous.end + 0.05, span))
+            let point = M.mix(from, to, p)
+            return CGPoint(x: point.x, y: point.y + hover)
         }
-        let knob = knobPoint(row: 1, t: t)
-        if t < 43.3 { return CGPoint(x: knob.x, y: knob.y + hover) }
-        let p = M.easeIn(M.progress(t, 43.3, 0.3))
+        let knob = knobPoint(row: last.row, t: last.end)
+        let p: Double = M.easeIn(M.progress(t, last.end + 0.1, 0.3))
         return M.mix(knob, CGPoint(x: knob.x + 60, y: knob.y + 40), p)
     }
 
@@ -727,19 +849,18 @@ private struct TrailerSpringLab: View {
     let side: CGFloat
 
     private static let cycle: Double = 1.3
-    private static let start: Double = 35.8
+    private static let start: Double = TrailerTune.labStart + 0.05
 
     var body: some View {
         let damping = TrailerTune.damping(t)
         let response = TrailerTune.response(t)
-        let shape = RoundedRectangle(cornerRadius: TrailerLayout.stageCorner, style: .continuous)
         ZStack(alignment: .topLeading) {
             StageBackground()
             curve(damping: damping, response: response)
             lane(damping: damping, response: response)
         }
         .frame(width: side, height: side)
-        .clipShape(shape)
+        .clipShape(RoundedRectangle(cornerRadius: TrailerLayout.stageCorner, style: .continuous))
         .overlay(StageRim(cornerRadius: TrailerLayout.stageCorner))
     }
 

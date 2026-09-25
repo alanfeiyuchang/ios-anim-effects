@@ -54,8 +54,8 @@ private enum HookLayout {
 
     /// 2.05× in 9:16 (1.8× in 3:4), smaller when the count has more digits so it always fits 340 pt.
     static let scale: CGFloat = {
-        let count: CGFloat = CGFloat(max(digits.count, 1))
-        let natural: CGFloat = count * face.width + (count - 1) * spacing
+        let count: CGFloat = CGFloat(max(HookLayout.digits.count, 1))
+        let natural: CGFloat = count * HookLayout.face.width + (count - 1) * HookLayout.spacing
         let fit: CGFloat = 340 / max(natural, 1)
         return min(TrailerCanvas.pick(1.8, 2.05), fit)
     }()

@@ -6,7 +6,7 @@
   },
   "pain": {
     "titleLine1": "想要的动效，",
-    "titleLine2": "说不出名字？",
+    "titleLine2": "说不出来",
     "backdropMark": "？",
     "words": [
       "弹一下？",
@@ -18,22 +18,29 @@
       "丝滑？"
     ]
   },
-  "search": {
-    "title": "一搜即达",
-    "subtitle": "{effects} 个动效秒速定位",
-    "placeholder": "搜索动效、控件、手势…",
-    "query": "卡片",
-    "resultSuffix": "个结果",
-    "chips": [
-      "全部",
-      "卡片",
-      "质感交互",
-      "按钮"
+  "unknown": {
+    "titleLine1": "iOS 能做到什么？",
+    "titleLine2": "不知道",
+    "tileMark": "?"
+  },
+  "intro": {
+    "title": "Motionary",
+    "subtitle": "动效词典",
+    "pillars": [
+      "找灵感",
+      "上手感受",
+      "实时可调",
+      "一键复制提示词"
     ]
+  },
+  "search": {
+    "title": "找灵感 · 一搜即达",
+    "subtitle": "{effects} 个动效 · {categories} 大分类 · {families} 个家族",
+    "query": "卡片"
   },
   "phone": {
     "title": "真实上手体验",
-    "subtitle": "每一下都有触感",
+    "subtitle": "每一下都有触感反馈",
     "statusTime": "9:41",
     "hintTap": "点一下试试",
     "hintGesture": "按住拖动试试",
@@ -55,8 +62,8 @@
     "targetLabel": "目标"
   },
   "prompt": {
-    "title": "专业中英提示词",
-    "subtitle": "一键复制给 AI",
+    "title": "一键复制提示词",
+    "subtitle": "中英双语 · 直接发给 AI",
     "cardTitle": "专业提示词",
     "languageZh": "中",
     "languageEn": "EN",
@@ -73,12 +80,14 @@
     "reply": "收到！这就用 SwiftUI 实现："
   },
   "web": {
-    "title": "网页版全部动效",
-    "subtitle": "录像一览，随时查看",
+    "title": "网页随时看 · App 感受手感",
+    "subtitle": "",
     "url": "alanfeiyuchang.github.io/ios-anim-effects",
     "siteName": "Motionary",
-    "siteTagline": "全部动效录像一览",
-    "countBadge": "{effects} 个"
+    "siteTagline": "全部动效录像",
+    "countBadge": "{effects} 个",
+    "webLabel": "网页 · 快速浏览全部录像",
+    "appLabel": "App · 亲手感受手感"
   },
   "end": {
     "title": "Motionary",
@@ -87,5 +96,52 @@
   },
   "touch": {
     "hapticBadge": "触感"
-  }
+  },
+  "voiceover": [
+    {
+      "start": 0,
+      "end": 6,
+      "text": "做 App 的时候，你一定遇到过这种情况——"
+    },
+    {
+      "start": 6,
+      "end": 16,
+      "text": "脑子里有感觉，却说不清：是弹簧还是缓动？回弹多少？跟设计师、跟 AI 都讲不明白。"
+    },
+    {
+      "start": 16,
+      "end": 24,
+      "text": "更难的是，你根本不知道 iOS 原生能做出哪些效果。"
+    },
+    {
+      "start": 24,
+      "end": 30,
+      "text": "所以我做了 Motionary，一本可以上手玩的 iOS 动效词典。"
+    },
+    {
+      "start": 30,
+      "end": 44,
+      "text": "{effects} 个动效，按 {categories} 个分类、{families} 个家族整理。输入关键词就能搜到，点「质感交互」，看最精致的那一批。"
+    },
+    {
+      "start": 44,
+      "end": 60,
+      "text": "每个动效都是真实运行的 SwiftUI，不是视频。用手指去按、去拖，配合 Taptic Engine 的触感反馈，手感好不好，一摸就知道。"
+    },
+    {
+      "start": 60,
+      "end": 70,
+      "text": "弹簧的响应时间、阻尼比，拖一下马上看到变化。阻尼越小回弹越多，系统默认的弹簧大约是响应 0.55 秒、阻尼 0.825。"
+    },
+    {
+      "start": 70,
+      "end": 80,
+      "text": "每个动效都配有中英双语的专业提示词，写清时长、曲线和弹簧参数，一键复制给 AI 或设计师，直接复现。"
+    },
+    {
+      "start": 80,
+      "end": 90,
+      "text": "想快速浏览，打开网页就能看全部录像；想感受手感，就在 App 里亲手试试。Motionary，让动效说得清、看得见、摸得着。"
+    }
+  ]
 }

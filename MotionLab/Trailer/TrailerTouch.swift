@@ -6,51 +6,8 @@ import SwiftUI
 enum TrailerLayout {
     /// Centre of the two-line headline that tops most scenes.
     static let headlineY: CGFloat = TrailerCanvas.pick(58, 128)
-    /// Where the pain scene's words collapse, and the search field is born.
+    /// Where the pain scene's words collapse, and the unknown tiles are born.
     static let painCollapse = TrailerCanvas.point(195, 250, 330)
-
-    // Search
-    static let fieldY: CGFloat = TrailerCanvas.pick(118, 204)
-    static let chipY: CGFloat = TrailerCanvas.pick(164, 254)
-    /// One width per `TrailerCopy.search.chips` label (58 pt minimum, 82 pt for the default "质感交互"),
-    /// scaled down together if the row would not fit the canvas.
-    static let chipWidths: [CGFloat] = {
-        let natural: [CGFloat] = TrailerCopy.current.search.chips.map { title in
-            max(58, TrailerCopy.estimatedWidth(title, size: 14) + 26)
-        }
-        let spacing: CGFloat = TrailerLayout.chipSpacing * CGFloat(max(natural.count - 1, 0))
-        let sum: CGFloat = natural.reduce(0, +)
-        let room: CGFloat = TrailerCanvas.width - 20 - spacing
-        guard sum > room, sum > 0 else { return natural }
-        let factor: CGFloat = room / sum
-        return natural.map { $0 * factor }
-    }()
-    static let chipSpacing: CGFloat = 8
-
-    static func chipCenter(_ index: Int) -> CGPoint {
-        let total = chipWidths.reduce(0, +) + chipSpacing * CGFloat(chipWidths.count - 1)
-        var x = (TrailerCanvas.width - total) / 2
-        for i in 0..<index where i < chipWidths.count {
-            x += chipWidths[i] + chipSpacing
-        }
-        let width = index < chipWidths.count ? chipWidths[index] : 58
-        return CGPoint(x: x + width / 2, y: chipY)
-    }
-
-    static let tileSide: CGFloat = TrailerCanvas.pick(104, 112)
-    static let tileGap: CGFloat = TrailerCanvas.pick(10, 12)
-    static let gridTop: CGFloat = TrailerCanvas.pick(196, 290)
-
-    /// Centre of result slot `index` (3 columns × 2 rows).
-    static func slotCenter(_ index: Int) -> CGPoint {
-        let column = CGFloat(index % 3)
-        let row = CGFloat(index / 3)
-        let gridWidth = tileSide * 3 + tileGap * 2
-        let left = (TrailerCanvas.width - gridWidth) / 2
-        let x: CGFloat = left + tileSide / 2 + column * (tileSide + tileGap)
-        let y: CGFloat = gridTop + tileSide / 2 + row * (tileSide + tileGap)
-        return CGPoint(x: x, y: y)
-    }
 
     // Phone (the app's detail page on an iPhone, see `TrailerPhone`)
     /// Headline above the phone: higher and a touch smaller than elsewhere, so the phone can be big.
@@ -108,6 +65,15 @@ struct TrailerTap {
     var hold: Double = 0.14
     /// Small detent ticks (slider) get a ring pulse but no badge.
     var isTick = false
+    /// A drag: the finger slides from `point` to `to` while it is down.
+    var to: CGPoint? = nil
+    /// No ripple and no badge (a scroll flick, which has no haptic).
+    var silent = false
+    /// Whether the "触感" badge pops (off for the first tap of a double tap).
+    var badge = true
+
+    /// Where the finger is when it lifts.
+    var endPoint: CGPoint { to ?? point }
 }
 
 struct TrailerFingerState {
@@ -122,29 +88,61 @@ struct TrailerFingerState {
 enum TrailerScript {
     /// Windows in which the finger is visible (the tune drag window is driven by `TrailerTune`).
     static let segments: [ClosedRange<Double>] = [
-        15.2...16.6, 19.6...21.0, 21.9...35.7, 36.4...43.6, 46.0...49.5,
+        30.55...35.45, 37.0...38.1, 41.6...42.65,
+        43.25...47.5, 47.85...49.0, 51.35...54.0, 54.75...58.25,
+        60.4...69.3,
+        72.9...76.3,
+        82.55...86.1,
     ]
-    static let tuneSegment: ClosedRange<Double> = 36.4...43.6
+    static let tuneSegment: ClosedRange<Double> = 60.4...69.3
+
+    /// A point of a demo's 340 × 340 canvas on the phone's detail stage.
+    private static func stage(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+        TrailerLayout.demoPoint(x, y)
+    }
+
+    /// A device point of the embedded app screens.
+    private static func app(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+        TrailerFind.canvasPoint(CGPoint(x: x, y: y))
+    }
 
     static let taps: [TrailerTap] = {
-        var list: [TrailerTap] = [
-            // Search: pick the "卡片" chip, then open a result.
-            TrailerTap(time: 15.85, point: TrailerLayout.chipCenter(1)),
-            TrailerTap(time: 20.35, point: TrailerLayout.slotCenter(TrailerData.heroSlot)),
-            // Phone: cards.flip, showcase.board-card, buttons.depth-press, inputs.squash-toggle.
-            TrailerTap(time: 22.6, point: TrailerLayout.demoPoint(185, 175)),
-            TrailerTap(time: 24.8, point: TrailerLayout.demoPoint(185, 175)),
-            TrailerTap(time: 26.3, point: TrailerLayout.demoPoint(170, 160)),
-            TrailerTap(time: 28.7, point: TrailerLayout.demoPoint(170, 160)),
-            TrailerTap(time: 30.0, point: TrailerLayout.demoPoint(170, 166), hold: 0.76),
-            TrailerTap(time: 31.6, point: TrailerLayout.demoPoint(170, 166), hold: 0.76),
-            TrailerTap(time: 33.5, point: TrailerLayout.demoPoint(267, 129), hold: 0.3),
-            TrailerTap(time: 34.8, point: TrailerLayout.demoPoint(267, 129), hold: 0.3),
+        let flicks: [TrailerTap] = TrailerFind.swipes.enumerated().map { pair -> TrailerTap in
+            let swipe = pair.element
+            let x: CGFloat = pair.offset == 0 ? 300 : 292
+            let y: CGFloat = pair.offset == 0 ? 690 : 720
+            return TrailerTap(
+                time: swipe.start - 0.02,
+                point: TrailerScript.app(x, y),
+                hold: 0.34,
+                to: TrailerScript.app(x, y - swipe.reach),
+                silent: true
+            )
+        }
+        var list: [TrailerTap] = flicks
+        list += [
+            // Find: the tab bar's search button, the Signature Interactions chip, then a result.
+            TrailerTap(time: TrailerFind.searchTap, point: TrailerFind.canvasPoint(TrailerFind.searchButton)),
+            TrailerTap(time: TrailerFind.chipTap, point: TrailerFind.canvasPoint(TrailerFind.showcaseChip)),
+            TrailerTap(time: TrailerFind.cardTap, point: TrailerFind.canvasPoint(TrailerFind.resultStage(TrailerData.heroResultIndex))),
+            // Feel: photo-play (play, pause), summit-badge, save-burst (double tap, bookmark), board-card (two flips).
+            TrailerTap(time: 43.8, point: TrailerScript.stage(170, 150)),
+            TrailerTap(time: 47.0, point: TrailerScript.stage(170, 150)),
+            TrailerTap(time: 48.4, point: TrailerScript.stage(170, 150), hold: 0.2),
+            TrailerTap(time: 51.88, point: TrailerScript.stage(170, 133), hold: 0.06, badge: false),
+            TrailerTap(time: 52.0, point: TrailerScript.stage(170, 133), hold: 0.1),
+            TrailerTap(time: 53.5, point: TrailerScript.stage(272, 265)),
+            TrailerTap(time: 55.3, point: TrailerScript.stage(170, 160)),
+            TrailerTap(time: 57.7, point: TrailerScript.stage(170, 160)),
             // Prompt: EN, back to 中, copy.
-            TrailerTap(time: 46.65, point: TrailerLayout.segmentEn),
-            TrailerTap(time: 48.05, point: TrailerLayout.segmentZh),
-            TrailerTap(time: 48.9, point: TrailerLayout.copyButton),
+            TrailerTap(time: 73.4, point: TrailerLayout.segmentEn),
+            TrailerTap(time: 74.9, point: TrailerLayout.segmentZh),
+            TrailerTap(time: 75.8, point: TrailerLayout.copyButton),
         ]
+        // Outro: the phone beside the web page gets played too.
+        for time in TrailerOutroScene.phoneTapTimes {
+            list.append(TrailerTap(time: time, point: TrailerOutroScene.phoneTapPoint))
+        }
         for press in TrailerTune.presses {
             list.append(TrailerTap(time: press.start, point: TrailerTune.knobPoint(row: press.row, t: press.start), hold: press.end - press.start))
         }
@@ -174,10 +172,15 @@ enum TrailerScript {
         var pressed: Double = 0
         let point: CGPoint
         if let previous, t <= previous.time + previous.hold {
-            point = previous.point
+            if let to = previous.to {
+                let p = TrailerMath.easeInOut(TrailerMath.progress(t, previous.time, previous.hold))
+                point = TrailerMath.mix(previous.point, to, p)
+            } else {
+                point = previous.point
+            }
             pressed = min(1, 1 - TrailerMath.progress(t, previous.time + previous.hold - 0.06, 0.06))
         } else if let next {
-            let from = previous?.point ?? CGPoint(x: next.point.x + 70, y: next.point.y + 120)
+            let from = previous?.endPoint ?? CGPoint(x: next.point.x + 70, y: next.point.y + 120)
             let departure = previous.map { $0.time + $0.hold + 0.06 } ?? segment.lowerBound
             let arrival = next.time - 0.1
             let p = TrailerMath.easeInOut(TrailerMath.progress(t, departure, max(arrival - departure, 0.05)))
@@ -189,17 +192,18 @@ enum TrailerScript {
         } else if let previous {
             let leave = previous.time + previous.hold + 0.15
             let p = TrailerMath.easeIn(TrailerMath.progress(t, leave, max(segment.upperBound - leave, 0.1)))
-            point = TrailerMath.mix(previous.point, CGPoint(x: previous.point.x + 60, y: previous.point.y + 40), p)
+            let end = previous.endPoint
+            point = TrailerMath.mix(end, CGPoint(x: end.x + 60, y: end.y + 40), p)
         } else {
             point = CGPoint(x: 300, y: 380)
         }
         return TrailerFingerState(point: point, opacity: opacity, pressed: pressed)
     }
 
-    /// Device shake for the phone: the sum of every recent tap's decaying buzz.
-    static func buzz(_ t: Double) -> Double {
+    /// Device shake: the sum of every recent tap's decaying buzz inside `window`.
+    static func buzz(_ t: Double, window: ClosedRange<Double> = 34.5...69.5) -> Double {
         var total: Double = 0
-        for tap in taps where !tap.isTick && tap.time > 21.5 && tap.time < 44 {
+        for tap in taps where !tap.isTick && !tap.silent && window.contains(tap.time) {
             total += TrailerMath.buzz(t - tap.time)
         }
         return total
@@ -216,8 +220,9 @@ struct TrailerTouchLayer: View {
     var body: some View {
         let finger = TrailerScript.finger(at: t)
         let active = TrailerScript.taps.indices.filter { index in
-            let elapsed = t - TrailerScript.taps[index].time
-            return elapsed >= 0 && elapsed < 1.1
+            let tap = TrailerScript.taps[index]
+            let elapsed = t - tap.time
+            return !tap.silent && elapsed >= 0 && elapsed < 1.1
         }
         ZStack {
             ForEach(active, id: \.self) { index in
@@ -227,7 +232,7 @@ struct TrailerTouchLayer: View {
             TrailerFinger(state: finger)
             ForEach(active, id: \.self) { index in
                 let tap = TrailerScript.taps[index]
-                if !tap.isTick {
+                if !tap.isTick && tap.badge {
                     TrailerHapticBadge(point: tap.point, elapsed: t - tap.time)
                 }
             }

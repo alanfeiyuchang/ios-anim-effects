@@ -7,9 +7,9 @@
 **可以上手体验的 iOS 高级动效词典**<br>
 **A hands-on dictionary of premium iOS motion**
 
-<a href="https://alanfeiyuchang.github.io/ios-anim-effects/"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E9%A2%84%E8%A7%88%20%C2%B7%20Live%20Preview-%E2%86%92%20%E5%85%A8%E9%83%A8%E5%8A%A8%E6%95%88%E5%BD%95%E5%83%8F-FF7A1A?style=for-the-badge&labelColor=1A0A00" height="38" alt="在线预览 · Live Preview"></a>
+<a href="https://alanfeiyuchang.github.io/motionary-ios-animations/"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E9%A2%84%E8%A7%88%20%C2%B7%20Live%20Preview-%E2%86%92%20%E5%85%A8%E9%83%A8%E5%8A%A8%E6%95%88%E5%BD%95%E5%83%8F-FF7A1A?style=for-the-badge&labelColor=1A0A00" height="38" alt="在线预览 · Live Preview"></a>
 
-### 👉 [alanfeiyuchang.github.io/ios-anim-effects](https://alanfeiyuchang.github.io/ios-anim-effects/)
+### 👉 [alanfeiyuchang.github.io/motionary-ios-animations](https://alanfeiyuchang.github.io/motionary-ios-animations/)
 
 ![461 effects](https://img.shields.io/badge/effects-461-FF8A1F?style=flat-square)
 ![15 categories](https://img.shields.io/badge/categories-15-FF8A1F?style=flat-square)
@@ -41,7 +41,7 @@
 
 | | |
 |---|---|
-| 🌐 **网页 · Web** — [在线预览全部动效录像](https://alanfeiyuchang.github.io/ios-anim-effects/)：搜索、按分类浏览、看参数、复制提示词，打开就能用。<br>Browse every effect's recording, search, filter, read the parameters and copy prompts — nothing to install. | 📱 **App** — 在 iPhone 上亲手感受：真实手势、Taptic Engine 触感反馈、参数滑块实时生效。<br>Feel them on an iPhone: real gestures, Taptic Engine haptics, live parameter sliders. |
+| 🌐 **网页 · Web** — [在线预览全部动效录像](https://alanfeiyuchang.github.io/motionary-ios-animations/)：搜索、按分类浏览、看参数、复制提示词，打开就能用。<br>Browse every effect's recording, search, filter, read the parameters and copy prompts — nothing to install. | 📱 **App** — 在 iPhone 上亲手感受：真实手势、Taptic Engine 触感反馈、参数滑块实时生效。<br>Feel them on an iPhone: real gestures, Taptic Engine haptics, live parameter sliders. |
 
 ## 功能 · Features
 
@@ -104,8 +104,8 @@ Requires Xcode 16 or later (Xcode 26 recommended for Liquid Glass); iOS 18.0+ de
 **iOS 26** use Liquid Glass and fall back gracefully on older systems.
 
 ```bash
-git clone https://github.com/alanfeiyuchang/ios-anim-effects.git
-cd ios-anim-effects
+git clone https://github.com/alanfeiyuchang/motionary-ios-animations.git
+cd motionary-ios-animations
 open MotionLab.xcodeproj
 ```
 
@@ -159,7 +159,7 @@ Free to use, modify and distribute, code and prompts alike, as long as the copyr
 
 <div align="center">
 
-**[→ 在线预览全部 461 个动效 · Browse all 461 effects online](https://alanfeiyuchang.github.io/ios-anim-effects/)**
+**[→ 在线预览全部 461 个动效 · Browse all 461 effects online](https://alanfeiyuchang.github.io/motionary-ios-animations/)**
 
 如果觉得有用，欢迎点个 ⭐ · If it helps, a ⭐ is appreciated.
 

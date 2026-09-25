@@ -18,8 +18,8 @@ Motionary 的 75 秒宣传片（`MotionLab/Trailer/`）是 App 里实时渲染�
 | 33.2–43.1 s | 上手感受 | 动效详情页依次演示照片卡片播放、收藏迸发、雪板翻转，手指点击带涟漪，手机随之轻轻一震 | 每个动效都是真实运行的 SwiftUI…… |
 | 43.1–52.4 s | 我最喜欢的 | 同一台手机上：昼夜切换开关（手指来回切三次），然后装备清单（五件装备依次打包，「装备齐全」） | 其中我最喜欢的有昼夜切换开关……还有这个装备清单…… |
 | 52.4–61.9 s | 一键复制提示词 | 提示词卡片、中/EN 切换、一键复制，飞进 AI 对话 | 每个动效都配有中英双语的专业提示词…… |
-| 61.9–68 s | 网页 + App | 左边浏览器（地址栏打出 `alanfeiyuchang.github.io/ios-anim-effects`），右边手机被手指点着玩：「网页随时看 · App 感受手感」 | 想快速浏览，打开网页就能看全部录像…… |
-| 68–71 s | 开源 | 手机退场，浏览器移到中央放大，地址栏改打 `github.com/alanfeiyuchang/ios-anim-effects`，页面是仓库的真实截图（`trailer/github.jpg`），下滑到 README 标题和「在线预览」链接 | 整个项目已经开源，欢迎查看 |
+| 61.9–68 s | 网页 + App | 左边浏览器（地址栏打出 `alanfeiyuchang.github.io/motionary-ios-animations`），右边手机被手指点着玩：「网页随时看 · App 感受手感」 | 想快速浏览，打开网页就能看全部录像…… |
+| 68–71 s | 开源 | 手机退场，浏览器移到中央放大，地址栏改打 `github.com/alanfeiyuchang/motionary-ios-animations`，页面是仓库的真实截图（`trailer/github.jpg`），下滑到 README 标题和「在线预览」链接 | 整个项目已经开源，欢迎查看 |
 | 71–75.4 s | 片尾 | GitHub 窗口收拢成 App 图标：Motionary · 动效词典 · iOS Motion Dictionary + 「让动效说得清 · 看得见 · 摸得着」+「更多动效后续加入」小胶囊 | Motionary 让动效说得清，看得见、摸得着 |
 
 画面底部约 18% 始终空着，留给旁白字幕。
@@ -45,8 +45,8 @@ sudo xcode-select -s /Applications/Xcode.app      # 不对的话切换一下
 ### 1. 获取代码
 
 ```bash
-git clone https://github.com/alanfeiyuchang/ios-anim-effects.git
-cd ios-anim-effects
+git clone https://github.com/alanfeiyuchang/motionary-ios-animations.git
+cd motionary-ios-animations
 ```
 
 ### 2. 编辑文案
@@ -173,7 +173,7 @@ out/3x4/…                        3:4 画幅的同样一套（如果录了）
 ## 开源画面的 GitHub 截图
 
 68–71 秒浏览器里显示的是 `trailer/github.jpg`：仓库首页在手机宽度（393 pt，3 倍图裁到 786 px 宽）、深色模式下的整页截图，
-保留从顶部到 README 动图的一段（约 1610 pt 高）。录制脚本会把它复制进 App 的 `Documents/trailer-github.jpg`；
+保留从顶部到 README 动图上沿的一段（约 1330 pt 高）。录制脚本会把它复制进 App 的 `Documents/trailer-github.jpg`；
 文件不存在时画面里只画一个简单的替身。README 改版后重新截一张覆盖它即可，
 滚动停在哪里由 `TrailerGitHubPage.stopFraction`（截图高度的比例）决定。
 

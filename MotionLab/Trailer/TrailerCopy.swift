@@ -131,7 +131,7 @@ struct TrailerCopy: Codable, Equatable {
         var title = "网页随时看 · App 感受手感"
         var subtitle = ""
         /// Typed into the address bar.
-        var url = "alanfeiyuchang.github.io/ios-anim-effects"
+        var url = "alanfeiyuchang.github.io/motionary-ios-animations"
         var siteName = "Motionary"
         var siteTagline = "全部动效录像"
         var countBadge = "{effects} 个"
@@ -145,7 +145,7 @@ struct TrailerCopy: Codable, Equatable {
         var title = "完全开源"
         var subtitle = "欢迎 Star · 一起补充动效"
         /// Typed into the address bar.
-        var url = "github.com/alanfeiyuchang/ios-anim-effects"
+        var url = "github.com/alanfeiyuchang/motionary-ios-animations"
     }
 
     /// 87–90 s: the end card under the app icon.

@@ -619,13 +619,14 @@ private struct TrailerBrowserWindow: View {
     }()
 
     /// The address is retyped to the GitHub repository, the page loads (a thin progress bar), then scrolls.
-    static let githubTypeStart: Double = TrailerOutroScene.githubStart + 0.3
+    static let githubTypeStart: Double = TrailerOutroScene.githubStart + 0.2
+    /// 18 ms per character (0.9 s for the default 50), 0.4 … 1.2 s: the beat is short.
     static let githubTypeDuration: Double = {
-        let natural: Double = Double(TrailerCopy.current.openSource.url.count) * 0.022
-        return min(max(natural, 0.4), 1.4)
+        let natural: Double = Double(TrailerCopy.current.openSource.url.count) * 0.018
+        return min(max(natural, 0.4), 1.2)
     }()
     static let githubLoadStart: Double = githubTypeStart + githubTypeDuration + 0.05
-    static let githubShown: Double = githubLoadStart + 0.3
+    static let githubShown: Double = githubLoadStart + 0.25
 
     private var isCompact: Bool { size.width < 300 }
     /// 0 in the small window, 1 once it has grown for GitHub: the traffic lights and the reload glyph
@@ -668,7 +669,7 @@ private struct TrailerBrowserWindow: View {
 
     /// A thin ember bar under the address while GitHub loads.
     private var loadingBar: some View {
-        let p: Double = M.easeOut(M.progress(t, Self.githubLoadStart, 0.3))
+        let p: Double = M.easeOut(M.progress(t, Self.githubLoadStart, 0.25))
         let fade: Double = 1 - M.progress(t, Self.githubShown, 0.2)
         return Rectangle()
             .fill(Palette.accentFill)
@@ -739,14 +740,15 @@ private struct TrailerGitHubPage: View {
     let shownAt: Double
 
     /// Where the scroll stops, as a fraction of the screenshot's height: the README's icon, title and the
-    /// preview badge fill the window (the screenshot is 393 pt wide and 1610 pt tall; the icon starts
-    /// ~860 pt down, the badge sits at ~1175 pt).
-    static let stopFraction: CGFloat = 0.53
+    /// preview badge fill the window (the screenshot is 393 pt wide and 1330 pt tall; the icon starts
+    /// 871 pt down, the badge sits at 1168 pt).
+    static let stopFraction: CGFloat = 857.0 / 1330.0
 
     var body: some View {
         if let image = TrailerGitHubShot.image {
             let height: CGFloat = width * image.size.height / max(image.size.width, 1)
-            let p: Double = M.easeInOut(M.progress(t, shownAt + 0.25, TrailerOutroScene.condenseStart - shownAt - 0.65))
+            // Scrolls straight down to the README, then holds on its title and preview link before condensing.
+            let p: Double = M.easeInOut(M.progress(t, shownAt + 0.1, max(TrailerOutroScene.condenseStart - shownAt - 0.9, 0.3)))
             Image(uiImage: image)
                 .resizable()
                 .interpolation(.high)
@@ -755,7 +757,7 @@ private struct TrailerGitHubPage: View {
                 .frame(width: width, alignment: .top)
         } else {
             VStack(spacing: 10) {
-                Text(verbatim: "alanfeiyuchang / ios-anim-effects")
+                Text(verbatim: "alanfeiyuchang / motionary-ios-animations")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color(hex: 0x4493F8))
                 Text(verbatim: "Motionary · 动效词典")

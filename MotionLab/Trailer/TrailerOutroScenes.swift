@@ -442,8 +442,8 @@ private struct TrailerWebPage: View {
         let scroll = CGFloat(26 * (local - (1 - exp(-2 * local)) / 2))
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Text(verbatim: "动效词典")
-                    .font(.system(size: 13, weight: .heavy))
+                Text(verbatim: "Motionary")
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
                     .foregroundStyle(Color.white)
                 Text(verbatim: "全部动效录像一览")
                     .font(.system(size: 11, weight: .semibold))
@@ -456,8 +456,11 @@ private struct TrailerWebPage: View {
                     .padding(.vertical, 3)
                     .background(Palette.accentFill, in: Capsule())
             }
+            // The grid scrolls inside its own clipped area, so it never slides over the header.
             grid
                 .offset(y: -scroll)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .clipped()
         }
         .padding(.horizontal, 12)
         .padding(.top, 10)

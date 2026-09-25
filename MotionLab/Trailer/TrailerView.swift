@@ -8,9 +8,10 @@ import SwiftUI
 /// the embedded real effect demos run their own preview autoplay, phase-locked to the same clock
 /// through `demoSyncEpoch`.
 ///
-/// Layout: a fixed 390 × 520 pt (3:4) canvas scaled to the screen width and centred vertically on
-/// #0B0B0D, so the recording can be cropped exactly (see the script for the crop math). The bottom
-/// 104 pt of the canvas is a clean caption band.
+/// Layout: a fixed canvas 390 pt wide, 9:16 (390 × 693⅓ pt, default) or 3:4 (390 × 520 pt) picked with
+/// `-ML_trailerAspect`, scaled to the screen width and centred vertically on #0B0B0D, so the recording
+/// can be cropped exactly (see the script for the crop math). The bottom 18 % of the canvas is a clean
+/// caption band (`TrailerCanvas.contentBottom`).
 ///
 /// Timeline (s): 0 hook · 5 pain · 10 search · 21 feel it (phone) · 36 tune · 44 prompt · 52 web · 57 end card.
 struct TrailerView: View {

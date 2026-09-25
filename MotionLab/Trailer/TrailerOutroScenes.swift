@@ -15,7 +15,7 @@ struct TrailerPromptScene: View {
                 reveal: M.progress(t, 44.4, 0.9),
                 exit: M.easeIn(M.progress(t, 51.55, 0.5))
             )
-            .position(x: 195, y: 58)
+            .position(x: 195, y: TrailerLayout.headlineY)
             if t > 49.1 {
                 TrailerChatPanel(t: t)
             }
@@ -50,20 +50,23 @@ private enum PromptSource {
     }
 }
 
-/// The prompt card: unfolds from its top edge, flips its text to English and back, gets copied,
-/// then shrinks along an arc into the chat's message bubble.
+/// The prompt card: rises out of depth, cross-fades its text to English and back, gets copied, then
+/// shrinks (uniformly) along an arc into the chat's message bubble.
 private struct TrailerPromptCard: View {
     let t: Double
 
-    static let bubbleCenter = CGPoint(x: 252, y: 214)
+    /// The user bubble of `TrailerChatPanel`, which shares the card's centre.
+    static let bubbleCenter = CGPoint(x: 252, y: TrailerLayout.promptCenter.y - 43)
 
     var body: some View {
         let unfold = M.spring(t, at: 44.05, response: 0.8, damping: 0.82)
+        let settled = M.clamp(unfold)
         let fly = M.easeInOut(M.progress(t, 49.45, 0.8))
         let arc = CGFloat(sin(fly * Double.pi)) * 56
         let path = M.mix(TrailerLayout.promptCenter, Self.bubbleCenter, fly)
         let center = CGPoint(x: path.x, y: path.y - arc)
         let size = TrailerLayout.promptSize
+        let scale: Double = (0.9 + 0.1 * unfold) * (1 - 0.55 * fly)
         return VStack(alignment: .leading, spacing: 10) {
             header
             Text(verbatim: PromptSource.title)
@@ -85,8 +88,9 @@ private struct TrailerPromptCard: View {
             }
         }
         .trailerGlint(M.progress(t, 45.1, 0.8), strength: 0.18)
-        .rotation3DEffect(.degrees(72 * (1 - M.clamp(unfold))), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: 0.6)
-        .scaleEffect(CGFloat((0.92 + 0.08 * unfold) * (1 - 0.55 * fly)))
+        .scaleEffect(CGFloat(scale))
+        .blur(radius: CGFloat(1 - settled) * 8)
+        .offset(y: CGFloat(1 - settled) * 28)
         .rotationEffect(.degrees(-6 * sin(fly * Double.pi)))
         .opacity(M.clamp(unfold * 2) * (1 - M.progress(t, 49.95, 0.35)))
         .position(center)
@@ -139,18 +143,31 @@ private struct TrailerPromptCard: View {
         .frame(width: 42)
     }
 
+    /// 中 → EN → 中 as a cross-fade with a soft blur and a small slide (never a squashing flip).
     private var promptText: some View {
-        let angle = 180 * M.easeInOut(M.progress(t, 46.7, 0.5)) + 180 * M.easeInOut(M.progress(t, 48.1, 0.5))
-        let wrapped = angle.truncatingRemainder(dividingBy: 360)
-        let showEnglish = wrapped > 90 && wrapped < 270
-        return Text(verbatim: showEnglish ? PromptSource.en : PromptSource.zh)
-            .font(.system(size: showEnglish ? 12 : 13, weight: .regular))
-            .lineSpacing(showEnglish ? 3 : 4)
+        let english = M.easeInOut(M.progress(t, 46.7, 0.5)) - M.easeInOut(M.progress(t, 48.1, 0.5))
+        let slide = CGFloat(english) * 6
+        return ZStack(alignment: .topLeading) {
+            promptBody(PromptSource.zh, english: false)
+                .blur(radius: CGFloat(english) * 6)
+                .offset(y: -slide)
+                .opacity(1 - english)
+            promptBody(PromptSource.en, english: true)
+                .blur(radius: CGFloat(1 - english) * 6)
+                .offset(y: 6 - slide)
+                .opacity(english)
+        }
+        .frame(width: TrailerLayout.promptSize.width - 36, height: TrailerLayout.promptSize.height - 142, alignment: .topLeading)
+    }
+
+    private func promptBody(_ text: String, english: Bool) -> some View {
+        Text(verbatim: text)
+            .font(.system(size: english ? 12 : 13, weight: .regular))
+            .lineSpacing(english ? 3 : 4)
             .foregroundStyle(Color.white.opacity(0.86))
-            .lineLimit(6)
+            .lineLimit(TrailerCanvas.isTall ? 7 : 6)
             .textRenderer(TrailerLineReveal(progress: M.progress(t, 44.7, 1.4)))
-            .frame(width: TrailerLayout.promptSize.width - 36, height: 128, alignment: .topLeading)
-            .rotation3DEffect(.degrees(showEnglish ? angle + 180 : angle), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
+            .frame(width: TrailerLayout.promptSize.width - 36, height: TrailerLayout.promptSize.height - 142, alignment: .topLeading)
     }
 
     private var footer: some View {
@@ -216,7 +233,8 @@ private struct TrailerChatPanel: View {
         let blur = CGFloat(exit) * 6
         let fadeOut: Double = 1 - M.progress(t, 51.9, 0.45)
         let opacity: Double = M.clamp(appear * 2) * fadeOut
-        let center: CGPoint = M.mix(TrailerLayout.promptCenter, CGPoint(x: 195, y: 280), exit)
+        let exitCenter = CGPoint(x: 195, y: TrailerLayout.promptCenter.y + 23)
+        let center: CGPoint = M.mix(TrailerLayout.promptCenter, exitCenter, exit)
         return VStack(alignment: .leading, spacing: 14) {
             header
             userBubble
@@ -333,16 +351,12 @@ struct TrailerWebScene: View {
     let t: Double
 
     static let url = "alanfeiyuchang.github.io/ios-anim-effects"
-    static let windowCenter = CGPoint(x: 195, y: 257)
-    static let windowSize = CGSize(width: 350, height: 294)
+    static let windowCenter = TrailerLayout.promptCenter
+    static let windowSize = CGSize(width: 350, height: TrailerCanvas.pick(294, 360))
 
     var body: some View {
         let enter = M.spring(t, at: 51.65, response: 0.85, damping: 0.88)
         let condense = TrailerEndScene.condense(t)
-        let size = Self.windowSize
-        let side = TrailerEndScene.iconSide
-        let scaleX = M.mix(CGFloat(1), side / size.width, condense)
-        let scaleY = M.mix(CGFloat(1), side / size.height, condense)
         ZStack {
             TrailerHeadline(
                 title: "网页版全部动效",
@@ -350,10 +364,11 @@ struct TrailerWebScene: View {
                 reveal: M.progress(t, 52.3, 0.9),
                 exit: M.easeIn(M.progress(t, 56.75, 0.5))
             )
-            .position(x: 195, y: 58)
-            TrailerBrowserWindow(t: t, contentOpacity: 1 - M.clamp(condense * 2.2))
+            .position(x: 195, y: TrailerLayout.headlineY)
+            // Condensing into the app icon: the window's frame and corners morph into the icon's rounded
+            // square (content fixed and cropped, never scaled), then the icon cross-fades in over it.
+            TrailerBrowserWindow(t: t, morph: M.clamp(condense), contentOpacity: 1 - M.clamp(condense * 2.2))
                 .scaleEffect(CGFloat(1.45 - 0.45 * enter))
-                .scaleEffect(x: scaleX, y: scaleY)
                 .blur(radius: CGFloat(1 - M.clamp(enter)) * 8)
                 .opacity(M.clamp(enter * 2) * (1 - M.progress(condense, 0.45, 0.35)))
                 .position(M.mix(Self.windowCenter, TrailerEndScene.iconCenter, condense))
@@ -364,11 +379,17 @@ struct TrailerWebScene: View {
 
 private struct TrailerBrowserWindow: View {
     let t: Double
+    /// 0 = the full window, 1 = the app icon's rounded square.
+    let morph: Double
     let contentOpacity: Double
 
     var body: some View {
         let size = TrailerWebScene.windowSize
-        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        let side = TrailerEndScene.iconSide
+        let width = M.mix(size.width, side, morph)
+        let height = M.mix(size.height, side, morph)
+        let corner = M.mix(CGFloat(20), side * 0.225, morph)
+        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
         VStack(spacing: 0) {
             toolbar
             Rectangle()
@@ -382,6 +403,8 @@ private struct TrailerBrowserWindow: View {
         }
         .opacity(contentOpacity)
         .frame(width: size.width, height: size.height, alignment: .top)
+        // Cropped from the top, so the URL bar stays pinned until the content has faded.
+        .frame(width: width, height: height, alignment: .top)
         .background(TrailerGlass(shape: shape, glow: 0.2, shadowOpacity: 0.6))
         .clipShape(shape)
         .overlay(shape.strokeBorder(TrailerStyle.rim, lineWidth: 0.75))
@@ -514,8 +537,8 @@ private struct TrailerWebPage: View {
 struct TrailerEndScene: View {
     let t: Double
 
-    static let iconSide: CGFloat = 132
-    static let iconCenter = CGPoint(x: 195, y: 188)
+    static let iconSide: CGFloat = TrailerCanvas.pick(132, 150)
+    static let iconCenter = TrailerCanvas.point(195, 188, 262)
 
     /// The browser window condensing into the icon.
     static func condense(_ t: Double) -> Double {
@@ -524,35 +547,35 @@ struct TrailerEndScene: View {
 
     var body: some View {
         let condense = Self.condense(t)
-        let size = TrailerWebScene.windowSize
         let side = Self.iconSide
-        let scaleX = M.mix(size.width / side, CGFloat(1), condense)
-        let scaleY = M.mix(size.height / side, CGFloat(1), condense)
         let float = CGFloat(2 * sin((t - 58.5) * 1.3) * M.progress(t, 58.5, 0.8))
+        let iconIn = M.progress(condense, 0.3, 0.35)
+        let path = M.mix(TrailerWebScene.windowCenter, Self.iconCenter, condense)
         ZStack {
+            // Always a true square: it only grows uniformly while cross-fading over the morphing window.
             TrailerAppIcon(t: t, side: side)
-                .scaleEffect(x: scaleX, y: scaleY)
+                .scaleEffect(CGFloat(0.86 + 0.14 * M.easeOut(iconIn)))
                 .shadow(color: Palette.ember.opacity(0.45 * M.clamp(condense)), radius: 34, x: 0, y: 10)
-                .opacity(M.progress(condense, 0.25, 0.4))
-                .position(x: M.mix(TrailerWebScene.windowCenter.x, Self.iconCenter.x, condense), y: M.mix(TrailerWebScene.windowCenter.y, Self.iconCenter.y, condense) + float)
+                .opacity(iconIn)
+                .position(x: path.x, y: path.y + float)
             Text(verbatim: "Motionary")
-                .font(.system(size: 44, weight: .heavy, design: .rounded))
+                .font(.system(size: TrailerCanvas.pick(44, 50), weight: .heavy, design: .rounded))
                 .foregroundStyle(Color.white)
                 .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 57.75, 0.8)))
                 .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 4)
-                .position(x: 195, y: 300)
+                .position(x: 195, y: TrailerCanvas.pick(300, 394))
             Text(verbatim: "动效词典 · iOS Motion Dictionary")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(size: TrailerCanvas.pick(17, 18), weight: .semibold))
                 .tracking(1)
                 .foregroundStyle(TrailerStyle.emberText)
                 .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 58.05, 0.8)))
-                .position(x: 195, y: 344)
+                .position(x: 195, y: TrailerCanvas.pick(344, 444))
             Text(verbatim: "\(TrailerData.effectCount) 个可上手玩的 iOS 高级动效")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: TrailerCanvas.pick(13, 14), weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.55))
                 .opacity(M.easeOut(M.progress(t, 58.4, 0.7)))
                 .offset(y: CGFloat(1 - M.easeOut(M.progress(t, 58.4, 0.7))) * 8)
-                .position(x: 195, y: 382)
+                .position(x: 195, y: TrailerCanvas.pick(382, 486))
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
     }

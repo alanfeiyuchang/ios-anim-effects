@@ -13,22 +13,30 @@ struct TrailerHookScene: View {
         ZStack {
             HookSwarm(t: t)
             HookShockwave(t: t)
-                .position(x: 195, y: 184)
+                .position(x: 195, y: HookLayout.numberY)
             HookNumber(t: t)
                 .trailerDepth(numberExit, scale: -0.9, blur: 18)
-                .position(x: 195, y: 184)
+                .position(x: 195, y: HookLayout.numberY)
             Text(verbatim: "个 iOS 高级动效")
-                .font(.system(size: 30, weight: .heavy))
+                .font(.system(size: TrailerCanvas.pick(30, 34), weight: .heavy))
                 .foregroundStyle(Color.white)
                 .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 2.75, 0.8)))
                 .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 4)
                 .trailerDepth(subtitleExit, scale: -0.35, blur: 14)
-                .position(x: 195, y: 284)
+                .position(x: 195, y: TrailerCanvas.pick(284, 364))
             HookStats(t: t)
-                .position(x: 195, y: 340)
+                .position(x: 195, y: TrailerCanvas.pick(340, 432))
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
     }
+}
+
+/// Where the hook's number sits, per aspect.
+private enum HookLayout {
+    static let numberY: CGFloat = TrailerCanvas.pick(184, 250)
+    static let numberSize: CGFloat = TrailerCanvas.pick(124, 140)
+    /// Half-extent of the cloud the dots are absorbed into.
+    static let targetSpread = CGSize(width: TrailerCanvas.pick(210, 236), height: TrailerCanvas.pick(84, 96))
 }
 
 /// ~150 ember dots scattered through the frame; one after another they curve into the number and
@@ -86,9 +94,10 @@ private struct HookSwarm: View {
     private static func position(_ index: Int, t: Double) -> CGPoint {
         let depth = M.hash(index, 3)
         let homeX = 18 + M.hash(index, 1) * 354 + sin(t * 0.9 + Double(index)) * 6 * (0.5 + depth)
-        let homeY = 16 + M.hash(index, 2) * 410 + cos(t * 0.7 + Double(index) * 1.3) * 6
-        let targetX = 195 + (M.hash(index, 5) - 0.5) * 210
-        let targetY = 184 + (M.hash(index, 6) - 0.5) * 84
+        let spreadY: Double = Double(TrailerCanvas.contentBottom) - 26
+        let homeY: Double = 16 + M.hash(index, 2) * spreadY + cos(t * 0.7 + Double(index) * 1.3) * 6
+        let targetX: Double = 195 + (M.hash(index, 5) - 0.5) * Double(HookLayout.targetSpread.width)
+        let targetY: Double = Double(HookLayout.numberY) + (M.hash(index, 6) - 0.5) * Double(HookLayout.targetSpread.height)
         let u = M.progress(t, launch(index), travel)
         let e = pow(u, 2.2)
         // Curved path: the control point is pushed sideways so the swarm swirls in.
@@ -123,7 +132,7 @@ private struct HookNumber: View {
         let pop: Double = landing > 0 ? 0.1 * sin(landing * 13) * exp(-landing * 5) : 0
         let scale = 0.82 + 0.18 * fraction + pop
         Text(verbatim: "\(value)")
-            .font(.system(size: 124, weight: .heavy, design: .rounded))
+            .font(.system(size: HookLayout.numberSize, weight: .heavy, design: .rounded))
             .monospacedDigit()
             .foregroundStyle(TrailerStyle.emberText)
             .contentTransition(.numericText(value: Double(value)))
@@ -141,7 +150,8 @@ private struct HookShockwave: View {
 
     var body: some View {
         let p = M.progress(t, HookSwarm.lastArrival, 0.8)
-        let size = CGFloat(120 + 300 * M.easeOut(p))
+        let reach: Double = TrailerCanvas.isTall ? 340 : 300
+        let size = CGFloat(120 + reach * M.easeOut(p))
         Circle()
             .strokeBorder(TrailerStyle.emberRing, lineWidth: CGFloat(3 * (1 - p) + 0.5))
             .frame(width: size, height: size)
@@ -195,14 +205,15 @@ struct TrailerPainScene: View {
         let depth: Double
     }
 
+    /// (3:4 y, 9:16 y) per word; the 9:16 layout spreads them through the taller frame.
     private static let words: [Word] = [
-        Word(text: "弹一下？", x: 96, y: 262, depth: 0.9),
-        Word(text: "顺滑一点？", x: 288, y: 250, depth: 0.6),
-        Word(text: "像果冻？", x: 116, y: 338, depth: 0.45),
-        Word(text: "有点高级感？", x: 272, y: 322, depth: 0.95),
-        Word(text: "duang 一下？", x: 200, y: 390, depth: 0.7),
-        Word(text: "要回弹吗？", x: 92, y: 76, depth: 0.2),
-        Word(text: "丝滑？", x: 300, y: 92, depth: 0.3),
+        Word(text: "弹一下？", x: 96, y: TrailerCanvas.pick(262, 334), depth: 0.9),
+        Word(text: "顺滑一点？", x: 288, y: TrailerCanvas.pick(250, 318), depth: 0.6),
+        Word(text: "像果冻？", x: 112, y: TrailerCanvas.pick(338, 424), depth: 0.45),
+        Word(text: "有点高级感？", x: 274, y: TrailerCanvas.pick(322, 406), depth: 0.95),
+        Word(text: "duang 一下？", x: 200, y: TrailerCanvas.pick(390, 494), depth: 0.7),
+        Word(text: "要回弹吗？", x: 94, y: TrailerCanvas.pick(76, 128), depth: 0.2),
+        Word(text: "丝滑？", x: 298, y: TrailerCanvas.pick(92, 152), depth: 0.3),
     ]
 
     var body: some View {
@@ -210,12 +221,12 @@ struct TrailerPainScene: View {
         let enter = M.easeOut(M.progress(t, 5.0, 1.0))
         ZStack {
             Text(verbatim: "？")
-                .font(.system(size: 300, weight: .black))
+                .font(.system(size: TrailerCanvas.pick(300, 360), weight: .black))
                 .foregroundStyle(Color.white.opacity(0.04))
                 .rotationEffect(.degrees(-8 + 4 * sin(t * 0.5)))
                 .scaleEffect(CGFloat(0.9 + 0.1 * enter))
                 .opacity(enter * (1 - exit))
-                .position(x: 205, y: 250)
+                .position(x: 205, y: TrailerLayout.painCollapse.y)
             ForEach(Self.words.indices, id: \.self) { index in
                 wordView(index)
             }
@@ -227,11 +238,11 @@ struct TrailerPainScene: View {
                     .foregroundStyle(TrailerStyle.emberText)
                     .textRenderer(GlyphBlurRenderer(progress: M.progress(t, 5.75, 0.8)))
             }
-            .font(.system(size: 38, weight: .heavy))
+            .font(.system(size: TrailerCanvas.pick(38, 42), weight: .heavy))
             .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 4)
             .scaleEffect(CGFloat(1.25 - 0.25 * enter))
             .trailerDepth(exit, scale: 0.12, lift: -36, blur: 14)
-            .position(x: 195, y: 172)
+            .position(x: 195, y: TrailerCanvas.pick(172, 224))
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
     }
@@ -247,7 +258,7 @@ struct TrailerPainScene: View {
         let blur = CGFloat((1 - word.depth) * 5 + 2.2 * breathe * (1 - word.depth * 0.6) + 4 * collapse)
         let scale = CGFloat((0.78 + 0.3 * word.depth) * (0.6 + 0.4 * appear) * (1 - 0.75 * collapse))
         let home = CGPoint(x: word.x + driftX, y: word.y + driftY)
-        let point = M.mix(home, CGPoint(x: 195, y: 250), collapse)
+        let point = M.mix(home, TrailerLayout.painCollapse, collapse)
         return Text(verbatim: word.text)
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(Color.white.opacity(0.88))

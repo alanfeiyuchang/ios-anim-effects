@@ -2,11 +2,16 @@ import SwiftUI
 
 // MARK: - Layout anchors shared by scenes and the finger script
 
-/// Canvas positions (in the 390 × 520 design space) that more than one scene refers to.
+/// Canvas positions that more than one scene refers to, per aspect (`TrailerCanvas.pick(3:4, 9:16)`).
 enum TrailerLayout {
+    /// Centre of the two-line headline that tops most scenes.
+    static let headlineY: CGFloat = TrailerCanvas.pick(58, 128)
+    /// Where the pain scene's words collapse, and the search field is born.
+    static let painCollapse = TrailerCanvas.point(195, 250, 330)
+
     // Search
-    static let fieldY: CGFloat = 118
-    static let chipY: CGFloat = 164
+    static let fieldY: CGFloat = TrailerCanvas.pick(118, 204)
+    static let chipY: CGFloat = TrailerCanvas.pick(164, 254)
     static let chipWidths: [CGFloat] = [58, 58, 82, 58]
     static let chipSpacing: CGFloat = 8
 
@@ -20,9 +25,9 @@ enum TrailerLayout {
         return CGPoint(x: x + width / 2, y: chipY)
     }
 
-    static let tileSide: CGFloat = 104
-    static let tileGap: CGFloat = 10
-    static let gridTop: CGFloat = 196
+    static let tileSide: CGFloat = TrailerCanvas.pick(104, 112)
+    static let tileGap: CGFloat = TrailerCanvas.pick(10, 12)
+    static let gridTop: CGFloat = TrailerCanvas.pick(196, 290)
 
     /// Centre of result slot `index` (3 columns × 2 rows).
     static func slotCenter(_ index: Int) -> CGPoint {
@@ -30,18 +35,30 @@ enum TrailerLayout {
         let row = CGFloat(index / 3)
         let gridWidth = tileSide * 3 + tileGap * 2
         let left = (TrailerCanvas.width - gridWidth) / 2
-        return CGPoint(
-            x: left + tileSide / 2 + column * (tileSide + tileGap),
-            y: gridTop + tileSide / 2 + row * (tileSide + tileGap)
-        )
+        let x: CGFloat = left + tileSide / 2 + column * (tileSide + tileGap)
+        let y: CGFloat = gridTop + tileSide / 2 + row * (tileSide + tileGap)
+        return CGPoint(x: x, y: y)
     }
 
-    // Phone (detail stage)
-    static let phoneCenter = CGPoint(x: 195, y: 262)
-    static let phoneSize = CGSize(width: 262, height: 300)
-    /// The demo "stage card" inside the phone screen.
-    static let demoOrigin = CGPoint(x: 72, y: 150)
-    static let demoSide: CGFloat = 246
+    // Phone (the app's detail page on an iPhone, see `TrailerPhone`)
+    /// Headline above the phone: higher and a touch smaller than elsewhere, so the phone can be big.
+    static let phoneHeadlineY: CGFloat = TrailerCanvas.pick(46, 96)
+    /// The phone is authored at 9:16 size (`TrailerPhone.bodySize`) and scaled uniformly for 3:4.
+    static let phoneScale: CGFloat = TrailerCanvas.pick(TrailerPhone.classicBodyHeight / TrailerPhone.bodySize.height, 1)
+    static let phoneCenter = TrailerCanvas.point(195, 88 + TrailerPhone.classicBodyHeight / 2, 146 + TrailerPhone.bodySize.height / 2)
+
+    /// Maps a point in the phone's screen coordinates (`TrailerPhone.screenSize`) onto the canvas.
+    static func screenPoint(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+        let screen = TrailerPhone.screenSize
+        let dx: CGFloat = (x - screen.width / 2) * phoneScale
+        let dy: CGFloat = (y - screen.height / 2) * phoneScale
+        return CGPoint(x: phoneCenter.x + dx, y: phoneCenter.y + dy)
+    }
+
+    /// The demo "stage card" inside the phone screen, in canvas coordinates.
+    static let demoOrigin: CGPoint = screenPoint(TrailerPhone.stageRect.minX, TrailerPhone.stageRect.minY)
+    static let demoSide: CGFloat = TrailerPhone.stageRect.width * phoneScale
+    static let stageCorner: CGFloat = TrailerPhone.stageCorner * phoneScale
     static var demoCenter: CGPoint {
         CGPoint(x: demoOrigin.x + demoSide / 2, y: demoOrigin.y + demoSide / 2)
     }
@@ -52,12 +69,15 @@ enum TrailerLayout {
         return CGPoint(x: demoOrigin.x + x * scale, y: demoOrigin.y + y * scale)
     }
 
-    // Prompt card
-    static let promptCenter = CGPoint(x: 195, y: 257)
-    static let promptSize = CGSize(width: 334, height: 270)
-    static let segmentZh = CGPoint(x: 281, y: 154)
-    static let segmentEn = CGPoint(x: 323, y: 154)
-    static let copyButton = CGPoint(x: 292, y: 358)
+    // Prompt card (the chat panel and the web window share its centre)
+    static let promptCenter = TrailerCanvas.point(195, 257, 356)
+    static let promptSize = CGSize(width: 334, height: TrailerCanvas.pick(270, 300))
+    private static let promptTopLeft = CGPoint(x: promptCenter.x - promptSize.width / 2, y: promptCenter.y - promptSize.height / 2)
+    /// The 中/EN toggle (84 × 28, right of the header row, card padding 18).
+    static let segmentZh = CGPoint(x: promptTopLeft.x + promptSize.width - 18 - 84 + 21, y: promptTopLeft.y + 18 + 14)
+    static let segmentEn = CGPoint(x: segmentZh.x + 42, y: segmentZh.y)
+    /// The copy button (104 × 32, bottom right).
+    static let copyButton = CGPoint(x: promptTopLeft.x + promptSize.width - 18 - 52, y: promptTopLeft.y + promptSize.height - 18 - 16)
 }
 
 // MARK: - Script

@@ -2,15 +2,38 @@ import SwiftUI
 
 // MARK: - Canvas
 
-/// The trailer's fixed design canvas: Xiaohongshu 3:4, authored at 390 × 520 pt and scaled to the
-/// screen width by `TrailerView`. Everything is placed in these coordinates with `.position`.
+/// Output aspect of the trailer, chosen with `-ML_trailerAspect 9x16|3x4` (default 9:16).
+enum TrailerAspect: String {
+    /// 390 × 693⅓ pt → 1080 × 1920 (Xiaohongshu full-screen video; recommended).
+    case portrait = "9x16"
+    /// 390 × 520 pt → 1080 × 1440 (Xiaohongshu feed 3:4).
+    case classic = "3x4"
+
+    static let current: TrailerAspect = TrailerAspect(rawValue: CatalogTools.trailerAspect) ?? .portrait
+}
+
+/// The trailer's fixed design canvas, 390 pt wide and 9:16 or 3:4 tall, scaled to the screen width by
+/// `TrailerView`. Everything is placed in these coordinates with `.position`.
 enum TrailerCanvas {
+    static let aspect: TrailerAspect = TrailerAspect.current
+    static let isTall: Bool = aspect == .portrait
     static let width: CGFloat = 390
-    static let height: CGFloat = 520
-    /// Bottom 20 % kept free of text and UI: subtitles are added in post.
-    static let captionBand: CGFloat = 104
-    /// Lowest y any text or UI may reach (416).
+    /// 9:16 → 693.33 pt (exactly 16/9 of the width, so the crop maps 1:1 onto 1080 × 1920); 3:4 → 520 pt.
+    static let height: CGFloat = isTall ? width * 16 / 9 : width * 4 / 3
+    /// Bottom 18 % kept free of text and UI: subtitles are added in post (125 pt / 94 pt).
+    static let captionBand: CGFloat = (height * 0.18).rounded()
+    /// Lowest y any text or UI may reach (568 pt in 9:16, 426 pt in 3:4).
     static let contentBottom: CGFloat = height - captionBand
+    /// In 9:16, the central 3:4 window (what the Xiaohongshu feed cover shows): y 86.7 … 606.7.
+    static let coverTop: CGFloat = (height - width * 4 / 3) / 2
+
+    /// A layout value per aspect: `tall` in 9:16, `classic` in 3:4.
+    static func pick(_ classic: CGFloat, _ tall: CGFloat) -> CGFloat { isTall ? tall : classic }
+
+    /// A point per aspect (x is shared).
+    static func point(_ x: CGFloat, _ classicY: CGFloat, _ tallY: CGFloat) -> CGPoint {
+        CGPoint(x: x, y: isTall ? tallY : classicY)
+    }
     /// Page ink of the dark app shell; also the letterbox around the canvas.
     static let ink = Color(hex: 0x0B0B0D)
     /// Length of the cut (the last frame holds after it).
@@ -195,8 +218,8 @@ struct TrailerHeadline: View {
     var subtitle: String? = nil
     /// Which line carries the ember gradient (the other is white).
     var accentOnTitle = false
-    var titleSize: CGFloat = 32
-    var subtitleSize: CGFloat = 20
+    var titleSize: CGFloat = TrailerCanvas.pick(32, 36)
+    var subtitleSize: CGFloat = TrailerCanvas.pick(20, 22)
     let reveal: Double
     var exit: Double = 0
 
@@ -261,7 +284,7 @@ struct TrailerBackdrop: View {
                 colors: [Palette.ember.opacity(0.26 * glow), Palette.emberHot.opacity(0.08 * glow), Color.clear],
                 center: UnitPoint(x: focus.x / TrailerCanvas.width, y: focus.y / TrailerCanvas.height),
                 startRadius: 0,
-                endRadius: 250
+                endRadius: TrailerCanvas.pick(250, 320)
             )
             TrailerMotes(t: t)
             LinearGradient(
@@ -269,7 +292,7 @@ struct TrailerBackdrop: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 170)
+            .frame(height: TrailerCanvas.pick(170, 230))
             .frame(maxHeight: .infinity, alignment: .bottom)
         }
         .frame(width: TrailerCanvas.width, height: TrailerCanvas.height)
@@ -282,11 +305,14 @@ struct TrailerBackdrop: View {
         Color(hex: 0x0B0B0D), Color(hex: 0x140C0A), Color(hex: 0x0B0B0D),
     ]
 
-    /// Where the light gathers: behind whatever the scene is about.
-    private static let focusKeys: [(time: Double, x: Double, y: Double)] = [
-        (0, 195, 190), (5, 195, 210), (10.5, 195, 250), (12, 195, 150), (20.5, 195, 280),
-        (36, 195, 250), (44, 195, 240), (52, 195, 250), (57, 195, 190), (60, 195, 190),
-    ]
+    /// Where the light gathers: behind whatever the scene is about (3:4 y, 9:16 y).
+    private static let focusKeys: [(time: Double, x: Double, y: Double)] = {
+        let keys: [(Double, Double, Double)] = [
+            (0, 190, 262), (5, 210, 290), (10.5, 250, 330), (12, 150, 230), (20.5, 280, 360),
+            (36, 250, 350), (44, 240, 350), (52, 250, 350), (57, 190, 270), (60, 190, 270),
+        ]
+        return keys.map { key in (time: key.0, x: 195, y: TrailerCanvas.isTall ? key.2 : key.1) }
+    }()
 
     static func focus(_ t: Double) -> CGPoint {
         let keys = focusKeys

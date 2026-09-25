@@ -3,7 +3,8 @@ import UIKit
 
 /// Launch-argument tools used by CI to build the documentation site:
 /// - `-ML_stage <effect-id>` renders a single effect's demo full-screen (square, autoplaying) for video capture.
-/// - `-ML_trailer YES` plays the 60 s promotional trailer (`TrailerView`, recorded by `scripts/record-trailer.sh`).
+/// - `-ML_trailer YES` plays the 60 s promotional trailer (`TrailerView`, recorded by `scripts/record-trailer.sh`);
+///   `-ML_trailerAspect 9x16|3x4` picks its canvas (default 9x16).
 /// - `-ML_exportCatalog YES` writes `catalog.json` (all categories, families and effects) to the app's Documents folder.
 /// - `-ML_auditStills YES` renders every snapshot-able effect's still thumbnail (light + dark) through the grid's
 ///   own pipeline and writes `still-audit.json` to Documents: the "ink" coverage of each still, plus the Data & Charts
@@ -18,6 +19,9 @@ enum CatalogTools {
     static var shouldExport: Bool { UserDefaults.standard.bool(forKey: "ML_exportCatalog") }
 
     static var isTrailer: Bool { UserDefaults.standard.bool(forKey: "ML_trailer") }
+
+    /// Trailer canvas aspect, `-ML_trailerAspect 9x16|3x4` (see `TrailerAspect`; default 9x16).
+    static var trailerAspect: String { UserDefaults.standard.string(forKey: "ML_trailerAspect") ?? "9x16" }
 
     /// Writes the catalog JSON. Returns the file URL, or nil if encoding failed.
     @discardableResult

@@ -1,9 +1,11 @@
 name: Trailer
 
-# Records the 60 s promotional trailer (MotionLab/Trailer, `-ML_trailer YES`) on an iPhone Pro simulator and
-# renders it for Xiaohongshu (3:4, 1080×1440, 60 fps) with scripts/record-trailer.sh.
+# Records the 60 s promotional trailer (MotionLab/Trailer, `-ML_trailer YES`) on an iPhone Pro simulator in both
+# canvas aspects and renders it for Xiaohongshu with scripts/record-trailer.sh:
+#   9:16 (1080×1920, full-screen video; recommended) and 3:4 (1080×1440), 60 fps.
 # Trigger: "[trailer]" in a commit message, or run manually from the Actions tab.
-# The result is uploaded as the "trailer" artifact and committed to docs/trailer/ on the same branch.
+# The result is uploaded as the "trailer" artifact and committed to docs/trailer/9x16/ and docs/trailer/3x4/
+# on the same branch.
 
 on:
   push:
@@ -13,7 +15,7 @@ jobs:
   trailer:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[trailer]')
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 90
     concurrency:
       group: trailer-${{ github.ref }}
       cancel-in-progress: true
@@ -33,8 +35,8 @@ jobs:
       - name: Install ffmpeg
         run: brew install ffmpeg >/dev/null
 
-      - name: Record trailer
-        timeout-minutes: 45
+      - name: Record trailer (9:16 and 3:4)
+        timeout-minutes: 75
         run: scripts/record-trailer.sh out
 
       - uses: actions/upload-artifact@v4
@@ -44,14 +46,18 @@ jobs:
           path: out/
           retention-days: 14
 
-      - name: Commit trailer to docs/trailer
+      - name: Commit trailer to docs/trailer/{9x16,3x4}
         run: |
+          # Replaces everything under docs/trailer, which also removes the old single-aspect files
+          # (docs/trailer/trailer.mp4, trailer-preview.mp4, frames/) in this commit.
           rm -rf docs/trailer
-          mkdir -p docs/trailer/frames
-          cp out/trailer.mp4 out/trailer-preview.mp4 docs/trailer/
-          cp out/frames/*.png docs/trailer/frames/
+          for ASPECT in 9x16 3x4; do
+            mkdir -p "docs/trailer/$ASPECT/frames"
+            cp "out/$ASPECT/trailer.mp4" "out/$ASPECT/trailer-preview.mp4" "docs/trailer/$ASPECT/"
+            cp "out/$ASPECT"/frames/*.png "docs/trailer/$ASPECT/frames/"
+          done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/trailer
+          git add -A docs/trailer
           git commit -m "Update trailer [skip ci]" || exit 0
           for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break; sleep 5; done

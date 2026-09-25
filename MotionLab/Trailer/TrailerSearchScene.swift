@@ -109,11 +109,11 @@ struct TrailerSearchScene: View {
                 title: "一搜即达",
                 subtitle: "\(TrailerData.effectCount) 个动效秒速定位",
                 accentOnTitle: true,
-                titleSize: 36,
+                titleSize: TrailerCanvas.pick(36, 40),
                 reveal: M.progress(t, 11.25, 0.9),
                 exit: headlineExit
             )
-            .position(x: 195, y: 54)
+            .position(x: 195, y: TrailerLayout.headlineY - 4)
             if t < 21.4 {
                 SearchGrid(t: t)
                 SearchChips(t: t)
@@ -136,7 +136,7 @@ private struct SearchField: View {
         let glide = M.spring(t, at: 10.95, response: 0.6, damping: 0.8)
         let exit = M.easeIn(M.progress(t, 20.6, 0.5))
         let width = max(CGFloat(44 + 286 * emerge), 44)
-        let y = M.mix(CGFloat(250), TrailerLayout.fieldY, glide)
+        let y = M.mix(TrailerLayout.painCollapse.y, TrailerLayout.fieldY, glide)
         let focus = M.progress(t, 11.6, 0.4)
         let typedCount = Self.typedAt.filter { t >= $0 }.count
         let bump = Self.typedAt.reduce(0.0) { sum, time in sum + 0.03 * TrailerMath.buzz(t - time) }
@@ -424,7 +424,7 @@ struct TrailerHeroLayer: View {
                 effect: effect,
                 epoch: origin.addingTimeInterval(Self.epochOffset),
                 side: side,
-                cornerRadius: M.mix(16, 24, zoom),
+                cornerRadius: M.mix(CGFloat(16), TrailerLayout.stageCorner, zoom),
                 labelOpacity: 1 - M.clamp(zoom * 2),
                 backgroundOpacity: 1
             )

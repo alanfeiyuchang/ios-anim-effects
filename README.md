@@ -16,6 +16,7 @@
 ![85 families](https://img.shields.io/badge/families-85-FF8A1F?style=flat-square)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-iOS%2018%2B-0B0B0D?style=flat-square&logo=swift)
 ![Bilingual](https://img.shields.io/badge/中文%20%2F%20English-prompts-0B0B0D?style=flat-square)
+[![MIT License](https://img.shields.io/badge/license-MIT-0B0B0D?style=flat-square)](LICENSE)
 
 <img src="docs/readme/effects.gif" width="660" alt="Six effects playing: save burst, slide to start, day/night toggle, gear checklist, like burst, mesh gradient">
 
@@ -150,6 +151,11 @@ sessions and community write-ups, e.g.
 [PhaseAnimator](https://www.appcoda.com/phaseanimator/),
 [Metal shaders in SwiftUI](https://www.hackingwithswift.com/quick-start/swiftui/how-to-add-metal-shaders-to-swiftui-views-using-layer-effects),
 [Liquid Glass reference](https://github.com/conorluddy/LiquidGlassReference).
+
+## 许可 · License
+
+[MIT](LICENSE) © 2026 Feiyu (Alan) Chang — 代码与提示词可自由使用、修改和分发，保留版权声明即可。
+Free to use, modify and distribute, code and prompts alike, as long as the copyright notice is kept.
 
 <div align="center">
 

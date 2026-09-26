@@ -1,0 +1,23 @@
+.mw-params { display: flex; flex-direction: column; gap: 14px; }
+.mw-param { display: flex; flex-direction: column; gap: 8px; }
+.mw-param-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; color: var(--mw-muted, #9a9aa3); }
+.mw-param-head b { color: var(--mw-accent, #ff8a1f); font-variant-numeric: tabular-nums; font-weight: 700; }
+.mw-param input[type="range"] { width: 100%; accent-color: var(--mw-accent, #ff8a1f); }
+.mw-switch { width: 51px; height: 31px; border-radius: 16px; border: 0; background: rgb(120 120 128 / 0.32); position: relative; cursor: pointer; transition: background .2s; padding: 0; }
+.mw-switch i { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .25); transition: transform .25s cubic-bezier(.3,1.4,.5,1); }
+.mw-switch.on { background: var(--mw-accent, #ff8a1f); }
+.mw-switch.on i { transform: translateX(20px); }
+.mw-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.mw-seg button { flex: 1 1 auto; border: 1px solid var(--mw-line, rgb(255 255 255 / .12)); background: transparent; color: inherit; border-radius: 10px; padding: 7px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.mw-seg button.on { background: var(--mw-accent, #ff8a1f); border-color: transparent; color: #1a0a00; font-weight: 700; }
+
+/* The docs site's live panel (live.tsx) */
+.mw-live { display: flex; flex-direction: column; gap: 14px; color: inherit; }
+.mw-live-stage { position: relative; border-radius: 20px; overflow: hidden; background: #1c1c1e; }
+.mw-live-reset { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer;
+  font-size: 17px; line-height: 34px; color: #fff; background: rgb(0 0 0 / 0.35); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.mw-live-params { padding: 14px; border-radius: 16px; border: 1px solid var(--mw-line, rgb(127 127 127 / .2)); }
+.mw-live-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--mw-muted, #8a8a95); }
+.mw-live-head button { border: 0; background: none; color: var(--mw-accent, #ff8a1f); font: inherit; font-size: 12px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+.mw-live-note { margin: 0; font-size: 12px; color: var(--mw-muted, #8a8a95); }

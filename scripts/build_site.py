@@ -5,7 +5,10 @@ Input:  a catalog JSON exported by the app (`-ML_exportCatalog YES`) and a folde
         video loops (<effect-id>.mp4) + posters (<effect-id>.jpg) recorded in the simulator.
 Output: a static, bilingual (中文 / English) single-page site in the output folder.
 
-Usage: scripts/build_site.py catalog.json media/ site/
+Usage: scripts/build_site.py catalog.json media/ site/ [web-dist/]
+
+With a built web bundle (web/dist, `npm run build` in web/; or $LIVE_DIR), the page also loads
+live.js: effects ported to the web get an interactive, tunable demo in their dialog.
 """
 import html
 import json
@@ -23,10 +26,11 @@ CATEGORY_GRADIENTS = {
 
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) not in (4, 5):
         print(__doc__)
         sys.exit(2)
-    catalog_path, media_dir, out_dir = sys.argv[1:]
+    catalog_path, media_dir, out_dir = sys.argv[1:4]
+    live_dir = sys.argv[4] if len(sys.argv) == 5 else os.environ.get("LIVE_DIR", "")
     with open(catalog_path, encoding="utf-8") as f:
         catalog = json.load(f)
 
@@ -59,6 +63,14 @@ def main():
             key = ""
     catalog["appetize"] = key
 
+    # Interactive web demos (web/, React): copied next to the page and loaded on demand.
+    catalog["live"] = False
+    if live_dir and os.path.isfile(os.path.join(live_dir, "live.js")):
+        target = os.path.join(out_dir, "live")
+        shutil.rmtree(target, ignore_errors=True)
+        shutil.copytree(live_dir, target)
+        catalog["live"] = True
+
     data = json.dumps(catalog, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     page = TEMPLATE.replace("__DATA__", data)
     with open(os.path.join(out_dir, "index.html"), "w", encoding="utf-8") as f:
@@ -66,7 +78,7 @@ def main():
     with open(os.path.join(out_dir, ".nojekyll"), "w") as f:
         f.write("")
     print(f"Site: {len(catalog['effects'])} effects, {videos} videos, {posters} posters, "
-          f"live preview {'on (' + key + ')' if key else 'off'} → {out_dir}")
+          f"live preview {'on (' + key + ')' if key else 'off'}, web demos {'on' if catalog['live'] else 'off'} → {out_dir}")
 
 
 TEMPLATE = r"""<!doctype html>
@@ -165,6 +177,11 @@ table.params th{color:var(--muted);font-weight:600}
 .dlg-app{padding:18px;display:grid;place-items:center}
 .dlg-app .live{width:min(390px,100%)}
 footer{padding:40px 0 60px;color:var(--muted);font-size:13px;text-align:center}
+.badge.touch{left:8px;right:auto;background:rgba(255,122,26,.92);color:#1a0a00}
+.stagebar{display:flex;gap:8px;margin-top:10px}
+#stage{--mw-accent:#b94a00;--mw-muted:var(--muted);--mw-line:var(--line)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #stage{--mw-accent:#ff8a1f}}
+:root[data-theme="dark"] #stage{--mw-accent:#ff8a1f}
 </style>
 </head>
 <body>
@@ -187,15 +204,26 @@ const I18N = {
       search:"搜索动效、API、关键词…",all:"全部",prompt:"提示词",copy:"复制提示词",copied:"已复制",impl:"实现方式",apis:"关键 API",tags:"标签",params:"参数",
       param:"参数",def:"默认值",range:"范围",variants:"同家族变体",none:"暂无录像",noResults:"没有匹配的动效",requires:"需要",close:"关闭",
       foot:"由 Motionary App 自动生成 · 动画均为 iOS 模拟器实录",
-      live:"▶ 在线交互试玩",liveApp:"▶ 在线试玩完整 App",video:"返回录像",liveNote:"真实 App 运行在云端 iOS 模拟器中（Appetize.io），可直接点击、拖动。启动约需数秒。"},
+      live:"▶ 在线交互试玩",liveApp:"▶ 在线试玩完整 App",video:"返回录像",liveNote:"真实 App 运行在云端 iOS 模拟器中（Appetize.io），可直接点击、拖动。启动约需数秒。",
+      touch:"可交互",tryIt:"✋ 上手试玩",watch:"▶ 看录像"},
   en:{title:"Motionary",subtitle:"iOS Motion Dictionary — every effect with a real recorded loop, tunable parameters and a native bilingual prompt.",effects:"effects",categories:"categories",families:"families",
       search:"Search effects, APIs, keywords…",all:"All",prompt:"Prompt",copy:"Copy prompt",copied:"Copied",impl:"Implementation",apis:"Key APIs",tags:"Tags",params:"Parameters",
       param:"Parameter",def:"Default",range:"Range",variants:"Variations in this family",none:"No recording yet",noResults:"No matching effects",requires:"Requires",close:"Close",
       foot:"Generated from the Motionary app · every animation recorded in the iOS Simulator",
-      live:"▶ Try it live",liveApp:"▶ Try the full app live",video:"Back to video",liveNote:"The real app running in a cloud iOS Simulator (Appetize.io) — tap and drag as on a phone. It takes a few seconds to boot."}
+      live:"▶ Try it live",liveApp:"▶ Try the full app live",video:"Back to video",liveNote:"The real app running in a cloud iOS Simulator (Appetize.io) — tap and drag as on a phone. It takes a few seconds to boot.",
+      touch:"Interactive",tryIt:"✋ Try it",watch:"▶ Watch recording"}
 };
 let lang = localStorage.getItem("ml.lang") || ((navigator.language||"").toLowerCase().startsWith("zh") ? "zh" : "en");
 let cat = null, query = "";
+// Web demos (live.js): loaded after first paint; cards and the dialog pick them up once it arrives.
+let LIVE = null, liveHandle = null;
+const scheme = () => document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+if (DATA.live) import("./live/live.js").then(m => {
+  LIVE = m; render();
+  const open = $("#dlg").open && location.hash.length > 1 ? decodeURIComponent(location.hash.slice(1)) : null;
+  if (open && LIVE.has(open)) openEffect(open);
+}).catch(err => console.warn("live demos unavailable", err));
+function unmountLive(){ if (liveHandle){ liveHandle.unmount(); liveHandle = null; } }
 const $ = s => document.querySelector(s);
 const t = k => I18N[lang][k];
 const L = o => (o && (o[lang] ?? o.en)) || "";
@@ -231,7 +259,7 @@ function openApp(){
 }
 function cardHTML(e){
   return `<article class="card" data-id="${e.id}" tabindex="0" role="button" aria-label="${esc(L(e.name))}">
-    <div class="media">${mediaHTML(e)}${e.requirement?`<span class="badge">${esc(e.requirement)}</span>`:""}</div>
+    <div class="media">${mediaHTML(e)}${e.requirement?`<span class="badge">${esc(e.requirement)}</span>`:""}${LIVE&&LIVE.has(e.id)?`<span class="badge touch">${t("touch")}</span>`:""}</div>
     <h4>${esc(L(e.name))}</h4><p>${esc(L(e.summary))}</p></article>`;
 }
 function render(){
@@ -290,11 +318,15 @@ function paramDefault(p){
 }
 function openEffect(id){
   const e = effById[id]; if (!e) return;
+  unmountLive();
+  const hasLive = !!(LIVE && LIVE.has(id));
+  let livePrompt = null;
   const f = famById[e.family];
   const sibs = f ? DATA.effects.filter(x => x.family === f.id) : [];
   const d = $("#dlg");
   d.innerHTML = `<div style="position:relative"><button class="btn ghost close" id="x" aria-label="${t("close")}">✕</button>
    <div class="dlg"><div><div id="stage"><div class="media">${mediaHTML(e, true)}</div></div>
+   ${hasLive?`<div class="stagebar"><button class="btn ghost" id="swap"></button></div>`:""}
    ${DATA.appetize?`<div style="margin-top:10px"><button class="btn" id="live">${t("live")}</button></div>`:""}
    ${sibs.length>1?`<div class="block"><h5>${t("variants")}</h5><div class="variants">${sibs.map(s=>`<div class="v ${s.id===e.id?"on":""}" data-id="${s.id}"><div class="media">${pick(s,"poster")?`<img loading="lazy" src="${pick(s,"poster")}" alt="">`:""}</div><span>${esc(L(s.name))}</span></div>`).join("")}</div></div>`:""}
    </div><div>
@@ -303,7 +335,7 @@ function openEffect(id){
    <div class="block"><h5>${t("prompt")}</h5><div class="prompt" id="ptxt">${esc(L(e.prompt))}</div>
      <div style="margin-top:10px;display:flex;gap:8px"><button class="btn" id="copy">${t("copy")}</button>
      <button class="btn ghost" id="other">${lang==="zh"?"English prompt":"中文提示词"}</button></div></div>
-   ${(e.params||[]).length?`<div class="block"><h5>${t("params")}</h5><table class="params"><tr><th>${t("param")}</th><th>${t("def")}</th><th>${t("range")}</th></tr>
+   ${(e.params||[]).length?`<div class="block" id="ptable"><h5>${t("params")}</h5><table class="params"><tr><th>${t("param")}</th><th>${t("def")}</th><th>${t("range")}</th></tr>
      ${e.params.map(p=>`<tr><td>${esc(L(p.name))}</td><td>${esc(paramDefault(p))}</td><td>${esc(paramRange(p))}</td></tr>`).join("")}</table></div>`:""}
    <div class="block"><h5>${t("impl")}</h5><div>${esc(L(e.implementation))}</div></div>
    <div class="block"><h5>${t("apis")}</h5><div class="meta">${(e.apis||[]).map(a=>`<span class="tag api">${esc(a)}</span>`).join("")}</div></div>
@@ -312,15 +344,33 @@ function openEffect(id){
   let shownLang = lang;
   d.querySelector("#x").onclick = () => d.close();
   d.querySelector("#copy").onclick = async ev => {
-    try { await navigator.clipboard.writeText(e.prompt[shownLang]); ev.target.textContent = t("copied"); ev.target.classList.add("ok");
+    try { await navigator.clipboard.writeText(shownLang===lang && livePrompt ? livePrompt : e.prompt[shownLang]); ev.target.textContent = t("copied"); ev.target.classList.add("ok");
       setTimeout(()=>{ev.target.textContent=t("copy");ev.target.classList.remove("ok")},1600);} catch(_){}
   };
   d.querySelector("#other").onclick = ev => {
     shownLang = shownLang === "zh" ? "en" : "zh";
-    d.querySelector("#ptxt").textContent = e.prompt[shownLang];
+    d.querySelector("#ptxt").textContent = shownLang===lang && livePrompt ? livePrompt : e.prompt[shownLang];
     ev.target.textContent = shownLang === "zh" ? "English prompt" : "中文提示词";
   };
   d.querySelectorAll(".variants .v").forEach(v => v.onclick = () => openEffect(v.dataset.id));
+  if (hasLive){
+    // The ported web demo replaces the recording (the recording is one tap away); its sliders
+    // replace the static parameter table and keep the copied prompt's parameter line current.
+    const stage = d.querySelector("#stage"), recorded = stage.innerHTML, swap = d.querySelector("#swap"), table = d.querySelector("#ptable");
+    const showLive = on => {
+      unmountLive();
+      if (on){
+        stage.innerHTML = "";
+        liveHandle = LIVE.mount(stage, {effect: e, lang, scheme: scheme(), onPrompt: p => {
+          livePrompt = p; if (shownLang === lang) d.querySelector("#ptxt").textContent = p;
+        }});
+      } else stage.innerHTML = recorded;
+      if (table) table.hidden = on;
+      swap.textContent = on ? t("watch") : t("tryIt");
+      swap.onclick = () => showLive(!on);
+    };
+    showLive(true);
+  }
   const live = d.querySelector("#live");
   if (live){
     const stage = d.querySelector("#stage"), recorded = stage.innerHTML;
@@ -338,7 +388,7 @@ document.addEventListener("click", ev => {
   const card = ev.target.closest(".card"); if (card) openEffect(card.dataset.id);
 });
 document.addEventListener("keydown", ev => { if (ev.key==="Enter" && ev.target.classList && ev.target.classList.contains("card")) openEffect(ev.target.dataset.id); });
-$("#dlg").addEventListener("close", () => history.replaceState(null, "", location.pathname));
+$("#dlg").addEventListener("close", () => { unmountLive(); history.replaceState(null, "", location.pathname); });
 $("#tryApp").onclick = openApp;
 $("#q").addEventListener("input", ev => { query = ev.target.value; render(); });
 $("#lang-zh").onclick = () => { lang="zh"; localStorage.setItem("ml.lang","zh"); render(); };

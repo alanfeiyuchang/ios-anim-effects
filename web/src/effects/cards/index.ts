@@ -1,0 +1,32 @@
+import type { DemoMap } from "../../kit/types";
+
+/** Cards · 卡片: effect id → lazily loaded demo. */
+export const demos: DemoMap = {
+  "cards.tilt-3d": () => import("./tilt-3d"),
+  "cards.holographic": () => import("./holographic"),
+  "cards.flip": () => import("./flip"),
+  "cards.swipe-stack": () => import("./swipe-stack"),
+  "cards.wallet-stack": () => import("./wallet-stack"),
+  "cards.fan-deck": () => import("./fan-deck"),
+  "cards.parallax-layers": () => import("./parallax-layers"),
+  "cards.press-tilt": () => import("./press-tilt"),
+  "cards.rim-light": () => import("./rim-light"),
+  "cards.shuffle": () => import("./shuffle"),
+  "cards.jelly-swipe": () => import("./jelly-swipe"),
+  "cards.turn-swipe": () => import("./turn-swipe"),
+  "cards.toss-swipe": () => import("./toss-swipe"),
+  "cards.tear-off": () => import("./tear-off"),
+  "cards.rewind-swipe": () => import("./rewind-swipe"),
+  "cards.peek": () => import("./peek"),
+  "cards.notification-stack": () => import("./notification-stack"),
+  "cards.accordion": () => import("./accordion"),
+  "cards.bento-expand": () => import("./bento-expand"),
+  "cards.detent-expand": () => import("./detent-expand"),
+  "cards.origami-unfold": () => import("./origami-unfold"),
+  "cards.scratch-reveal": () => import("./scratch-reveal"),
+  "cards.hinge-reveal": () => import("./hinge-reveal"),
+  "cards.tile-flip": () => import("./tile-flip"),
+  "cards.scrub-flip": () => import("./scrub-flip"),
+  "cards.stacking-scroll": () => import("./stacking-scroll"),
+  "cards.cascade-spread": () => import("./cascade-spread"),
+};

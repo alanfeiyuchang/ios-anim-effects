@@ -1,0 +1,30 @@
+import type { DemoMap } from "../../kit/types";
+
+/** Icons · 图标与符号: effect id → lazily loaded demo. */
+export const demos: DemoMap = {
+  "icons.bounce": () => import("./bounce"),
+  "icons.heart-like": () => import("./heart-like"),
+  "icons.play-pause": () => import("./play-pause"),
+  "icons.hamburger-morph": () => import("./hamburger-morph"),
+  "icons.bell-ring": () => import("./bell-ring"),
+  "icons.checkmark-draw": () => import("./checkmark-draw"),
+  "icons.download": () => import("./download"),
+  "icons.replace": () => import("./replace"),
+  "icons.variable-color": () => import("./variable-color"),
+  "icons.wiggle-rotate-breathe": () => import("./wiggle-rotate-breathe"),
+  "icons.ripple-grid": () => import("./ripple-grid"),
+  "icons.weather": () => import("./weather"),
+  "icons.draw-on": () => import("./draw-on"),
+  "icons.trash-delete": () => import("./trash-delete"),
+  "icons.paper-plane": () => import("./paper-plane"),
+  "icons.padlock": () => import("./padlock"),
+  "icons.appear-disappear": () => import("./appear-disappear"),
+  "icons.radar-ping": () => import("./radar-ping"),
+  "icons.ai-sparkle": () => import("./ai-sparkle"),
+  "icons.plus-close": () => import("./plus-close"),
+  "icons.chevron-flip": () => import("./chevron-flip"),
+  "icons.search-close": () => import("./search-close"),
+  "icons.wifi-connect": () => import("./wifi-connect"),
+  "icons.battery-charge": () => import("./battery-charge"),
+  "icons.bookmark-save": () => import("./bookmark-save"),
+};

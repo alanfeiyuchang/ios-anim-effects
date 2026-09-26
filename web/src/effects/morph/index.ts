@@ -1,0 +1,30 @@
+import type { DemoMap } from "../../kit/types";
+
+/** Morph · 形变转场: effect id → lazily loaded demo. */
+export const demos: DemoMap = {
+  "morph.button-to-card": () => import("./button-to-card"),
+  "morph.hero-card": () => import("./hero-card"),
+  "morph.native-zoom": () => import("./native-zoom"),
+  "morph.fab-menu": () => import("./fab-menu"),
+  "morph.zoom-sheet": () => import("./zoom-sheet"),
+  "morph.mini-player": () => import("./mini-player"),
+  "morph.folder-open": () => import("./folder-open"),
+  "morph.search-expand": () => import("./search-expand"),
+  "morph.island-expand": () => import("./island-expand"),
+  "morph.gallery-zoom": () => import("./gallery-zoom"),
+  "morph.shape-morph": () => import("./shape-morph"),
+  "morph.polygon-sides": () => import("./polygon-sides"),
+  "morph.corner-cascade": () => import("./corner-cascade"),
+  "morph.line-to-ring": () => import("./line-to-ring"),
+  "morph.circular-reveal": () => import("./circular-reveal"),
+  "morph.blur-replace": () => import("./blur-replace"),
+  "morph.blinds-reveal": () => import("./blinds-reveal"),
+  "morph.feather-wipe": () => import("./feather-wipe"),
+  "morph.tile-mosaic": () => import("./tile-mosaic"),
+  "morph.staggered-transition": () => import("./staggered-transition"),
+  "morph.list-grid": () => import("./list-grid"),
+  "morph.cube-transition": () => import("./cube-transition"),
+  "morph.grid-to-ring": () => import("./grid-to-ring"),
+  "morph.sort-hop": () => import("./sort-hop"),
+  "morph.liquid-glass": () => import("./liquid-glass"),
+};

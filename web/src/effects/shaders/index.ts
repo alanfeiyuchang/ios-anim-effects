@@ -1,0 +1,30 @@
+import type { DemoMap } from "../../kit/types";
+
+/** Shaders · 着色器与材质: effect id → lazily loaded demo. */
+export const demos: DemoMap = {
+  "shader.ripple": () => import("./ripple"),
+  "shader.wave": () => import("./wave"),
+  "shader.pixelate": () => import("./pixelate"),
+  "shader.dissolve": () => import("./dissolve"),
+  "shader.glitch": () => import("./glitch"),
+  "shader.magnifier": () => import("./magnifier"),
+  "shader.swirl": () => import("./swirl"),
+  "shader.plasma": () => import("./plasma"),
+  "shader.crt": () => import("./crt"),
+  "shader.halftone": () => import("./halftone"),
+  "shader.glassmorphism": () => import("./glassmorphism"),
+  "shader.liquid-glass-lens": () => import("./liquid-glass-lens"),
+  "shader.chromatic-drag": () => import("./chromatic-drag"),
+  "shader.kaleidoscope": () => import("./kaleidoscope"),
+  "shader.edge-scan": () => import("./edge-scan"),
+  "shader.progressive-blur": () => import("./progressive-blur"),
+  "shader.caustics": () => import("./caustics"),
+  "shader.jelly-press": () => import("./jelly-press"),
+  "shader.liquid-wipe": () => import("./liquid-wipe"),
+  "shader.tile-scatter": () => import("./tile-scatter"),
+  "shader.reeded-glass": () => import("./reeded-glass"),
+  "shader.dither": () => import("./dither"),
+  "shader.vhs": () => import("./vhs"),
+  "shader.voronoi-cells": () => import("./voronoi-cells"),
+  "shader.tunnel": () => import("./tunnel"),
+};

@@ -1,0 +1,32 @@
+import type { DemoMap } from "../../kit/types";
+
+/** Scroll & Lists · 滚动与列表: effect id → lazily loaded demo. */
+export const demos: DemoMap = {
+  "scroll.cover-flow": () => import("./cover-flow"),
+  "scroll.stretchy-header": () => import("./stretchy-header"),
+  "scroll.transition-list": () => import("./transition-list"),
+  "scroll.paging-carousel": () => import("./paging-carousel"),
+  "scroll.collapsing-header": () => import("./collapsing-header"),
+  "scroll.parallax-cards": () => import("./parallax-cards"),
+  "scroll.wheel-list": () => import("./wheel-list"),
+  "scroll.infinite-carousel": () => import("./infinite-carousel"),
+  "scroll.stack-carousel": () => import("./stack-carousel"),
+  "scroll.cube-carousel": () => import("./cube-carousel"),
+  "scroll.parallax-pager": () => import("./parallax-pager"),
+  "scroll.fan-carousel": () => import("./fan-carousel"),
+  "scroll.progress-indicator": () => import("./progress-indicator"),
+  "scroll.staggered-entrance": () => import("./staggered-entrance"),
+  "scroll.insert-remove": () => import("./insert-remove"),
+  "scroll.elastic-list": () => import("./elastic-list"),
+  "scroll.arc-dial": () => import("./arc-dial"),
+  "scroll.ruler-picker": () => import("./ruler-picker"),
+  "scroll.rotary-wheel": () => import("./rotary-wheel"),
+  "scroll.slot-reels": () => import("./slot-reels"),
+  "scroll.sticky-sections": () => import("./sticky-sections"),
+  "scroll.hiding-header": () => import("./hiding-header"),
+  "scroll.pill-header": () => import("./pill-header"),
+  "scroll.index-scrubber": () => import("./index-scrubber"),
+  "scroll.minimap": () => import("./minimap"),
+  "scroll.chapter-rail": () => import("./chapter-rail"),
+  "scroll.liquid-scrollbar": () => import("./liquid-scrollbar"),
+};

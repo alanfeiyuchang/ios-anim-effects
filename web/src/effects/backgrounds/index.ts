@@ -1,0 +1,32 @@
+import type { DemoMap } from "../../kit/types";
+
+/** Backgrounds · 背景与氛围: effect id → lazily loaded demo. */
+export const demos: DemoMap = {
+  "backgrounds.mesh-gradient": () => import("./mesh-gradient"),
+  "backgrounds.intelligence-glow": () => import("./intelligence-glow"),
+  "backgrounds.aurora": () => import("./aurora"),
+  "backgrounds.metaballs": () => import("./metaballs"),
+  "backgrounds.particle-repulsion": () => import("./particle-repulsion"),
+  "backgrounds.glow-orb": () => import("./glow-orb"),
+  "backgrounds.starfield-warp": () => import("./starfield-warp"),
+  "backgrounds.fireflies": () => import("./fireflies"),
+  "backgrounds.halftone-flow": () => import("./halftone-flow"),
+  "backgrounds.sine-waves": () => import("./sine-waves"),
+  "backgrounds.synthwave-grid": () => import("./synthwave-grid"),
+  "backgrounds.shockwave-grid": () => import("./shockwave-grid"),
+  "backgrounds.bokeh": () => import("./bokeh"),
+  "backgrounds.lava-lamp": () => import("./lava-lamp"),
+  "backgrounds.ink-bloom": () => import("./ink-bloom"),
+  "backgrounds.slosh-tank": () => import("./slosh-tank"),
+  "backgrounds.rain": () => import("./rain"),
+  "backgrounds.snowfall": () => import("./snowfall"),
+  "backgrounds.window-droplets": () => import("./window-droplets"),
+  "backgrounds.rolling-fog": () => import("./rolling-fog"),
+  "backgrounds.autumn-wind": () => import("./autumn-wind"),
+  "backgrounds.grain-gradient": () => import("./grain-gradient"),
+  "backgrounds.conic-halo": () => import("./conic-halo"),
+  "backgrounds.light-leak": () => import("./light-leak"),
+  "backgrounds.wave-band": () => import("./wave-band"),
+  "backgrounds.constellation": () => import("./constellation"),
+  "backgrounds.flow-field": () => import("./flow-field"),
+};

@@ -1,0 +1,30 @@
+import type { DemoMap } from "../../kit/types";
+
+/** Charts · 数据与图表: effect id → lazily loaded demo. */
+export const demos: DemoMap = {
+  "charts.bar-grow": () => import("./bar-grow"),
+  "charts.line-draw": () => import("./line-draw"),
+  "charts.donut-explode": () => import("./donut-explode"),
+  "charts.gauge-needle": () => import("./gauge-needle"),
+  "charts.activity-rings": () => import("./activity-rings"),
+  "charts.scrub-tooltip": () => import("./scrub-tooltip"),
+  "charts.heatmap-cascade": () => import("./heatmap-cascade"),
+  "charts.kpi-count-up": () => import("./kpi-count-up"),
+  "charts.sparkline-stream": () => import("./sparkline-stream"),
+  "charts.bar-race": () => import("./bar-race"),
+  "charts.radar-morph": () => import("./radar-morph"),
+  "charts.range-morph": () => import("./range-morph"),
+  "charts.candlestick-live": () => import("./candlestick-live"),
+  "charts.donut-to-bars": () => import("./donut-to-bars"),
+  "charts.stacked-bars": () => import("./stacked-bars"),
+  "charts.liquid-bars": () => import("./liquid-bars"),
+  "charts.brick-bars": () => import("./brick-bars"),
+  "charts.segmented-gauge": () => import("./segmented-gauge"),
+  "charts.rose-bloom": () => import("./rose-bloom"),
+  "charts.bars-to-line": () => import("./bars-to-line"),
+  "charts.scatter-histogram": () => import("./scatter-histogram"),
+  "charts.grouped-stacked": () => import("./grouped-stacked"),
+  "charts.odometer-kpi": () => import("./odometer-kpi"),
+  "charts.bullet-kpi": () => import("./bullet-kpi"),
+  "charts.waffle-kpi": () => import("./waffle-kpi"),
+};

@@ -1,7 +1,9 @@
 name: Docs site
 
-# Builds the bilingual documentation site (every effect with a recorded animation loop) and publishes it to
-# GitHub Pages. Trigger: "[site]" in a commit message, or run manually from the Actions tab.
+# Builds the bilingual documentation site (every effect with a recorded animation loop, plus the interactive
+# web demos from web/) and publishes it to GitHub Pages.
+# Triggers: "[site]" in a commit message (or a manual run from the Actions tab) re-records every effect;
+# "[web]" rebuilds the page and the web demos only, reusing the recordings already published.
 # One-time setup: repository Settings → Pages → Build and deployment → Source: GitHub Actions.
 
 on:
@@ -57,12 +59,55 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: shards
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build web demos
+        working-directory: web
+        run: npm ci && npm run build
       - name: Merge shards and build site
         run: |
           mkdir -p media
           for d in shards/shard-*; do cp -R "$d/media/." media/ 2>/dev/null || true; done
           cp "$(ls shards/shard-*/catalog.json | head -n 1)" catalog.json
-          python3 scripts/build_site.py catalog.json media site
+          python3 scripts/build_site.py catalog.json media site web/dist
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  # "[web]": new web demos or page code without re-recording. The recordings are mirrored from the
+  # published site; the catalog is the one exported into web/src/catalog.json.
+  web:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[web]') && !contains(github.event.head_commit.message, '[site]')
+    concurrency:
+      group: docs-site-deploy
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build web demos
+        working-directory: web
+        run: npm ci && npm run build
+      - name: Mirror published recordings and build site
+        run: |
+          python3 scripts/mirror_media.py web/src/catalog.json media
+          python3 scripts/build_site.py web/src/catalog.json media site web/dist
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

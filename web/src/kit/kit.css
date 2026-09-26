@@ -1,0 +1,74 @@
+/* The demo canvas: a 340-wide authoring surface (Swift's StageMetrics.previewCanvas), scaled to fit. */
+.ml-canvas {
+  --ml-label-rgb: 0 0 0;
+  --ml-label: rgb(0 0 0);
+  --ml-label2: rgb(60 60 67 / 0.6);
+  --ml-label3: rgb(60 60 67 / 0.3);
+  --ml-surface: #f2f2f7;
+  --ml-elevated: #ffffff;
+  --ml-background: #ffffff;
+  --ml-page: #f2f2f7;
+  --ml-stroke: rgb(0 0 0 / 0.08);
+  --ml-accent: #b94a00;
+  --ml-stage: #ebebf1;
+  --ml-stage-glow: rgb(255 255 255 / 0.6);
+  color: var(--ml-label);
+  font-family: system-ui, -apple-system, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.25;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.ml-canvas *, .ml-canvas *::before, .ml-canvas *::after { box-sizing: border-box; }
+.ml-canvas button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; }
+.ml-canvas input { font: inherit; color: inherit; }
+.ml-canvas img, .ml-canvas svg { display: block; }
+
+.ml-canvas[data-scheme="dark"], .ml-dark {
+  --ml-label-rgb: 255 255 255;
+  --ml-label: rgb(255 255 255);
+  --ml-label2: rgb(235 235 245 / 0.6);
+  --ml-label3: rgb(235 235 245 / 0.3);
+  --ml-surface: #1c1c1e;
+  --ml-elevated: #2c2c2e;
+  --ml-background: #000000;
+  --ml-page: #0b0b0d;
+  --ml-stroke: rgb(255 255 255 / 0.08);
+  --ml-accent: #ff8a1f;
+  --ml-stage: #1c1c1e;
+  --ml-stage-glow: rgb(255 255 255 / 0.10);
+  color: var(--ml-label);
+}
+.ml-light {
+  --ml-label-rgb: 0 0 0;
+  --ml-label: rgb(0 0 0);
+  --ml-label2: rgb(60 60 67 / 0.6);
+  --ml-label3: rgb(60 60 67 / 0.3);
+  --ml-surface: #f2f2f7;
+  --ml-elevated: #ffffff;
+  --ml-background: #ffffff;
+  --ml-page: #f2f2f7;
+  --ml-stroke: rgb(0 0 0 / 0.08);
+  --ml-accent: #b94a00;
+  color: var(--ml-label);
+}
+
+/* StageBackground: Palette.stage + a soft radial lift from the top edge. */
+.ml-stage-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(320px circle at 50% 0%, var(--ml-stage-glow), transparent 100%),
+    var(--ml-stage);
+}
+
+.ml-rounded { font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif; }
+.ml-mono-digits { font-variant-numeric: tabular-nums; }
+.ml-fill { position: absolute; inset: 0; }
+.ml-center { display: flex; align-items: center; justify-content: center; }

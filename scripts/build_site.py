@@ -146,10 +146,16 @@ section.cat{padding:26px 0 8px}
 .card p{margin:0 4px;color:var(--muted);font-size:12px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .badge{position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff}
 .empty{padding:60px 0;text-align:center;color:var(--muted)}
-dialog{border:0;padding:0;border-radius:26px;background:var(--panel);color:var(--text);width:min(920px,calc(100vw - 24px));max-height:calc(100vh - 24px);box-shadow:0 30px 80px rgba(0,0,0,.35)}
+dialog{border:0;padding:0;border-radius:26px;background:var(--panel);color:var(--text);width:min(920px,calc(100vw - 24px));max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);box-shadow:0 30px 80px rgba(0,0,0,.35)}
 dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(6px)}
 .dlg{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:22px;padding:22px}
-@media (max-width:760px){.dlg{grid-template-columns:1fr;padding:16px}}
+.dlg>*{min-width:0}
+/* Phones: one column that never grows past the dialog (the live stage scales to its column, so a
+   content-sized track would feed back into it), the close button pinned to the corner above the
+   stage, and the stage's own reset button moved to the other corner. */
+@media (max-width:760px){.dlg{grid-template-columns:minmax(0,1fr);padding:16px}
+  #dlg .close{position:fixed;top:22px;right:22px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  #stage .mw-live-reset{right:auto;left:10px}}
 .dlg .media{border-radius:20px}
 .dlg h2{margin:4px 0 4px;font-size:26px;letter-spacing:-.01em}
 .meta{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
@@ -165,7 +171,7 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(6px)}
 table.params{width:100%;border-collapse:collapse;font-size:13px}
 table.params td,table.params th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
 table.params th{color:var(--muted);font-weight:600}
-.close{position:absolute;top:12px;right:12px}
+.close{position:absolute;top:12px;right:12px;z-index:3}
 .variants{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
 .variants .v{flex:none;width:86px;cursor:pointer}
 .variants .v .media{border-radius:12px}

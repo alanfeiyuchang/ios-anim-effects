@@ -3,13 +3,15 @@
 # Usage: scripts/record-catalog.sh <out-dir> <shard-index> <shard-count>
 # Output: <out-dir>/media/<id>.<lang>.mp4, <out-dir>/media/<id>.<lang>.jpg, and (shard 0) <out-dir>/catalog.json
 # ONLY_MISSING_FROM=<media-url>: record only the effects that lack any of their four files there (the
-# published site's media folder), split across the shards, instead of every effect.
+# published site's media folder), or whose clip there is shorter than MIN_SECONDS (default 3), split
+# across the shards, instead of every effect.
 set -euo pipefail
 OUT="${1:-catalog-out}"
 SHARD="${2:-0}"
 SHARDS="${3:-1}"
 BUNDLE_ID="com.motionlexicon.MotionLab"
 CLIP_SECONDS="${CLIP_SECONDS:-4}"
+MIN_SECONDS="${MIN_SECONDS:-3}"
 mkdir -p "$OUT/media" "$OUT/raw"
 
 UDID=$(xcrun simctl list devices available -j | python3 -c '
@@ -38,16 +40,20 @@ xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 sleep 30
 
 IDS=$(ONLY_MISSING_FROM="${ONLY_MISSING_FROM:-}" python3 -c "
-import concurrent.futures, json, os, urllib.error, urllib.request
+import concurrent.futures, json, os, subprocess, urllib.error, urllib.request
 ids=[e['id'] for e in json.load(open('$OUT/catalog.json'))['effects']]
 base=os.environ['ONLY_MISSING_FROM'].rstrip('/')
+def seconds(url):
+    r=subprocess.run(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',url],capture_output=True,text=True,timeout=60)
+    try: return float(r.stdout.strip())
+    except ValueError: return 0
 def published(i):
     for name in (f'{i}.{l}.{x}' for l in ('zh', 'en') for x in ('mp4', 'jpg')):
         try:
             urllib.request.urlopen(urllib.request.Request(f'{base}/{name}', method='HEAD'), timeout=30)
         except (urllib.error.URLError, TimeoutError):
             return False
-    return True
+    return all(seconds(f'{base}/{i}.{l}.mp4') >= $MIN_SECONDS for l in ('zh', 'en'))
 if base:
     with concurrent.futures.ThreadPoolExecutor(16) as pool:
         ids=[i for i, ok in zip(ids, pool.map(published, ids)) if not ok]
@@ -81,8 +87,14 @@ record_once() { # id lang; returns 1 when the recorder produced nothing
     echo "skip $id.$lang: launch failed or timed out"; return 0
   fi
   sleep 1.2
-  xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$raw" >/dev/null 2>&1 &
+  xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$raw" >"$OUT/raw/rec.log" 2>&1 &
   local rec=$!
+  # Time the clip from when capture actually begins: on a slow machine the recorder can take seconds to
+  # start, which used to leave clips of 2 s or a single frame.
+  local tries=0
+  until grep -q "Recording started" "$OUT/raw/rec.log" 2>/dev/null || [ "$tries" -ge 60 ] || ! kill -0 "$rec" 2>/dev/null; do
+    sleep 0.25; tries=$((tries + 1))
+  done
   sleep "$CLIP_SECONDS"
   kill -INT "$rec" 2>/dev/null || true
   # Give the recorder up to 10 s to finalize the file, then kill it.
@@ -94,11 +106,16 @@ record_once() { # id lang; returns 1 when the recorder produced nothing
   fi
   wait "$rec" 2>/dev/null || true
   [ -s "$raw" ] || { echo "skip $id.$lang: empty recording"; return 1; }
+  local got
+  got=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$raw" 2>/dev/null || echo 0)
+  if ! python3 -c "import sys; sys.exit(0 if float('${got:-0}' or 0) >= $MIN_SECONDS else 1)"; then
+    echo "skip $id.$lang: clip too short (${got:-0} s)"; rm -f "$raw"; return 1
+  fi
   # Square crop from the vertical center, 480 px, 30 fps, small h264 that loops cleanly on the web.
   limit 60 ffmpeg -loglevel error -y -i "$raw" -an \
     -vf "crop=iw:iw:0:(ih-iw)/2,scale=480:480:flags=lanczos,fps=30,format=yuv420p" \
     -c:v libx264 -preset veryfast -crf 30 -movflags +faststart "$OUT/media/$id.$lang.mp4" || return 0
-  limit 30 ffmpeg -loglevel error -y -ss 2 -i "$OUT/media/$id.$lang.mp4" -frames:v 1 -q:v 5 "$OUT/media/$id.$lang.jpg" || true
+  limit 30 ffmpeg -loglevel error -y -ss 2 -i "$OUT/media/$id.$lang.mp4" -frames:v 1 -q:v 5 -strict unofficial "$OUT/media/$id.$lang.jpg" || true
   rm -f "$raw"
 }
 

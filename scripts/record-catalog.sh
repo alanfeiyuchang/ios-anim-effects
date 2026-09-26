@@ -3,15 +3,16 @@
 # Usage: scripts/record-catalog.sh <out-dir> <shard-index> <shard-count>
 # Output: <out-dir>/media/<id>.<lang>.mp4, <out-dir>/media/<id>.<lang>.jpg, and (shard 0) <out-dir>/catalog.json
 # ONLY_MISSING_FROM=<media-url>: record only the effects that lack any of their four files there (the
-# published site's media folder), or whose clip there is shorter than MIN_SECONDS (default 3), split
-# across the shards, instead of every effect.
+# published site's media folder), or whose clip there is shorter than MIN_SECONDS (default 2), split
+# across the shards, instead of every effect. (simctl writes frames only when the screen changes, so an
+# effect that settles gives a clip shorter than CLIP_SECONDS; that is fine. A 1-frame clip is not.)
 set -euo pipefail
 OUT="${1:-catalog-out}"
 SHARD="${2:-0}"
 SHARDS="${3:-1}"
 BUNDLE_ID="com.motionlexicon.MotionLab"
 CLIP_SECONDS="${CLIP_SECONDS:-4}"
-MIN_SECONDS="${MIN_SECONDS:-3}"
+MIN_SECONDS="${MIN_SECONDS:-2}"
 mkdir -p "$OUT/media" "$OUT/raw"
 
 UDID=$(xcrun simctl list devices available -j | python3 -c '

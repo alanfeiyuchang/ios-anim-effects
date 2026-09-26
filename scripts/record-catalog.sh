@@ -2,6 +2,8 @@
 # Records a short looping video + poster of every effect (zh and en) for the documentation site.
 # Usage: scripts/record-catalog.sh <out-dir> <shard-index> <shard-count>
 # Output: <out-dir>/media/<id>.<lang>.mp4, <out-dir>/media/<id>.<lang>.jpg, and (shard 0) <out-dir>/catalog.json
+# ONLY_MISSING_FROM=<media-url>: record only the effects that lack any of their four files there (the
+# published site's media folder), split across the shards, instead of every effect.
 set -euo pipefail
 OUT="${1:-catalog-out}"
 SHARD="${2:-0}"
@@ -35,15 +37,44 @@ xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 # Let first-boot system banners expire before recording.
 sleep 30
 
-IDS=$(python3 -c "
-import json
+IDS=$(ONLY_MISSING_FROM="${ONLY_MISSING_FROM:-}" python3 -c "
+import concurrent.futures, json, os, urllib.error, urllib.request
 ids=[e['id'] for e in json.load(open('$OUT/catalog.json'))['effects']]
+base=os.environ['ONLY_MISSING_FROM'].rstrip('/')
+def published(i):
+    for name in (f'{i}.{l}.{x}' for l in ('zh', 'en') for x in ('mp4', 'jpg')):
+        try:
+            urllib.request.urlopen(urllib.request.Request(f'{base}/{name}', method='HEAD'), timeout=30)
+        except (urllib.error.URLError, TimeoutError):
+            return False
+    return True
+if base:
+    with concurrent.futures.ThreadPoolExecutor(16) as pool:
+        ids=[i for i, ok in zip(ids, pool.map(published, ids)) if not ok]
 print('\n'.join(i for n,i in enumerate(ids) if n % $SHARDS == $SHARD))")
+[ -n "${ONLY_MISSING_FROM:-}" ] && echo "Missing from $ONLY_MISSING_FROM, this shard: $(echo "$IDS" | grep -c . || true)"
 
 # Runs a command with a time limit (macOS has no GNU timeout); a hung simctl call must not stall the shard.
 limit() { local secs="$1"; shift; perl -e 'alarm shift; exec @ARGV' "$secs" "$@"; }
 
+# The simulator's recorder can break for the rest of a session (every later file comes out empty), so
+# an empty or hung recording reboots the simulator and tries that clip once more.
+reboot_simulator() {
+  echo "rebooting the simulator"
+  limit 60 xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
+  limit 60 xcrun simctl boot "$UDID" >/dev/null 2>&1 || true
+  limit 180 xcrun simctl bootstatus "$UDID" -b >/dev/null 2>&1 || true
+  xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 >/dev/null 2>&1 || true
+  sleep 20
+}
+
 record() { # id lang
+  record_once "$@" && return 0
+  reboot_simulator
+  record_once "$@" || true
+}
+
+record_once() { # id lang; returns 1 when the recorder produced nothing
   local id="$1" lang="$2" raw="$OUT/raw/$1.$2.mov"
   limit 20 xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
   if ! limit 30 xcrun simctl launch "$UDID" "$BUNDLE_ID" -ML_stage "$id" -ML_noIntro YES -app.language "$lang" -app.appearance 2 >/dev/null; then
@@ -59,10 +90,10 @@ record() { # id lang
   while kill -0 "$rec" 2>/dev/null && [ "$waited" -lt 20 ]; do sleep 0.5; waited=$((waited + 1)); done
   if kill -0 "$rec" 2>/dev/null; then
     kill -9 "$rec" 2>/dev/null || true
-    echo "skip $id.$lang: recorder hung"; rm -f "$raw"; return 0
+    echo "skip $id.$lang: recorder hung"; rm -f "$raw"; return 1
   fi
   wait "$rec" 2>/dev/null || true
-  [ -s "$raw" ] || { echo "skip $id.$lang: empty recording"; return 0; }
+  [ -s "$raw" ] || { echo "skip $id.$lang: empty recording"; return 1; }
   # Square crop from the vertical center, 480 px, 30 fps, small h264 that loops cleanly on the web.
   limit 60 ffmpeg -loglevel error -y -i "$raw" -an \
     -vf "crop=iw:iw:0:(ih-iw)/2,scale=480:480:flags=lanczos,fps=30,format=yuv420p" \

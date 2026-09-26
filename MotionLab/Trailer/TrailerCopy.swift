@@ -17,9 +17,15 @@ import SwiftUI
 /// `voiceover.srt` / `voiceover.txt` next to the video.
 ///
 /// Effect names, prompts, parameter values and every string inside the embedded app screens come from the
-/// real catalog and the app's own localisation. `prompt.effectID` / `prompt.textZh` / `prompt.textEn`
-/// optionally override the prompt card (empty = catalog).
+/// real catalog and the app's own localisation, in `language` ("zh" or "en"). `prompt.effectID` /
+/// `prompt.textZh` / `prompt.textEn` optionally override the prompt card (empty = catalog).
+///
+/// `edit` (optional) retimes the cut to another voice-over: its `knots` replace `TrailerEdit`'s default
+/// (cut, source) pairs and `duration` the cut's length, so a second language version is a second copy file.
 struct TrailerCopy: Codable, Equatable {
+    /// Language of everything the trailer takes from the app: its screens, effect names, prompts, parameters.
+    var language = "zh"
+    var edit: Edit? = nil
     var hook = Hook()
     var pain = Pain()
     var unknown = Unknown()
@@ -33,6 +39,15 @@ struct TrailerCopy: Codable, Equatable {
     var openSource = OpenSource()
     var end = End()
     var voiceover: [VoiceLine] = TrailerCopy.defaultVoiceover
+
+    /// A retiming of the cut (see `TrailerEdit`): `knots` are [cut, source] pairs in seconds.
+    struct Edit: Codable, Equatable {
+        var duration: Double
+        var knots: [[Double]]
+    }
+
+    /// The app language the trailer shows.
+    static var appLanguage: AppLanguage { current.language.lowercased().hasPrefix("en") ? .en : .zh }
 
     /// 0–6 s: the number tumbling in on prism digits, the line under it and the two stat chips.
     struct Hook: Codable, Equatable {
@@ -211,6 +226,8 @@ extension TrailerCopy {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = TrailerCopy()
+        language = c.trailerCopyValue(.language, d.language)
+        edit = c.trailerCopyValue(.edit, d.edit)
         hook = c.trailerCopyValue(.hook, d.hook)
         pain = c.trailerCopyValue(.pain, d.pain)
         unknown = c.trailerCopyValue(.unknown, d.unknown)

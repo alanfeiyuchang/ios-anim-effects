@@ -1,0 +1,346 @@
+{
+  "language": "en",
+  "edit": {
+    "duration": 78.47,
+    "knots": [
+      [
+        0,
+        0
+      ],
+      [
+        3.3,
+        3.3
+      ],
+      [
+        5.5,
+        5.9
+      ],
+      [
+        16.2,
+        15.0
+      ],
+      [
+        18.4,
+        17.2
+      ],
+      [
+        19.9,
+        22.6
+      ],
+      [
+        21.9,
+        26.6
+      ],
+      [
+        24.07,
+        29.7
+      ],
+      [
+        29.33,
+        35.1
+      ],
+      [
+        30.4,
+        36.2
+      ],
+      [
+        32.1,
+        37.3
+      ],
+      [
+        32.6,
+        37.8
+      ],
+      [
+        33.0,
+        38.2
+      ],
+      [
+        34.55,
+        41.6
+      ],
+      [
+        35.3,
+        42.35
+      ],
+      [
+        55.6,
+        62.65
+      ],
+      [
+        55.75,
+        70.0
+      ],
+      [
+        62.4,
+        75.8
+      ],
+      [
+        65.47,
+        79.3
+      ],
+      [
+        69.8,
+        83.63
+      ],
+      [
+        71.15,
+        85.3
+      ],
+      [
+        74.15,
+        88.3
+      ],
+      [
+        78.47,
+        92.62
+      ]
+    ]
+  },
+  "hook": {
+    "subtitle": "premium iOS animations",
+    "categoriesLabel": "categories",
+    "familiesLabel": "families"
+  },
+  "pain": {
+    "titleLine1": "The motion you want,",
+    "titleLine2": "you can't describe",
+    "backdropMark": "?",
+    "words": [
+      "A little bounce?",
+      "Smoother?",
+      "Like jelly?",
+      "More premium?",
+      "Some wobble?",
+      "Spring back?",
+      "Buttery?"
+    ]
+  },
+  "unknown": {
+    "titleLine1": "What can iOS do?",
+    "titleLine2": "No idea",
+    "tileMark": "?"
+  },
+  "intro": {
+    "title": "Motionary",
+    "subtitle": "iOS Motion Dictionary",
+    "pillars": [
+      "Find ideas",
+      "Feel it",
+      "Copy prompts",
+      "Open source"
+    ]
+  },
+  "search": {
+    "title": "Find it in seconds",
+    "subtitle": "{effects} effects · {categories} categories · {families} families",
+    "query": "card"
+  },
+  "phone": {
+    "title": "Feel it for real",
+    "subtitle": "Haptics on every tap",
+    "statusTime": "9:41",
+    "hintTap": "Tap to try",
+    "hintGesture": "Drag to try",
+    "hintScroll": "Scroll to try",
+    "hintLoop": "Plays on a loop",
+    "hintState": "Tap to switch",
+    "paramsHeader": "Parameters",
+    "reset": "Reset",
+    "noParams": "No parameters"
+  },
+  "favorites": {
+    "title": "My favorites"
+  },
+  "prompt": {
+    "title": "Copy the prompt",
+    "subtitle": "English & Chinese · straight to AI",
+    "cardTitle": "Pro prompt",
+    "languageZh": "中",
+    "languageEn": "EN",
+    "copyButton": "Copy",
+    "copiedButton": "Copied",
+    "effectID": "",
+    "textZh": "",
+    "textEn": ""
+  },
+  "chat": {
+    "assistantName": "AI Assistant",
+    "status": "Online",
+    "bubbleTitle": "{name} · prompt",
+    "reply": "Got it! Building it in SwiftUI:"
+  },
+  "web": {
+    "title": "Web to browse · App to feel",
+    "subtitle": "",
+    "url": "alanfeiyuchang.github.io/motionary-ios-animations",
+    "siteName": "Motionary",
+    "siteTagline": "All recordings",
+    "countBadge": "{effects}",
+    "webLabel": "Web · every recording",
+    "appLabel": "App · feel it yourself"
+  },
+  "openSource": {
+    "title": "Open source",
+    "subtitle": "Stars and PRs welcome",
+    "url": "github.com/alanfeiyuchang/motionary-ios-animations"
+  },
+  "end": {
+    "title": "Motionary",
+    "subtitle": "iOS Motion Dictionary",
+    "tagline": "Motion you can describe, see and feel",
+    "upcoming": "More effects coming"
+  },
+  "voiceover": [
+    {
+      "start": 0.0,
+      "end": 2.63,
+      "text": "400+ iOS animations,"
+    },
+    {
+      "start": 2.63,
+      "end": 5.48,
+      "text": "to help you find the exact smooth effect you want."
+    },
+    {
+      "start": 5.48,
+      "end": 7.88,
+      "text": "If you've ever built an app, you know this feeling:"
+    },
+    {
+      "start": 7.88,
+      "end": 10.92,
+      "text": "you can picture the animation, but you can't describe it."
+    },
+    {
+      "start": 10.92,
+      "end": 13.59,
+      "text": "All you can say is \"make it feel premium.\""
+    },
+    {
+      "start": 13.59,
+      "end": 16.42,
+      "text": "Your designer doesn't get it. Neither does AI."
+    },
+    {
+      "start": 16.42,
+      "end": 17.5,
+      "text": "And even worse,"
+    },
+    {
+      "start": 17.5,
+      "end": 19.93,
+      "text": "you don't know what native iOS can actually do."
+    },
+    {
+      "start": 19.93,
+      "end": 21.4,
+      "text": "So I built Motionary,"
+    },
+    {
+      "start": 21.4,
+      "end": 24.07,
+      "text": "a hands-on dictionary of iOS motion."
+    },
+    {
+      "start": 24.07,
+      "end": 27.11,
+      "text": "461 effects across 15 categories,"
+    },
+    {
+      "start": 27.11,
+      "end": 29.33,
+      "text": "organized into 85 families."
+    },
+    {
+      "start": 29.33,
+      "end": 32.37,
+      "text": "Search any keyword and find it in seconds."
+    },
+    {
+      "start": 32.37,
+      "end": 35.8,
+      "text": "Tap Signature Interactions for the most polished ones."
+    },
+    {
+      "start": 35.8,
+      "end": 40.03,
+      "text": "Every effect is real SwiftUI, running live, not a video."
+    },
+    {
+      "start": 40.03,
+      "end": 42.06,
+      "text": "Press them, drag them,"
+    },
+    {
+      "start": 42.06,
+      "end": 44.47,
+      "text": "and feel the Taptic Engine haptics."
+    },
+    {
+      "start": 44.47,
+      "end": 46.5,
+      "text": "You'll know right away if it feels right."
+    },
+    {
+      "start": 46.5,
+      "end": 48.74,
+      "text": "My favorite is this Day / Night Toggle."
+    },
+    {
+      "start": 48.74,
+      "end": 50.77,
+      "text": "Look how smooth that transition is."
+    },
+    {
+      "start": 50.77,
+      "end": 52.4,
+      "text": "And this Gear Checklist."
+    },
+    {
+      "start": 52.4,
+      "end": 55.24,
+      "text": "Packing everything feels so satisfying."
+    },
+    {
+      "start": 55.24,
+      "end": 58.84,
+      "text": "Each one comes with a pro prompt in English and Chinese,"
+    },
+    {
+      "start": 58.84,
+      "end": 62.26,
+      "text": "spelling out the duration, curve and spring values."
+    },
+    {
+      "start": 62.26,
+      "end": 65.47,
+      "text": "Hand it to your AI or designer, and they can rebuild it."
+    },
+    {
+      "start": 65.47,
+      "end": 68.71,
+      "text": "Want a quick look? Browse every recording on the web."
+    },
+    {
+      "start": 68.71,
+      "end": 71.15,
+      "text": "Want to feel it? Try it yourself in the app."
+    },
+    {
+      "start": 71.15,
+      "end": 74.18,
+      "text": "The whole project is open source. Go check it out."
+    },
+    {
+      "start": 74.18,
+      "end": 77.02,
+      "text": "Motionary: motion you can describe,"
+    },
+    {
+      "start": 77.02,
+      "end": 78.47,
+      "text": "see, and feel."
+    }
+  ]
+}

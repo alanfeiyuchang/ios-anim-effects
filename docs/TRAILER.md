@@ -170,6 +170,23 @@ out/3x4/…                        3:4 画幅的同样一套（如果录了）
 手机里的 App 页面是按 iPhone 16/17 Pro（402 × 874 pt）排版后等比缩小的真实页面。搜索页上手指点的位置（「质感交互精选」胶囊、第一张结果卡片）
 是按系统导航栏高度估算的：如果录出来手指没点准，调整 `MotionLab/Trailer/TrailerFind.swift` 里的 `searchContentTop`。
 
+## 英文版（或别的口播版本）
+
+一个语言版本 = 一个文案文件。`trailer/copy-en.json` 就是英文版：
+
+- `"language": "en"`：手机里的 App 页面、动效名、参数、网页、提示词卡片（先英文、切到中文再切回）都用英文，录制脚本也用英文启动 App；
+- `"edit"`：这一版口播的剪辑时间轴，`duration` 是成片长度（最后一句字幕的结束时间），`knots` 是 [成片时间, 源时间] 对，
+  把每句字幕对到它讲的画面上（手机里有实时动效的那一段保持 1 倍速，节奏只在静止的段落里快慢调整）；
+- 其余各组是画面上的英文文字，`voiceover` 是英文口播的 30 句字幕。
+
+录制：
+
+```bash
+scripts/record-trailer.sh --aspects 9x16 --copy trailer/copy-en.json --out out-en
+```
+
+时长和语言都从文案文件里读，不用另外传参数。
+
 ## 开源画面的 GitHub 截图
 
 68–71 秒浏览器里显示的是 `trailer/github.jpg`：仓库首页在手机宽度（393 pt，3 倍图裁到 786 px 宽）、深色模式下的整页截图，

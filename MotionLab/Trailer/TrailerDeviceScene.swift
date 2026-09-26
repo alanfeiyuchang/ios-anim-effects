@@ -427,12 +427,12 @@ private struct PhonePage {
             if case .slider(let range, _) = spec.kind, range.upperBound > range.lowerBound {
                 fraction = M.clamp((value - range.lowerBound) / (range.upperBound - range.lowerBound))
             }
-            return Param(name: spec.name.zh, value: spec.formatted(value, .zh), fraction: fraction)
+            return Param(name: spec.name(TrailerCopy.appLanguage), value: spec.formatted(value, TrailerCopy.appLanguage), fraction: fraction)
         }
         return PhonePage(
             start: start,
-            name: effect.name.zh,
-            tag: effect.category.title.zh,
+            name: effect.name(TrailerCopy.appLanguage),
+            tag: effect.category.title(TrailerCopy.appLanguage),
             hint: hint(effect.interaction),
             symbol: effect.interaction.symbol,
             params: params
@@ -723,8 +723,8 @@ private struct TrailerFavouritesHeadline: View {
         .trailerDepth(exit, scale: -0.08, lift: -18, blur: 12)
     }
 
-    /// The effect's Chinese name, as the app shows it.
+    /// The effect's name in the trailer's language, as the app shows it.
     private static func name(_ id: String) -> String {
-        EffectLibrary.effect(id: id)?.name.zh ?? id
+        EffectLibrary.effect(id: id)?.name(TrailerCopy.appLanguage) ?? id
     }
 }

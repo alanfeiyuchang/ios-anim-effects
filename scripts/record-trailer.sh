@@ -12,7 +12,8 @@
 #   --voiceover-only     Only (re)write voiceover.srt / voiceover.txt in <out>/<aspect>/ from the copy file
 #                        (no Xcode needed; numbers from the trailer-resolved.json of an earlier take).
 #   -h, --help           Show this help.
-# Environment (still honoured): TRAILER_ASPECTS (same as --aspects), TRAILER_SECONDS (cut length, 75.4).
+# Environment (still honoured): TRAILER_ASPECTS (same as --aspects), TRAILER_SECONDS (cut length; default: the
+# copy file's edit.duration, else 75.4). The copy file's "language" ("zh" / "en") sets the app language too.
 #
 # Output, per aspect:
 #   <out>/9x16/trailer.mp4            1080×1920, 60 fps, H.264 CRF 18, 75.4 s (full-screen video; recommended)
@@ -103,7 +104,16 @@ else
 fi
 
 BUNDLE_ID="com.motionlexicon.MotionLab"
-DURATION="${TRAILER_SECONDS:-75.4}"
+# Cut length and app language come from the copy file when it sets them (a second language version is a
+# second copy file with its own `edit` timing and `"language"`).
+COPY_DURATION=""
+TRAILER_LANGUAGE="zh"
+if [ -n "$COPY" ]; then
+  COPY_DURATION=$(python3 -c 'import json,sys; e=json.load(open(sys.argv[1], encoding="utf-8")).get("edit") or {}; print(e.get("duration", ""))' "$COPY" 2>/dev/null || true)
+  TRAILER_LANGUAGE=$(python3 -c 'import json,sys; l=str(json.load(open(sys.argv[1], encoding="utf-8")).get("language", "zh")).lower(); print("en" if l.startswith("en") else "zh")' "$COPY" 2>/dev/null || echo zh)
+fi
+DURATION="${TRAILER_SECONDS:-${COPY_DURATION:-75.4}}"
+echo "Cut: ${DURATION}s, language: $TRAILER_LANGUAGE"
 LEAD_IN=2.5
 mkdir -p "$OUT"
 
@@ -433,7 +443,7 @@ install_copy() {
 }
 
 # -ML_freshState: no persisted "Recently Viewed" row, so the embedded Browse screen is the same every take.
-BASE_ARGS=(-ML_trailer YES -ML_noIntro YES -ML_freshState YES -app.language zh -app.appearance 2)
+BASE_ARGS=(-ML_trailer YES -ML_noIntro YES -ML_freshState YES -app.language "$TRAILER_LANGUAGE" -app.appearance 2)
 
 # Makes sure no instance is running: a surviving instance would simply be brought to the front by the
 # next launch and the recording would start mid-trailer (or on the end card).

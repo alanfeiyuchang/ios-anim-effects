@@ -44,13 +44,18 @@ private enum PromptSource {
         let override = TrailerCopy.current.prompt.textEn
         return override.isEmpty ? (effect?.prompt.en ?? "") : override
     }
-    /// The chat bubble's title (`{name}` = the effect's Chinese name).
+    /// The card leads with the trailer's language and flips to the other one and back.
+    static var english: Bool { TrailerCopy.appLanguage == .en }
+    static var primary: String { english ? en : zh }
+    static var secondary: String { english ? zh : en }
+
+    /// The chat bubble's title (`{name}` = the effect's name in the trailer's language).
     static var bubbleTitle: String {
-        TrailerCopy.current.chat.bubbleTitle.replacingOccurrences(of: "{name}", with: effect?.name.zh ?? "")
+        TrailerCopy.current.chat.bubbleTitle.replacingOccurrences(of: "{name}", with: effect?.name(TrailerCopy.appLanguage) ?? "")
     }
     static var title: String {
         guard let effect else { return "" }
-        return "\(effect.name.zh) · \(effect.name.en)"
+        return english ? "\(effect.name.en) · \(effect.name.zh)" : "\(effect.name.zh) · \(effect.name.en)"
     }
 
     /// The first two slider parameters with their default values, e.g. "抬升 0.08".
@@ -63,7 +68,7 @@ private enum PromptSource {
                 return false
             }
             .prefix(2)
-            .map { "\($0.name.zh) \($0.formatted(values[$0.id], .zh))" }
+            .map { "\($0.name(TrailerCopy.appLanguage)) \($0.formatted(values[$0.id], TrailerCopy.appLanguage))" }
     }
 }
 
@@ -130,9 +135,9 @@ private struct TrailerPromptCard: View {
     }
 
     private var languageToggle: some View {
-        let toEnglish: Double = M.spring(t, at: 73.4, response: 0.45, damping: 0.72)
-        let toChinese: Double = M.spring(t, at: 74.9, response: 0.45, damping: 0.72)
-        let pill: Double = toEnglish - toChinese
+        // Away to the other language at 73.4, back at 74.9 (中 → EN → 中, or EN → 中 → EN).
+        let away: Double = M.spring(t, at: 73.4, response: 0.45, damping: 0.72) - M.spring(t, at: 74.9, response: 0.45, damping: 0.72)
+        let pill: Double = PromptSource.english ? 1 - away : away
         let onEnglish = M.clamp(pill)
         return ZStack {
             Capsule()
@@ -167,19 +172,19 @@ private struct TrailerPromptCard: View {
         .frame(width: 42)
     }
 
-    /// 中 → EN → 中 as a cross-fade with a soft blur and a small slide (never a squashing flip).
+    /// 中 → EN → 中 (or EN → 中 → EN) as a cross-fade with a soft blur and a small slide (never a squashing flip).
     private var promptText: some View {
-        let english: Double = M.easeInOut(M.progress(t, 73.45, 0.5)) - M.easeInOut(M.progress(t, 74.95, 0.5))
-        let slide = CGFloat(english) * 6
+        let away: Double = M.easeInOut(M.progress(t, 73.45, 0.5)) - M.easeInOut(M.progress(t, 74.95, 0.5))
+        let slide = CGFloat(away) * 6
         return ZStack(alignment: .topLeading) {
-            promptBody(PromptSource.zh, english: false)
-                .blur(radius: CGFloat(english) * 6)
+            promptBody(PromptSource.primary, english: PromptSource.english)
+                .blur(radius: CGFloat(away) * 6)
                 .offset(y: -slide)
-                .opacity(1 - english)
-            promptBody(PromptSource.en, english: true)
-                .blur(radius: CGFloat(1 - english) * 6)
+                .opacity(1 - away)
+            promptBody(PromptSource.secondary, english: !PromptSource.english)
+                .blur(radius: CGFloat(1 - away) * 6)
                 .offset(y: 6 - slide)
-                .opacity(english)
+                .opacity(away)
         }
         .frame(width: TrailerLayout.promptSize.width - 36, height: TrailerLayout.promptSize.height - 142, alignment: .topLeading)
     }
@@ -315,7 +320,7 @@ private struct TrailerChatPanel: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
-                Text(verbatim: PromptSource.zh)
+                Text(verbatim: PromptSource.primary)
                     .font(.system(size: 10.5, weight: .medium))
                     .lineLimit(2)
                     .opacity(0.8)
@@ -549,10 +554,10 @@ private struct TrailerOutroPhoneScreen: View {
                 .foregroundStyle(Palette.accent)
                 .position(x: 15, y: TrailerPhone.navY)
             HStack(spacing: 4) {
-                Text(verbatim: effect?.name.zh ?? "")
+                Text(verbatim: effect?.name(TrailerCopy.appLanguage) ?? "")
                     .font(.system(size: 10.5, weight: .heavy))
                     .foregroundStyle(Color.white)
-                Text(verbatim: effect?.category.title.zh ?? "")
+                Text(verbatim: effect?.category.title(TrailerCopy.appLanguage) ?? "")
                     .font(.system(size: 7, weight: .bold))
                     .foregroundStyle(Palette.accent)
                     .padding(.horizontal, 4)
@@ -585,7 +590,7 @@ private struct TrailerOutroPhoneScreen: View {
             .background(Color.white.opacity(0.06), in: Capsule())
             .position(x: size.width / 2, y: TrailerPhone.hintY)
             VStack(alignment: .leading, spacing: 6) {
-                Text(verbatim: effect?.summary.zh ?? "")
+                Text(verbatim: effect?.summary(TrailerCopy.appLanguage) ?? "")
                     .font(.system(size: 8.5, weight: .medium))
                     .foregroundStyle(Color.white.opacity(0.7))
                     .lineSpacing(2)
@@ -861,7 +866,7 @@ private struct TrailerWebPage: View {
                         .background(Color.black.opacity(0.35), in: Circle())
                         .padding(4)
                 }
-            Text(verbatim: effect.name.zh)
+            Text(verbatim: effect.name(TrailerCopy.appLanguage))
                 .font(.system(size: 8, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.7))
                 .lineLimit(1)

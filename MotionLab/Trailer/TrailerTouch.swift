@@ -138,9 +138,9 @@ enum TrailerScript {
             TrailerTap(time: 53.8, point: TrailerScript.stage(118, TrailerScript.dayNightY)),
             TrailerTap(time: 55.4, point: TrailerScript.stage(222, TrailerScript.dayNightY)),
             TrailerTap(time: 57.0, point: TrailerScript.stage(118, TrailerScript.dayNightY)),
-            // Prompt: EN, back to 中, copy.
-            TrailerTap(time: 73.4, point: TrailerLayout.segmentEn),
-            TrailerTap(time: 74.9, point: TrailerLayout.segmentZh),
+            // Prompt: the other language, back, copy.
+            TrailerTap(time: 73.4, point: TrailerCopy.appLanguage == .en ? TrailerLayout.segmentZh : TrailerLayout.segmentEn),
+            TrailerTap(time: 74.9, point: TrailerCopy.appLanguage == .en ? TrailerLayout.segmentEn : TrailerLayout.segmentZh),
             TrailerTap(time: 75.8, point: TrailerLayout.copyButton),
         ]
         // Outro: the phone beside the web page gets played too.

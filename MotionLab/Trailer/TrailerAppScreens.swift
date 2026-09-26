@@ -59,8 +59,8 @@ struct TrailerAppScreen: View, Equatable {
         }
         .frame(width: size.width, height: size.height)
         .environment(\.colorScheme, .dark)
-        .environment(\.appLanguage, .zh)
-        .environment(\.locale, AppLanguage.zh.locale)
+        .environment(\.appLanguage, TrailerCopy.appLanguage)
+        .environment(\.locale, TrailerCopy.appLanguage.locale)
         // Scaled into the drawn phone, scroll visibility misses most cards; the lazy stacks still only
         // build the cells near the viewport, so this mounts a screenful of live demos, not the catalog.
         .environment(\.previewsAlwaysOnScreen, true)
@@ -149,9 +149,9 @@ private struct TrailerTabBar: View {
         let height = TrailerFind.tabBarHeight
         HStack(spacing: 12) {
             HStack(spacing: 0) {
-                item(symbol: "square.grid.2x2.fill", title: Strings.browse.zh, selected: !searchSelected)
-                item(symbol: "heart.fill", title: Strings.favorites.zh, selected: false)
-                item(symbol: "gearshape.fill", title: Strings.settings.zh, selected: false)
+                item(symbol: "square.grid.2x2.fill", title: Strings.browse(TrailerCopy.appLanguage), selected: !searchSelected)
+                item(symbol: "heart.fill", title: Strings.favorites(TrailerCopy.appLanguage), selected: false)
+                item(symbol: "gearshape.fill", title: Strings.settings(TrailerCopy.appLanguage), selected: false)
             }
             .padding(4)
             .frame(height: height)

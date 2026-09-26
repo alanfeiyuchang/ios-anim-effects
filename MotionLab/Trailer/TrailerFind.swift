@@ -59,12 +59,12 @@ struct TrailerLiveDemo: View, Equatable {
     var body: some View {
         let side = StageMetrics.previewCanvas
         if let effect = EffectLibrary.effect(id: effectID) {
-            EffectDemoView(effect: effect, context: DemoContext(params: effect.defaultParams, isPreview: true, language: .zh))
+            EffectDemoView(effect: effect, context: DemoContext(params: effect.defaultParams, isPreview: true, language: TrailerCopy.appLanguage))
                 .frame(width: side, height: side)
                 .environment(\.demoAutoplayEnabled, autoplay)
                 .environment(\.demoSyncEpoch, epoch)
                 .environment(\.demoAutoplayIntervalScale, intervalScale)
-                .environment(\.appLanguage, .zh)
+                .environment(\.appLanguage, TrailerCopy.appLanguage)
         }
     }
 }

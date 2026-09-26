@@ -74,10 +74,20 @@ struct TrailerView: View {
 /// `knots` (cut time, source time). Slope 1 wherever something moves or a live demo plays; steeper only
 /// through holds (static frames, drifting ambience) and the empty beat between two scenes.
 enum TrailerEdit {
-    /// Length of the cut, in seconds (the record script cuts exactly this much).
-    static let duration: Double = 75.4
+    /// Length of the cut, in seconds (the record script cuts exactly this much); `copy.edit` may override it.
+    static let duration: Double = TrailerCopy.current.edit?.duration ?? 75.4
 
-    static let knots: [(cut: Double, source: Double)] = [
+    /// The copy file's `edit.knots` when it has a valid set (another voice-over), else the default cut's.
+    static let knots: [(cut: Double, source: Double)] = {
+        let custom: [(cut: Double, source: Double)] = (TrailerCopy.current.edit?.knots ?? []).compactMap { pair in
+            pair.count == 2 ? (cut: pair[0], source: pair[1]) : nil
+        }
+        let increasing = zip(custom, custom.dropFirst()).allSatisfy { $0.cut < $1.cut && $0.source <= $1.source }
+        return custom.count >= 2 && increasing ? custom : defaultKnots
+    }()
+
+    /// The Chinese voice-over's cut (75.4 s).
+    static let defaultKnots: [(cut: Double, source: Double)] = [
         (0, 0),
         (3.2, 3.2), (3.5, 5.0),        // hook: the number has landed; skip most of the hold
         (15.7, 17.2), (18.0, 22.7),    // pain → unknown; the unknown tiles float faster for a moment
